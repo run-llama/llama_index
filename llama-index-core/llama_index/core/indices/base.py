@@ -325,7 +325,7 @@ class BaseIndex(Generic[IS], ABC):
 
         self.delete_nodes(
             ref_doc_info.node_ids,
-            delete_from_docstore=False,
+            delete_from_docstore=delete_from_docstore,
             **delete_kwargs,
         )
 
@@ -343,7 +343,7 @@ class BaseIndex(Generic[IS], ABC):
 
         await self.adelete_nodes(
             ref_doc_info.node_ids,
-            delete_from_docstore=False,
+            delete_from_docstore=delete_from_docstore,
             **delete_kwargs,
         )
 
@@ -441,11 +441,11 @@ class BaseIndex(Generic[IS], ABC):
             for i, document in enumerate(documents):
                 existing_doc_hash = self._docstore.get_document_hash(document.id_)
                 if existing_doc_hash is None:
-                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    self.insert(document, **update_kwargs.get("insert_kwargs", {}))
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
                     self.update_ref_doc(
-                        document, **update_kwargs.pop("update_kwargs", {})
+                        document, **update_kwargs.get("update_kwargs", {})
                     )
                     refreshed_documents[i] = True
 
@@ -469,12 +469,12 @@ class BaseIndex(Generic[IS], ABC):
                 )
                 if existing_doc_hash is None:
                     await self.ainsert(
-                        document, **update_kwargs.pop("insert_kwargs", {})
+                        document, **update_kwargs.get("insert_kwargs", {})
                     )
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
                     await self.aupdate_ref_doc(
-                        document, **update_kwargs.pop("update_kwargs", {})
+                        document, **update_kwargs.get("update_kwargs", {})
                     )
                     refreshed_documents[i] = True
             return refreshed_documents

@@ -875,6 +875,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
+        self._ensure_async_client()
+
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -945,10 +947,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
+        if self._client is None:
+            raise ValueError(
+                "Sync client is not initialized. Pass client= to the constructor."
+            )
         return self._client.collection_exists(collection_name)
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
+        self._ensure_async_client()
         return await self._aclient.collection_exists(collection_name)
 
     def _create_shard_keys(self) -> None:
@@ -1097,7 +1104,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self.parse_to_query_result(sparse_response[0].points),
                 self.parse_to_query_result(sparse_response[1].points),
                 # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
-                alpha=query.alpha or 0.5,
+                alpha=query.alpha if query.alpha is not None else 0.5,
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
                 top_k=query.hybrid_top_k or query.similarity_top_k,
             )
@@ -1194,7 +1201,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         shard_identifier = kwargs.get("shard_identifier")
         shard_key = (
             self._generate_shard_key_selector(shard_identifier)
-            if shard_identifier
+            if shard_identifier is not None
             else None
         )
 
@@ -1480,7 +1487,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # Unsupported filter operator
                 raise NotImplementedError(
                     f"Filter operator {subfilter.operator} is not supported by Qdrant vector store. "
-                    f"Supported operators: EQ, NE, GT, GTE, LT, LTE, IN, NIN, TEXT_MATCH, IS_EMPTY"
+                    f"Supported operators: EQ, NE, GT, GTE, LT, LTE, IN, NIN, TEXT_MATCH, "
+                    f"TEXT_MATCH_INSENSITIVE, IS_EMPTY"
                 )
 
         filter = Filter()

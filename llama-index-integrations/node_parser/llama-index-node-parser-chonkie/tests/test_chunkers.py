@@ -1,6 +1,7 @@
 """Tests for Chonkie Chunker integration."""
 
 import pytest
+import importlib
 from typing import List
 
 
@@ -389,17 +390,39 @@ def test_chunker_kwargs() -> None:
     assert len(chunks_small) >= len(chunks_large)
 
 
+def _optional_chunker_available(chunker_type: str) -> bool:
+    """Return whether a chunker can be safely instantiated in minimal env."""
+    if chunker_type == "late":
+        # requires sentence-transformers -> transformers -> torch
+        try:
+            importlib.import_module("sentence_transformers")
+            importlib.import_module("torch")
+            return True
+        except Exception:
+            return False
+    return True
+
+
 def test_available_chunkers() -> None:
     """Test that all available chunkers can be initialized."""
     assert len(CHUNKERS) > 0
+
     for chunker_type in CHUNKERS:
+        if not _optional_chunker_available(chunker_type):
+            pytest.skip(
+                f"Skipping optional chunker '{chunker_type}' (missing heavy deps)"
+            )
+
         kwargs = {}
         try:
             if chunker_type == "code":
                 kwargs = {"language": "python"}
+
             chunker = Chunker(chunker=chunker_type, **kwargs)
+
         except Exception as e:
             raise AssertionError(f"Failed to initialize chunker '{chunker_type}': {e}")
+
         assert chunker is not None
         assert chunker.chunker is not None
 

@@ -27,12 +27,12 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-volcengine-mysql"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index vector_stores Volcengine MySQL integration"
 authors = [
     {name = "Siyu Chen", email = "fishmage33@gmail.com"},
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

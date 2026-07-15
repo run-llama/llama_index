@@ -306,7 +306,29 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         self._reranker = reranker
 
     def _table_exists(self, tbl_name: Optional[str] = None) -> bool:
-        return (tbl_name or self._table_name) in self._connection.table_names()
+        table_name = tbl_name or self._table_name
+        if table_name is None:
+            return False
+
+        # Use page_token pagination to iterate through all table names.
+        page_token: Optional[str] = None
+        seen_page_tokens: set[Optional[str]] = set()
+        while page_token not in seen_page_tokens:
+            seen_page_tokens.add(page_token)
+            # table_names() defaults to limit=10 in LanceDB.
+            page = list(self._connection.table_names(page_token))
+
+            if table_name in page:
+                return True
+            if not page:
+                return False
+
+            next_page_token = page[-1]
+            if next_page_token == page_token:
+                return False
+            page_token = next_page_token
+
+        return False
 
     def create_index(
         self,

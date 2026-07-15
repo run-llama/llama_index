@@ -11,7 +11,7 @@ import neo4j
 logger = logging.getLogger(__name__)
 
 node_properties_query = """
-CALL apoc.meta.data()
+CALL apoc.meta.data($config)
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
@@ -20,7 +20,7 @@ RETURN {labels: nodeLabels, properties: properties} AS output
 """
 
 rel_properties_query = """
-CALL apoc.meta.data()
+CALL apoc.meta.data($config)
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
@@ -28,7 +28,7 @@ RETURN {type: nodeLabels, properties: properties} AS output
 """
 
 rel_query = """
-CALL apoc.meta.data()
+CALL apoc.meta.data($config)
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
@@ -46,10 +46,17 @@ class Neo4jGraphStore(GraphStore):
         node_label: str = "Entity",
         refresh_schema: bool = True,
         timeout: Optional[float] = None,
+        user_agent: str = "LLAMAINDEX-GRAPH",
+        apoc_sample: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         self.node_label = node_label
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._apoc_meta_config = (
+            {"sample": apoc_sample} if apoc_sample is not None else {}
+        )
+        self._driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password), user_agent=user_agent
+        )
         self._database = database
         self._timeout = timeout
         self.schema = ""
@@ -207,9 +214,14 @@ class Neo4jGraphStore(GraphStore):
         """
         Refreshes the Neo4j graph schema information.
         """
-        node_properties = [el["output"] for el in self.query(node_properties_query)]
-        rel_properties = [el["output"] for el in self.query(rel_properties_query)]
-        relationships = [el["output"] for el in self.query(rel_query)]
+        config = {"config": self._apoc_meta_config}
+        node_properties = [
+            el["output"] for el in self.query(node_properties_query, param_map=config)
+        ]
+        rel_properties = [
+            el["output"] for el in self.query(rel_properties_query, param_map=config)
+        ]
+        relationships = [el["output"] for el in self.query(rel_query, param_map=config)]
 
         self.structured_schema = {
             "node_props": {el["labels"]: el["properties"] for el in node_properties},

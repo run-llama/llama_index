@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-index-store-couchbase"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index index_store couchbase integration"
 authors = [{name = "Couchbase", email = "devadvocates@couchbase.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

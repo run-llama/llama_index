@@ -1,6 +1,12 @@
-# AWS Bedrock AgentCore Tools
+# Amazon Bedrock AgentCore Runtime and Tools
 
-This module provides tools for interacting with [AWS Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/)'s browser and code interpreter sandbox tools.
+This module provides a runtime adapter and tools for deploying and extending LlamaIndex agents with [Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/) -- including managed compute via AgentCore Runtime, sandboxed browser automation, and code execution.
+
+## Prerequisites
+
+- **AWS credentials** configured via environment variables, AWS CLI profile, or IAM role
+- **IAM permissions** for `bedrock-agentcore:*` actions (see the [AgentCore documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/agentcore.html) for details)
+- **Python 3.9+**
 
 ## Installation
 
@@ -16,11 +22,101 @@ Install the main tools package:
 pip install llama-index-tools-aws-bedrock-agentcore
 ```
 
+## Runtime
+
+The `AgentCoreRuntime` adapter deploys any LlamaIndex agent to [Amazon Bedrock AgentCore Runtime](https://docs.aws.amazon.com/bedrock/latest/userguide/agentcore.html) -- a managed compute platform for AI agents. It wraps `BedrockAgentCoreApp` from the `bedrock-agentcore` SDK, providing the required `POST /invocations` and `GET /ping` endpoints.
+
+### Quick Start
+
+```python
+from llama_index.llms.bedrock_converse import BedrockConverse
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.tools.aws_bedrock_agentcore import AgentCoreRuntime
+
+llm = BedrockConverse(
+    model="us.anthropic.claude-sonnet-4-6-v1",
+    region_name="us-west-2",
+)
+agent = FunctionAgent(llm=llm, tools=[])
+
+# One-liner -- starts uvicorn on port 8080
+AgentCoreRuntime.serve(agent)
+```
+
+### With Options
+
+```python
+runtime = AgentCoreRuntime(
+    agent=agent,
+    stream=True,  # SSE streaming (default)
+    port=8080,  # Required port for AgentCore deployment
+    debug=False,
+)
+runtime.run()
+```
+
+### With AgentCore Memory
+
+```python
+from llama_index.memory.bedrock_agentcore import (
+    AgentCoreMemory,
+    AgentCoreMemoryContext,
+)
+
+memory = AgentCoreMemory(
+    context=AgentCoreMemoryContext(
+        memory_id="your-memory-id",
+        actor_id="user-123",
+    ),
+    region_name="us-west-2",
+)
+
+# Session ID from the X-Amzn-Bedrock-AgentCore-Runtime-Session-Id header
+# is automatically wired to memory
+AgentCoreRuntime.serve(agent, memory=memory)
+```
+
+### Sending Requests
+
+```bash
+# Non-streaming
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello, what can you do?"}'
+
+# Streaming (SSE)
+curl -N -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello, what can you do?"}'
+```
+
+The adapter accepts `prompt`, `message`, or `input` as the payload key.
+
+### Streaming Event Types
+
+When `stream=True` (default), the SSE stream emits these event types:
+
+| Event          | Fields                                 | Description               |
+| -------------- | -------------------------------------- | ------------------------- |
+| `agent_stream` | `delta`, `response`, `thinking_delta`? | Token-by-token LLM output |
+| `tool_call`    | `tool_name`, `tool_kwargs`             | Before tool execution     |
+| `tool_result`  | `tool_name`, `tool_output`             | After tool execution      |
+| `done`         | `response`                             | Final agent response      |
+| `error`        | `message`                              | Error during streaming    |
+
+### Testing with ASGI
+
+```python
+runtime = AgentCoreRuntime(agent=agent)
+app = runtime.app  # BedrockAgentCoreApp (Starlette-based)
+# Use with httpx.AsyncClient for testing
+```
+
 ## Toolspecs
 
 ### Browser
 
-The Bedrock AgentCore `Browser` toolspec provides a set of tools for interacting with web browsers in a secure sandbox environment. It enables your LlamaIndex agents to navigate websites, extract content, click elements, and more.
+The AgentCore `Browser` toolspec provides a set of tools for interacting with web browsers in a secure sandbox environment. It enables your LlamaIndex agents to navigate websites, extract content, click elements, and more.
 
 Included tools:
 
@@ -31,6 +127,22 @@ Included tools:
 - `get_elements`: Get elements matching a CSS selector
 - `navigate_back`: Navigate to the previous page
 - `current_webpage`: Get information about the current webpage
+- `generate_live_view_url`: Generate a presigned URL for human oversight of a browser session
+- `take_control`: Take manual control of a browser session (disables automation)
+- `release_control`: Release manual control (re-enables automation)
+
+Lifecycle methods available for programmatic use (not exposed as agent tools):
+
+- `list_browsers`, `create_browser`, `delete_browser`, `get_browser`
+
+You can optionally pass a custom `identifier` for VPC-enabled browser resources:
+
+```python
+tool_spec = AgentCoreBrowserToolSpec(
+    region="us-west-2",
+    identifier="my-custom-browser-id",
+)
+```
 
 Example usage:
 
@@ -50,7 +162,7 @@ async def main():
     tools = tool_spec.to_tool_list()
 
     llm = BedrockConverse(
-        model="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        model="us.anthropic.claude-sonnet-4-6-v1",
         region_name="us-west-2",
     )
 
@@ -73,7 +185,7 @@ if __name__ == "__main__":
 
 ### Code Interpreter
 
-The Bedrock AgentCore `code_interpreter` toolspec provides a set of tools interacting with a secure code interpreter sandbox environment. It enables your LlamaIndex agents to execute code, run shell commands, manage files, and perform computational task.
+The AgentCore `Code Interpreter` toolspec provides a set of tools for interacting with a secure code interpreter sandbox environment. It enables your LlamaIndex agents to execute code, run shell commands, manage files, and perform computational tasks.
 
 Included tools:
 
@@ -86,6 +198,25 @@ Included tools:
 - `start_command`: Start long-running commands asynchronously
 - `get_task`: Check status of async tasks
 - `stop_task`: Stop running tasks
+- `upload_file`: Upload a file with an optional semantic description
+- `upload_files`: Upload multiple files at once
+- `install_packages`: Install Python packages via pip
+- `download_file`: Download a file from the sandbox
+- `download_files`: Download multiple files from the sandbox
+- `clear_context`: Clear all variable state in the Python execution context
+
+Lifecycle methods available for programmatic use (not exposed as agent tools):
+
+- `list_code_interpreters`, `create_code_interpreter`, `delete_code_interpreter`, `get_code_interpreter`
+
+You can optionally pass a custom `identifier` for VPC-enabled code interpreter resources:
+
+```python
+tool_spec = AgentCoreCodeInterpreterToolSpec(
+    region="us-west-2",
+    identifier="my-custom-interpreter-id",
+)
+```
 
 Example usage:
 
@@ -107,7 +238,7 @@ async def main():
     tools = tool_spec.to_tool_list()
 
     llm = BedrockConverse(
-        model="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        model="us.anthropic.claude-sonnet-4-6-v1",
         region_name="us-west-2",
     )
 
@@ -132,3 +263,8 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+## Example Notebooks
+
+- [Browser Tool Notebook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/tools/agentcore_browser.ipynb)
+- [Code Interpreter Tool Notebook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/tools/agentcore_code_interpreter.ipynb)

@@ -37,6 +37,13 @@ from tenacity import (
 )
 from typing_extensions import NotRequired, TypedDict
 
+try:
+    import aioboto3  # noqa: F401
+
+    HAS_AIOBOTO3 = True
+except ImportError:
+    HAS_AIOBOTO3 = False
+
 logger = logging.getLogger(__name__)
 
 HUMAN_PREFIX = "\n\nHuman:"
@@ -66,10 +73,14 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
-    "anthropic.claude-opus-4-6-v1": 200000,
+    "anthropic.claude-opus-4-6-v1": 1000000,
+    "anthropic.claude-opus-4-7": 1000000,
+    "anthropic.claude-opus-4-8": 1000000,
+    "anthropic.claude-fable-5": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
-    "anthropic.claude-sonnet-4-6": 200000,
+    "anthropic.claude-sonnet-4-6": 1000000,
+    "anthropic.claude-sonnet-5": 1000000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
@@ -77,6 +88,9 @@ BEDROCK_MODELS = {
     "cohere.command-light-text-v14": 4096,
     "cohere.command-r-v1:0": 128000,
     "cohere.command-r-plus-v1:0": 128000,
+    "google.gemma-3-12b-it": 128000,
+    "google.gemma-3-27b-it": 128000,
+    "google.gemma-3-4b-it": 128000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
     "meta.llama3-8b-instruct-v1:0": 8192,
@@ -100,6 +114,8 @@ BEDROCK_MODELS = {
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
+    "deepseek.v3-v1:0": 128000,
+    "deepseek.v3.2": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
@@ -120,9 +136,13 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
+    "anthropic.claude-opus-4-8",
+    "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
+    "anthropic.claude-sonnet-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
@@ -137,6 +157,8 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "meta.llama4-scout-17b-instruct-v1:0",
     "openai.gpt-oss-120b-1:0",
     "openai.gpt-oss-20b-1:0",
+    "deepseek.v3-v1:0",
+    "deepseek.v3.2",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
@@ -157,9 +179,13 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
+    "anthropic.claude-opus-4-8",
+    "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
+    "anthropic.claude-sonnet-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
@@ -180,9 +206,13 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
+    "anthropic.claude-opus-4-8",
+    "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
+    "anthropic.claude-sonnet-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
@@ -198,16 +228,33 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
+    "anthropic.claude-opus-4-8",
+    "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
+    "anthropic.claude-sonnet-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
+    "deepseek.v3-v1:0",
+    "google.gemma-3-12b-it",
 )
 
 BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
+    "anthropic.claude-opus-4-8",
+    "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-6",
+    "anthropic.claude-sonnet-5",
+)
+
+BEDROCK_NO_TEMP_MODELS = (
+    "anthropic.claude-opus-4-7",
+    "anthropic.claude-opus-4-8",
+    "anthropic.claude-fable-5",
+    "anthropic.claude-sonnet-5",
 )
 
 
@@ -218,8 +265,8 @@ def is_reasoning(model_name: str) -> bool:
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
-    # Check for region prefixes (us, eu, apac, jp, global)
-    REGION_PREFIXES = ["us.", "eu.", "apac.", "jp.", "global."]
+    # Check for region prefixes (us, us-gov, eu, apac, jp, global, ca, au)
+    REGION_PREFIXES = ["us.", "us-gov.", "eu.", "apac.", "jp.", "global.", "ca.", "au."]
 
     # If no region prefix, return the original model name
     if not any(prefix in model_name for prefix in REGION_PREFIXES):
@@ -278,6 +325,32 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
+BEDROCK_DOC_MIMETYPE_TO_FORMAT = {
+    "application/pdf": "pdf",
+    "text/csv": "csv",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "text/html": "html",
+    "text/plain": "txt",
+    "text/markdown": "md",
+}
+
+
+def _get_bedrock_doc_format(mimetype: Optional[str]) -> str:
+    """Map a document mimetype to a Bedrock Converse document format."""
+    if mimetype and mimetype in BEDROCK_DOC_MIMETYPE_TO_FORMAT:
+        return BEDROCK_DOC_MIMETYPE_TO_FORMAT[mimetype]
+    if mimetype:
+        logger.warning(
+            f"Unsupported document mimetype for Bedrock Converse: {mimetype}. "
+            f"Supported types: {', '.join(BEDROCK_DOC_MIMETYPE_TO_FORMAT.keys())}. "
+            "Falling back to 'txt'."
+        )
+    return "txt"
+
+
 def _content_block_to_bedrock_format(
     block: ContentBlock, role: MessageRole
 ) -> Optional[Dict[str, Any]]:
@@ -318,9 +391,10 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
-        # NOTE: At the time of writing, "txt" format works for all file types
-        # The API then infers the format from the file type based on the bytes
-        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
+        doc_format = _get_bedrock_doc_format(block.document_mimetype)
+        return {
+            "document": {"format": doc_format, "name": title, "source": {"bytes": data}}
+        }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -437,11 +511,22 @@ def messages_to_converse_messages(
                         )
 
         elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
-            # convert tool output to the AWS Bedrock Converse format
+            # Serialize tool result blocks using the same converter as user
+            # messages.  Falls back to legacy message.content for plain-text
+            # tool results.
+            tool_content: list[dict[str, Any]] = []
+            for block in message.blocks:
+                bedrock_block = _content_block_to_bedrock_format(
+                    block, MessageRole.USER
+                )
+                if bedrock_block:
+                    tool_content.append(bedrock_block)
+            if not tool_content and message.content:
+                tool_content = [{"text": message.content}]
             content = {
                 "toolResult": {
                     "toolUseId": message.additional_kwargs["tool_call_id"],
-                    "content": [{"text": message.content}] if message.content else [],
+                    "content": tool_content,
                 }
             }
             if status := message.additional_kwargs.get("status"):
@@ -557,7 +642,10 @@ def tools_to_converse_tools(
         converse_tools.append({"cachePoint": {"type": "default"}})
 
     if tool_choice:
-        tool_choice = tool_choice
+        if isinstance(tool_choice, str):
+            tool_choice = {"tool": {"name": tool_choice}}
+        else:
+            tool_choice = tool_choice
     elif supports_forced_tool_calls and tool_required:
         tool_choice = {"any": {}}
     else:
@@ -637,14 +725,6 @@ def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    try:
-        import aioboto3  # noqa
-    except ImportError as e:
-        raise ImportError(
-            "You must install the `aioboto3` package to use Bedrock."
-            "Please `pip install aioboto3`"
-        ) from e
-
     return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
@@ -663,7 +743,7 @@ def converse_with_retry(
     system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
-    temperature: float = 0.1,
+    temperature: Optional[float] = None,
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
@@ -673,13 +753,15 @@ def converse_with_retry(
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
+    inference_config: Dict[str, Any] = {
+        "maxTokens": max_tokens,
+    }
+    if temperature is not None:
+        inference_config["temperature"] = temperature
     converse_kwargs = {
         "modelId": model,
         "messages": messages,
-        "inferenceConfig": {
-            "maxTokens": max_tokens,
-            "temperature": temperature,
-        },
+        "inferenceConfig": inference_config,
     }
     if "thinking" in kwargs:
         converse_kwargs["additionalModelRequestFields"] = {
@@ -740,8 +822,7 @@ def converse_with_retry(
 
 
 async def converse_with_retry_async(
-    session: Any,
-    config: Any,
+    client: Any,
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
@@ -749,131 +830,202 @@ async def converse_with_retry_async(
     system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
-    temperature: float = 0.1,
+    temperature: Optional[float] = None,
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
     guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
+    session: Any = None,
+    config: Any = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
-    """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
-    converse_kwargs = {
-        "modelId": model,
-        "messages": messages,
-        "inferenceConfig": {
+    """
+    Async Bedrock Converse API calls with retry.
+
+    When aioboto3 is installed and a session is provided, uses native async.
+    Otherwise falls back to asyncio.to_thread wrapping the sync implementation.
+    """
+    if HAS_AIOBOTO3 and session is not None:
+        # Native async path (original aioboto3 implementation)
+        retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
+        inference_config: Dict[str, Any] = {
             "maxTokens": max_tokens,
-            "temperature": temperature,
-        },
-    }
-    if "thinking" in kwargs:
-        converse_kwargs["additionalModelRequestFields"] = {
-            "thinking": kwargs["thinking"]
         }
+        if temperature is not None:
+            inference_config["temperature"] = temperature
+        converse_kwargs = {
+            "modelId": model,
+            "messages": messages,
+            "inferenceConfig": inference_config,
+        }
+        if "thinking" in kwargs:
+            converse_kwargs["additionalModelRequestFields"] = {
+                "thinking": kwargs["thinking"]
+            }
 
-    if system_prompt:
-        if isinstance(system_prompt, str):
-            # if the system prompt is a simple text (for retro compatibility)
-            system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        if system_prompt:
+            if isinstance(system_prompt, str):
+                # if the system prompt is a simple text (for retro compatibility)
+                system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+            else:
+                system_messages: list[dict[str, Any]] = system_prompt
+            if (
+                system_prompt_caching
+                and len(system_messages) > 0
+                and system_messages[-1].get("cachePoint", None) is None
+            ):
+                # "Adding cache point to system prompt if not present"
+                system_messages.append({"cachePoint": {"type": "default"}})
+            converse_kwargs["system"] = system_messages
+
+        if tool_config := kwargs.get("tools"):
+            converse_kwargs["toolConfig"] = tool_config
+            if tool_caching and "tools" in converse_kwargs["toolConfig"]:
+                converse_kwargs["toolConfig"]["tools"].append(
+                    {"cachePoint": {"type": "default"}}
+                )
+        if guardrail_identifier and guardrail_version:
+            converse_kwargs["guardrailConfig"] = {}
+            converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = (
+                guardrail_identifier
+            )
+            converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+            if trace:
+                converse_kwargs["guardrailConfig"]["trace"] = trace
+            if guardrail_stream_processing_mode and stream:
+                converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                    guardrail_stream_processing_mode
+                )
+        converse_kwargs = join_two_dicts(
+            converse_kwargs,
+            {
+                k: v
+                for k, v in kwargs.items()
+                if k
+                not in [
+                    "tools",
+                    "guardrail_identifier",
+                    "guardrail_version",
+                    "trace",
+                    "thinking",
+                ]
+            },
+        )
+        _boto_client_kwargs = {}
+        if boto_client_kwargs is not None:
+            _boto_client_kwargs |= boto_client_kwargs
+
+        ## NOTE: Returning the generator directly from converse_stream doesn't work
+        # So, we have to use two separate functions for streaming and non-streaming
+        # This differs from the synchronous version, and is a bit of a hack
+        # Further investigation is needed
+
+        @retry_decorator
+        async def _conversion_with_retry(**kwargs: Any) -> Any:
+            if client is not None:
+                return await client.converse(**kwargs)
+            async with session.client(
+                "bedrock-runtime",
+                config=config,
+                **_boto_client_kwargs,
+            ) as c:
+                return await c.converse(**kwargs)
+
+        @retry_decorator
+        async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
+            if client is not None:
+                response = await client.converse_stream(**kwargs)
+                async for event in response["stream"]:
+                    yield event
+            else:
+                async with session.client(
+                    "bedrock-runtime",
+                    config=config,
+                    **_boto_client_kwargs,
+                ) as c:
+                    response = await c.converse_stream(**kwargs)
+                    async for event in response["stream"]:
+                        yield event
+
+        if stream:
+            return _conversion_stream_with_retry(**converse_kwargs)
         else:
-            system_messages: list[dict[str, Any]] = system_prompt
-        if (
-            system_prompt_caching
-            and len(system_messages) > 0
-            and system_messages[-1].get("cachePoint", None) is None
-        ):
-            # "Adding cache point to system prompt if not present"
-            system_messages.append({"cachePoint": {"type": "default"}})
-        converse_kwargs["system"] = system_messages
-
-    if tool_config := kwargs.get("tools"):
-        converse_kwargs["toolConfig"] = tool_config
-        if tool_caching and "tools" in converse_kwargs["toolConfig"]:
-            converse_kwargs["toolConfig"]["tools"].append(
-                {"cachePoint": {"type": "default"}}
-            )
-    if guardrail_identifier and guardrail_version:
-        converse_kwargs["guardrailConfig"] = {}
-        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
-        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
-        if trace:
-            converse_kwargs["guardrailConfig"]["trace"] = trace
-        if guardrail_stream_processing_mode and stream:
-            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
-                guardrail_stream_processing_mode
-            )
-    converse_kwargs = join_two_dicts(
-        converse_kwargs,
-        {
-            k: v
-            for k, v in kwargs.items()
-            if k
-            not in [
-                "tools",
-                "guardrail_identifier",
-                "guardrail_version",
-                "trace",
-                "thinking",
-            ]
-        },
-    )
-    _boto_client_kwargs = {}
-    if boto_client_kwargs is not None:
-        _boto_client_kwargs |= boto_client_kwargs
-
-    ## NOTE: Returning the generator directly from converse_stream doesn't work
-    # So, we have to use two separate functions for streaming and non-streaming
-    # This differs from the synchronous version, and is a bit of a hack
-    # Further investigation is needed
-
-    @retry_decorator
-    async def _conversion_with_retry(**kwargs: Any) -> Any:
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as client:
-            return await client.converse(**kwargs)
-
-    @retry_decorator
-    async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as client:
-            response = await client.converse_stream(**kwargs)
-            async for event in response["stream"]:
-                yield event
-
-    if stream:
-        return _conversion_stream_with_retry(**converse_kwargs)
+            return await _conversion_with_retry(**converse_kwargs)
     else:
-        return await _conversion_with_retry(**converse_kwargs)
+        # Fallback: asyncio.to_thread wrapping sync implementation
+        import asyncio
 
+        if client is None:
+            raise ValueError(
+                "A sync boto3 bedrock-runtime client must be provided via the 'client' parameter."
+            )
 
-def extract_thinking_from_block(block: Dict[str, Any]) -> Optional[str]:
-    """Extract thinking content from a Bedrock Converse content block or delta."""
-    if "reasoningContent" in block:
-        # For non-streaming, it's reasoningContent.reasoningText.text
-        # For streaming, it's reasoningContent.text
-        reasoning = block["reasoningContent"]
-        if "reasoningText" in reasoning:
-            return reasoning["reasoningText"].get("text")
-        return reasoning.get("text")
+        if not stream:
+            return await asyncio.to_thread(
+                converse_with_retry,
+                client=client,
+                model=model,
+                messages=messages,
+                max_retries=max_retries,
+                system_prompt=system_prompt,
+                system_prompt_caching=system_prompt_caching,
+                tool_caching=tool_caching,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stream=False,
+                guardrail_identifier=guardrail_identifier,
+                guardrail_version=guardrail_version,
+                guardrail_stream_processing_mode=guardrail_stream_processing_mode,
+                trace=trace,
+                **kwargs,
+            )
+        else:
+            # Stream chunks incrementally via a queue bridging the sync iterator
+            # to an async generator. This avoids buffering the entire response.
+            queue: asyncio.Queue = asyncio.Queue()
+            loop = asyncio.get_running_loop()
 
-    # Fallback for other potential keys (Nova, etc.)
-    for key in ("reasoning_content", "thinking", "reasoning"):
-        if key in block:
-            val = block[key]
-            if isinstance(val, str):
-                return val
-            if isinstance(val, dict):
-                return val.get("text") or val.get("content")
+            def _producer():
+                try:
+                    response = converse_with_retry(
+                        client=client,
+                        model=model,
+                        messages=messages,
+                        max_retries=max_retries,
+                        system_prompt=system_prompt,
+                        system_prompt_caching=system_prompt_caching,
+                        tool_caching=tool_caching,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        stream=True,
+                        guardrail_identifier=guardrail_identifier,
+                        guardrail_version=guardrail_version,
+                        guardrail_stream_processing_mode=guardrail_stream_processing_mode,
+                        trace=trace,
+                        **kwargs,
+                    )
+                    for event in response["stream"]:
+                        loop.call_soon_threadsafe(queue.put_nowait, event)
+                except BaseException as e:
+                    loop.call_soon_threadsafe(queue.put_nowait, e)
+                finally:
+                    loop.call_soon_threadsafe(queue.put_nowait, None)
 
-    return None
+            thread = loop.run_in_executor(None, _producer)
+
+            async def _async_gen():
+                while True:
+                    chunk = await queue.get()
+                    if chunk is None:
+                        break
+                    if isinstance(chunk, BaseException):
+                        raise chunk
+                    yield chunk
+                await thread  # ensure thread completes cleanly
+
+            return _async_gen()
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:

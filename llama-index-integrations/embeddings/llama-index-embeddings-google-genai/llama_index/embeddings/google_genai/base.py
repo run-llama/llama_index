@@ -122,7 +122,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     Args:
         model_name (str): Model for embedding.
-            Defaults to "text-embedding-005".
+            Defaults to "gemini-embedding-2-preview".
         api_key (Optional[str]): API key to access the model. Defaults to None.
         embedding_config (Optional[types.EmbedContentConfigOrDict]): Embedding config to access the model. Defaults to None.
         vertexai_config (Optional[VertexAIConfig]): Vertex AI config to access the model. Defaults to None.
@@ -142,7 +142,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         ```python
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-        embed_model = GoogleGenAIEmbedding(model_name="text-embedding-005", api_key="...")
+        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2-preview", api_key="...")
         ```
 
     """
@@ -167,7 +167,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "text-embedding-004",
+        model_name: str = "gemini-embedding-2-preview",
         api_key: Optional[str] = None,
         embedding_config: Optional[types.EmbedContentConfigOrDict] = None,
         vertexai_config: Optional[VertexAIConfig] = None,
@@ -264,7 +264,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         def embed_with_client() -> List[List[float]]:
             results = self._client.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=[[t] for t in texts],
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
@@ -297,7 +297,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         async def aembed_with_client() -> List[List[float]]:
             results = await self._client.aio.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=[[t] for t in texts],
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]

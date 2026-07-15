@@ -2755,3 +2755,45 @@ def test_extract_html_table():
     assert test_document.text[nodes[3].start_char_idx : nodes[3].end_char_idx] == table2
     assert type(nodes[4]) is TextNode
     assert test_document.text[nodes[4].start_char_idx : nodes[4].end_char_idx] == table2
+
+
+def test_code_block_extraction() -> None:
+    """Test that code blocks are properly extracted as code elements."""
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+
+    document = """my cool file
+```
+my cool code block
+```
+some text after"""
+
+    result = node_parser.extract_elements(document)
+
+    # Should have 3 elements: text, code, text
+    assert len(result) == 3
+    assert result[0].type == "text"
+    assert "my cool file" in result[0].element
+    assert result[1].type == "code"
+    assert "my cool code block" in result[1].element
+    assert result[2].type == "text"
+    assert "some text after" in result[2].element
+
+
+def test_code_block_with_language() -> None:
+    """Test code block with language identifier."""
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+
+    document = """intro text
+```python
+def hello():
+    pass
+```
+outro text"""
+
+    result = node_parser.extract_elements(document)
+
+    assert len(result) == 3
+    assert result[0].type == "text"
+    assert result[1].type == "code"
+    assert "def hello():" in result[1].element
+    assert result[2].type == "text"

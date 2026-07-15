@@ -43,7 +43,7 @@ class FakeClient:
 
 def _make_llm(file_mode="fileapi"):
     llm = GoogleGenAI.model_construct()
-    object.__setattr__(llm, "model", "gemini-2.0-flash")
+    object.__setattr__(llm, "model", "gemini-3-flash-preview")
     object.__setattr__(llm, "file_mode", file_mode)
     object.__setattr__(llm, "max_retries", 0)
     object.__setattr__(llm, "_generation_config", {})
@@ -108,7 +108,7 @@ def test_stream_chat_runs_cleanup(monkeypatch):
 
     class Chunk:
         def __init__(self):
-            part = SimpleNamespace(text="hi")
+            part = SimpleNamespace(text="hi", thought=None)
             content = SimpleNamespace(parts=[part])
             cand = SimpleNamespace(content=content)
             self.candidates = [cand]
@@ -150,7 +150,7 @@ async def test_astream_chat_runs_cleanup(monkeypatch):
 
     class Chunk:
         def __init__(self):
-            part = SimpleNamespace(text="hi")
+            part = SimpleNamespace(text="hi", thought=None)
             content = SimpleNamespace(parts=[part])
             cand = SimpleNamespace(content=content)
             self.candidates = [cand]

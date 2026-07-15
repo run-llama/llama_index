@@ -9,7 +9,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-readers-paddle-ocr"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index readers paddle_ocr integration"
 authors = [{name = "Michael M L Ye", email = "1156961988@qq.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "mdarshad1000"}]
@@ -42,7 +42,7 @@ dependencies = [
     "paddleocr>=2.7.0",
     "pdfplumber==0.11.7",
     "PyMuPDF==1.26.4",
-    "pillow==10.4.0",
+    "pillow==12.2.0",
     "paddlepaddle==3.2.0",
     "llama-index-core>=0.13.0,<0.15",
     "requests>=2.0.0",

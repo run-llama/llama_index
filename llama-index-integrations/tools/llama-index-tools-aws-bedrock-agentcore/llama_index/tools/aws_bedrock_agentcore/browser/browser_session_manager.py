@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 from bedrock_agentcore.tools.browser_client import BrowserClient
 
@@ -27,17 +27,45 @@ class BrowserSessionManager:
     browser session will raise a RuntimeError until it is released.
     """
 
-    def __init__(self, region: str = "us-west-2"):
+    def __init__(
+        self,
+        region: str = "us-west-2",
+        identifier: Optional[str] = None,
+    ):
         """
         Initialize the browser session manager.
 
         Args:
             region: AWS region for browser client
+            identifier: Optional custom browser identifier for VPC-enabled resources
 
         """
         self.region = region
+        self._identifier = identifier
         self._async_sessions: Dict[str, Tuple[BrowserClient, AsyncBrowser, bool]] = {}
         self._sync_sessions: Dict[str, Tuple[BrowserClient, SyncBrowser, bool]] = {}
+
+    def get_browser_client(self, thread_id: str) -> Optional[BrowserClient]:
+        """
+        Get the underlying BrowserClient for a thread, if one exists.
+
+        Checks both sync and async sessions. Returns None if no session exists
+        for the given thread_id.
+
+        Args:
+            thread_id: Unique identifier for the thread
+
+        Returns:
+            BrowserClient instance, or None if no session exists
+
+        """
+        if thread_id in self._sync_sessions:
+            client, _, _ = self._sync_sessions[thread_id]
+            return client
+        if thread_id in self._async_sessions:
+            client, _, _ = self._async_sessions[thread_id]
+            return client
+        return None
 
     async def get_async_browser(self, thread_id: str) -> AsyncBrowser:
         """
@@ -105,11 +133,16 @@ class BrowserSessionManager:
             Exception: If browser session creation fails
 
         """
-        browser_client = BrowserClient(region=self.region)
+        browser_client = BrowserClient(
+            region=self.region, integration_source="llamaindex"
+        )
 
         try:
             # Start browser session
-            browser_client.start()
+            start_kwargs = {}
+            if self._identifier is not None:
+                start_kwargs["identifier"] = self._identifier
+            browser_client.start(**start_kwargs)
 
             # Get WebSocket connection info
             ws_url, headers = browser_client.generate_ws_headers()
@@ -162,11 +195,16 @@ class BrowserSessionManager:
             Exception: If browser session creation fails
 
         """
-        browser_client = BrowserClient(region=self.region)
+        browser_client = BrowserClient(
+            region=self.region, integration_source="llamaindex"
+        )
 
         try:
             # Start browser session
-            browser_client.start()
+            start_kwargs = {}
+            if self._identifier is not None:
+                start_kwargs["identifier"] = self._identifier
+            browser_client.start(**start_kwargs)
 
             # Get WebSocket connection info
             ws_url, headers = browser_client.generate_ws_headers()

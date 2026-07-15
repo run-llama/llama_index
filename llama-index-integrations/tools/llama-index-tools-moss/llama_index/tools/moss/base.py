@@ -4,6 +4,7 @@ from typing import List, Optional
 from dataclasses import dataclass
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from inferedge_moss import MossClient, DocumentInfo
+from inferedge_moss import QueryOptions as MossQueryOptions
 
 
 @dataclass
@@ -14,7 +15,7 @@ class QueryOptions:
     Attributes:
         top_k (int): Number of results to return from queries. Defaults to 5.
         alpha (float): Hybrid search weight (0.0=keyword, 1.0=semantic). Defaults to 0.5.
-        model_id (str): The model ID to use for embeddings. Defaults to "moss-minilm".
+        model_id (str): The embedding model ID used when creating the index. Defaults to "moss-minilm".
 
     """
 
@@ -31,7 +32,7 @@ class MossToolSpec(BaseToolSpec):
     and query for relevant information.
     """
 
-    spec_functions: tuple[str, ...] = ("query",)
+    spec_functions: tuple[str, ...] = ("query", "list_indexes", "delete_index")
 
     def __init__(
         self,
@@ -58,10 +59,10 @@ class MossToolSpec(BaseToolSpec):
 
         self.top_k: int = opt.top_k
         self.alpha: float = opt.alpha
+        self.model_id: str = opt.model_id
         self.client: MossClient = client
         self.index_name: str = index_name
         self._index_loaded: bool = False
-        self.model_id: str = opt.model_id
 
     async def index_docs(self, docs: List[DocumentInfo]) -> None:
         await self.client.create_index(self.index_name, docs, model_id=self.model_id)
@@ -93,7 +94,7 @@ class MossToolSpec(BaseToolSpec):
             await self._load_index()
 
         results = await self.client.query(
-            self.index_name, query, self.top_k, self.alpha
+            self.index_name, query, MossQueryOptions(top_k=self.top_k, alpha=self.alpha)
         )
         answer = f"Search results for: '{query}'\n\n"
 
@@ -111,3 +112,40 @@ class MossToolSpec(BaseToolSpec):
             answer += "-" * 20 + "\n\n"
 
         return answer
+
+    async def list_indexes(self) -> str:
+        """
+        List all available indexes in the Moss project.
+
+        Use this tool to discover what indexes exist before querying or managing them.
+
+        Returns:
+            str: A formatted list of all index names in the project.
+
+        """
+        indexes = await self.client.list_indexes()
+        if not indexes:
+            return "No indexes found."
+
+        result = "Available indexes:\n"
+        for idx in indexes:
+            result += f"  - {idx.name} (docs: {idx.doc_count}, status: {idx.status})\n"
+        return result
+
+    async def delete_index(self, index_name: str) -> str:
+        """
+        Delete an index from the Moss project.
+
+        Use this tool to remove an index and all its documents when it is no longer needed.
+
+        Args:
+            index_name (str): The name of the index to delete.
+
+        Returns:
+            str: A confirmation message indicating the index was deleted.
+
+        """
+        await self.client.delete_index(index_name)
+        if index_name == self.index_name:
+            self._index_loaded = False
+        return f"Index '{index_name}' has been deleted."

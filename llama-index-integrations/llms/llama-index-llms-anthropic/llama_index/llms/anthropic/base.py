@@ -44,6 +44,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
+    ANTHROPIC_NO_TEMP_MODELS,
     anthropic_modelname_to_contextsize,
     force_single_tool_call,
     is_anthropic_prompt_caching_supported_model,
@@ -344,6 +345,12 @@ class Anthropic(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+
+        for model in ANTHROPIC_NO_TEMP_MODELS:
+            if model in self.model:
+                del base_kwargs["temperature"]
+                break
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
@@ -376,7 +383,7 @@ class Anthropic(FunctionCallingLLM):
         self, chat_response: AnthropicChatResponse
     ) -> AnthropicCompletionResponse:
         return AnthropicCompletionResponse(
-            text=chat_response.message.content,
+            text=chat_response.message.content or "",
             delta=chat_response.delta,
             additional_kwargs=chat_response.additional_kwargs,
             raw=chat_response.raw,
@@ -499,6 +506,7 @@ class Anthropic(FunctionCallingLLM):
             input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             for r in response:
+                thinking_delta = ""
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
                         content_delta = r.delta.text or ""
@@ -539,13 +547,14 @@ class Anthropic(FunctionCallingLLM):
                             )
                     elif isinstance(r.delta, ThinkingDelta):
                         content_delta = ""
+                        thinking_delta = r.delta.thinking or ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
-                                content=r.delta.thinking or "",
+                                content=thinking_delta,
                                 additional_information={"signature": ""},
                             )
                         else:
-                            cur_block.content += r.delta.thinking
+                            cur_block.content += thinking_delta
                     elif isinstance(r.delta, CitationsDelta):
                         content_delta = ""
                         # TODO: handle citation deltas
@@ -589,6 +598,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -627,6 +637,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -662,6 +673,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -751,6 +763,7 @@ class Anthropic(FunctionCallingLLM):
             input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             async for r in response:
+                thinking_delta = ""
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
                         content_delta = r.delta.text or ""
@@ -791,13 +804,14 @@ class Anthropic(FunctionCallingLLM):
                             )
                     elif isinstance(r.delta, ThinkingDelta):
                         content_delta = ""
+                        thinking_delta = r.delta.thinking or ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
-                                content=r.delta.thinking or "",
+                                content=thinking_delta,
                                 additional_information={"signature": ""},
                             )
                         else:
-                            cur_block.content += r.delta.thinking
+                            cur_block.content += thinking_delta
                     elif isinstance(r.delta, CitationsDelta):
                         content_delta = ""
                         # TODO: handle citation deltas
@@ -841,6 +855,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -879,6 +894,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -914,6 +930,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,

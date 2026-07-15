@@ -7,7 +7,6 @@ from abc import ABC
 from enum import Enum
 from io import IOBase, BytesIO
 from pathlib import Path
-from types import NoneType
 from typing import (
     Annotated,
     Any,
@@ -19,7 +18,15 @@ from typing import (
     Optional,
     Union,
     cast,
+    Sequence,
 )
+
+try:
+    # Python 3.10+
+    from types import NoneType  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    # Python 3.9 and below
+    NoneType = type(None)  # type: ignore[misc,assignment]
 
 import filetype
 from tinytag import TinyTag, UnsupportedFormatError
@@ -59,8 +66,8 @@ class MessageRole(str, Enum):
 class BaseContentBlock(ABC, BaseModel):
     @classmethod
     async def amerge(
-        cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
-    ) -> list[Self]:
+        cls, splits: Sequence[Self], chunk_size: int, tokenizer: Any | None = None
+    ) -> Sequence[Self]:
         """
         Async merge smaller content blocks into larger blocks up to chunk_size tokens.
         Default implementation returns splits without merging, should be overridden by subclasses that support merging.
@@ -69,8 +76,8 @@ class BaseContentBlock(ABC, BaseModel):
 
     @classmethod
     def merge(
-        cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
-    ) -> list[Self]:
+        cls, splits: Sequence[Self], chunk_size: int, tokenizer: Any | None = None
+    ) -> Sequence[Self]:
         """Merge smaller content blocks into larger blocks up to chunk_size tokens."""
         return asyncio_run(
             cls.amerge(splits=splits, chunk_size=chunk_size, tokenizer=tokenizer)
@@ -247,8 +254,11 @@ class TextBlock(BaseContentBlock):
 
     @classmethod
     async def amerge(
-        cls, splits: List["TextBlock"], chunk_size: int, tokenizer: Any | None = None
-    ) -> list["TextBlock"]:
+        cls,
+        splits: Sequence["TextBlock"],
+        chunk_size: int,
+        tokenizer: Any | None = None,
+    ) -> Sequence["TextBlock"]:
         merged_blocks = []
         current_block_texts = []
         current_block_tokens = 0
@@ -362,12 +372,7 @@ class ImageBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            resolve_binary(
-                raw_bytes=self.image.read(),
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=as_base64,
-            )
+            self.image
             if isinstance(self.image, IOBase)
             else resolve_binary(
                 raw_bytes=self.image,
@@ -482,12 +487,7 @@ class AudioBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            resolve_binary(
-                raw_bytes=self.audio.read(),
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=as_base64,
-            )
+            self.audio
             if isinstance(self.audio, IOBase)
             else resolve_binary(
                 raw_bytes=self.audio,
@@ -616,12 +616,7 @@ class VideoBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            resolve_binary(
-                raw_bytes=self.video.read(),
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=as_base64,
-            )
+            self.video
             if isinstance(self.video, IOBase)
             else resolve_binary(
                 raw_bytes=self.video,
@@ -762,6 +757,9 @@ class DocumentBlock(BaseContentBlock):
         return Path(str(path)).suffix.replace(".", "")
 
     def _guess_mimetype(self) -> str | None:
+        if self.document_mimetype:
+            return self.document_mimetype
+
         if self.data:
             guess = filetype.guess(self.data)
             return str(guess.mime) if guess else None
@@ -851,7 +849,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
             else:
                 nested_blocks_by_type[-1].append(nb)
 
-        new_nested_blocks = []
+        new_nested_blocks: list[BaseContentBlock] = []
         # merge nested blocks of same type
         for nbs in nested_blocks_by_type:
             new_nested_blocks.extend(
@@ -864,10 +862,10 @@ class BaseRecursiveContentBlock(BaseContentBlock):
     @classmethod
     async def amerge(
         cls,
-        splits: List["BaseRecursiveContentBlock"],
+        splits: Sequence["BaseRecursiveContentBlock"],
         chunk_size: int,
         tokenizer: Any | None = None,
-    ) -> list["BaseRecursiveContentBlock"]:
+    ) -> Sequence["BaseRecursiveContentBlock"]:
         """
         First merge nested_blocks of consecutive BaseRecursiveContentBlock types based on token estimates
 

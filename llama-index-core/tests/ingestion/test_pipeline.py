@@ -5,7 +5,7 @@ from typing import Sequence, Any
 import pytest
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
-from llama_index.core.ingestion.pipeline import IngestionPipeline
+from llama_index.core.ingestion.pipeline import IngestionPipeline, DocstoreStrategy
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodeParser
 from llama_index.core.readers import ReaderConfig, StringIterableReader
@@ -86,6 +86,7 @@ def test_save_load_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=documents)
@@ -169,6 +170,7 @@ def test_pipeline_update_text_content() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=[document1])
@@ -200,6 +202,7 @@ def test_pipeline_update_metadata() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=[document1])
@@ -236,6 +239,7 @@ def test_pipeline_dedup_duplicates_only() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=documents)
@@ -243,6 +247,71 @@ def test_pipeline_dedup_duplicates_only() -> None:
 
     nodes = pipeline.run(documents=documents)
     assert len(nodes) == 0
+
+
+def test_pipeline_dedup_within_single_batch() -> None:
+    """
+    `_handle_duplicates` should deduplicate nodes that share a hash
+    within a single ingestion run, not just against the docstore.
+
+    Documents with identical text and metadata produce identical
+    `node.hash` values, so the set-based dedup must collapse them to one.
+    """
+    documents = [
+        Document(text="same content", doc_id="a"),
+        Document(text="same content", doc_id="b"),
+        Document(text="same content", doc_id="c"),
+        Document(text="unique content", doc_id="d"),
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)],
+        docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+    nodes = pipeline.run(documents=documents)
+
+    hashes = {n.hash for n in nodes}
+    assert len(nodes) == len(hashes), (
+        "within-batch duplicates must be collapsed to one node per hash"
+    )
+
+
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+def test_pipeline_parallel_cache_populated() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    pipeline.run(documents=docs, num_workers=num_workers)
+
+    cache_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+    assert cache_size == num_workers
+
+
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+def test_pipeline_parallel_cache_reused_on_second_run() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    pipeline.run(documents=docs, num_workers=num_workers)
+    first_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+
+    pipeline.run(documents=docs, num_workers=num_workers)
+    second_size = len(
+        pipeline.cache.cache.get_all(collection=pipeline.cache.collection)
+    )
+
+    assert first_size == num_workers
+    assert second_size == first_size
 
 
 def test_pipeline_parallel() -> None:
@@ -255,6 +324,7 @@ def test_pipeline_parallel() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     num_workers = min(2, cpu_count())
@@ -280,6 +350,7 @@ def test_pipeline_with_transform_error() -> None:
             RaisingTransform(),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     with pytest.raises(RuntimeError):
@@ -340,6 +411,7 @@ async def test_async_pipeline_update_text_content() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = await pipeline.arun(documents=[document1])
@@ -372,6 +444,7 @@ async def test_async_pipeline_update_metadata() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = await pipeline.arun(documents=[document1])
@@ -409,6 +482,7 @@ async def test_async_pipeline_dedup_duplicates_only() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = await pipeline.arun(documents=documents)
@@ -416,6 +490,46 @@ async def test_async_pipeline_dedup_duplicates_only() -> None:
 
     nodes = await pipeline.arun(documents=documents)
     assert len(nodes) == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+async def test_async_pipeline_parallel_cache_populated() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    await pipeline.arun(documents=docs, num_workers=num_workers)
+
+    cache_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+    assert cache_size == num_workers
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+async def test_async_pipeline_parallel_cache_reused_on_second_run() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    await pipeline.arun(documents=docs, num_workers=num_workers)
+    first_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+
+    await pipeline.arun(documents=docs, num_workers=num_workers)
+    second_size = len(
+        pipeline.cache.cache.get_all(collection=pipeline.cache.collection)
+    )
+
+    assert first_size == num_workers
+    assert second_size == first_size
 
 
 @pytest.mark.asyncio
@@ -429,6 +543,7 @@ async def test_async_pipeline_parallel() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     num_workers = min(2, cpu_count())
@@ -457,9 +572,37 @@ async def test_async_pipeline_with_transform_error() -> None:
             RaisingTransform(),
         ],
         docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     with pytest.raises(RuntimeError):
         await pipeline.arun(documents=[document1])
 
     assert pipeline.docstore.get_node("1", raise_error=False) is None
+
+
+def test_docstore_strategy_not_mutated_on_run_without_vector_store() -> None:
+    for strategy in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE):
+        pipeline = IngestionPipeline(
+            transformations=[],
+            docstore=SimpleDocumentStore(),
+            docstore_strategy=strategy,
+        )
+        with pytest.warns(UserWarning, match="requires a vector store"):
+            pipeline.run(documents=[Document.example()])
+
+        assert pipeline.docstore_strategy is strategy
+
+
+@pytest.mark.asyncio
+async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> None:
+    for strategy in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE):
+        pipeline = IngestionPipeline(
+            transformations=[],
+            docstore=SimpleDocumentStore(),
+            docstore_strategy=strategy,
+        )
+        with pytest.warns(UserWarning, match="requires a vector store"):
+            await pipeline.arun(documents=[Document.example()])
+
+        assert pipeline.docstore_strategy is strategy

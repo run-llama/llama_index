@@ -53,15 +53,17 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
     mistralai_modelname_to_contextsize,
 )
-from mistralai_azure import MistralAzure
-import mistralai_azure.models as mistral_azure_models
+from mistralai.azure.client import MistralAzure
+from mistralai.azure.client import models as mistral_azure_models
 
-from mistralai import Mistral
-import mistralai.models as mistral_models
+
+from mistralai.client import Mistral
+from mistralai.client import models as mistral_models
+
 
 if TYPE_CHECKING:
-    from mistralai.models import ContentChunk, Messages
-    from mistralai.models import (
+    from mistralai.client.models import ContentChunk, Messages
+    from mistralai.client.models import (
         AssistantMessage,
         FunctionCall,
         ImageURLChunk,
@@ -378,15 +380,21 @@ class MistralAI(FunctionCallingLLM):
         self, response: Union[str, List["ContentChunk"]]
     ) -> Tuple[str, str]:
         """Separate the thinking from the response."""
-        content = ""
         if isinstance(response, str):
             content = response
         else:
+            # When the API returns structured chunks, directly separate
+            # ThinkChunk text from TextChunk text without regex.
+            thinking_parts: List[str] = []
+            response_parts: List[str] = []
             for chunk in response:
                 if isinstance(chunk, self._models.ThinkChunk):
                     for c in chunk.thinking:
                         if isinstance(c, self._models.TextChunk):
-                            content += c.text + "\n"
+                            thinking_parts.append(c.text)
+                elif isinstance(chunk, self._models.TextChunk):
+                    response_parts.append(chunk.text)
+            return "\n".join(thinking_parts), "\n".join(response_parts)
 
         match = THINKING_REGEX.search(content)
         if match:

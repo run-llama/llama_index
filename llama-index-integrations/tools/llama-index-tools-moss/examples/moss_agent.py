@@ -1,7 +1,8 @@
 import asyncio
 import os
 from typing import List
-
+from dotenv import load_dotenv
+load_dotenv()
 from llama_index.core.agent import ReActAgent
 from llama_index.llms.openai import OpenAI
 from llama_index.tools.moss import MossToolSpec, QueryOptions
@@ -9,63 +10,71 @@ from inferedge_moss import MossClient, DocumentInfo
 
 
 async def main():
-    print("--- Moss Tool with ReAct Agent Example ---\n")
-
     # 1. Initialize Client
-    # Ensure you have your environment variables set or pass credentials directly.
-    MOSS_PROJECT_KEY = os.getenv('MOSS_PROJECT_KEY')
-    MOSS_PROJECT_ID = os.getenv('MOSS_PROJECT_ID')
+    MOSS_PROJECT_KEY = os.getenv("MOSS_PROJECT_KEY")
+    MOSS_PROJECT_ID = os.getenv("MOSS_PROJECT_ID")
     client = MossClient(project_id=MOSS_PROJECT_ID, project_key=MOSS_PROJECT_KEY)
-    # 2. Configure query settings - Instantiate QueryOptions (Optional)
-    # If skipped, the tool will use its own defaults.
-    query_options = QueryOptions(top_k=12, alpha=0.9)
+
+    # 2. Configure query settings (optional — defaults: top_k=5, alpha=0.5, model_id="moss-minilm")
+    query_options = QueryOptions(top_k=5, alpha=0.5, model_id="moss-minilm")
+
     # 3. Initialize Tool
-    print("Initializing MossToolSpec...")
     moss_tool = MossToolSpec(
         client=client,
-        index_name="knowledge_base",
-        query_options=query_options
+        index_name="knowledge_base_new",
+        query_options=query_options,
     )
 
-    # 4. Index Documents (Optional step)
-    print("\n[Step 4] Indexing Documents...")
-    docs = [
+    # 4. List existing indexes before indexing
+    print("\n[Step 4] Listing existing indexes...")
+    print(await moss_tool.list_indexes())
+
+    # 5. Index Documents
+    print("\n[Step 5] Indexing Documents...")
+    docs: List[DocumentInfo] = [
         DocumentInfo(
+            id="123",
             text="LlamaIndex is a data framework for LLM-based applications.",
-            metadata={"source": "docs", "category": "framework"}
+            metadata={"source": "docs", "category": "framework"},
         ),
         DocumentInfo(
+            id="124",
             text="Moss is a real-time semantic search engine optimized for speed.",
-            metadata={"source": "moss_website", "category": "engine"}
+            metadata={"source": "moss_website", "category": "engine"},
         ),
     ]
     await moss_tool.index_docs(docs)
     print(f"Indexed {len(docs)} documents.")
 
-    # 5. Create an agent (Using OpenAI llm for demonstration)
-    print("\n[Step 5] Creating Agent...")
-    os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', 'your-key-here')
-    llm = OpenAI()
-    agent = ReActAgent.from_tools(
-        moss_tool.to_tool_list(),
+    # 6. List indexes again to confirm creation
+    print("\n[Step 6] Listing indexes after indexing...")
+    print(await moss_tool.list_indexes())
+
+    # 7. Create agent with all exposed tools (query, list_indexes, delete_index)
+    print("\n[Step 7] Creating Agent...")
+    llm = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    agent = ReActAgent(
+        tools=moss_tool.to_tool_list(),
         llm=llm,
-        verbose=True
+        verbose=True,
     )
 
-    # 6. Run Agent
-    print("\n[Step 6] Querying...")
-    # This query would trigger the tool usage in a real scenario
-    response = await agent.achat("What is Moss?")
+    # 8. Run Agent — natural language query triggers the query tool
+    print("\n[Step 8] Querying via Agent...")
+    response = await agent.run(user_msg="What is Moss?")
     print("\nAgent Response:")
     print(response)
 
+    # 9. Run Agent — ask it to list available indexes
+    print("\n[Step 9] Listing indexes via Agent...")
+    response = await agent.run(user_msg="What indexes are available?")
+    print("\nAgent Response:")
+    print(response)
+
+    # 10. Clean up — delete the index directly (not via agent to avoid accidental deletion)
+    print("\n[Step 10] Cleaning up...")
+    print(await moss_tool.delete_index("knowledge_base"))
+
 
 if __name__ == "__main__":
-    # Ensure we catch ImportError for better user experience if run without deps
-    try:
-        asyncio.run(main())
-    except ImportError as e:
-        print(f"Error: {e}")
-        print("Please install required dependencies: pip install llama-index-tools-moss llama-index-core llama-index-llms-openai inferedge-moss")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    asyncio.run(main())

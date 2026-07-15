@@ -6,7 +6,7 @@ import re
 import warnings
 from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
-from functools import partial, reduce
+from functools import partial
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
@@ -34,6 +34,7 @@ from llama_index.core.storage.docstore import (
     BaseDocumentStore,
     SimpleDocumentStore,
 )
+from llama_index.core.storage.kvstore.types import MutableMappingKVStore
 from llama_index.core.storage.storage_context import DOCSTORE_FNAME
 from llama_index.core.utils import concat_dirs, get_tqdm_iterable
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
@@ -180,6 +181,62 @@ def arun_transformations_wrapper(
     )
     loop.close()
     return nodes
+
+
+def _run_transformations_worker(
+    nodes: Sequence[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+) -> tuple:
+    """
+    Multiprocessing worker for run_transformations.
+
+    Returns (nodes, cache_entries) so the parent can merge cache writes
+    back after all workers finish. Only in-memory backends are merged.
+    External backends write through to shared storage and need no merge.
+    """
+    result_nodes = run_transformations(
+        nodes,
+        transformations,
+        in_place=in_place,
+        cache=cache,
+        cache_collection=cache_collection,
+    )
+    cache_entries = {}
+    if cache is not None and isinstance(cache.cache, MutableMappingKVStore):
+        collection = cache_collection or cache.collection
+        cache_entries = cache.cache.get_all(collection=collection)
+    return list(result_nodes), cache_entries
+
+
+def _arun_transformations_worker(
+    nodes: Sequence[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+) -> tuple:
+    """
+    ProcessPoolExecutor worker for arun_transformations.
+
+    Returns (nodes, cache_entries) so the parent can merge cache writes
+    back after all workers finish. Only in-memory backends are merged.
+    External backends write through to shared storage and need no merge.
+    """
+    result_nodes = arun_transformations_wrapper(
+        nodes,
+        transformations,
+        in_place=in_place,
+        cache=cache,
+        cache_collection=cache_collection,
+    )
+    cache_entries = {}
+    if cache is not None and isinstance(cache.cache, MutableMappingKVStore):
+        collection = cache_collection or cache.collection
+        cache_entries = cache.cache.get_all(collection=collection)
+    return list(result_nodes), cache_entries
 
 
 class DocstoreStrategy(str, Enum):
@@ -399,13 +456,13 @@ class IngestionPipeline(BaseModel):
         assert self.docstore is not None
 
         existing_hashes = self.docstore.get_all_document_hashes()
-        current_hashes = []
+        current_hashes: set[str] = set()
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
                 self.docstore.set_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
-                current_hashes.append(node.hash)
+                current_hashes.add(node.hash)
 
         return nodes_to_run
 
@@ -459,21 +516,24 @@ class IngestionPipeline(BaseModel):
             yield nodes[i : i + batch_size]
 
     def _update_docstore(
-        self, nodes: Sequence[BaseNode], store_doc_text: bool = True
+        self,
+        nodes: Sequence[BaseNode],
+        effective_strategy: DocstoreStrategy,
+        store_doc_text: bool = True,
     ) -> None:
         """Update the document store with the given nodes."""
         assert self.docstore is not None
 
-        if self.docstore_strategy in (
+        if effective_strategy in (
             DocstoreStrategy.UPSERTS,
             DocstoreStrategy.UPSERTS_AND_DELETE,
         ):
             self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
             self.docstore.add_documents(nodes, store_text=store_doc_text)
-        elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+        elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         else:
-            raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+            raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
 
     @dispatcher.span
     def run(
@@ -511,30 +571,34 @@ class IngestionPipeline(BaseModel):
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
+        effective_strategy = self.docstore_strategy
+        if (
+            self.docstore is not None
+            and self.vector_store is None
+            and self.docstore_strategy
+            in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE)
+        ):
+            warnings.warn(
+                f"docstore_strategy='{self.docstore_strategy.value}' requires a vector store "
+                "to apply upsert/delete semantics; falling back to 'duplicates_only' for this run. "
+                "pipeline.docstore_strategy is unchanged.",
+                UserWarning,
+                stacklevel=3,
+            )
+            effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
+
         # check if we need to dedup
         if self.docstore is not None and self.vector_store is not None:
-            if self.docstore_strategy in (
+            if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
                 nodes_to_run = self._handle_upserts(input_nodes)
-            elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
                 nodes_to_run = self._handle_duplicates(input_nodes)
             else:
-                raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+                raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
         elif self.docstore is not None and self.vector_store is None:
-            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                logger.info(
-                    "Docstore strategy set to upserts, but no vector store. "
-                    "Switching to duplicates_only strategy."
-                )
-                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
-            elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                logger.info(
-                    "Docstore strategy set to upserts and delete, but no vector store. "
-                    "Switching to duplicates_only strategy."
-                )
-                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             nodes_to_run = self._handle_duplicates(input_nodes)
         else:
             nodes_to_run = input_nodes
@@ -544,7 +608,8 @@ class IngestionPipeline(BaseModel):
             if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
-                    "Setting `num_workers` down to the maximum CPU count."
+                    "Setting `num_workers` down to the maximum CPU count.",
+                    stacklevel=2,
                 )
                 num_workers = num_cpus
 
@@ -552,8 +617,8 @@ class IngestionPipeline(BaseModel):
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
                 )
-                nodes_parallel = p.starmap(
-                    run_transformations,
+                worker_results = p.starmap(
+                    _run_transformations_worker,
                     zip(
                         node_batches,
                         repeat(self.transformations),
@@ -562,7 +627,13 @@ class IngestionPipeline(BaseModel):
                         repeat(cache_collection),
                     ),
                 )
-                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])  # type: ignore
+                nodes = []
+                for result_nodes, cache_entries in worker_results:
+                    nodes.extend(result_nodes)
+                    if cache_entries:
+                        collection = cache_collection or self.cache.collection
+                        for key, val in cache_entries.items():
+                            self.cache.cache.put(key, val, collection=collection)
         else:
             nodes = run_transformations(
                 nodes_to_run,
@@ -582,27 +653,34 @@ class IngestionPipeline(BaseModel):
                 self.vector_store.add(nodes_with_embeddings)
 
         if self.docstore is not None:
-            self._update_docstore(nodes_to_run, store_doc_text=store_doc_text)
+            self._update_docstore(
+                nodes_to_run,
+                effective_strategy=effective_strategy,
+                store_doc_text=store_doc_text,
+            )
 
         return nodes
 
     # ------ async methods ------
     async def _aupdate_docstore(
-        self, nodes: Sequence[BaseNode], store_doc_text: bool = True
+        self,
+        nodes: Sequence[BaseNode],
+        effective_strategy: DocstoreStrategy,
+        store_doc_text: bool = True,
     ) -> None:
         """Update the document store with the given nodes."""
         assert self.docstore is not None
 
-        if self.docstore_strategy in (
+        if effective_strategy in (
             DocstoreStrategy.UPSERTS,
             DocstoreStrategy.UPSERTS_AND_DELETE,
         ):
             await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
-        elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+        elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
         else:
-            raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+            raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
 
     async def _ahandle_duplicates(
         self,
@@ -613,13 +691,13 @@ class IngestionPipeline(BaseModel):
         assert self.docstore is not None
 
         existing_hashes = await self.docstore.aget_all_document_hashes()
-        current_hashes = []
+        current_hashes: set[str] = set()
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
                 await self.docstore.aset_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
-                current_hashes.append(node.hash)
+                current_hashes.add(node.hash)
 
         return nodes_to_run
 
@@ -700,38 +778,41 @@ class IngestionPipeline(BaseModel):
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
+        effective_strategy = self.docstore_strategy
+        if (
+            self.docstore is not None
+            and self.vector_store is None
+            and self.docstore_strategy
+            in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE)
+        ):
+            warnings.warn(
+                f"docstore_strategy='{self.docstore_strategy.value}' requires a vector store "
+                "to apply upsert/delete semantics; falling back to 'duplicates_only' for this run. "
+                "pipeline.docstore_strategy is unchanged.",
+                UserWarning,
+                stacklevel=3,
+            )
+            effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
+
         # check if we need to dedup
         if self.docstore is not None and self.vector_store is not None:
-            if self.docstore_strategy in (
+            if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
                 nodes_to_run = await self._ahandle_upserts(
                     input_nodes, store_doc_text=store_doc_text
                 )
-            elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
                 nodes_to_run = await self._ahandle_duplicates(
                     input_nodes, store_doc_text=store_doc_text
                 )
             else:
-                raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+                raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
         elif self.docstore is not None and self.vector_store is None:
-            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                logger.info(
-                    "Docstore strategy set to upserts, but no vector store. "
-                    "Switching to duplicates_only strategy."
-                )
-                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
-            elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                logger.info(
-                    "Docstore strategy set to upserts and delete, but no vector store. "
-                    "Switching to duplicates_only strategy."
-                )
-                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             nodes_to_run = await self._ahandle_duplicates(
                 input_nodes, store_doc_text=store_doc_text
             )
-
         else:
             nodes_to_run = input_nodes
 
@@ -740,11 +821,12 @@ class IngestionPipeline(BaseModel):
             if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
-                    "Setting `num_workers` down to the maximum CPU count."
+                    "Setting `num_workers` down to the maximum CPU count.",
+                    stacklevel=2,
                 )
                 num_workers = num_cpus
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with ProcessPoolExecutor(max_workers=num_workers) as p:
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
@@ -753,7 +835,7 @@ class IngestionPipeline(BaseModel):
                     loop.run_in_executor(
                         p,
                         partial(
-                            arun_transformations_wrapper,
+                            _arun_transformations_worker,
                             transformations=self.transformations,
                             in_place=in_place,
                             cache=self.cache if not self.disable_cache else None,
@@ -763,8 +845,14 @@ class IngestionPipeline(BaseModel):
                     )
                     for batch in node_batches
                 ]
-                result: Sequence[Sequence[BaseNode]] = await asyncio.gather(*tasks)
-                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, result, [])  # type: ignore
+                worker_results: Sequence[tuple] = await asyncio.gather(*tasks)
+                nodes = []
+                for result_nodes, cache_entries in worker_results:
+                    nodes.extend(result_nodes)
+                    if cache_entries:
+                        collection = cache_collection or self.cache.collection
+                        for key, val in cache_entries.items():
+                            self.cache.cache.put(key, val, collection=collection)
         else:
             nodes = await arun_transformations(  # type: ignore
                 nodes_to_run,
@@ -785,6 +873,10 @@ class IngestionPipeline(BaseModel):
                 await self.vector_store.async_add(nodes_with_embeddings)
 
         if self.docstore is not None:
-            await self._aupdate_docstore(nodes_to_run, store_doc_text=store_doc_text)
+            await self._aupdate_docstore(
+                nodes_to_run,
+                effective_strategy=effective_strategy,
+                store_doc_text=store_doc_text,
+            )
 
         return nodes

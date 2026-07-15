@@ -1,6 +1,8 @@
+from io import BytesIO
 import os
+from io import BytesIO
 from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from google.genai import types
@@ -14,6 +16,7 @@ from llama_index.core.base.llms.types import (
     ToolCallBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
@@ -22,6 +25,7 @@ from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
+    create_file_part,
     prepare_chat_params,
     chat_from_gemini_response,
 )
@@ -725,6 +729,18 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.asyncio
+async def test_create_file_part_rejects_large_hybrid_file_for_vertexai() -> None:
+    file_buffer = BytesIO(b"x" * (20 * 1024 * 1024))
+    mock_client = MagicMock()
+    mock_client.vertexai = True
+
+    with pytest.raises(ValueError, match="vertexai client" and "smaller than 20MB"):
+        await create_file_part(file_buffer, "video/mp4", "hybrid", mock_client)
+
+    mock_client.aio.files.upload.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_prepare_chat_params_more_than_2_tool_calls():
     expected_generation_config = types.GenerateContentConfig()
     expected_model_name = "models/gemini-foo"
@@ -859,6 +875,50 @@ async def test_prepare_chat_params_with_system_message():
     )
 
 
+@pytest.mark.asyncio
+async def test_prepare_chat_params_does_not_mutate_messages():
+    """
+    Ensure prepare_chat_params does not pop the system message from the
+    caller's list, which would break retry logic (e.g. after a 429).
+
+    See: https://github.com/run-llama/llama_index/issues/21137
+    """
+    model_name = "models/gemini-test"
+    system_prompt = "You are a helpful assistant."
+    user_text = "Hi there."
+
+    messages = [
+        ChatMessage(content=system_prompt, role=MessageRole.SYSTEM),
+        ChatMessage(content=user_text, role=MessageRole.USER),
+    ]
+    original_length = len(messages)
+
+    # First call -- should extract the system message internally
+    next_msg, chat_kwargs, _ = await prepare_chat_params(model_name, messages)
+
+    # The caller's list must be unchanged
+    assert len(messages) == original_length
+    assert messages[0].role == MessageRole.SYSTEM
+    assert messages[0].content == system_prompt
+
+    # The system message should still have been forwarded correctly
+    cfg = chat_kwargs["config"]
+    assert isinstance(cfg, GenerateContentConfig)
+    assert cfg.system_instruction == system_prompt
+
+    # Simulate a retry: calling again with the same messages list
+    next_msg2, chat_kwargs2, _ = await prepare_chat_params(model_name, messages)
+
+    # System message should still be extracted on the retry
+    cfg2 = chat_kwargs2["config"]
+    assert isinstance(cfg2, GenerateContentConfig)
+    assert cfg2.system_instruction == system_prompt
+
+    # And the caller's list must still be intact
+    assert len(messages) == original_length
+    assert messages[0].role == MessageRole.SYSTEM
+
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_cached_content_initialization() -> None:
     """Test GoogleGenAI initialization with cached_content parameter."""
@@ -875,6 +935,53 @@ def test_cached_content_initialization() -> None:
 
     # Verify cached_content is stored in generation config
     assert llm._generation_config["cached_content"] == cached_content_value
+
+
+def test_temperature_defaults() -> None:
+    """Test that GoogleGenAI initialization sets temperature defaults correctly based on model."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+
+        # 1. Non-Gemini 3 models should get DEFAULT_TEMPERATURE (0.1)
+        llm_legacy = GoogleGenAI(
+            model="gemini-2.5-flash",
+            api_key="test-key",
+        )
+        assert llm_legacy.temperature == DEFAULT_TEMPERATURE
+        assert llm_legacy._generation_config["temperature"] == DEFAULT_TEMPERATURE
+
+        # 2. Gemini 3 models should leave temperature as None
+        llm_gemini3 = GoogleGenAI(
+            model="gemini-3-flash-preview",
+            api_key="test-key",
+        )
+        assert llm_gemini3.temperature is None
+        assert llm_gemini3._generation_config["temperature"] is None
+
+
+def test_temperature_explicitly_set() -> None:
+    """Test that GoogleGenAI initialization preserves custom temperature."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+
+        llm = GoogleGenAI(
+            model="gemini-3-flash-preview",
+            api_key="test-key",
+            temperature=0.7,
+        )
+
+        # Verify temperature field is 0.7
+        assert llm.temperature == 0.7
+        # Verify temperature is correctly passed in the generation config dict
+        assert llm._generation_config["temperature"] == 0.7
 
 
 def test_cached_content_in_response() -> None:
@@ -1939,3 +2046,53 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_passes_display_name_to_file_api():
+    mock_file = MagicMock()
+    mock_file.state.name = "ACTIVE"
+    mock_file.uri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    mock_file.name = "files/abc123"
+
+    mock_client = MagicMock()
+    mock_client.aio.files.upload = AsyncMock(return_value=mock_file)
+
+    file_buffer = BytesIO(b"fake pdf content")
+
+    part, file_api_name = await create_file_part(
+        file_buffer,
+        "application/pdf",
+        "fileapi",
+        mock_client,
+        display_name="my_report",
+    )
+
+    mock_client.aio.files.upload.assert_called_once()
+    call_kwargs = mock_client.aio.files.upload.call_args
+    upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
+    assert upload_config.display_name == "my_report"
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_no_display_name_by_default():
+    mock_file = MagicMock()
+    mock_file.state.name = "ACTIVE"
+    mock_file.uri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    mock_file.name = "files/abc123"
+
+    mock_client = MagicMock()
+    mock_client.aio.files.upload = AsyncMock(return_value=mock_file)
+
+    file_buffer = BytesIO(b"fake pdf content")
+
+    part, file_api_name = await create_file_part(
+        file_buffer,
+        "application/pdf",
+        "fileapi",
+        mock_client,
+    )
+
+    call_kwargs = mock_client.aio.files.upload.call_args
+    upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
+    assert upload_config.display_name is None

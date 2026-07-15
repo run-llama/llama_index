@@ -1,15 +1,15 @@
+import base64
 from io import BytesIO
 from typing import Literal
 from unittest.mock import MagicMock, patch
 
-import aioboto3
 import pytest
-from botocore.config import Config
 from llama_index.core.base.llms.types import (
     AudioBlock,
     CacheControl,
     CachePoint,
     ChatMessage,
+    DocumentBlock,
     ImageBlock,
     MessageRole,
     TextBlock,
@@ -17,12 +17,16 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
+    BEDROCK_MODELS,
     ThinkingDict,
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
+    bedrock_modelname_to_context_size,
     converse_with_retry,
     converse_with_retry_async,
     get_model_name,
+    is_bedrock_function_calling_model,
+    is_reasoning,
     messages_to_converse_messages,
     tools_to_converse_tools,
 )
@@ -45,21 +49,17 @@ class MockExceptions:
         pass
 
 
-class AsyncMockClient:
+class MockClient:
+    """Sync mock client used for both sync and async (via asyncio.to_thread) tests."""
+
     def __init__(self) -> None:
         self.exceptions = MockExceptions()
 
-    async def __aenter__(self) -> "AsyncMockClient":
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        pass
-
-    async def converse(self, *args, **kwargs):
+    def converse(self, *args, **kwargs):
         return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
 
-    async def converse_stream(self, *args, **kwargs):
-        async def stream_generator():
+    def converse_stream(self, *args, **kwargs):
+        def stream_generator():
             for element in EXP_STREAM_RESPONSE:
                 yield {
                     "contentBlockDelta": {
@@ -67,7 +67,6 @@ class AsyncMockClient:
                         "contentBlockIndex": 0,
                     }
                 }
-            # Add messageStop and metadata events for token usage testing
             yield {"messageStop": {"stopReason": "end_turn"}}
             yield {
                 "metadata": {
@@ -79,19 +78,6 @@ class AsyncMockClient:
         return {"stream": stream_generator()}
 
 
-class MockAsyncSession:
-    def __init__(self, *args, **kwargs) -> None:
-        pass
-
-    def client(self, *args, **kwargs):
-        return AsyncMockClient()
-
-
-@pytest.fixture()
-def mock_aioboto3_session(monkeypatch):
-    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
-
-
 def test_get_model_name_translates_us():
     assert (
         get_model_name("us.meta.llama3-2-3b-instruct-v1:0")
@@ -99,9 +85,41 @@ def test_get_model_name_translates_us():
     )
 
 
+def test_get_model_name_translates_us_gov():
+    assert (
+        get_model_name("us-gov.anthropic.claude-3-haiku-20240307-v1:0")
+        == "anthropic.claude-3-haiku-20240307-v1:0"
+    )
+
+
+def test_get_model_name_translates_eu():
+    assert (
+        get_model_name("eu.meta.llama3-2-3b-instruct-v1:0")
+        == "meta.llama3-2-3b-instruct-v1:0"
+    )
+
+
 def test_get_model_name_translates_global():
     assert (
         get_model_name("global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+        == "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+
+
+def test_get_model_name_translates_apac():
+    assert (
+        get_model_name("apac.anthropic.claude-3-haiku-20240307-v1:0")
+        == "anthropic.claude-3-haiku-20240307-v1:0"
+    )
+
+
+def test_get_model_name_translates_ca():
+    assert get_model_name("ca.amazon.nova-lite-v1:0") == "amazon.nova-lite-v1:0"
+
+
+def test_get_model_name_translates_au():
+    assert (
+        get_model_name("au.anthropic.claude-sonnet-4-5-20250929-v1:0")
         == "anthropic.claude-sonnet-4-5-20250929-v1:0"
     )
 
@@ -127,6 +145,60 @@ def test_get_model_name_does_nottranslate_unsupported():
 def test_get_model_name_throws_inference_profile_exception():
     with pytest.raises(ValueError):
         assert get_model_name("us.cohere.command-r-plus-v1:0")
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected_context"),
+    [
+        ("deepseek.r1-v1:0", 128000),
+        ("deepseek.v3-v1:0", 128000),
+        ("deepseek.v3.2", 128000),
+    ],
+)
+def test_deepseek_models_registered(model_id, expected_context):
+    assert model_id in BEDROCK_MODELS
+    assert bedrock_modelname_to_context_size(model_id) == expected_context
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected"),
+    [
+        ("deepseek.r1-v1:0", True),
+        ("deepseek.v3-v1:0", True),
+        ("deepseek.v3.2", False),
+    ],
+)
+def test_deepseek_reasoning_models(model_id, expected):
+    assert is_reasoning(model_id) == expected
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected"),
+    [
+        ("deepseek.r1-v1:0", False),
+        ("deepseek.v3-v1:0", True),
+        ("deepseek.v3.2", True),
+    ],
+)
+def test_deepseek_function_calling_models(model_id, expected):
+    assert is_bedrock_function_calling_model(model_id) == expected
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected_context"),
+    [
+        ("google.gemma-3-12b-it", 128000),
+        ("google.gemma-3-27b-it", 128000),
+        ("google.gemma-3-4b-it", 128000),
+    ],
+)
+def test_gemma_models_registered(model_id, expected_context):
+    assert model_id in BEDROCK_MODELS
+    assert bedrock_modelname_to_context_size(model_id) == expected_context
+
+
+def test_gemma_reasoning_model():
+    assert is_reasoning("google.gemma-3-12b-it") is True
 
 
 def test_get_img_format_jpeg():
@@ -551,33 +623,94 @@ def test_messages_to_converse_messages_tool_calls():
     assert converse_messages[1]["content"][0]["toolResult"]["toolUseId"] == "tool_123"
 
 
+def test_messages_to_converse_messages_tool_result_with_document_block():
+    """Tool results containing a DocumentBlock should serialize the document."""
+    doc_block = DocumentBlock(
+        data=base64.b64encode(b"fake-pdf-content"),
+        document_mimetype="application/pdf",
+        title="test_doc",
+    )
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Let me read that file.",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "toolUseId": "tool_doc",
+                        "name": "read_file",
+                        "input": {"path": "report.pdf"},
+                    }
+                ]
+            },
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            blocks=[doc_block],
+            additional_kwargs={"tool_call_id": "tool_doc"},
+        ),
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    tool_result_msg = converse_messages[1]
+    assert tool_result_msg["role"] == "user"
+    tool_result = tool_result_msg["content"][0]["toolResult"]
+    assert tool_result["toolUseId"] == "tool_doc"
+    assert len(tool_result["content"]) == 1
+
+    doc = tool_result["content"][0]
+    assert "document" in doc
+    assert doc["document"]["format"] == "pdf"
+    assert doc["document"]["name"] == "test_doc"
+    assert doc["document"]["source"]["bytes"] == b"fake-pdf-content"
+
+
+@patch("llama_index.core.base.llms.types.ImageBlock.resolve_image")
+def test_messages_to_converse_messages_tool_result_with_image_block(mock_resolve):
+    """Tool results containing an ImageBlock should serialize the image."""
+    mock_bytes = BytesIO(b"fake_image_data")
+    mock_bytes.read = MagicMock(return_value=b"fake_image_data")
+    mock_resolve.return_value = mock_bytes
+
+    image_block = ImageBlock(image=b"", image_mimetype="image/png")
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Let me look at that image.",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "toolUseId": "tool_img",
+                        "name": "get_image",
+                        "input": {"url": "http://example.com/img.png"},
+                    }
+                ]
+            },
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            blocks=[image_block],
+            additional_kwargs={"tool_call_id": "tool_img"},
+        ),
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    tool_result_msg = converse_messages[1]
+    assert tool_result_msg["role"] == "user"
+    tool_result = tool_result_msg["content"][0]["toolResult"]
+    assert tool_result["toolUseId"] == "tool_img"
+    assert len(tool_result["content"]) == 1
+
+    img = tool_result["content"][0]
+    assert "image" in img
+    assert img["image"]["format"] == "png"
+    assert img["image"]["source"]["bytes"] == b"fake_image_data"
+    mock_resolve.assert_called_once()
+
+
 # Tests for converse_with_retry function
-class MockClient:
-    def __init__(self):
-        self.exceptions = MagicMock()
-        self.exceptions.ThrottlingException = Exception
-
-    def converse(self, **kwargs):
-        return {"output": {"message": {"content": [{"text": "Test response"}]}}}
-
-    def converse_stream(self, **kwargs):
-        def stream_generator():
-            yield {
-                "contentBlockDelta": {
-                    "delta": {"text": "Test "},
-                    "contentBlockIndex": 0,
-                }
-            }
-            yield {
-                "contentBlockDelta": {
-                    "delta": {"text": "stream"},
-                    "contentBlockIndex": 0,
-                }
-            }
-
-        return {"stream": stream_generator()}
-
-
 def test_converse_with_retry_string_system_prompt():
     """Test converse_with_retry with string system prompt."""
     client = MockClient()
@@ -674,23 +807,21 @@ def test_converse_with_retry_guardrail_stream_processing_mode(
 @pytest.mark.parametrize("stream_processing_mode", ["sync", "async"])
 async def test_converse_with_retry_async_guardrail_stream_processing_mode(
     stream_processing_mode: Literal["sync", "async"],
-    mock_aioboto3_session,
 ):
     """
     Test use of guardrail_stream_processing_mode in converse_with_retry_async with streaming.
+    Now uses a sync MockClient since converse_with_retry_async delegates to asyncio.to_thread.
     """
-    session = aioboto3.Session()
-    client = AsyncMockClient()
+    client = MockClient()
 
     with patch.object(
-        AsyncMockClient, "converse_stream", wraps=client.converse_stream
+        client, "converse_stream", wraps=client.converse_stream
     ) as patched_converse_stream:
         response_gen = await converse_with_retry_async(
-            session=session,
-            config=Config(),
+            client=client,
             model="anthropic.claude-sonnet-4-5-20250929-v1:0",
             messages=[],
-            stream=True,  # with streaming
+            stream=True,
             guardrail_identifier="IDENT",
             guardrail_version="DRAFT",
             guardrail_stream_processing_mode=stream_processing_mode,
@@ -728,24 +859,19 @@ def test_converse_with_retry_guardrail_stream_processing_mode_without_stream():
 
 
 @pytest.mark.asyncio
-async def test_converse_with_retry_async_guardrail_stream_processing_mode_without_stream(
-    mock_aioboto3_session,
-):
+async def test_converse_with_retry_async_guardrail_stream_processing_mode_without_stream():
     """
     Test use of guardrail_stream_processing_mode in converse_with_retry_async WITHOUT streaming.
+    Now uses a sync MockClient since converse_with_retry_async delegates to asyncio.to_thread.
     """
-    session = aioboto3.Session()
-    client = AsyncMockClient()
+    client = MockClient()
 
-    with patch.object(
-        AsyncMockClient, "converse", wraps=client.converse
-    ) as patched_converse:
+    with patch.object(client, "converse", wraps=client.converse) as patched_converse:
         await converse_with_retry_async(
-            session=session,
-            config=Config(),
+            client=client,
             model="anthropic.claude-sonnet-4-5-20250929-v1:0",
             messages=[],
-            stream=False,  # without streaming
+            stream=False,
             guardrail_identifier="IDENT",
             guardrail_version="DRAFT",
             guardrail_stream_processing_mode="async",
@@ -753,6 +879,40 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
         call_kwargs = patched_converse.call_args.kwargs
         assert "guardrailConfig" in call_kwargs
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_uses_provided_client():
+    """When client is provided, converse_with_retry_async uses it directly."""
+    client = MockClient()
+
+    with patch.object(client, "converse", wraps=client.converse) as patched_converse:
+        await converse_with_retry_async(
+            client=client,
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=False,
+        )
+        patched_converse.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_uses_provided_client_streaming():
+    """When client is provided, streaming in converse_with_retry_async uses it directly."""
+    client = MockClient()
+
+    with patch.object(
+        client, "converse_stream", wraps=client.converse_stream
+    ) as patched_stream:
+        response_gen = await converse_with_retry_async(
+            client=client,
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=True,
+        )
+        async for _ in response_gen:
+            pass
+        patched_stream.assert_called_once()
 
 
 def test_thinking_dict_enabled_requires_budget():

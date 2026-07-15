@@ -49,7 +49,7 @@ VECTOR_INDEX_NAME = "entity"
 LONG_TEXT_THRESHOLD = 52
 
 node_properties_query = """
-CALL apoc.meta.data()
+CALL apoc.meta.data($config)
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
   AND NOT label IN $EXCLUDED_LABELS
@@ -59,7 +59,7 @@ RETURN {labels: nodeLabels, properties: properties} AS output
 """
 
 rel_properties_query = """
-CALL apoc.meta.data()
+CALL apoc.meta.data($config)
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
       AND NOT label in $EXCLUDED_LABELS
@@ -68,7 +68,7 @@ RETURN {type: nodeLabels, properties: properties} AS output
 """
 
 rel_query = """
-CALL apoc.meta.data()
+CALL apoc.meta.data($config)
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
@@ -120,6 +120,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         timeout (Optional[float]): The timeout for transactions in seconds.
         Useful for terminating long-running queries.
         By default, there is no timeout set.
+        apoc_sample (Optional[int]): The number of nodes/rels to sample when calling
+        apoc.meta.data(). Useful for large databases where schema introspection
+        is slow. When None (default), no sampling config is passed.
 
     Examples:
         `pip install llama-index-graph-stores-neo4j`
@@ -163,20 +166,27 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         enhanced_schema: bool = False,
         create_indexes: bool = True,
         timeout: Optional[float] = None,
+        user_agent: str = "LLAMAINDEX-PROPERTYGRAPH",
+        apoc_sample: Optional[int] = None,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
         self.enhanced_schema = enhanced_schema
+        self._apoc_meta_config = (
+            {"sample": apoc_sample} if apoc_sample is not None else {}
+        )
         self._driver = neo4j.GraphDatabase.driver(
             url,
             auth=(username, password),
             notifications_min_severity="OFF",
+            user_agent=user_agent,
             **neo4j_kwargs,
         )
         self._async_driver = neo4j.AsyncGraphDatabase.driver(
             url,
             auth=(username, password),
             notifications_min_severity="OFF",
+            user_agent=user_agent,
             **neo4j_kwargs,
         )
         self._database = database
@@ -219,7 +229,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     *EXCLUDED_LABELS,
                     BASE_ENTITY_LABEL,
                     BASE_NODE_LABEL,
-                ]
+                ],
+                "config": self._apoc_meta_config,
             },
         )
         node_properties = (
@@ -227,7 +238,11 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         )
 
         rels_query_result = self.structured_query(
-            rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
+            rel_properties_query,
+            param_map={
+                "EXCLUDED_LABELS": EXCLUDED_RELS,
+                "config": self._apoc_meta_config,
+            },
         )
         rel_properties = (
             [el["output"] for el in rels_query_result] if rels_query_result else []
@@ -240,7 +255,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     *EXCLUDED_LABELS,
                     BASE_ENTITY_LABEL,
                     BASE_NODE_LABEL,
-                ]
+                ],
+                "config": self._apoc_meta_config,
             },
         )
         relationships = (

@@ -72,7 +72,19 @@ class TestAgentCoreBrowserToolSpec:
         tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
         assert tool_spec.region == "us-east-1"
         assert tool_spec._browser_clients == {}
-        mock_browser_session_manager.assert_called_once_with(region="us-east-1")
+        mock_browser_session_manager.assert_called_once_with(
+            region="us-east-1", identifier=None
+        )
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserSessionManager")
+    def test_init_custom_identifier(self, mock_browser_session_manager):
+        tool_spec = AgentCoreBrowserToolSpec(
+            region="us-east-1", identifier="my-browser"
+        )
+        assert tool_spec._identifier == "my-browser"
+        mock_browser_session_manager.assert_called_once_with(
+            region="us-east-1", identifier="my-browser"
+        )
 
     @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.get_aws_region")
     @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserSessionManager")
@@ -83,7 +95,9 @@ class TestAgentCoreBrowserToolSpec:
         tool_spec = AgentCoreBrowserToolSpec()
         assert tool_spec.region == "us-west-2"
         mock_get_aws_region.assert_called_once()
-        mock_browser_session_manager.assert_called_once_with(region="us-west-2")
+        mock_browser_session_manager.assert_called_once_with(
+            region="us-west-2", identifier=None
+        )
 
     @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
     def test_get_or_create_browser_client_new(self, mock_browser_client):
@@ -97,7 +111,9 @@ class TestAgentCoreBrowserToolSpec:
         assert "test-thread" in tool_spec._browser_clients
         assert tool_spec._browser_clients["test-thread"] == mock_instance
 
-        mock_browser_client.assert_called_once_with("us-east-1")
+        mock_browser_client.assert_called_once_with(
+            "us-east-1", integration_source="llamaindex"
+        )
 
     @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
     def test_get_or_create_browser_client_existing(self, mock_browser_client):
@@ -452,6 +468,49 @@ class TestAgentCoreBrowserToolSpec:
         assert "Images: 5" in result
         assert "Forms: 2" in result
 
+    def test_generate_live_view_url(self):
+        mock_browser_client = MagicMock()
+        mock_browser_client.generate_live_view_url.return_value = (
+            "https://live-view.example.com/session-abc"
+        )
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = mock_browser_client
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.generate_live_view_url(expires=120, thread_id="test-thread")
+
+        mock_session_manager.get_browser_client.assert_called_once_with("test-thread")
+        mock_browser_client.generate_live_view_url.assert_called_once_with(expires=120)
+        assert result == "https://live-view.example.com/session-abc"
+
+    def test_generate_live_view_url_no_session(self):
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = None
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.generate_live_view_url(thread_id="test-thread")
+
+        assert "No browser session found" in result
+
+    def test_generate_live_view_url_exception(self):
+        mock_browser_client = MagicMock()
+        mock_browser_client.generate_live_view_url.side_effect = Exception(
+            "Session not started"
+        )
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = mock_browser_client
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.generate_live_view_url(thread_id="test-thread")
+
+        assert "Error generating live view URL: Session not started" in result
+
     def test_cleanup_thread(self):
         mock_browser_client = MagicMock()
 
@@ -467,3 +526,326 @@ class TestAgentCoreBrowserToolSpec:
 
         mock_browser_client.stop.assert_called_once()
         assert "test-thread" not in tool_spec._browser_clients
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_list_browsers(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.list_browsers.return_value = {
+            "browserSummaries": [
+                {
+                    "name": "my_browser",
+                    "browserId": "browser-123",
+                    "status": "READY",
+                    "type": "CUSTOM",
+                },
+            ]
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.list_browsers(thread_id="test-thread")
+
+        mock_client.list_browsers.assert_called_once_with(
+            browser_type=None, max_results=10
+        )
+        assert "Found 1 browser(s)" in result
+        assert "my_browser" in result
+        assert "browser-123" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_list_browsers_empty(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.list_browsers.return_value = {"browserSummaries": []}
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.list_browsers(thread_id="test-thread")
+
+        assert "No browsers found" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_list_browsers_with_type_filter(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.list_browsers.return_value = {"browserSummaries": []}
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        tool_spec.list_browsers(browser_type="CUSTOM", thread_id="test-thread")
+
+        mock_client.list_browsers.assert_called_once_with(
+            browser_type="CUSTOM", max_results=10
+        )
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_list_browsers_exception(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.list_browsers.side_effect = Exception("API error")
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.list_browsers(thread_id="test-thread")
+
+        assert "Error listing browsers: API error" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_create_browser(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.create_browser.return_value = {
+            "browserId": "browser-456",
+            "status": "CREATING",
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.create_browser(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            thread_id="test-thread",
+        )
+
+        mock_client.create_browser.assert_called_once_with(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_configuration={"networkMode": "PUBLIC"},
+        )
+        assert "browser-456" in result
+        assert "CREATING" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_create_browser_with_description(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.create_browser.return_value = {
+            "browserId": "browser-789",
+            "status": "CREATING",
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.create_browser(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_mode="VPC",
+            description="A test browser",
+            thread_id="test-thread",
+        )
+
+        mock_client.create_browser.assert_called_once_with(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_configuration={"networkMode": "VPC"},
+            description="A test browser",
+        )
+        assert "browser-789" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_create_browser_vpc_with_subnets(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.create_browser.return_value = {
+            "browserId": "browser-vpc",
+            "status": "CREATING",
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.create_browser(
+            name="vpc_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_mode="VPC",
+            subnet_ids=["subnet-abc", "subnet-def"],
+            security_group_ids=["sg-123"],
+            thread_id="test-thread",
+        )
+
+        mock_client.create_browser.assert_called_once_with(
+            name="vpc_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_configuration={
+                "networkMode": "VPC",
+                "vpcConfig": {
+                    "subnets": ["subnet-abc", "subnet-def"],
+                    "securityGroups": ["sg-123"],
+                },
+            },
+        )
+        assert "browser-vpc" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_create_browser_public_no_vpc_config(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.create_browser.return_value = {
+            "browserId": "browser-pub",
+            "status": "CREATING",
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        tool_spec.create_browser(
+            name="public_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_mode="PUBLIC",
+            thread_id="test-thread",
+        )
+
+        mock_client.create_browser.assert_called_once_with(
+            name="public_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_configuration={"networkMode": "PUBLIC"},
+        )
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_create_browser_exception(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.create_browser.side_effect = Exception("Permission denied")
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.create_browser(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            thread_id="test-thread",
+        )
+
+        assert "Error creating browser: Permission denied" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_delete_browser(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.delete_browser.return_value = {
+            "browserId": "browser-123",
+            "status": "DELETING",
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.delete_browser(
+            browser_id="browser-123", thread_id="test-thread"
+        )
+
+        mock_client.delete_browser.assert_called_once_with(browser_id="browser-123")
+        assert "browser-123" in result
+        assert "DELETING" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_delete_browser_exception(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.delete_browser.side_effect = Exception("Not found")
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.delete_browser(
+            browser_id="browser-999", thread_id="test-thread"
+        )
+
+        assert "Error deleting browser: Not found" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_get_browser(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.get_browser.return_value = {
+            "browserId": "browser-123",
+            "name": "my_browser",
+            "status": "READY",
+            "description": "A custom browser",
+            "networkConfiguration": {"networkMode": "PUBLIC"},
+        }
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.get_browser(
+            browser_id="browser-123", thread_id="test-thread"
+        )
+
+        mock_client.get_browser.assert_called_once_with(browser_id="browser-123")
+        assert "my_browser" in result
+        assert "READY" in result
+        assert "A custom browser" in result
+        assert "PUBLIC" in result
+
+    @patch("llama_index.tools.aws_bedrock_agentcore.browser.base.BrowserClient")
+    def test_get_browser_exception(self, mock_browser_client_cls):
+        mock_client = MagicMock()
+        mock_browser_client_cls.return_value = mock_client
+        mock_client.get_browser.side_effect = Exception("Not found")
+
+        tool_spec = AgentCoreBrowserToolSpec(region="us-east-1")
+        result = tool_spec.get_browser(
+            browser_id="browser-999", thread_id="test-thread"
+        )
+
+        assert "Error getting browser: Not found" in result
+
+    def test_take_control(self):
+        mock_browser_client = MagicMock()
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = mock_browser_client
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.take_control(thread_id="test-thread")
+
+        mock_session_manager.get_browser_client.assert_called_once_with("test-thread")
+        mock_browser_client.take_control.assert_called_once()
+        assert "Took manual control" in result
+
+    def test_take_control_no_session(self):
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = None
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.take_control(thread_id="test-thread")
+
+        assert "No browser session found" in result
+
+    def test_take_control_exception(self):
+        mock_browser_client = MagicMock()
+        mock_browser_client.take_control.side_effect = Exception("Stream error")
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = mock_browser_client
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.take_control(thread_id="test-thread")
+
+        assert "Error taking control: Stream error" in result
+
+    def test_release_control(self):
+        mock_browser_client = MagicMock()
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = mock_browser_client
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.release_control(thread_id="test-thread")
+
+        mock_session_manager.get_browser_client.assert_called_once_with("test-thread")
+        mock_browser_client.release_control.assert_called_once()
+        assert "Released manual control" in result
+
+    def test_release_control_no_session(self):
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = None
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.release_control(thread_id="test-thread")
+
+        assert "No browser session found" in result
+
+    def test_release_control_exception(self):
+        mock_browser_client = MagicMock()
+        mock_browser_client.release_control.side_effect = Exception("Stream error")
+        mock_session_manager = MagicMock()
+        mock_session_manager.get_browser_client.return_value = mock_browser_client
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        tool_spec._session_manager = mock_session_manager
+
+        result = tool_spec.release_control(thread_id="test-thread")
+
+        assert "Error releasing control: Stream error" in result

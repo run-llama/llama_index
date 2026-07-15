@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -43,11 +44,12 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelec
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
+    BEDROCK_NO_TEMP_MODELS,
+    HAS_AIOBOTO3,
     ThinkingDict,
     bedrock_modelname_to_context_size,
     converse_with_retry,
     converse_with_retry_async,
-    extract_thinking_from_block,
     force_single_tool_call,
     is_bedrock_adaptive_thinking_supported_model,
     is_bedrock_function_calling_model,
@@ -59,6 +61,22 @@ from llama_index.llms.bedrock_converse.utils import (
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+
+def _parse_tool_input(raw_input: Any) -> Any:
+    """
+    Parse tool input from string to dict if needed.
+
+    During streaming, tool call input is accumulated as a concatenated JSON
+    string. This helper parses it into a dict so that ToolCallBlock.tool_kwargs
+    is always a dict, matching the non-streaming behavior.
+    """
+    if isinstance(raw_input, str):
+        try:
+            return parse_partial_json(raw_input)
+        except (json.JSONDecodeError, ValueError):
+            return {}
+    return raw_input
 
 
 class BedrockConverse(FunctionCallingLLM):
@@ -189,7 +207,8 @@ class BedrockConverse(FunctionCallingLLM):
 
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
-    _asession: Any = PrivateAttr()
+    _asession: Any = PrivateAttr(default=None)
+    _async_client: Any = PrivateAttr(default=None)
     _boto_client_kwargs: Any = PrivateAttr()
 
     def __init__(
@@ -208,6 +227,7 @@ class BedrockConverse(FunctionCallingLLM):
         endpoint_url: Optional[str] = None,
         botocore_session: Optional[Any] = None,
         client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         timeout: Optional[float] = 60.0,
         max_retries: Optional[int] = 10,
         botocore_config: Optional[Any] = None,
@@ -305,7 +325,6 @@ class BedrockConverse(FunctionCallingLLM):
 
         try:
             import boto3
-            import aioboto3
             from botocore.config import Config
 
             self._config = (
@@ -319,11 +338,9 @@ class BedrockConverse(FunctionCallingLLM):
                 else botocore_config
             )
             session = boto3.Session(**session_kwargs)
-            self._asession = aioboto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 and/or aioboto3 package not found, install with"
-                "'pip install boto3 aioboto3"
+                "boto3 package not found, install with 'pip install boto3'"
             )
 
         # Prior to general availability, custom boto3 wheel files were
@@ -344,6 +361,13 @@ class BedrockConverse(FunctionCallingLLM):
                 config=self._config,
                 **self._boto_client_kwargs,
             )
+
+        self._async_client = async_client
+
+        if HAS_AIOBOTO3:
+            import aioboto3
+
+            self._asession = aioboto3.Session(**session_kwargs)
 
     @classmethod
     def class_name(cls) -> str:
@@ -366,6 +390,10 @@ class BedrockConverse(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+
+        if any(model in self.model for model in BEDROCK_NO_TEMP_MODELS):
+            del base_kwargs["temperature"]
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
@@ -382,11 +410,12 @@ class BedrockConverse(FunctionCallingLLM):
         response: Optional[Dict[str, Any]] = None,
         content: Optional[Dict[str, Any]] = None,
     ) -> Tuple[
-        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]],
-        List[str],
-        List[str],
-        Optional[str],
+        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]], List[str], List[str]
     ]:
+        """
+        Returns a tuple containing content, tool call ids, and status by parsing the
+        response from a Bedrock Converse (non-streaming) request.
+        """
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
         )
@@ -395,7 +424,6 @@ class BedrockConverse(FunctionCallingLLM):
         )
         tool_call_ids = []
         status = []
-        thinking_text = ""
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         if content is not None:
             content_list = [content]
@@ -405,16 +433,15 @@ class BedrockConverse(FunctionCallingLLM):
         for content_block in content_list:
             if text := content_block.get("text", None):
                 blocks.append(TextBlock(text=text))
-            if reasoning_text := extract_thinking_from_block(content_block):
-                if reasoning_text:
-                    thinking_text += reasoning_text
+            if reasoning_content := content_block.get("reasoningContent", None):
+                # For Converse (non-streaming) requests, reasoning text and signature
+                # are both stored within `reasoningContent.reasoningText`.
+                reasoning_text = reasoning_content.get("reasoningText", {})
                 blocks.append(
                     ThinkingBlock(
-                        content=reasoning_text,
+                        content=reasoning_text.get("text", None),
                         additional_information={
-                            "signature": content_block.get("reasoningContent", {})
-                            .get("reasoningText", {})
-                            .get("signature", None)
+                            "signature": reasoning_text.get("signature", None)
                         },
                     )
                 )
@@ -438,7 +465,7 @@ class BedrockConverse(FunctionCallingLLM):
                 tool_call_ids.append(tool_result.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
 
-        return blocks, tool_call_ids, status, (thinking_text or None)
+        return blocks, tool_call_ids, status
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -465,9 +492,7 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_call_ids, status, thinking_text = self._get_content_and_tool_calls(
-            response
-        )
+        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
 
         additional_kwargs = self._get_response_token_counts(dict(response))
 
@@ -532,12 +557,15 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
-                    thinking_delta_value = extract_thinking_from_block(content_delta)
-                    if thinking_delta_value:
-                        thinking += thinking_delta_value
-                        thinking_signature += content_delta.get(
-                            "reasoningContent", {}
-                        ).get("signature", "")
+                    thinking_delta_value = None
+                    if "reasoningContent" in content_delta:
+                        # For ConverseStream (streaming) requests, reasoning text, signature,
+                        # redacted content are stored within `reasoningContent`.
+                        reasoning_content = content_delta.get("reasoningContent", {})
+                        reasoning_text = reasoning_content.get("text", "")
+                        thinking += reasoning_text
+                        thinking_delta_value = reasoning_text
+                        thinking_signature += reasoning_content.get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -586,7 +614,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -642,7 +672,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -686,7 +718,9 @@ class BedrockConverse(FunctionCallingLLM):
                             for tool_call in tool_calls:
                                 blocks.append(
                                     ToolCallBlock(
-                                        tool_kwargs=tool_call.get("input", {}),
+                                        tool_kwargs=_parse_tool_input(
+                                            tool_call.get("input", {})
+                                        ),
                                         tool_name=tool_call.get("name", ""),
                                         tool_call_id=tool_call.get("toolUseId"),
                                     )
@@ -731,8 +765,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
-            session=self._asession,
-            config=self._config,
+            client=self._async_client if HAS_AIOBOTO3 else self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
             system_prompt_caching=self.system_prompt_caching,
@@ -742,13 +775,13 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
+            session=self._asession,
+            config=self._config,
             boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
-        blocks, tool_call_ids, status, thinking_text = self._get_content_and_tool_calls(
-            response
-        )
+        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
 
         additional_kwargs = self._get_response_token_counts(dict(response))
 
@@ -786,8 +819,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response_gen = await converse_with_retry_async(
-            session=self._asession,
-            config=self._config,
+            client=self._async_client if HAS_AIOBOTO3 else self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
             system_prompt_caching=self.system_prompt_caching,
@@ -798,6 +830,8 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=self.guardrail_version,
             guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
+            session=self._asession,
+            config=self._config,
             boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
@@ -815,12 +849,15 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
-                    thinking_delta_value = extract_thinking_from_block(content_delta)
-                    if thinking_delta_value:
-                        thinking += thinking_delta_value
-                        thinking_signature += content_delta.get(
-                            "reasoningContent", {}
-                        ).get("signature", "")
+                    thinking_delta_value = None
+                    if "reasoningContent" in content_delta:
+                        # For ConverseStream (streaming) requests, reasoning text, signature,
+                        # redacted content are stored within `reasoningContent`.
+                        reasoning_content = content_delta.get("reasoningContent", {})
+                        reasoning_text = reasoning_content.get("text", "")
+                        thinking += reasoning_text
+                        thinking_delta_value = reasoning_text
+                        thinking_signature += reasoning_content.get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -869,7 +906,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -925,7 +964,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -970,7 +1011,9 @@ class BedrockConverse(FunctionCallingLLM):
                             for tool_call in tool_calls:
                                 blocks.append(
                                     ToolCallBlock(
-                                        tool_kwargs=tool_call.get("input", {}),
+                                        tool_kwargs=_parse_tool_input(
+                                            tool_call.get("input", {})
+                                        ),
                                         tool_name=tool_call.get("name", ""),
                                         tool_call_id=tool_call.get("toolUseId"),
                                     )

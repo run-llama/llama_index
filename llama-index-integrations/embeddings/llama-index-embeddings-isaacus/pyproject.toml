@@ -12,7 +12,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "pytest-asyncio>=0.23.0,<0.24",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
@@ -31,10 +31,10 @@ test_integration = [
 
 [project]
 name = "llama-index-embeddings-isaacus"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index embeddings isaacus integration"
 authors = [{name = "Isaacus", email = "hello@isaacus.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

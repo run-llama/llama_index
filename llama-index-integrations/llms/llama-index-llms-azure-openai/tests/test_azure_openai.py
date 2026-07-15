@@ -4,7 +4,9 @@ from openai import AsyncAzureOpenAI
 from typing import Any, Generator, AsyncGenerator
 from unittest.mock import MagicMock, AsyncMock, patch
 import httpx
-from llama_index.llms.azure_openai import AzureOpenAI
+from pydantic import BaseModel, Field
+from llama_index.core import PromptTemplate
+from llama_index.llms.azure_openai import AzureOpenAI, AzureOpenAIResponses
 from llama_index.core.base.llms.types import ChatMessage
 from openai.types.chat.chat_completion import (
     ChatCompletion,
@@ -33,6 +35,33 @@ def mock_chat_completion_v1(*args: Any, **kwargs: Any) -> ChatCompletion:
             )
         ],
     )
+
+
+@patch("llama_index.llms.azure_openai.responses.AsyncAzureOpenAI")
+@patch("llama_index.llms.azure_openai.responses.SyncAzureOpenAI")
+def test_azure_openai_responses_constructor(
+    sync_azure_mock: MagicMock, async_azure_mock: MagicMock
+) -> None:
+    """Verify AzureOpenAIResponses can be constructed without TypeError."""
+    llm = AzureOpenAIResponses(
+        engine="my-deployment",
+        model="gpt-4o",
+        api_key="mock-key",
+        azure_endpoint="https://test.openai.azure.com/",
+        api_version="2025-03-01-preview",
+    )
+    assert llm.engine == "my-deployment"
+    assert llm.model == "gpt-4o"
+    assert llm.azure_endpoint == "https://test.openai.azure.com/"
+
+    # Ensure Azure clients were created, not plain OpenAI clients
+    sync_azure_mock.assert_called_once()
+    async_azure_mock.assert_called_once()
+
+    # Verify azure-specific kwargs were passed to the clients
+    sync_kwargs = sync_azure_mock.call_args.kwargs
+    assert sync_kwargs["azure_endpoint"] == "https://test.openai.azure.com/"
+    assert sync_kwargs["api_key"] == "mock-key"
 
 
 @patch("llama_index.llms.azure_openai.base.SyncAzureOpenAI")
@@ -221,3 +250,79 @@ async def test_async_chat_completion_with_filter_results(
     chat_response_gen = await llm.astream_chat([message])
     chat_responses = [item async for item in chat_response_gen]
     assert chat_responses[-1].message.content == "Hello from\nAzure"
+
+
+@patch("llama_index.llms.azure_openai.responses.AsyncAzureOpenAI")
+@patch("llama_index.llms.azure_openai.responses.SyncAzureOpenAI")
+def test_structured_predict_uses_engine_not_model(
+    sync_azure_mock: MagicMock, async_azure_mock: MagicMock
+) -> None:
+    """
+    AzureOpenAIResponses.structured_predict must pass self.engine to responses.parse.
+
+    The parent OpenAIResponses.structured_predict uses self.model, which is the
+    model family name (e.g. 'gpt-4o').  Azure routes by deployment name, so
+    passing self.model raises a 404 DeploymentNotFound.
+    """
+
+    class Answer(BaseModel):
+        value: int = Field(description="The answer")
+
+    llm = AzureOpenAIResponses(
+        engine="my-deployment",
+        model="gpt-4o",
+        api_key="mock-key",
+        azure_endpoint="https://test.openai.azure.com/",
+        api_version="2025-03-01-preview",
+    )
+
+    mock_response = MagicMock()
+    mock_response.output_parsed = Answer(value=42)
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    result = llm.structured_predict(
+        output_cls=Answer,
+        prompt=PromptTemplate("What is 6 times 7?"),
+    )
+
+    assert isinstance(result, Answer)
+    assert result.value == 42
+    assert llm._client.responses.parse.call_args.kwargs["model"] == "my-deployment"
+
+
+@pytest.mark.asyncio
+@patch("llama_index.llms.azure_openai.responses.AsyncAzureOpenAI")
+@patch("llama_index.llms.azure_openai.responses.SyncAzureOpenAI")
+async def test_astructured_predict_uses_engine_not_model(
+    sync_azure_mock: MagicMock, async_azure_mock: MagicMock
+) -> None:
+    """
+    AzureOpenAIResponses.astructured_predict must pass self.engine to responses.parse.
+
+    Same as the sync variant: the inherited OpenAIResponses implementation uses
+    self.model, which is the model family name and not a valid Azure deployment.
+    """
+
+    class Answer(BaseModel):
+        value: int = Field(description="The answer")
+
+    llm = AzureOpenAIResponses(
+        engine="my-deployment",
+        model="gpt-4o",
+        api_key="mock-key",
+        azure_endpoint="https://test.openai.azure.com/",
+        api_version="2025-03-01-preview",
+    )
+
+    mock_response = MagicMock()
+    mock_response.output_parsed = Answer(value=42)
+    llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+
+    result = await llm.astructured_predict(
+        output_cls=Answer,
+        prompt=PromptTemplate("What is 6 times 7?"),
+    )
+
+    assert isinstance(result, Answer)
+    assert result.value == 42
+    assert llm._aclient.responses.parse.call_args.kwargs["model"] == "my-deployment"

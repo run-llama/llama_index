@@ -12,6 +12,7 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
+import httpx
 from openai import OpenAI, AsyncOpenAI
 from .utils import (
     EMBEDDING_MODEL_TABLE,
@@ -62,6 +63,8 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr(default=None)
+    _async_http_client: Optional[httpx.AsyncClient] = PrivateAttr(default=None)
     _is_hosted: bool = PrivateAttr(True)
 
     def __init__(
@@ -74,6 +77,8 @@ class NVIDIAEmbedding(BaseEmbedding):
         api_key: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,  # This could default to 50
         callback_manager: Optional[CallbackManager] = None,
+        http_client: Optional[httpx.Client] = None,
+        async_http_client: Optional[httpx.AsyncClient] = None,
         **kwargs: Any,
     ):
         """
@@ -109,6 +114,8 @@ class NVIDIAEmbedding(BaseEmbedding):
             **kwargs,
         )
         self.dimensions = dimensions
+        self._http_client = http_client
+        self._async_http_client = async_http_client
 
         if embed_batch_size > 259:
             raise ValueError("The batch size should not be larger than 259.")
@@ -126,20 +133,28 @@ class NVIDIAEmbedding(BaseEmbedding):
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
 
-        self._client = OpenAI(
-            api_key=api_key,
-            base_url=self.base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
+        client_kwargs: dict[str, Any] = {
+            "api_key": api_key,
+            "base_url": self.base_url,
+            "timeout": timeout,
+            "max_retries": max_retries,
+        }
+        if self._http_client is not None:
+            client_kwargs["http_client"] = self._http_client
+
+        self._client = OpenAI(**client_kwargs)
         self._client._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
-        self._aclient = AsyncOpenAI(
-            api_key=api_key,
-            base_url=self.base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
+        aclient_kwargs: dict[str, Any] = {
+            "api_key": api_key,
+            "base_url": self.base_url,
+            "timeout": timeout,
+            "max_retries": max_retries,
+        }
+        if self._async_http_client is not None:
+            aclient_kwargs["http_client"] = self._async_http_client
+
+        self._aclient = AsyncOpenAI(**aclient_kwargs)
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
         self.model = model

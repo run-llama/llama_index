@@ -1,15 +1,11 @@
+import json
 import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-import openai
 from deprecated import deprecated
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
 from tenacity import (
+    RetryCallState,
     before_sleep_log,
     retry,
     retry_if_exception_type,
@@ -19,21 +15,28 @@ from tenacity import (
     wait_random_exponential,
 )
 from tenacity.stop import stop_base
+from tenacity.wait import wait_base
 
+import openai
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
+    AudioBlock,
     ChatMessage,
+    ContentBlock,
+    DocumentBlock,
     ImageBlock,
     LogProb,
     MessageRole,
     TextBlock,
-    AudioBlock,
-    DocumentBlock,
     ThinkingBlock,
     ToolCallBlock,
-    ContentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -59,6 +62,8 @@ O1_MODELS: Dict[str, int] = {
     # gpt-5 is a reasoning model, putting it in the o models list
     "gpt-5": 400000,
     "gpt-5-2025-08-07": 400000,
+    "gpt-5-chat": 128000,
+    "gpt-5-chat-latest": 128000,
     "gpt-5-mini": 400000,
     "gpt-5-mini-2025-08-07": 400000,
     "gpt-5-nano": 400000,
@@ -71,11 +76,21 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
     "gpt-5.2-chat-latest": 128000,
+    "gpt-5.3": 400000,
+    "gpt-5.3-chat-latest": 128000,
+    "gpt-5.4": 1050000,
+    "gpt-5.4-2026-03-05": 1050000,
+    "gpt-5.4-mini": 400000,
+    "gpt-5.4-nano": 400000,
+    "gpt-5.4-chat-latest": 128000,
+    "gpt-5.5": 1050000,
+    "gpt-5.5-2026-04-23": 1050000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
     "gpt-5.2-pro": 400000,
     "gpt-5.2-pro-2025-12-11": 400000,
+    "gpt-5.4-pro": 1050000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -217,6 +232,8 @@ JSON_SCHEMA_MODELS = [
     "gpt-4.1",
     "gpt-5",
     "gpt-5.2",
+    "gpt-5.4",
+    "gpt-5.5",
 ]
 
 
@@ -249,6 +266,56 @@ logger = logging.getLogger(__name__)
 
 OpenAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 
+# Maximum wait time (seconds) to accept from a Retry-After header.
+# Prevents a misbehaving server from stalling the client indefinitely.
+_MAX_RETRY_AFTER_SECONDS = 120.0
+
+
+class _WaitRetryAfter(wait_base):
+    """
+    Wait strategy that respects the Retry-After header on RateLimitError.
+
+    When the last exception is an ``openai.RateLimitError`` whose HTTP response
+    contains a ``Retry-After`` header, the wait time is taken from that header
+    (capped at ``_MAX_RETRY_AFTER_SECONDS``).  For all other exceptions the
+    ``fallback`` strategy decides the sleep duration.
+    """
+
+    def __init__(self, fallback: wait_base) -> None:
+        self.fallback = fallback
+
+    def __call__(self, retry_state: RetryCallState) -> float:
+        exc = retry_state.outcome.exception() if retry_state.outcome else None
+        if isinstance(exc, openai.RateLimitError):
+            retry_after = _parse_retry_after(exc)
+            if retry_after is not None:
+                return min(retry_after, _MAX_RETRY_AFTER_SECONDS)
+        return self.fallback(retry_state)
+
+
+def _parse_retry_after(exc: openai.RateLimitError) -> Optional[float]:
+    """
+    Extract the Retry-After value (in seconds) from a RateLimitError.
+
+    Returns ``None`` when the header is missing or cannot be parsed.
+    """
+    response = getattr(exc, "response", None)
+    if response is None:
+        return None
+    headers = getattr(response, "headers", None)
+    if headers is None:
+        return None
+    raw = headers.get("retry-after")  # httpx.Headers is case-insensitive
+    if raw is None:
+        return None
+    try:
+        value = float(raw)
+    except (ValueError, TypeError):
+        return None
+    if value < 0:
+        return None
+    return value
+
 
 def create_retry_decorator(
     max_retries: int,
@@ -257,11 +324,12 @@ def create_retry_decorator(
     min_seconds: float = 4,
     max_seconds: float = 60,
 ) -> Callable[[Any], Any]:
-    wait_strategy = (
+    fallback = (
         wait_random_exponential(min=min_seconds, max=max_seconds)
         if random_exponential
         else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
     )
+    wait_strategy = _WaitRetryAfter(fallback)
 
     stop_strategy: stop_base = stop_after_attempt(max_retries)
     if stop_after_delay_seconds is not None:
@@ -350,6 +418,7 @@ def to_openai_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
+    store: bool = False,
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -378,8 +447,10 @@ def to_openai_message_dict(
             content.append(
                 {
                     "type": "file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         elif isinstance(block, ImageBlock):
@@ -421,13 +492,21 @@ def to_openai_message_dict(
                     },
                 }
             )
+        elif isinstance(block, ThinkingBlock):
+            # ThinkingBlock is not supported in the Chat Completions API input;
+            # skip it when converting messages back (round-tripping).
+            continue
         elif isinstance(block, ToolCallBlock):
             try:
+                # OpenAI API expects arguments as a JSON string, not a dict
+                arguments = block.tool_kwargs
+                if isinstance(arguments, dict):
+                    arguments = json.dumps(arguments)
                 function_dict = {
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                     },
                     "id": block.tool_call_id,
                 }
@@ -527,6 +606,7 @@ def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
+    store: bool = False,
 ) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -575,23 +655,29 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+
+        # Omit reasoning items when store is set to False
         elif isinstance(block, ThinkingBlock):
-            if block.content and "id" in block.additional_information:
-                reasoning.append(
-                    {
-                        "type": "reasoning",
-                        "id": block.additional_information["id"],
-                        "summary": [
-                            {"type": "summary_text", "text": block.content or ""}
-                        ],
-                    }
-                )
+            if store:
+                if block.content and "id" in block.additional_information:
+                    reasoning.append(
+                        {
+                            "type": "reasoning",
+                            "id": block.additional_information["id"],
+                            "summary": [
+                                {"type": "summary_text", "text": block.content or ""}
+                            ],
+                        }
+                    )
         elif isinstance(block, ToolCallBlock):
+            arguments = block.tool_kwargs
+            if not isinstance(arguments, str):
+                arguments = json.dumps(arguments)
             tool_calls.extend(
                 [
                     {
                         "type": "function_call",
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                         "call_id": block.tool_call_id,
                         "name": block.tool_name,
                     }
@@ -607,9 +693,17 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
-        return [*reasoning, *message_dicts]
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(message_dicts)
+        return items
     elif tool_calls:
-        return [*reasoning, *tool_calls]
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(tool_calls)
+        return items
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
     # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed
@@ -692,6 +786,7 @@ def to_openai_message_dicts(
     drop_none: bool = False,
     model: Optional[str] = None,
     is_responses_api: bool = False,
+    store: bool = False,
 ) -> Union[List[ChatCompletionMessageParam], str]:
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
@@ -701,6 +796,7 @@ def to_openai_message_dicts(
                 message,
                 drop_none=drop_none,
                 model="o3-mini",  # hardcode to ensure developer messages are used
+                store=store,
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
@@ -724,6 +820,7 @@ def to_openai_message_dicts(
                 message,
                 drop_none=drop_none,
                 model=model,
+                store=store,
             )
             for message in messages
         ]
@@ -734,11 +831,17 @@ def from_openai_message(
 ) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = openai_message.role
+    blocks: List[ContentBlock] = []
+
+    # Extract reasoning content if present. Many OpenAI-compatible providers
+    # use reasoning_content, while vLLM exposes the same trace as reasoning.
+    reasoning_content = get_openai_reasoning_content(openai_message)
+    if isinstance(reasoning_content, str) and reasoning_content:
+        blocks.append(ThinkingBlock(content=reasoning_content))
+
     # NOTE: Azure OpenAI returns function calling messages without a content key
     if "text" in modalities and openai_message.content:
-        blocks: List[ContentBlock] = [TextBlock(text=openai_message.content or "")]
-    else:
-        blocks: List[ContentBlock] = []
+        blocks.append(TextBlock(text=openai_message.content or ""))
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls:
@@ -761,6 +864,19 @@ def from_openai_message(
         blocks.append(AudioBlock(audio=audio_data, format="mp3"))
 
     return ChatMessage(role=role, blocks=blocks, additional_kwargs=additional_kwargs)
+
+
+def get_openai_reasoning_content(message: Any) -> Optional[str]:
+    """Return reasoning text from OpenAI-compatible message objects."""
+    reasoning_content = getattr(message, "reasoning_content", None)
+    if isinstance(reasoning_content, str):
+        return reasoning_content
+
+    reasoning = getattr(message, "reasoning", None)
+    if isinstance(reasoning, str):
+        return reasoning
+
+    return None
 
 
 def from_openai_token_logprob(

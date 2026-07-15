@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -26,6 +27,8 @@ from llama_index.core.base.llms.types import (
     CitableBlock,
     CitationBlock,
     ContentBlock,
+    DocumentBlock,
+    VideoBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
@@ -46,7 +49,8 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
+        ctx = contextvars.copy_context()
+        return await loop.run_in_executor(None, lambda: ctx.run(fn, *args, **kwargs))
 
     return _async_wrapped_fn
 
@@ -134,6 +138,15 @@ class FunctionTool(AsyncBaseTool):
             self._async_callback = sync_to_async(self._callback)
 
         self.partial_params = partial_params or {}
+
+        # Extract actual default values from FieldInfo defaults so they are
+        # applied when the function is called without those arguments.
+        self._field_defaults: Dict[str, Any] = {}
+        for param in sig.parameters.values():
+            if isinstance(param.default, FieldInfo) and not param.default.is_required():
+                self._field_defaults[param.name] = param.default.get_default(
+                    call_default_factory=True
+                )
 
     def _run_sync_callback(self, result: Any) -> CallbackReturn:
         """
@@ -278,12 +291,30 @@ class FunctionTool(AsyncBaseTool):
     def _parse_tool_output(self, raw_output: Any) -> List[ContentBlock]:
         """Parse tool output into content blocks."""
         if isinstance(
-            raw_output, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+            raw_output,
+            (
+                TextBlock,
+                ImageBlock,
+                AudioBlock,
+                CitableBlock,
+                CitationBlock,
+                DocumentBlock,
+                VideoBlock,
+            ),
         ):
             return [raw_output]
         elif isinstance(raw_output, list) and all(
             isinstance(
-                item, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+                item,
+                (
+                    TextBlock,
+                    ImageBlock,
+                    AudioBlock,
+                    CitableBlock,
+                    CitationBlock,
+                    DocumentBlock,
+                    VideoBlock,
+                ),
             )
             for item in raw_output
         ):
@@ -303,7 +334,7 @@ class FunctionTool(AsyncBaseTool):
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
-        all_kwargs = {**self.partial_params, **kwargs}
+        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
@@ -342,7 +373,7 @@ class FunctionTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
-        all_kwargs = {**self.partial_params, **kwargs}
+        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")

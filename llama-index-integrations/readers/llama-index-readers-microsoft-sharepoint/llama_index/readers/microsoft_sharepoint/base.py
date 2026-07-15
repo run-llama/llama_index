@@ -312,13 +312,13 @@ class SharePointReader(
             ValueError: If there is an error in obtaining the drive ID.
 
         """
+        self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
+
         if hasattr(self, "_drive_id"):
             return self._drive_id
 
         if self.drive_id:
             return self.drive_id
-
-        self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
 
         # Use generic pagination helper to get all drives
         drives = self._get_all_items_with_pagination(self._drive_id_endpoint)

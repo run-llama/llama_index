@@ -263,7 +263,7 @@ class SECExtractor:
 
         return all_narrative_dict, filing_type
 
-    def pipeline_api(self, text, m_section=[], m_section_regex=[]):
+    def pipeline_api(self, text, m_section=None, m_section_regex=None):
         """
         Unsturcured API to get the text.
 
@@ -280,6 +280,10 @@ class SECExtractor:
                 section and corresponding texts
 
         """
+        if m_section is None:
+            m_section = []
+        if m_section_regex is None:
+            m_section_regex = []
         validate_section_names(m_section)
 
         sec_document = SECDocument.from_string(text)

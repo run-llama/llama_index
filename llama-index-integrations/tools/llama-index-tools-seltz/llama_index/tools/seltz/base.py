@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from seltz import Includes, Seltz
+from seltz import Seltz
 
 
 class SeltzToolSpec(BaseToolSpec):
@@ -27,7 +27,11 @@ class SeltzToolSpec(BaseToolSpec):
         """
         self.client = Seltz(api_key=api_key)
 
-    def search(self, query: str, max_documents: Optional[int] = 10) -> List[Document]:
+    def search(
+        self,
+        query: str,
+        max_documents: Optional[int] = 10,
+    ) -> List[Document]:
         """
         Search the web using Seltz and return relevant documents with sources.
 
@@ -39,8 +43,7 @@ class SeltzToolSpec(BaseToolSpec):
             A list of Document objects containing web content and source URLs.
 
         """
-        includes = Includes(max_documents=max_documents) if max_documents else None
-        response = self.client.search(query, includes=includes)
+        response = self.client.search(query, max_results=max_documents)
         return [
             Document(text=doc.content or "", metadata={"url": doc.url or ""})
             for doc in response.documents

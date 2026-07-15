@@ -18,7 +18,7 @@ dev = [
     "types-protobuf>=4.24.0.4,<5",
     "types-redis==4.5.5.0",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-you"
-version = "1.0.0"
+version = "1.1.0"
 description = "llama-index retrievers you integration"
 authors = [{email = "akhil@you.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
