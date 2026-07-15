@@ -460,6 +460,49 @@ def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
 
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_parallel_tool_calls_have_unique_ids_and_roundtrip(llm: GoogleGenAI) -> None:
+    """
+    Live: parallel calls to the SAME tool must get distinct tool_ids, and
+    sending the results back (with those ids) must complete a valid round trip.
+    """
+
+    def get_step_info(step: int) -> str:
+        """Return the info for a given step number of the onboarding checklist."""
+        data = {1: "create account", 2: "verify email", 3: "done"}
+        return data.get(step, "no such step")
+
+    step_tool = FunctionTool.from_defaults(fn=get_step_info)
+    msg = ChatMessage(
+        "Call get_step_info in parallel for step 1 and step 2 in a single turn."
+    )
+    response = llm.chat_with_tools(user_msg=msg, tools=[step_tool])
+    tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
+
+    # The model may not always parallelize; only assert uniqueness when it does.
+    if len(tool_calls) >= 2:
+        ids = [tc.tool_id for tc in tool_calls]
+        assert len(set(ids)) == len(ids), (
+            f"parallel calls to the same tool collapsed to duplicate ids: {ids}"
+        )
+        assert all(tc.tool_name == "get_step_info" for tc in tool_calls)
+
+    # Round trip: feed the assistant tool-call message + tool results back and
+    # confirm the follow-up chat succeeds with the new id serialization.
+    history = [msg, response.message]
+    for tc in tool_calls:
+        history.append(
+            ChatMessage(
+                role="tool",
+                content=get_step_info(**tc.tool_kwargs),
+                additional_kwargs={"tool_call_id": tc.tool_id},
+            )
+        )
+
+    followup = llm.chat_with_tools(tools=[step_tool], chat_history=history)
+    assert followup.message is not None
+
+
 def search(query: str) -> str:
     """Search for information about a query."""
     return f"Results for {query}"
