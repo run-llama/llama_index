@@ -61,6 +61,29 @@ def baz():
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_oversized_leaf_node_is_not_dropped() -> None:
+    """
+    A leaf node bigger than max_chars must be emitted, not silently lost.
+
+    A long string literal parses to a leaf AST node with no children. The
+    recursive chunker used to return an empty list for such nodes, dropping
+    their text entirely.
+    """
+    if "CI" in os.environ:
+        return
+
+    literal = "a" * 40
+    text = f'x = "{literal}"'
+    code_splitter = CodeSplitter(language="python", chunk_lines=1, max_chars=10)
+
+    chunks = code_splitter.split_text(text)
+
+    # The oversized literal survives as its own chunk instead of vanishing.
+    assert literal in "".join(chunks)
+    assert any(literal in chunk for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_typescript_code_splitter() -> None:
     """Test case for code splitting using typescript."""
     if "CI" in os.environ:

@@ -183,6 +183,16 @@ class CodeSplitter(TextSplitter):
         current_chunk = ""
         max_size = self.max_chars if self.count_mode == "char" else self.max_tokens
 
+        # A leaf node (e.g. a long string literal or comment) has no children to
+        # recurse into. Without this guard the loop below never runs and the
+        # node's text is silently dropped when the node is larger than max_size,
+        # losing content. Emit the node's span (from the parent's cursor) as a
+        # single chunk; an atomic token that cannot be subdivided is allowed to
+        # exceed the size limit rather than vanish.
+        if not node.children:
+            leaf_text = text_bytes[last_end : node.end_byte].decode("utf-8")
+            return [leaf_text] if len(leaf_text) > 0 else []
+
         for child in node.children:
             child_text = text_bytes[child.start_byte : child.end_byte].decode("utf-8")
             child_size = (
