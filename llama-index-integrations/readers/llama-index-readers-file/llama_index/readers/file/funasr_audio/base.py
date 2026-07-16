@@ -98,11 +98,15 @@ class FunASRAudioReader(BaseReader):
                 )
 
         response.raise_for_status()
-        result = response.json()
 
-        transcript = self._extract_transcript(result)
+        if self.response_format in {"json", "verbose_json"}:
+            result: Any = response.json()
+            transcript = self._extract_transcript(result)
+        else:
+            result = response.text
+            transcript = result.strip()
 
-        if "segments" in result:
+        if isinstance(result, dict) and "segments" in result:
             metadata["segments"] = result["segments"]
 
         metadata["raw_response"] = result

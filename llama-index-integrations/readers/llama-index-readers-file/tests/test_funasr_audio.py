@@ -84,3 +84,22 @@ def test_funasr_audio_reader_segments_response(tmp_path: Path) -> None:
 
     assert docs[0].text == "Hello from segments"
     assert docs[0].metadata["segments"] == segments
+
+
+def test_funasr_audio_reader_plain_text_response(tmp_path: Path) -> None:
+    audio_file = tmp_path / "test.wav"
+    audio_file.write_bytes(b"fake audio")
+
+    mock_response = Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.text = "Hello from plain text"
+    mock_response.json.side_effect = AssertionError("JSON parser should not be called")
+
+    with patch("requests.post", return_value=mock_response) as mock_post:
+        reader = FunASRAudioReader(response_format="text")
+        docs = reader.load_data(audio_file)
+
+    assert docs[0].text == "Hello from plain text"
+    assert docs[0].metadata["raw_response"] == "Hello from plain text"
+    assert mock_post.call_args.kwargs["data"]["response_format"] == "text"
+    mock_response.json.assert_not_called()

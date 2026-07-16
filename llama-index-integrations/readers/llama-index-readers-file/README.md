@@ -203,15 +203,15 @@ documents = SimpleDirectoryReader(
 # funasr-server --device cpu --model sensevoice --port 8000
 parser = FunASRAudioReader(
     endpoint_url="http://localhost:8000",
-    model="sensevoice",)
+    model="sensevoice",
+)
 file_extractor = {
     ".mp3": parser,
-    ".wav": parser,}
+    ".wav": parser,
+}
 documents = SimpleDirectoryReader(
     "./data", file_extractor=file_extractor
 ).load_data()
-
-
 ```
 
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
