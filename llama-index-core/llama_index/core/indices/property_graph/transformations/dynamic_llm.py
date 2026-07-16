@@ -17,6 +17,12 @@ from llama_index.core.prompts.default_prompts import (
 )
 from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
 
+# Upper bound on input length handed to the regex fallback path. The fallback is
+# only meant to recover from minor JSON drift in a short LLM response; anything
+# significantly larger than a normal response is rejected here so a malformed or
+# adversarial payload cannot pin a worker inside re.findall.
+_MAX_FALLBACK_INPUT_LEN = 50_000
+
 
 def default_parse_dynamic_triplets(
     llm_output: str,
@@ -53,8 +59,14 @@ def default_parse_dynamic_triplets(
                 triplets.append((head_node, relation_node, tail_node))
 
     except json.JSONDecodeError:
-        # Flexible pattern to match the key-value pairs for head, head_type, relation, tail, and tail_type
-        pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']relation[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']tail[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']'
+        if len(llm_output) > _MAX_FALLBACK_INPUT_LEN:
+            return triplets
+
+        # Flexible pattern to match the key-value pairs for head, head_type, relation, tail, and tail_type.
+        # The value groups use a negated character class instead of the lazy `.*?` so the regex runs in
+        # linear time on malformed input (avoids catastrophic backtracking when the LLM produces text
+        # that partially matches the key prefix but never satisfies the full chain).
+        pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\'],\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\'],\s*[\{"\']relation[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\'],\s*[\{"\']tail[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\'],\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\']'
 
         # Find all matches in the output
         matches = re.findall(pattern, llm_output)
@@ -114,8 +126,15 @@ def default_parse_dynamic_triplets_with_props(
                 )
                 triplets.append((head_node, relation_node, tail_node))
     except json.JSONDecodeError:
-        # Flexible pattern to match the key-value pairs for head, head_type, head_props, relation, relation_props, tail, tail_type, and tail_props
-        pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']head_props[\}"\']\s*:\s*\{(.*?)\}\s*,\s*[\{"\']relation[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']relation_props[\}"\']\s*:\s*\{(.*?)\}\s*,\s*[\{"\']tail[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']tail_props[\}"\']\s*:\s*\{(.*?)\}\s*'
+        if len(llm_output) > _MAX_FALLBACK_INPUT_LEN:
+            return triplets
+
+        # Flexible pattern to match the key-value pairs for head, head_type, head_props, relation,
+        # relation_props, tail, tail_type, and tail_props. Lazy `.*?` groups have been replaced with
+        # negated character classes so the regex runs in linear time on malformed input — the previous
+        # form admitted catastrophic backtracking because the lazy groups could consume the same
+        # characters used as delimiters.
+        pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\']\s*,\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\']\s*,\s*[\{"\']head_props[\}"\']\s*:\s*\{([^{}]*)\}\s*,\s*[\{"\']relation[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\']\s*,\s*[\{"\']relation_props[\}"\']\s*:\s*\{([^{}]*)\}\s*,\s*[\{"\']tail[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\']\s*,\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\']([^\}"\']*)[\}"\']\s*,\s*[\{"\']tail_props[\}"\']\s*:\s*\{([^{}]*)\}\s*'
 
         # Find all matches in the output
         matches = re.findall(pattern, llm_output)
