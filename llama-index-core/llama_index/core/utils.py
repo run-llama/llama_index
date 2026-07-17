@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import inspect
+import logging
 import os
 import random
 import sys
@@ -39,6 +40,8 @@ from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
+
+logger = logging.getLogger(__name__)
 
 
 class GlobalsHelper:
@@ -590,6 +593,9 @@ def infer_torch_device() -> str:
         has_cuda = torch.cuda.is_available()
     if has_cuda:
         return "cuda"
+    if hasattr(torch, "xpu") and torch.xpu.is_available():
+        logger.info("XPU detected, using XPU as torch device.")
+        return "xpu"
     if torch.backends.mps.is_available():
         return "mps"
     return "cpu"
