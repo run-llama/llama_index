@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
+DEFAULT_MAX_DECOMPRESSED_SECTION_SIZE = 100 * 1024 * 1024
+
 
 class HWPReader(BaseReader):
     """
@@ -13,8 +15,17 @@ class HWPReader(BaseReader):
     Args: None.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Any,
+        max_decompressed_size: int = DEFAULT_MAX_DECOMPRESSED_SECTION_SIZE,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
+        if max_decompressed_size <= 0:
+            raise ValueError("max_decompressed_size must be greater than 0")
+
+        self.max_decompressed_size = max_decompressed_size
         self.FILE_HEADER_SECTION = "FileHeader"
         self.HWP_SUMMARY_SECTION = "\x05HwpSummaryInformation"
         self.SECTION_NAME_LENGTH = len("Section")
@@ -86,12 +97,43 @@ class HWPReader(BaseReader):
         header_data = header.read()
         return (header_data[36] & 1) == 1
 
+    def _decompress_section(self, data: bytes) -> bytes:
+        decompressor = zlib.decompressobj(-15)
+        chunks: List[bytes] = []
+        total_size = 0
+
+        for index in range(0, len(data), 64 * 1024):
+            remaining_size = self.max_decompressed_size + 1 - total_size
+            chunk = decompressor.decompress(
+                data[index : index + 64 * 1024], remaining_size
+            )
+            chunks.append(chunk)
+            total_size += len(chunk)
+
+            if total_size > self.max_decompressed_size or decompressor.unconsumed_tail:
+                raise ValueError(
+                    "decompressed HWP section exceeds configured maximum size"
+                )
+
+        remaining_size = self.max_decompressed_size + 1 - total_size
+        chunk = decompressor.flush(remaining_size)
+        chunks.append(chunk)
+        total_size += len(chunk)
+
+        if total_size > self.max_decompressed_size:
+            raise ValueError("decompressed HWP section exceeds configured maximum size")
+
+        if not decompressor.eof:
+            raise zlib.error("incomplete or truncated HWP section")
+
+        return b"".join(chunks)
+
     def get_text_from_section(self, load_file, section):
         bodytext = load_file.openstream(section)
         data = bodytext.read()
 
         unpacked_data = (
-            zlib.decompress(data, -15) if self.is_compressed(load_file) else data
+            self._decompress_section(data) if self.is_compressed(load_file) else data
         )
         size = len(unpacked_data)
 
