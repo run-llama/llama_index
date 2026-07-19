@@ -164,14 +164,23 @@ class BaseIndex(Generic[IS], ABC):
 
     @property
     def storage_context(self) -> StorageContext:
+        """Get the storage context containing the docstore, index store, and vector store."""
         return self._storage_context
 
     @property
     def summary(self) -> str:
+        """Get the summary string stored on the underlying index struct."""
         return str(self._index_struct.summary)
 
     @summary.setter
     def summary(self, new_summary: str) -> None:
+        """
+        Set the summary string on the underlying index struct and persist it.
+
+        Args:
+            new_summary (str): The new summary string to store.
+
+        """
         self._index_struct.summary = new_summary
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
@@ -486,7 +495,15 @@ class BaseIndex(Generic[IS], ABC):
         ...
 
     @abstractmethod
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever: ...
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        """
+        Return a retriever for this index.
+
+        Concrete subclasses must override this to build a retriever appropriate
+        for their index type. Keyword arguments are forwarded to the retriever
+        constructor.
+        """
+        ...
 
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any

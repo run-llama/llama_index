@@ -44,6 +44,20 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
         )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        """
+        Return a retriever for the empty index.
+
+        The returned retriever yields no nodes; it exists so the empty index
+        can be composed with other indices and used for pure LLM calls.
+
+        Args:
+            **kwargs: Additional keyword arguments forwarded to the retriever
+                constructor.
+
+        Returns:
+            BaseRetriever: An ``EmptyIndexRetriever`` bound to this index.
+
+        """
         # NOTE: lazy import
         from llama_index.core.indices.empty.retrievers import EmptyIndexRetriever
 
@@ -52,6 +66,23 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
     ) -> BaseQueryEngine:
+        """
+        Return a query engine for the empty index.
+
+        Forces ``response_mode="generation"`` unless the caller explicitly
+        requests it; any other response mode is rejected because the empty
+        index has no nodes to synthesize from.
+
+        Args:
+            llm (Optional[LLMType]): LLM to use for generation. Defaults to
+                ``Settings.llm``.
+            **kwargs: Additional keyword arguments forwarded to
+                ``BaseIndex.as_query_engine``.
+
+        Returns:
+            BaseQueryEngine: A query engine configured for pure generation.
+
+        """
         if "response_mode" not in kwargs:
             kwargs["response_mode"] = "generation"
         else:

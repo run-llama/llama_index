@@ -110,6 +110,22 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return self._vector_store
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        """
+        Return a retriever for the vector store index.
+
+        Wraps a ``VectorIndexRetriever`` bound to the nodes currently held by
+        this index. Keyword arguments are forwarded to the retriever
+        constructor and typically control similarity top-k, filters, and
+        embedding model overrides.
+
+        Args:
+            **kwargs: Additional keyword arguments forwarded to
+                ``VectorIndexRetriever``.
+
+        Returns:
+            BaseRetriever: A ``VectorIndexRetriever`` bound to this index.
+
+        """
         # NOTE: lazy import
         from llama_index.core.indices.vector_store.retrievers import (
             VectorIndexRetriever,

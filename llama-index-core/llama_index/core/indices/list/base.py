@@ -21,6 +21,16 @@ from llama_index.core.utils import get_tqdm_iterable
 
 
 class ListRetrieverMode(str, Enum):
+    """
+    Retrieval strategies supported by the SummaryIndex.
+
+    Attributes:
+        DEFAULT: Iterate through the indexed nodes in order.
+        EMBEDDING: Retrieve nodes using embedding-based similarity.
+        LLM: Use an LLM to select which nodes to retrieve.
+
+    """
+
     DEFAULT = "default"
     EMBEDDING = "embedding"
     LLM = "llm"
@@ -72,6 +82,27 @@ class SummaryIndex(BaseIndex[IndexList]):
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> BaseRetriever:
+        """
+        Return a retriever for the summary index.
+
+        Args:
+            retriever_mode (Union[str, ListRetrieverMode]): The retrieval strategy
+                to use. Defaults to ``ListRetrieverMode.DEFAULT``.
+            llm (Optional[LLM]): LLM used when ``retriever_mode`` is ``LLM``.
+                Defaults to ``Settings.llm``.
+            embed_model (Optional[BaseEmbedding]): Embedding model used when
+                ``retriever_mode`` is ``EMBEDDING``. Defaults to
+                ``Settings.embed_model``.
+            **kwargs: Additional keyword arguments forwarded to the retriever
+                constructor.
+
+        Returns:
+            BaseRetriever: A summary index retriever of the requested mode.
+
+        Raises:
+            ValueError: If ``retriever_mode`` is not a supported value.
+
+        """
         from llama_index.core.indices.list.retrievers import (
             SummaryIndexEmbeddingRetriever,
             SummaryIndexLLMRetriever,

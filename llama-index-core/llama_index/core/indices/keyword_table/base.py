@@ -35,6 +35,16 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class KeywordTableRetrieverMode(str, Enum):
+    """
+    Retrieval strategies supported by keyword-table indexes.
+
+    Attributes:
+        DEFAULT: Extract keywords from the query with an LLM and look them up.
+        SIMPLE: Extract keywords using a simple keyword extractor.
+        RAKE: Extract keywords using the RAKE algorithm.
+
+    """
+
     DEFAULT = "default"
     SIMPLE = "simple"
     RAKE = "rake"
