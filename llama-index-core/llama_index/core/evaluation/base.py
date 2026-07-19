@@ -88,7 +88,10 @@ class BaseEvaluator(PromptMixin):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"{type(self).__name__}.aevaluate is not implemented; subclasses "
+            "of BaseEvaluator must override it to provide async evaluation."
+        )
 
     def evaluate_response(
         self,

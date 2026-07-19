@@ -119,6 +119,13 @@ def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
         assert None not in node.metadata.values()
 
 
+def test_sql_table_node_mapping_add_object_raises_descriptive() -> None:
+    """SQLTableNodeMapping._add_object must raise NotImplementedError with a message."""
+    mapping = SQLTableNodeMapping(_TestSQLDatabase())
+    with pytest.raises(NotImplementedError, match="SQLTableNodeMapping._add_object"):
+        mapping._add_object(SQLTableSchema(table_name="t"))
+
+
 def test_simple_object_node_mapping_persist_rejects_unsafe_pickle(
     tmp_path,
 ) -> None:

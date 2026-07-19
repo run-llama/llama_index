@@ -1,5 +1,7 @@
 from typing import Any, Optional, Sequence
 
+import pytest
+
 from llama_index.core.base.response.schema import NodeWithScore, Response
 from llama_index.core.evaluation import BaseEvaluator
 from llama_index.core.evaluation.base import EvaluationResult
@@ -62,3 +64,51 @@ def test_evaluator_basic() -> None:
     )
 
     assert eval_result_0 == eval_result_1
+
+
+class _NonAsyncEvaluator(BaseEvaluator):
+    """
+    Evaluator that delegates ``aevaluate`` to the base implementation.
+
+    ``BaseEvaluator.aevaluate`` is ``@abstractmethod`` with a
+    ``raise NotImplementedError`` body. Subclasses normally override it, but
+    here we deliberately call ``super().aevaluate(...)`` to verify the body
+    raises a descriptive error rather than a bare one.
+    """
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        response: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
+        return EvaluationResult(
+            query=query, contexts=contexts, response=response, passing=True
+        )
+
+    async def aevaluate(
+        self,
+        query: Optional[str] = None,
+        response: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
+        return await super().aevaluate(
+            query=query, response=response, contexts=contexts, **kwargs
+        )
+
+
+@pytest.mark.asyncio
+async def test_base_aevaluate_raises_descriptive() -> None:
+    """BaseEvaluator.aevaluate must raise NotImplementedError with a helpful message."""
+    evaluator = _NonAsyncEvaluator()
+    with pytest.raises(NotImplementedError, match="aevaluate"):
+        await evaluator.aevaluate(query="q", response="r", contexts=["c"])

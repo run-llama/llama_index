@@ -1,8 +1,11 @@
+import pytest
+
 from llama_index.core.agent.react.output_parser import (
     extract_final_response,
     extract_tool_use,
     parse_action_reasoning_step,
 )
+from llama_index.core.agent.react.output_parser import ReActOutputParser
 
 
 def test_parse_action_reasoning_step() -> None:
@@ -206,3 +209,10 @@ Answer: Answer contains Legislative Action: here is the legislative action conte
         answer
         == "Answer contains Legislative Action: here is the legislative action content."
     )
+
+
+def test_react_output_parser_format_raises_descriptive() -> None:
+    """ReActOutputParser.format must raise NotImplementedError with a message."""
+    parser = ReActOutputParser()
+    with pytest.raises(NotImplementedError, match="format"):
+        parser.format("query")

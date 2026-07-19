@@ -26,7 +26,10 @@ class RetrievalEvalMode(str, Enum):
         elif label == "image":
             return RetrievalEvalMode.IMAGE
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"{cls.__name__}.from_str does not support label={label!r}; "
+                "supported labels are 'text' and 'image'."
+            )
 
 
 class RetrievalEvalResult(BaseModel):
@@ -98,7 +101,11 @@ class BaseRetrievalEvaluator(BaseModel):
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
     ) -> Tuple[List[str], List[str]]:
         """Get retrieved ids and texts."""
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"{type(self).__name__}._aget_retrieved_ids_and_texts is not "
+            "implemented; subclasses of BaseRetrievalEvaluator must override it "
+            "to provide async retrieval."
+        )
 
     def evaluate(
         self,
