@@ -1,5 +1,6 @@
 """SQL Join query engine."""
 
+import asyncio
 import logging
 from typing import Callable, Dict, Optional, Union
 
@@ -347,5 +348,11 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             raise ValueError(f"Invalid result.ind: {result.ind}")
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        # TODO: make async
-        return self._query(query_bundle)
+        """
+        Query and get response asynchronously.
+
+        The underlying SQL and selector calls are synchronous, so we offload
+        the sync ``_query`` to a worker thread to avoid blocking the event
+        loop.
+        """
+        return await asyncio.to_thread(self._query, query_bundle)
