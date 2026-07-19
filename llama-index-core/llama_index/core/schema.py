@@ -1309,7 +1309,8 @@ def is_image_pil(file_path: str) -> bool:
 
 
 def _validate_ssrf_url(url: str) -> None:
-    """Raise ValueError if *url* resolves to a private/reserved address (SSRF guard).
+    """
+    Raise ValueError if *url* resolves to a private/reserved address (SSRF guard).
 
     Blocks RFC-1918 private ranges, loopback, link-local (169.254/16 – cloud
     metadata endpoints), and other reserved address space.
@@ -1356,8 +1357,10 @@ def _ssrf_redirect_hook(response: requests.Response, **kwargs: Any) -> None:
 
 
 def _ssrf_safe_get(url: str, **kwargs: Any) -> requests.Response:
-    """Perform an HTTP GET that is protected against SSRF via the initial URL
-    and every redirect hop in the chain."""
+    """
+    Perform an HTTP GET that is protected against SSRF via the initial URL
+    and every redirect hop in the chain.
+    """
     _validate_ssrf_url(url)
     with requests.Session() as session:
         session.hooks["response"].append(_ssrf_redirect_hook)
