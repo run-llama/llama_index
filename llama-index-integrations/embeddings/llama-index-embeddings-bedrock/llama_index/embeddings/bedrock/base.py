@@ -516,7 +516,10 @@ class BedrockEmbedding(BaseEmbedding):
             request_body = json.dumps(titan_body_request)
 
         elif provider == PROVIDERS.COHERE:
-            if isinstance(payload, list) and len(payload) == 0:
+            if isinstance(payload, list) and (
+                len(payload) == 0
+                or all(not text or not text.strip() for text in payload)
+            ):
                 raise ValueError(
                     "Cohere embedding payload must contain at least one text."
                 )

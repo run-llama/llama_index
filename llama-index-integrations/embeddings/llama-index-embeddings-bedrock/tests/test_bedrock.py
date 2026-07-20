@@ -200,6 +200,40 @@ class TestBedrockEmbedding(TestCase):
 
         bedrock_stubber.assert_no_pending_responses()
 
+    def test_get_embedding_cohere_empty_string_list_raises_locally(self) -> None:
+        """
+        A non-empty list containing only empty/whitespace-only strings (e.g.
+        the ``['']`` produced by ``''.split()``) must be rejected locally with
+        the same ValueError as a fully empty list, and must never reach AWS
+        Bedrock's invoke_model. Without this, such a payload sails past the
+        empty-list guard and AWS returns a real embedding for what is
+        effectively a null/whitespace query.
+        """
+        bedrock_stubber = Stubber(self.bedrock_client)
+        # Intentionally no responses queued: if invoke_model were called,
+        # the Stubber would raise a StubAssertionError instead of the
+        # expected ValueError, causing this test to fail.
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        bedrock_stubber.activate()
+        for payload in [
+            [""],  # what "".split() produces
+            ["   "],
+            ["", "  ", "\t"],
+        ]:
+            with pytest.raises(
+                ValueError,
+                match="Cohere embedding payload must contain at least one text",
+            ):
+                bedrock_embedding._get_embedding(payload=payload, type="query")
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+
     def test_list_supported_models(self):
         exp_dict = {
             "amazon": [
