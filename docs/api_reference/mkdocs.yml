@@ -144,7 +144,6 @@ plugins:
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-sagemaker-endpoint
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-openai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-cohere
-            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-optimum-intel
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-jinaai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-nomic
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-fastembed
@@ -410,13 +409,11 @@ plugins:
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-voyageai-rerank
             - ../../llama-index-integrations/readers/llama-index-readers-gcs
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-rankllm-rerank
-            - ../../llama-index-integrations/llms/llama-index-llms-ipex-llm
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-neptune
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
             - ../../llama-index-integrations/llms/llama-index-llms-databricks
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
             - ../../llama-index-integrations/llms/llama-index-llms-openvino
-            - ../../llama-index-integrations/embeddings/llama-index-embeddings-ipex-llm
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-openvino-rerank
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-couchbase
             - ../../llama-index-integrations/retrievers/llama-index-retrievers-bedrock
@@ -482,7 +479,6 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-iceberg
             - ../../llama-index-integrations/llms/llama-index-llms-cleanlab
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-databricks
-            - ../../llama-index-integrations/llms/llama-index-llms-optimum-intel
             - ../../llama-index-integrations/llms/llama-index-llms-qianfan
             - ../../llama-index-integrations/callbacks/llama-index-callbacks-agentops
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-azure-inference
