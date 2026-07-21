@@ -21,3 +21,17 @@ llm = OpenAILike(
     is_function_calling_model=False,
 )
 ```
+
+You can also point `OpenAILike` at a governed OpenAI-compatible endpoint such as [Tuning Engines](https://www.tuningengines.com/):
+
+```python
+llm = OpenAILike(
+    model="gpt-4o-mini",
+    api_base="https://api.tuningengines.com/v1",
+    api_key="your-tuning-engines-key",
+    is_chat_model=True,
+    is_function_calling_model=True,
+)
+```
+
+LlamaIndex continues to own indexing, retrieval, and query orchestration while the gateway centralizes model routing, policy controls, audit logs, traces, approvals, and cost visibility.
