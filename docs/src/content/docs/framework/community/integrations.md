@@ -56,9 +56,14 @@ for full tracing integrations.
 
 - [LlamaIndex + Ray](https://www.anyscale.com/blog/build-and-scale-a-powerful-query-engine-with-llamaindex-ray)
 
+## Guardrails / Safety
+
+- [prompt-shield](/python/framework/community/integrations/prompt-shield) -- Open-source prompt-injection firewall (33 input detectors + 9 output scanners, Apache 2.0)
+
 ## Other
 
 - [ChatGPT Plugins](/python/framework/community/integrations/chatgpt_plugins)
 - [Poe](https://github.com/poe-platform/poe-protocol/tree/main/llama_poe)
 - [Airbyte](https://airbyte.com/tutorials/airbyte-and-llamaindex-elt-and-chat-with-your-data-warehouse-without-writing-sql)
 - [Fleet](/python/framework/community/integrations/fleet_libraries_context)
+
