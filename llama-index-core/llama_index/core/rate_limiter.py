@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 _SLIDING_WINDOW_SECONDS = 60.0
 
 
+async def _acquire_lock_async(lock: threading.Lock) -> None:
+    """Acquire a thread lock without blocking the event loop."""
+    while not lock.acquire(blocking=False):
+        await asyncio.sleep(0)
+
+
 class BaseRateLimiter(ABC):
     """
     Abstract base class for rate limiters.
@@ -206,12 +212,15 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
 
         """
         while True:
-            with self._lock:
+            await _acquire_lock_async(self._lock)
+            try:
                 self._refill()
                 wait = self._wait_time(num_tokens)
                 if wait <= 0:
                     self._consume(num_tokens)
                     return
+            finally:
+                self._lock.release()
             await asyncio.sleep(wait)
 
 
@@ -388,13 +397,16 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
         """
         while True:
             now = time.monotonic()
-            with self._lock:
+            await _acquire_lock_async(self._lock)
+            try:
                 self._prune_request_timestamps(now)
                 self._prune_token_usage(now)
                 wait = self._wait_time(now, num_tokens)
                 if wait <= 0:
                     self._record_usage(now, num_tokens)
                     return
+            finally:
+                self._lock.release()
             await asyncio.sleep(wait)
 
 
