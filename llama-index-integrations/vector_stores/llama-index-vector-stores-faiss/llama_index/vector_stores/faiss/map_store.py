@@ -241,7 +241,7 @@ class FaissMapVectorStore(FaissVectorStore):
         id_map["faiss_id_to_node_id_map"] = self._faiss_id_to_node_id_map
         # save the id map as JSON for safe deserialization
         id_map_path = os.path.join(dirpath, DEFAULT_ID_MAP_NAME)
-        with open(id_map_path, "w") as f:
+        with open(id_map_path, "w", encoding="utf-8") as f:
             json.dump(id_map, f)
 
     @classmethod
@@ -281,7 +281,7 @@ class FaissMapVectorStore(FaissVectorStore):
             raise ValueError(f"No existing {__name__} found at {persist_path}.")
 
         faiss_index = faiss.read_index(persist_path)
-        with open(id_map_path, "r") as f:
+        with open(id_map_path, "r", encoding="utf-8") as f:
             raw = f.read()
         try:
             id_map = json.loads(raw)
