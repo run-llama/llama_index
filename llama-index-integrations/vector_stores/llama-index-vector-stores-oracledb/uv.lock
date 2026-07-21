@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <3.13"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -1457,6 +1457,19 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-index-embeddings-oracleai"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-index-core" },
+    { name = "oracledb" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/08/c69aaa146e7af8f989575d4be8d8e8b7baeca8389ff94595a6cbb8d6c24f/llama_index_embeddings_oracleai-0.4.0.tar.gz", hash = "sha256:681566716f94d3cd04c1e59dd8d47eabf730494e2a2429bbaa25a0a540fa5862", size = 4883, upload-time = "2026-03-12T20:21:35.204Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/98/8a/6f9c94f0b73892332850b9179d08e783406bc11653568b32fda7ec749eae/llama_index_embeddings_oracleai-0.4.0-py3-none-any.whl", hash = "sha256:a005bd9cb6450cea5379ffa31eab2073cce5aaff14c02d6ef24aeecd44d05c2c", size = 4498, upload-time = "2026-03-12T20:21:34.496Z" },
+]
+
+[[package]]
 name = "llama-index-instrumentation"
 version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1475,6 +1488,7 @@ version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
+    { name = "llama-index-embeddings-oracleai" },
     { name = "oracledb" },
 ]
 
@@ -1503,6 +1517,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
+    { name = "llama-index-embeddings-oracleai", specifier = ">=0.1.0" },
     { name = "oracledb", specifier = ">=2.2" },
 ]
 
