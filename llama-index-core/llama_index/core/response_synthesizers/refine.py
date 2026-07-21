@@ -96,6 +96,10 @@ class DefaultRefineProgram(BasePydanticProgram):
     def output_cls(self) -> Type[BaseModel]:
         return StructuredRefineResponse
 
+    @property
+    def streams_plain_text(self) -> bool:
+        return self._output_cls is None
+
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
         if self._output_cls is not None:
             answer = self._llm.structured_predict(
@@ -158,6 +162,12 @@ class DefaultRefineProgram(BasePydanticProgram):
                 answer += token
             yield StructuredRefineResponse(answer=answer.strip(), query_satisfied=True)
 
+    def stream_answer(self, *args: Any, **kwds: Any) -> Generator[str, None, None]:
+        yield from self._llm.stream(
+            self._prompt,
+            **kwds,
+        )
+
     async def astream_call(
         self, *args: Any, **kwds: Any
     ) -> AsyncGenerator[StructuredRefineResponse, None]:
@@ -198,6 +208,15 @@ class DefaultRefineProgram(BasePydanticProgram):
                     )
 
         return gen()
+
+    async def astream_answer(
+        self, *args: Any, **kwds: Any
+    ) -> AsyncGenerator[str, None]:
+        async for token in await self._llm.astream(
+            self._prompt,
+            **kwds,
+        ):
+            yield token
 
 
 class Refine(BaseSynthesizer):
@@ -344,6 +363,8 @@ class Refine(BaseSynthesizer):
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
+            if isinstance(program, DefaultRefineProgram) and program.streams_plain_text:
+                return program.stream_answer(**program_kwargs, **response_kwargs)
             try:
                 structured_response_gen = program.stream_call(
                     **program_kwargs,
@@ -394,6 +415,8 @@ class Refine(BaseSynthesizer):
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
+            if isinstance(program, DefaultRefineProgram) and program.streams_plain_text:
+                return program.astream_answer(**program_kwargs, **response_kwargs)
             try:
                 structured_response_gen = await program.astream_call(
                     **program_kwargs,
