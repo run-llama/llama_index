@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import quote_plus
@@ -33,6 +34,18 @@ from llama_index.core.vector_stores.utils import (
 
 
 _logger = logging.getLogger(__name__)
+
+# The table name is interpolated directly into SQL DDL/DML strings (it cannot
+# be passed as a bind parameter), so it is restricted to a safe identifier
+# charset to prevent SQL injection (CWE-89). Same hardening as the postgres
+# store fix for CVE-2025-1793.
+_VALID_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _validate_identifier(value: str, kind: str) -> str:
+    if not _VALID_IDENTIFIER.match(value):
+        raise ValueError(f"Invalid {kind}: {value}")
+    return value
 
 
 @dataclass
@@ -160,6 +173,9 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
             perform_setup=perform_setup,
             debug=debug,
         )
+
+        # Validate the table name before it is interpolated into SQL DDL/DML.
+        _validate_identifier(self.table_name, "table_name")
 
         # Private attrs
         self._engine = None
@@ -523,6 +539,11 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         - For ``IN``/``NIN`` operators build a ``(v1, v2, ...)`` value
           list.
         """
+        # The JSON path key is interpolated into a SQL string literal ('$.key')
+        # and cannot be a bind parameter, so allowlist it to a safe identifier
+        # charset to prevent SQL injection via the metadata key.
+        if not re.match(r"^[a-zA-Z0-9_]+$", filter_.key):
+            raise ValueError(f"Invalid metadata key format: {filter_.key}")
         key_expr = f"JSON_EXTRACT(metadata, '$.{filter_.key}')"
         value = filter_.value
 
