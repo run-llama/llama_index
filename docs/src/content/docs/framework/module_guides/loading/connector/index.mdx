@@ -17,7 +17,7 @@ A data connector (aka `Reader`) ingest data from different data sources and data
 ## LlamaHub
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
-LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.
+LlamaHub is a registry of data loader packages that you can install and plug into any LlamaIndex application.
 
 ![](./../../../_static/data_connectors/llamahub.png)
 
@@ -25,9 +25,11 @@ LlamaHub is an open-source repository containing data loaders that you can easil
 
 Get started with:
 
-```python
-from llama_index.core import download_loader
+```bash
+pip install llama-index-readers-google
+```
 
+```python
 from llama_index.readers.google import GoogleDocsReader
 
 loader = GoogleDocsReader()
