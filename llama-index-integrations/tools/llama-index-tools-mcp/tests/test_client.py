@@ -3,7 +3,7 @@ from httpx import AsyncClient
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
-from llama_index.tools.mcp.client import enable_sse
+from llama_index.tools.mcp.client import enable_sse, _mcp_prompt_message_to_chat_message
 from mcp import types
 
 
@@ -259,3 +259,76 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+
+def test_prompt_message_text_content():
+    """Text content should map to a TextBlock, unchanged from before."""
+    message = types.PromptMessage(
+        role="user", content=types.TextContent(type="text", text="hello")
+    )
+    chat_message = _mcp_prompt_message_to_chat_message(message)
+    assert chat_message.blocks[0].block_type == "text"
+    assert chat_message.blocks[0].text == "hello"
+
+
+def test_prompt_message_audio_content():
+    """AudioContent used to raise ValueError; it should now map to AudioBlock."""
+    message = types.PromptMessage(
+        role="user",
+        content=types.AudioContent(type="audio", data="ZmFrZQ==", mimeType="audio/mpeg"),
+    )
+    chat_message = _mcp_prompt_message_to_chat_message(message)
+    assert chat_message.blocks[0].block_type == "audio"
+    assert chat_message.blocks[0].format == "mp3"
+
+
+def test_prompt_message_embedded_text_resource():
+    """EmbeddedResource wrapping text content used to raise NotImplementedError."""
+    message = types.PromptMessage(
+        role="user",
+        content=types.EmbeddedResource(
+            type="resource",
+            resource=types.TextResourceContents(
+                uri="file:///notes.txt", mimeType="text/plain", text="resource body"
+            ),
+        ),
+    )
+    chat_message = _mcp_prompt_message_to_chat_message(message)
+    assert chat_message.blocks[0].block_type == "text"
+    assert chat_message.blocks[0].text == "resource body"
+
+
+def test_prompt_message_embedded_blob_resource():
+    """EmbeddedResource wrapping binary content should map to a DocumentBlock."""
+    import base64
+
+    message = types.PromptMessage(
+        role="user",
+        content=types.EmbeddedResource(
+            type="resource",
+            resource=types.BlobResourceContents(
+                uri="file:///data.bin",
+                mimeType="application/octet-stream",
+                blob=base64.b64encode(b"binary-data").decode(),
+            ),
+        ),
+    )
+    chat_message = _mcp_prompt_message_to_chat_message(message)
+    assert chat_message.blocks[0].block_type == "document"
+    assert chat_message.blocks[0].document_mimetype == "application/octet-stream"
+
+
+def test_prompt_message_resource_link():
+    """ResourceLink used to raise ValueError; it has no content to fetch, so it
+    should degrade to a text reference instead of failing outright."""
+    message = types.PromptMessage(
+        role="user",
+        content=types.ResourceLink(
+            type="resource_link", uri="https://example.com/doc", name="doc-name"
+        ),
+    )
+    chat_message = _mcp_prompt_message_to_chat_message(message)
+    assert chat_message.blocks[0].block_type == "text"
+    assert "doc-name" in chat_message.blocks[0].text
+    assert "https://example.com/doc" in chat_message.blocks[0].text

@@ -1,6 +1,7 @@
 import warnings
 import logging
 import io
+import mimetypes
 
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -27,7 +28,68 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import (
+    ChatMessage,
+    TextBlock,
+    ImageBlock,
+    AudioBlock,
+    DocumentBlock,
+)
+
+
+def _audio_format_from_mimetype(mime_type: str) -> Optional[str]:
+    """Turn a MIME type like ``audio/mpeg`` into a bare extension like ``mp3``."""
+    ext = mimetypes.guess_extension(mime_type)
+    if ext:
+        return ext.lstrip(".")
+    # Fall back to the subtype (e.g. "audio/wav" -> "wav") when the stdlib
+    # table doesn't recognize the MIME type.
+    return mime_type.split("/")[-1] or None
+
+
+def _mcp_prompt_message_to_chat_message(message: "types.PromptMessage") -> ChatMessage:
+    """
+    Convert a single MCP ``PromptMessage`` into a llama-index ``ChatMessage``.
+
+    Split out from ``get_prompt`` so each MCP content type (text, image, audio,
+    embedded resource, resource link) can be unit tested without needing a live
+    MCP session.
+    """
+    content = message.content
+    if isinstance(content, types.TextContent):
+        block = TextBlock(text=content.text)
+    elif isinstance(content, types.ImageContent):
+        block = ImageBlock(
+            image=content.data,
+            image_mimetype=content.mimeType,
+        )
+    elif isinstance(content, types.AudioContent):
+        block = AudioBlock(
+            audio=content.data,
+            format=_audio_format_from_mimetype(content.mimeType),
+        )
+    elif isinstance(content, types.EmbeddedResource):
+        resource = content.resource
+        if isinstance(resource, types.TextResourceContents):
+            block = TextBlock(text=resource.text)
+        else:
+            # BlobResourceContents: base64-encoded binary payload.
+            block = DocumentBlock(
+                data=resource.blob.encode("utf-8"),
+                document_mimetype=resource.mimeType,
+                title=str(resource.uri),
+            )
+    elif isinstance(content, types.ResourceLink):
+        # A resource link only carries a reference (uri/name), not the actual
+        # content, so there is nothing to download here without an extra
+        # server round trip. Surface it as text so callers at least see it
+        # instead of the request failing outright.
+        label = content.title or content.name
+        block = TextBlock(text=f"[{label}]({content.uri})")
+    else:
+        raise ValueError(f"Unsupported content type: {type(content)}")
+
+    return ChatMessage(role=message.role, blocks=[block])
 
 
 class StreamingHandler(logging.Handler):
@@ -377,34 +439,7 @@ class BasicMCPClient(ClientSession):
         """
         async with self._run_session() as session:
             prompt = await session.get_prompt(prompt_name, arguments)
-            llama_messages = []
-            for message in prompt.messages:
-                if isinstance(message.content, types.TextContent):
-                    llama_messages.append(
-                        ChatMessage(
-                            role=message.role,
-                            blocks=[TextBlock(text=message.content.text)],
-                        )
-                    )
-                elif isinstance(message.content, types.ImageContent):
-                    llama_messages.append(
-                        ChatMessage(
-                            role=message.role,
-                            blocks=[
-                                ImageBlock(
-                                    image=message.content.data,
-                                    image_mimetype=message.content.mimeType,
-                                )
-                            ],
-                        )
-                    )
-                elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
-                    )
-                else:
-                    raise ValueError(
-                        f"Unsupported content type: {type(message.content)}"
-                    )
-
-            return llama_messages
+            return [
+                _mcp_prompt_message_to_chat_message(message)
+                for message in prompt.messages
+            ]
