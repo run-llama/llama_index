@@ -170,7 +170,9 @@ def chat_from_gemini_response(
         # Set token usage information as required by MLFlow Tracing
         additional_kwargs["prompt_tokens"] = response.usage_metadata.prompt_token_count
         additional_kwargs["completion_tokens"] = (
-            response.usage_metadata.candidates_token_count
+            response.usage_metadata.response_token_count
+            if hasattr(response.usage_metadata, "response_token_count")
+            else response.usage_metadata.candidates_token_count
         )
         additional_kwargs["total_tokens"] = response.usage_metadata.total_token_count
 
