@@ -493,3 +493,72 @@ async def test_chat_methods_with_tool_input() -> None:
         ablocks.extend(r.message.blocks)
     assert len([block for block in ablocks if isinstance(block, TextBlock)]) > 0
     assert len([block for block in ablocks if isinstance(block, ToolCallBlock)]) == 0
+
+
+def test_stream_chat_keeps_thinking_only_chunks() -> None:
+    """Regression for #21232: thinking-only chunks (content=None, thinking=...)
+    from reasoning models (e.g. DeepSeek-R1, QwQ, gpt-oss) were dropped by the
+    `if content is None: continue` guard in `stream_chat`, so reasoning text
+    never reached the consumer. Only chunks with neither content nor thinking
+    should be skipped now."""
+    from unittest.mock import MagicMock
+
+    fake_client = MagicMock()
+    fake_client.chat.return_value = iter(
+        [
+            {"message": {"role": "assistant", "content": None, "thinking": "let me think..."}},
+            {"message": {"role": "assistant", "content": None, "thinking": " step 1"}},
+            {"message": {"role": "assistant", "content": "answer ", "thinking": ""}},
+            {"message": {"role": "assistant", "content": "is 42", "thinking": ""}},
+            {"message": {"role": "assistant", "content": None, "thinking": None}},  # skipped
+        ]
+    )
+
+    llm = Ollama(model="test-thinking-model", client=fake_client, async_client=MagicMock())
+
+    chunks = list(llm.stream_chat([ChatMessage(role="user", content="hi")]))
+
+    thinking_deltas = [
+        c.additional_kwargs.get("thinking_delta") for c in chunks
+    ]
+    assert "let me think..." in thinking_deltas
+    assert " step 1" in thinking_deltas
+    # Final accumulated thinking content survives onto the last yielded chunk's ThinkingBlock.
+    last_blocks = chunks[-1].message.blocks
+    thinking_blocks = [b for b in last_blocks if isinstance(b, ThinkingBlock)]
+    assert thinking_blocks and thinking_blocks[0].content == "let me think... step 1"
+    text_blocks = [b for b in last_blocks if isinstance(b, TextBlock)]
+    assert text_blocks and text_blocks[0].text == "answer is 42"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_keeps_thinking_only_chunks() -> None:
+    """Async sibling of `test_stream_chat_keeps_thinking_only_chunks` (#21232)."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    async def _agen():
+        for r in [
+            {"message": {"role": "assistant", "content": None, "thinking": "thinking-only"}},
+            {"message": {"role": "assistant", "content": "done", "thinking": ""}},
+            {"message": {"role": "assistant", "content": None, "thinking": None}},
+        ]:
+            yield r
+
+    fake_async_client = MagicMock()
+    fake_async_client.chat = AsyncMock(return_value=_agen())
+
+    llm = Ollama(
+        model="test-thinking-model",
+        client=MagicMock(),
+        async_client=fake_async_client,
+    )
+
+    chunks = []
+    async for c in await llm.astream_chat([ChatMessage(role="user", content="hi")]):
+        chunks.append(c)
+
+    last_blocks = chunks[-1].message.blocks
+    thinking_blocks = [b for b in last_blocks if isinstance(b, ThinkingBlock)]
+    assert thinking_blocks and thinking_blocks[0].content == "thinking-only"
+    text_blocks = [b for b in last_blocks if isinstance(b, TextBlock)]
+    assert text_blocks and text_blocks[0].text == "done"
