@@ -172,6 +172,67 @@ def test_list_resources(sharepoint_reader):
     assert file_paths[1] == Path("dummy_site_name/dummy_folder_path/file2.txt")
 
 
+@pytest.mark.parametrize("include_subfolders", [False, True])
+def test_download_files_forwards_recursive_flag(sharepoint_reader, include_subfolders):
+    with patch.object(
+        SharePointReader, "list_resources", return_value=[]
+    ) as list_resources:
+        sharepoint_reader._download_files_and_extract_metadata(
+            "dummy_folder_id",
+            "unused",
+            include_subfolders=include_subfolders,
+        )
+
+    list_resources.assert_called_once_with(
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_site_id=None,
+        sharepoint_folder_id="dummy_folder_id",
+        recursive=include_subfolders,
+    )
+
+
+@pytest.mark.parametrize(
+    ("recursive", "expected_paths", "lists_subfolder"),
+    [
+        (False, [Path("root.txt")], False),
+        (True, [Path("folder/nested.txt"), Path("root.txt")], True),
+    ],
+)
+def test_list_resources_from_drive_root_honors_recursive(
+    sharepoint_reader, recursive, expected_paths, lists_subfolder
+):
+    sharepoint_reader.sharepoint_folder_path = None
+    root_items = [
+        {"id": "folder_id", "name": "folder", "folder": {}},
+        {"id": "root_file_id", "name": "root.txt", "file": {}},
+    ]
+
+    with (
+        patch.object(
+            sharepoint_reader,
+            "_get_all_items_with_pagination",
+            return_value=root_items,
+        ),
+        patch.object(
+            sharepoint_reader,
+            "_list_folder_contents",
+            return_value=[Path("folder/nested.txt")],
+        ) as list_folder_contents,
+    ):
+        paths = sharepoint_reader.list_resources(
+            sharepoint_site_name="dummy_site_name",
+            recursive=recursive,
+        )
+
+    assert paths == expected_paths
+    if lists_subfolder:
+        list_folder_contents.assert_called_once_with(
+            "folder_id", recursive=True, current_path="folder"
+        )
+    else:
+        list_folder_contents.assert_not_called()
+
+
 def test_load_documents_with_metadata(sharepoint_reader):
     # Setting the _drive_id_endpoint manually to avoid the AttributeError
     sharepoint_reader._drive_id_endpoint = (
