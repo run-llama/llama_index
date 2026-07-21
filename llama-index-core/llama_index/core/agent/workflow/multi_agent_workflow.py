@@ -286,8 +286,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
         if not await ctx.store.get("state", default=None):
             await ctx.store.set("state", copy.deepcopy(self.initial_state))
-        if not await ctx.store.get("current_agent_name", default=None):
-            await ctx.store.set("current_agent_name", self.root_agent)
+        # Always reset the current agent to the root agent at the start of a new run.
+        # This prevents stale handoff state from a previous run from leaking into the next run.
+        await ctx.store.set("current_agent_name", self.root_agent)
         if not await ctx.store.get("handoff_output_prompt", default=None):
             await ctx.store.set(
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
@@ -310,6 +311,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
+
+        # Reset handoff state to prevent stale values from leaking between runs
+        await ctx.store.set("next_agent", None)
+        await ctx.store.set("current_tool_calls", [])
 
     async def _get_llm_response(
         self,
