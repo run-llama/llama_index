@@ -67,7 +67,7 @@ from llama_index.core.workflow import Context
 
 ctx = Context(agent)
 
-response = await ctx.run("<question that invokes tool>", ctx=ctx)
+response = await agent.run("<question that invokes tool>", ctx=ctx)
 
 # get the memory
 memory = await ctx.store.get("memory")
@@ -214,7 +214,7 @@ While predefined memory blocks are available, you can also create your own custo
 ```python
 from typing import Optional, List, Any
 from llama_index.core.llms import ChatMessage
-from llama_index.core.memory.memory import BaseMemoryBlock
+from llama_index.core.memory import BaseMemoryBlock
 
 
 # use generics to define the output type of the memory block
@@ -323,4 +323,4 @@ You can find a few examples of memory in action below:
 - [Chat Summary Memory Buffer](/python/examples/agent/memory/summary_memory_buffer)
 - [Composable Memory](/python/examples/agent/memory/composable_memory)
 - [Vector Memory](/python/examples/agent/memory/vector_memory)
-- [Mem0 Memory](/python/examples/memory/mem0memory)
+- [Mem0 Memory](/python/examples/memory/Mem0Memory)
