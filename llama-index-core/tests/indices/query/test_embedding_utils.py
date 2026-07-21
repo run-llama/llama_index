@@ -73,6 +73,48 @@ def test_get_top_k_mmr_embeddings() -> None:
         assert np.isclose(result_no_mmr, result_with_mmr, atol=0.00001)
 
 
+def test_get_top_k_embeddings_top_k_zero() -> None:
+    """
+    An explicit similarity_top_k of 0 must return no results.
+
+    Because 0 is falsy, ``if similarity_top_k and ...`` skipped the heap
+    trimming entirely, so asking for zero results silently returned every
+    embedding instead. ``similarity_top_k=None`` is the documented way to
+    request unlimited results.
+    """
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.9, 0.1], [0.0, 1.0]]
+
+    similarities, ids = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert similarities == []
+    assert ids == []
+
+    # None still means unlimited.
+    similarities, ids = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=None
+    )
+    assert len(ids) == 3
+
+
+def test_get_top_k_mmr_embeddings_top_k_zero() -> None:
+    """MMR variant of the falsy top-k bug: 0 must mean none, None means all."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.9, 0.1], [0.0, 1.0]]
+
+    similarities, ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert similarities == []
+    assert ids == []
+
+    _, ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=None
+    )
+    assert len(ids) == 3
+
+
 def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
     """
     An explicit mmr_threshold of 0 must request maximum diversity.
