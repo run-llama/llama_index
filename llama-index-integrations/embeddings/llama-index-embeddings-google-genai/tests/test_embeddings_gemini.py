@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import requests
+import google.genai.types as types
 from google.genai.errors import APIError
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
@@ -38,6 +39,64 @@ def test_embed_texts_mock(mock_client_class):
     assert len(result) == 1
     assert result[0] == [0.1, 0.2, 0.3]
     mock_embed_content.assert_called_once()
+
+
+@patch("google.genai.Client")
+def test_embed_texts_wraps_each_input_in_content(mock_client_class):
+    mock_client = mock_client_class.return_value
+    mock_embed_content = mock_client.models.embed_content
+
+    mock_result = MagicMock()
+    mock_result.embeddings = [
+        MagicMock(values=[0.1, 0.2]),
+        MagicMock(values=[0.3, 0.4]),
+        MagicMock(values=[0.5, 0.6]),
+    ]
+    mock_embed_content.return_value = mock_result
+
+    emb = GoogleGenAIEmbedding(api_key="fake_key")
+    texts = ["Hello world", "This is a test", "Embeddings are useful"]
+    result = emb.get_text_embedding_batch(texts)
+
+    assert len(result) == len(texts)
+    _, kwargs = mock_embed_content.call_args
+    contents = kwargs["contents"]
+    assert len(contents) == len(texts)
+    for content, text in zip(contents, texts):
+        assert isinstance(content, types.Content)
+        assert content.parts is not None
+        assert len(content.parts) == 1
+        assert content.parts[0].text == text
+
+
+@pytest.mark.asyncio
+@patch("google.genai.Client")
+async def test_aembed_texts_wraps_each_input_in_content(mock_client_class):
+    mock_client = mock_client_class.return_value
+    mock_aio_models = MagicMock()
+    mock_client.aio = MagicMock(models=mock_aio_models)
+
+    mock_result = MagicMock()
+    mock_result.embeddings = [
+        MagicMock(values=[0.1, 0.2]),
+        MagicMock(values=[0.3, 0.4]),
+    ]
+    mock_aembed_content = AsyncMock(return_value=mock_result)
+    mock_aio_models.embed_content = mock_aembed_content
+
+    emb = GoogleGenAIEmbedding(api_key="fake_key")
+    texts = ["foo", "bar"]
+    result = await emb.aget_text_embedding_batch(texts)
+
+    assert len(result) == len(texts)
+    _, kwargs = mock_aembed_content.call_args
+    contents = kwargs["contents"]
+    assert len(contents) == len(texts)
+    for content, text in zip(contents, texts):
+        assert isinstance(content, types.Content)
+        assert content.parts is not None
+        assert len(content.parts) == 1
+        assert content.parts[0].text == text
 
 
 @patch("google.genai.Client")
