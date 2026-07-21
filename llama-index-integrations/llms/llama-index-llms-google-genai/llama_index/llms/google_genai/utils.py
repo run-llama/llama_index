@@ -129,9 +129,11 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
             if finish_reason == types.FinishReason.SAFETY and candidate.safety_ratings:
                 relevant_safety = list(
                     filter(
-                        lambda sr: sr.probability
-                        and sr.probability.value
-                        > types.HarmProbability.NEGLIGIBLE.value,
+                        lambda sr: (
+                            sr.probability
+                            and sr.probability.value
+                            > types.HarmProbability.NEGLIGIBLE.value
+                        ),
                         candidate.safety_ratings,
                     )
                 )
