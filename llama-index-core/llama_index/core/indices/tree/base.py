@@ -23,6 +23,17 @@ from llama_index.core.storage.docstore.types import RefDocInfo
 
 
 class TreeRetrieverMode(str, Enum):
+    """
+    Retrieval strategies supported by the TreeIndex.
+
+    Attributes:
+        SELECT_LEAF: Traverse the tree from the root, selecting a single leaf.
+        SELECT_LEAF_EMBEDDING: Select a leaf using embedding-based similarity.
+        ALL_LEAF: Retrieve all leaf nodes directly, bypassing the tree structure.
+        ROOT: Synthesize an answer from the root node summaries.
+
+    """
+
     SELECT_LEAF = "select_leaf"
     SELECT_LEAF_EMBEDDING = "select_leaf_embedding"
     ALL_LEAF = "all_leaf"
@@ -97,6 +108,25 @@ class TreeIndex(BaseIndex[IndexGraph]):
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> BaseRetriever:
+        """
+        Return a retriever for the tree index.
+
+        Args:
+            retriever_mode (Union[str, TreeRetrieverMode]): The tree traversal
+                strategy to use. Defaults to ``TreeRetrieverMode.SELECT_LEAF``.
+                Modes that traverse the tree (``SELECT_LEAF``,
+                ``SELECT_LEAF_EMBEDDING``, ``ROOT``) require the tree to have
+                been built during index construction.
+            embed_model (Optional[BaseEmbedding]): Embedding model used when
+                ``retriever_mode`` is ``SELECT_LEAF_EMBEDDING``. Defaults to
+                ``Settings.embed_model``.
+            **kwargs: Additional keyword arguments forwarded to the retriever
+                constructor.
+
+        Returns:
+            BaseRetriever: A tree retriever of the requested mode.
+
+        """
         # NOTE: lazy import
         from llama_index.core.indices.tree.all_leaf_retriever import (
             TreeAllLeafRetriever,
