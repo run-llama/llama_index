@@ -130,8 +130,8 @@ class TypeCreationMixin:
         )
 
     def _extract_ref_name(self: "McpToolSpec", ref_path: str) -> str:
-        """Extract reference name from $ref path."""
-        return ref_path.split("#/$defs/")[-1]
+        """Extract reference name from a $ref path ("#/$defs/X" or "#/definitions/X")."""
+        return ref_path.split("/")[-1]
 
 
 class FieldExtractionMixin:

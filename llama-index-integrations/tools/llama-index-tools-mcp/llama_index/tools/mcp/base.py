@@ -215,7 +215,9 @@ class McpToolSpec(
             A Pydantic model class.
 
         """
-        defs = schema.get("$defs", {})
+        # Draft 2020-12 uses "$defs"; draft-07 emitters (e.g. zod-to-json-schema,
+        # used by TypeScript MCP servers) still use "definitions".
+        defs = {**schema.get("definitions", {}), **schema.get("$defs", {})}
 
         # Process all type definitions
         for cls_name, cls_schema in defs.items():
