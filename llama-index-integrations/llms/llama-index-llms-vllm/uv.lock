@@ -1827,7 +1827,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-vllm"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
