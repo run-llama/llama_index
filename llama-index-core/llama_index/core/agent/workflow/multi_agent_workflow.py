@@ -517,6 +517,48 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         output.tool_calls.extend(cur_tool_calls)  # type: ignore[arg-type]
         await ctx.store.set("current_tool_calls", [])
 
+        # Apply structured output if configured at the workflow level
+        post_messages = await memory.aget()
+        if self.structured_output_fn is not None:
+            try:
+                if inspect.iscoroutinefunction(self.structured_output_fn):
+                    output.structured_response = await self.structured_output_fn(
+                        post_messages
+                    )
+                else:
+                    output.structured_response = cast(
+                        Dict[str, Any], self.structured_output_fn(post_messages)
+                    )
+                ctx.write_event_to_stream(
+                    AgentStreamStructuredOutput(output=output.structured_response)
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"There was a problem with the generation of the structured output: {e}",
+                    stacklevel=2,
+                )
+        if self.output_cls is not None:
+            try:
+                output_llm_input = [*post_messages]
+                if agent.system_prompt:
+                    output_llm_input = [
+                        ChatMessage(role="system", content=agent.system_prompt),
+                        *output_llm_input,
+                    ]
+                output.structured_response = await generate_structured_response(
+                    messages=output_llm_input,
+                    llm=agent.llm,
+                    output_cls=self.output_cls,
+                )
+                ctx.write_event_to_stream(
+                    AgentStreamStructuredOutput(output=output.structured_response)
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"There was a problem with the generation of the structured output: {e}",
+                    stacklevel=2,
+                )
+
         ctx.write_event_to_stream(output)
         return StopEvent(result=output)
 
