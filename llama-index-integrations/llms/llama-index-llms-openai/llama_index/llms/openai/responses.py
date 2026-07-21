@@ -24,6 +24,8 @@ from openai.types.responses import (
     ResponseFunctionWebSearch,
     ResponseComputerToolCall,
     ResponseReasoningItem,
+    ResponseReasoningSummaryTextDeltaEvent,
+    ResponseReasoningTextDeltaEvent,
     ResponseCodeInterpreterToolCall,
     ResponseImageGenCallPartialImageEvent,
     ResponseOutputItemDoneEvent,
@@ -575,6 +577,7 @@ class OpenAIResponses(FunctionCallingLLM):
         Optional[ResponseFunctionToolCall],
         Optional[str],
         str,
+        str,
     ]:
         """
         Process a ResponseStreamEvent and update the state accordingly.
@@ -591,9 +594,14 @@ class OpenAIResponses(FunctionCallingLLM):
 
         Returns:
             A tuple containing the updated state:
-            (content, tool_calls, built_in_tool_calls, additional_kwargs, current_tool_call, updated_previous_response_id, delta)
+            (blocks, built_in_tool_calls, additional_kwargs, current_tool_call, updated_previous_response_id, delta, thinking_delta)
+
+            ``delta`` carries answer text only; ``thinking_delta`` carries
+            reasoning/summary text only. The two never overlap, so consumers can
+            render thinking and the final answer on separate channels.
         """
         delta = ""
+        thinking_delta = ""
         updated_previous_response_id = previous_response_id
         # we use blocks instead of content, since now we also support images! :)
         blocks: List[ContentBlock] = []
@@ -607,6 +615,21 @@ class OpenAIResponses(FunctionCallingLLM):
             # New output item (message, tool call, etc.)
             if isinstance(event.item, ResponseFunctionToolCall):
                 current_tool_call = event.item
+        elif isinstance(
+            event,
+            (ResponseReasoningSummaryTextDeltaEvent, ResponseReasoningTextDeltaEvent),
+        ):
+            # Reasoning/summary text is being streamed. Surface it on the
+            # separate `thinking_delta` channel so it never mixes with the
+            # answer `delta`. The full reasoning block is still emitted at the
+            # `ResponseOutputItemDoneEvent` below for the final message.
+            thinking_delta = event.delta or ""
+            blocks.append(
+                ThinkingBlock(
+                    content=thinking_delta,
+                    additional_information=event.model_dump(exclude={"delta"}),
+                )
+            )
         elif isinstance(event, ResponseTextDeltaEvent):
             # Text content is being added
             delta = event.delta
@@ -685,6 +708,7 @@ class OpenAIResponses(FunctionCallingLLM):
             current_tool_call,
             updated_previous_response_id,
             delta,
+            thinking_delta,
         )
 
     @llm_retry_decorator
@@ -716,6 +740,7 @@ class OpenAIResponses(FunctionCallingLLM):
                     current_tool_call,
                     local_previous_response_id,
                     delta,
+                    thinking_delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
                     built_in_tool_calls=built_in_tool_calls,
@@ -733,6 +758,10 @@ class OpenAIResponses(FunctionCallingLLM):
 
                 if built_in_tool_calls:
                     additional_kwargs["built_in_tool_calls"] = built_in_tool_calls
+
+                # Set per-event so reasoning never bleeds into a later answer
+                # chunk (the kwargs dict is reused across yields).
+                additional_kwargs["thinking_delta"] = thinking_delta
 
                 # For any event, yield a ChatResponse with the current state
                 yield ChatResponse(
@@ -836,6 +865,7 @@ class OpenAIResponses(FunctionCallingLLM):
                     current_tool_call,
                     local_previous_response_id,
                     delta,
+                    thinking_delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
                     built_in_tool_calls=built_in_tool_calls,
@@ -853,6 +883,10 @@ class OpenAIResponses(FunctionCallingLLM):
 
                 if built_in_tool_calls:
                     additional_kwargs["built_in_tool_calls"] = built_in_tool_calls
+
+                # Set per-event so reasoning never bleeds into a later answer
+                # chunk (the kwargs dict is reused across yields).
+                additional_kwargs["thinking_delta"] = thinking_delta
 
                 # For any event, yield a ChatResponse with the current state
                 yield ChatResponse(
