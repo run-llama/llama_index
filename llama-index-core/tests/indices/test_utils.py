@@ -34,3 +34,16 @@ def test_default_parse_choice_select_answer_fn(answer):
     answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
     assert answer_nums == [2, 4]
     assert answer_relevances == [8, 6]
+
+
+def test_default_parse_choice_select_answer_fn_unparseable_relevance():
+    """A line with a valid doc number but an unparseable relevance is skipped
+    whole, so answer_nums and answer_relevances stay aligned."""
+    from llama_index.core.indices.utils import default_parse_choice_select_answer_fn
+
+    answer = "Doc: 1, Relevance: 9\nDoc: 2, Relevance: high\nDoc: 3, Relevance: 7"
+    answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
+
+    assert answer_nums == [1, 3]
+    assert answer_relevances == [9, 7]
+    assert len(answer_nums) == len(answer_relevances)
