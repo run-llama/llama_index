@@ -575,6 +575,30 @@ def test_structured_predict_uses_responses_parse(default_responses_llm):
     assert call_kwargs.kwargs["model"] == "gpt-4o-mini"
 
 
+def test_structured_llm_chat_preserves_responses_parse_raw(default_responses_llm):
+    """StructuredLLM.chat preserves the raw responses.parse object and usage."""
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    usage = {"input_tokens": 11, "output_tokens": 5, "total_tokens": 16}
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Alice", age=25)
+    mock_response.usage = usage
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    result = llm.as_structured_llm(Person).chat(
+        [ChatMessage(role=MessageRole.USER, content="Create a profile")]
+    )
+
+    assert result.raw is mock_response
+    assert result.additional_kwargs["usage"] is usage
+    assert isinstance(result.additional_kwargs["structured_output"], Person)
+    assert result.additional_kwargs["structured_output"].name == "Alice"
+
+
 def test_structured_predict_raises_on_none_output(default_responses_llm):
     """Test that structured_predict raises ValueError when output_parsed is None."""
 
@@ -625,6 +649,34 @@ async def test_astructured_predict_uses_responses_parse(default_responses_llm):
     assert call_kwargs.kwargs["text_format"] is Person
     assert call_kwargs.kwargs["tool_choice"] == "none"
     assert call_kwargs.kwargs["model"] == "gpt-4o-mini"
+
+
+@pytest.mark.asyncio
+async def test_structured_llm_achat_preserves_responses_parse_raw(
+    default_responses_llm,
+):
+    """StructuredLLM.achat preserves the raw async responses.parse object and usage."""
+    from unittest.mock import AsyncMock
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    usage = {"input_tokens": 13, "output_tokens": 6, "total_tokens": 19}
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Bob", age=30)
+    mock_response.usage = usage
+    llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+
+    result = await llm.as_structured_llm(Person).achat(
+        [ChatMessage(role=MessageRole.USER, content="Create a profile")]
+    )
+
+    assert result.raw is mock_response
+    assert result.additional_kwargs["usage"] is usage
+    assert isinstance(result.additional_kwargs["structured_output"], Person)
+    assert result.additional_kwargs["structured_output"].name == "Bob"
 
 
 @pytest.mark.asyncio
