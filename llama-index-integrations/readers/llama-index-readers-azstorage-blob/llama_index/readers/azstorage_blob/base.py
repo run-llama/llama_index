@@ -5,6 +5,7 @@ A loader that fetches a file or iterates through a directory from Azure Storage 
 
 """
 
+import hashlib
 import logging
 import math
 import os
@@ -38,6 +39,12 @@ FileMetadataCallable = Annotated[
     Callable[[str], Dict],
     WithJsonSchema({"type": "string"}),
 ]
+
+
+def _get_staging_file_name(blob_name: str) -> str:
+    """Create a deterministic, flat staging name for a blob."""
+    digest = hashlib.sha256(blob_name.encode("utf-8")).hexdigest()
+    return f"{digest}{Path(blob_name).suffix}"
 
 
 class SanitizedJSONEncoder(json.JSONEncoder):
@@ -136,19 +143,18 @@ class AzStorageBlobReader(
             )
 
         for obj in blobs_list:
-            sanitized_file_name = obj.name.replace("/", "-") if not self.blob else obj
-            download_file_path = os.path.join(temp_dir, sanitized_file_name)
-            logger.info(f"Start download of {sanitized_file_name}")
+            blob_name = obj.name if not self.blob else obj
+            staging_file_name = _get_staging_file_name(blob_name)
+            download_file_path = os.path.join(temp_dir, staging_file_name)
+            logger.info(f"Start download of {blob_name}")
             start_time = time.time()
             blob_client = container_client.get_blob_client(obj)
             stream = blob_client.download_blob()
             with open(file=download_file_path, mode="wb") as download_file:
                 stream.readinto(download_file)
-            blob_meta[sanitized_file_name] = blob_client.get_blob_properties()
+            blob_meta[staging_file_name] = blob_client.get_blob_properties()
             end_time = time.time()
-            logger.debug(
-                f"{sanitized_file_name} downloaded in {end_time - start_time} seconds."
-            )
+            logger.debug(f"{blob_name} downloaded in {end_time - start_time} seconds.")
 
         return blob_meta
 
@@ -239,13 +245,12 @@ class AzStorageBlobReader(
             blob_client = container_client.get_blob_client(resource_id)
             stream = blob_client.download_blob()
             with tempfile.TemporaryDirectory() as temp_dir:
-                download_file_path = os.path.join(
-                    temp_dir, resource_id.replace("/", "-")
-                )
+                staging_file_name = _get_staging_file_name(resource_id)
+                download_file_path = os.path.join(temp_dir, staging_file_name)
                 with open(file=download_file_path, mode="wb") as download_file:
                     stream.readinto(download_file)
                 return self._load_documents_with_metadata(
-                    {resource_id: blob_client.get_blob_properties()}, temp_dir
+                    {staging_file_name: blob_client.get_blob_properties()}, temp_dir
                 )
         except Exception as e:
             logger.error(
