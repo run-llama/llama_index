@@ -1960,7 +1960,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-chat-store-dynamodb"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },

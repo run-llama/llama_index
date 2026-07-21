@@ -111,7 +111,7 @@ class DynamoDBChatStore(BaseChatStore):
     _client: ServiceResource = PrivateAttr()
     _table: Any = PrivateAttr()
     _aclient: ServiceResource = PrivateAttr()
-    _atable: Any = PrivateAttr()
+    _atable: Any = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -227,7 +227,7 @@ class DynamoDBChatStore(BaseChatStore):
         self._table.put_item(Item=item)
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        self.init_async_table()
+        await self.init_async_table()
 
         item = {self.primary_key: key, "History": _messages_to_dict(messages)}
 
@@ -258,7 +258,7 @@ class DynamoDBChatStore(BaseChatStore):
         return [_dict_to_message(message) for message in message_history]
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
-        self.init_async_table()
+        await self.init_async_table()
         response = await self._atable.get_item(Key={self.primary_key: key})
 
         if response and "Item" in response:
@@ -293,7 +293,7 @@ class DynamoDBChatStore(BaseChatStore):
         self._table.put_item(Item=item)
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
-        self.init_async_table()
+        await self.init_async_table()
         current_messages = _messages_to_dict(await self.aget_messages(key))
         current_messages.append(_message_to_dict(message))
 
@@ -322,7 +322,7 @@ class DynamoDBChatStore(BaseChatStore):
         return messages_to_delete
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        self.init_async_table()
+        await self.init_async_table()
         messages_to_delete = await self.aget_messages(key)
         await self._atable.delete_item(Key={self.primary_key: key})
         return messages_to_delete
@@ -353,7 +353,7 @@ class DynamoDBChatStore(BaseChatStore):
             return None
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        self.init_async_table()
+        await self.init_async_table()
         current_messages = await self.aget_messages(key)
         try:
             message_to_delete = current_messages[idx]
@@ -381,7 +381,7 @@ class DynamoDBChatStore(BaseChatStore):
         return self.delete_message(key, -1)
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
-        return self.adelete_message(key, -1)
+        return await self.adelete_message(key, -1)
 
     def get_keys(self) -> List[str]:
         """
@@ -402,7 +402,7 @@ class DynamoDBChatStore(BaseChatStore):
         return keys
 
     async def aget_keys(self) -> List[str]:
-        self.init_async_table()
+        await self.init_async_table()
         response = await self._atable.scan(ProjectionExpression=self.primary_key)
         keys = [item[self.primary_key] for item in response["Items"]]
         while "LastEvaluatedKey" in response:
