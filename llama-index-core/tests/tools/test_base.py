@@ -2,7 +2,7 @@
 
 import contextvars
 import json
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -339,18 +339,10 @@ def test_fn_schema_docstring_descriptions():
         """
         return f"{a}-{b}"
 
-    metadata = ToolMetadata(name="sample_tool", description="A test tool.")
-    tool = FunctionTool.from_defaults(fn=sample_tool, tool_metadata=None)
-
-    fn_schema = tool.metadata.fn_schema
-    assert fn_schema is not None, "Expected fn_schema to be generated"
-
-    fields = fn_schema.model_fields
-    assert "a" in fields
-    assert "b" in fields
-
-    assert fields["a"].description == "an integer value"
-    assert fields["b"].description == "an optional string"
+    tool = FunctionTool.from_defaults(fn=sample_tool)
+    properties = tool.metadata.get_parameters_dict()["properties"]
+    assert properties["a"]["description"] == "an integer value"
+    assert properties["b"]["description"] == "an optional string"
 
 
 def test_docstring_param_extraction_javadoc_style():
@@ -365,10 +357,9 @@ def test_docstring_param_extraction_javadoc_style():
         return f"{foo}-{bar}"
 
     tool = FunctionTool.from_defaults(fn=tool_fn)
-    fields = tool.metadata.fn_schema.model_fields
-
-    assert fields["foo"].description == "value for foo"
-    assert fields["bar"].description == "value for bar"
+    properties = tool.metadata.get_parameters_dict()["properties"]
+    assert properties["foo"]["description"] == "value for foo"
+    assert properties["bar"]["description"] == "value for bar"
 
 
 def test_docstring_param_extraction_google_style():
@@ -387,10 +378,9 @@ def test_docstring_param_extraction_google_style():
         return f"{a}-{b}"
 
     tool = FunctionTool.from_defaults(fn=tool_fn)
-    fields = tool.metadata.fn_schema.model_fields
-
-    assert fields["a"].description == "integer input"
-    assert fields["b"].description == "string input"
+    properties = tool.metadata.get_parameters_dict()["properties"]
+    assert properties["a"]["description"] == "integer input"
+    assert properties["b"]["description"] == "string input"
 
 
 def test_docstring_ignores_unknown_params():
@@ -427,6 +417,39 @@ def test_docstring_with_self_and_context():
     assert "a" in fields
     assert fields["a"].description == "some input value"
     assert "self" not in fields
+
+
+def test_docstring_description_precedence():
+    field_default = Field(default="y")
+    annotated_field_default = Field(default="z")
+
+    def tool_fn(
+        ann: Annotated[str, "from-annotation"],
+        field_desc: str = Field(default="x", description="from-field"),
+        field_nodesc: str = field_default,
+        annotated_field: Annotated[str, "from-annotation"] = annotated_field_default,
+    ) -> str:
+        """
+        Tool.
+
+        Args:
+            ann (str): from-docstring
+            field_desc (str): from-docstring
+            field_nodesc (str): from-docstring
+            annotated_field (str): from-docstring
+
+        """
+        return ann
+
+    props = FunctionTool.from_defaults(fn=tool_fn).metadata.to_openai_tool()[
+        "function"
+    ]["parameters"]["properties"]
+    assert props["ann"]["description"] == "from-annotation"
+    assert props["field_desc"]["description"] == "from-field"
+    assert props["field_nodesc"]["description"] == "from-docstring"
+    assert props["annotated_field"]["description"] == "from-annotation"
+    assert field_default.description is None
+    assert annotated_field_default.description is None
 
 
 def test_function_tool_output_document_and_nodes():

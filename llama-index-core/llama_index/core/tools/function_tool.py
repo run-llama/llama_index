@@ -244,11 +244,8 @@ class FunctionTool(AsyncBaseTool):
                     fn_to_parse,
                     additional_fields=None,
                     ignore_fields=ignore_fields,
+                    param_descriptions=param_docs,
                 )
-                if fn_schema is not None and param_docs:
-                    for param_name, field in fn_schema.model_fields.items():
-                        if not field.description and param_name in param_docs:
-                            field.description = param_docs[param_name].strip()
 
             tool_metadata = ToolMetadata(
                 name=name,
