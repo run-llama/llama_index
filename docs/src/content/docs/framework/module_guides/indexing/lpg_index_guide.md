@@ -176,6 +176,7 @@ This extractor is extremely customizable, and has options to customize
 - various aspects of the schema (as seen above)
 - the `extract_prompt`
 - `strict=False` vs. `strict=True`, to allow triples outside of the schema or not
+- `raise_on_error=False` vs. `raise_on_error=True` to control whether LLM API errors are swallowed and logged (default), or if they crash the pipeline.
 - passing in your own custom `kg_schema_cls` if you are a pydantic pro and wanted to create you own pydantic class with custom validation.
 
 ### Retrieval and Querying

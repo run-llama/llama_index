@@ -98,6 +98,27 @@ def test_create_schema_from_function_with_field_annotated() -> None:
     assert instance.x == 5  # type: ignore
 
 
+def test_create_schema_skips_variadic_args_kwargs() -> None:
+    def fn(q: str, *args: int, **kwargs: int) -> None:
+        pass
+
+    schema = create_schema_from_function("TestSchema", fn).model_json_schema()
+
+    assert "args" not in schema["properties"]
+    assert "kwargs" not in schema["properties"]
+    assert schema["required"] == ["q"]
+
+
+def test_create_schema_keeps_real_param_named_kwargs() -> None:
+    def fn(kwargs: dict) -> None:
+        pass
+
+    schema = create_schema_from_function("TestSchema", fn).model_json_schema()
+
+    assert "kwargs" in schema["properties"]
+    assert schema["required"] == ["kwargs"]
+
+
 def test_create_schema_with_date_and_metadata():
     def sample_func(
         birth_date: Annotated[
