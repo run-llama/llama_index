@@ -1,5 +1,6 @@
 """OneDrive files reader."""
 
+import hashlib
 import logging
 import os
 import tempfile
@@ -265,9 +266,11 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         - str: The file path of the download file
 
         """
-        # Extract download URL and filename from the provided item.
+        # Extract download URL and derive a collision-resistant staging filename.
         file_download_url = item["@microsoft.graph.downloadUrl"]
-        file_name = item["name"]
+        file_suffix = Path(item["name"]).suffix
+        item_digest = hashlib.sha256(item["id"].encode("utf-8")).hexdigest()
+        file_name = f"{item_digest}{file_suffix}"
 
         # Download the file.
         file_data = requests.get(file_download_url)
