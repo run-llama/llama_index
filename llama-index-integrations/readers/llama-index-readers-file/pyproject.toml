@@ -76,6 +76,7 @@ dependencies = [
     "pandas>=2.0.0,<3",
     "llama-index-core>=0.13.0,<0.15",
     "defusedxml>=0.7.1",
+    "PyYAML>=6.0.1",
 ]
 
 [project.optional-dependencies]

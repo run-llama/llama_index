@@ -1,6 +1,71 @@
 from llama_index.readers.file.markdown.base import MarkdownReader
 
 
+def test_extract_frontmatter_default_disabled() -> None:
+    reader = MarkdownReader()
+    content = "---\nticker: AAPL\n---\n# Thesis\nRevenue improved."
+
+    parsed_content, metadata = reader.extract_frontmatter(content)
+
+    assert parsed_content == content
+    assert metadata == {}
+
+
+def test_load_data_extracts_frontmatter_metadata(tmp_path) -> None:
+    path = tmp_path / "note.md"
+    path.write_text(
+        "---\n"
+        "ticker: AAPL\n"
+        "date: 2026-06-12\n"
+        "rating_score: 4\n"
+        "source: earnings_call\n"
+        "tags:\n"
+        "  - guidance\n"
+        "---\n"
+        "# Thesis\n"
+        "Revenue guidance improved.\n",
+        encoding="utf-8",
+    )
+    reader = MarkdownReader(extract_frontmatter=True)
+
+    documents = reader.load_data(
+        str(path),
+        extra_info={"source": "directory", "file_path": str(path)},
+    )
+
+    assert len(documents) == 1
+    assert "Revenue guidance improved." in documents[0].text
+    assert "ticker: AAPL" not in documents[0].text
+    assert documents[0].metadata["ticker"] == "AAPL"
+    assert documents[0].metadata["date"] == "2026-06-12"
+    assert documents[0].metadata["rating_score"] == 4
+    assert documents[0].metadata["source"] == "directory"
+    assert documents[0].metadata["tags"] == ["guidance"]
+    assert documents[0].metadata["file_path"] == str(path)
+
+
+def test_load_data_keeps_frontmatter_as_content_by_default(tmp_path) -> None:
+    path = tmp_path / "note.md"
+    path.write_text("---\nticker: AAPL\n---\n# Thesis\n", encoding="utf-8")
+    reader = MarkdownReader()
+
+    documents = reader.load_data(str(path))
+
+    assert len(documents) == 2
+    assert "ticker: AAPL" in documents[0].text
+    assert "ticker" not in documents[0].metadata
+
+
+def test_extract_frontmatter_invalid_yaml_keeps_content() -> None:
+    reader = MarkdownReader(extract_frontmatter=True)
+    content = "---\nticker: [AAPL\n---\n# Thesis\nRevenue improved."
+
+    parsed_content, metadata = reader.extract_frontmatter(content)
+
+    assert parsed_content == content
+    assert metadata == {}
+
+
 def test_parse_markdown_starting_with_header() -> None:
     reader = MarkdownReader()
     markdown_text = "# ABC\nabc\n# DEF\ndef"

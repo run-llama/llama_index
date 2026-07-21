@@ -135,6 +135,14 @@ documents = SimpleDirectoryReader(
     "./data", file_extractor=file_extractor
 ).load_data()
 
+# Markdown Reader with YAML frontmatter metadata
+parser = MarkdownReader(extract_frontmatter=True)
+file_extractor = {".md": parser}
+documents = SimpleDirectoryReader(
+    "./data", file_extractor=file_extractor
+).load_data()
+print(documents[0].metadata)
+
 # Mbox Reader example
 parser = MboxReader()
 file_extractor = {".mbox": parser}
