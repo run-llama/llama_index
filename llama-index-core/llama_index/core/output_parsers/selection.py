@@ -38,34 +38,39 @@ class Answer(DataClassJsonMixin):
 class SelectionOutputParser(BaseOutputParser):
     REQUIRED_KEYS = frozenset(Answer.__annotations__)
 
-    def _filter_dict(self, json_dict: dict) -> dict:
-        """Filter recursively until a dictionary matches all REQUIRED_KEYS."""
-        output_dict = json_dict
-        for key, val in json_dict.items():
-            if key in self.REQUIRED_KEYS:
-                continue
-            elif isinstance(val, dict):
-                output_dict = self._filter_dict(val)
+    def _filter_dict(self, json_dict: dict) -> List[dict]:
+        """
+        Recursively collect every nested dict that matches all REQUIRED_KEYS.
+
+        A model may wrap the answers in an outer object (e.g. ``{"items": [...]}``), and
+        that list can hold more than one selection, so all matches are returned rather than
+        just the last one encountered.
+        """
+        if self.REQUIRED_KEYS.issubset(json_dict):
+            return [json_dict]
+
+        matches: List[dict] = []
+        for val in json_dict.values():
+            if isinstance(val, dict):
+                matches.extend(self._filter_dict(val))
             elif isinstance(val, list):
                 for item in val:
                     if isinstance(item, dict):
-                        output_dict = self._filter_dict(item)
+                        matches.extend(self._filter_dict(item))
 
-        return output_dict
+        return matches
 
     def _format_output(self, output: List[dict]) -> List[dict]:
         output_json = []
         for json_dict in output:
-            valid = True
-            for key in self.REQUIRED_KEYS:
-                if key not in json_dict:
-                    valid = False
-                    break
+            if self.REQUIRED_KEYS.issubset(json_dict):
+                output_json.append(json_dict)
+                continue
 
-            if not valid:
-                json_dict = self._filter_dict(json_dict)
-
-            output_json.append(json_dict)
+            # Dig the selections out of a wrapper object; keep the original dict when
+            # nothing matches so downstream parsing still surfaces the error.
+            matches = self._filter_dict(json_dict)
+            output_json.extend(matches or [json_dict])
 
         return output_json
 
