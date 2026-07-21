@@ -27,6 +27,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
+    O1_MODELS,
     from_openai_completion_logprobs,
     from_openai_message_dicts,
     from_openai_messages,
@@ -446,10 +447,19 @@ def test_is_json_schema_supported_unsupported_models() -> None:
         )
 
 
-def test_gpt_5_chat_latest_model_support() -> None:
-    """Test that gpt-5-chat-latest is properly supported."""
-    model_name = "gpt-5-chat-latest"
+GPT_5_CHAT_VARIANTS = [
+    "gpt-5-chat",
+    "gpt-5-chat-latest",
+    "gpt-5.1-chat-latest",
+    "gpt-5.2-chat-latest",
+    "gpt-5.3-chat-latest",
+    "gpt-5.4-chat-latest",
+]
 
+
+@pytest.mark.parametrize("model_name", GPT_5_CHAT_VARIANTS)
+def test_gpt_5_chat_variants_model_support(model_name: str) -> None:
+    """Test that the GPT-5 chat variants are properly supported as chat models."""
     # Test that model is in available models
     assert model_name in ALL_AVAILABLE_MODELS, (
         f"{model_name} should be in ALL_AVAILABLE_MODELS"
@@ -473,6 +483,25 @@ def test_gpt_5_chat_latest_model_support() -> None:
 
     # Test that model is in CHAT_MODELS
     assert model_name in CHAT_MODELS, f"{model_name} should be in CHAT_MODELS"
+
+    # Chat variants are not reasoning models: they must not be in O1_MODELS,
+    # which forces temperature to 1.0 (regression guard for #20154 / #20156)
+    assert model_name not in O1_MODELS, f"{model_name} should not be in O1_MODELS"
+
+
+@pytest.mark.parametrize("model_name", GPT_5_CHAT_VARIANTS)
+def test_gpt_5_chat_variants_respect_temperature(model_name: str) -> None:
+    """GPT-5 chat variants accept a custom temperature (#20154)."""
+    llm = OpenAI(model=model_name, temperature=0.2, api_key="fake")
+    assert llm.temperature == 0.2, (
+        f"{model_name} should respect a custom temperature, got {llm.temperature}"
+    )
+
+
+def test_reasoning_models_force_temperature() -> None:
+    """True reasoning models still force temperature to 1.0."""
+    llm = OpenAI(model="o3", temperature=0.2, api_key="fake")
+    assert llm.temperature == 1.0
 
 
 def test_is_chatcomp_api_supported() -> None:
