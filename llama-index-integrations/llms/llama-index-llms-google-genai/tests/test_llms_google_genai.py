@@ -28,6 +28,7 @@ from llama_index.llms.google_genai.utils import (
     create_file_part,
     prepare_chat_params,
     chat_from_gemini_response,
+    chat_message_to_gemini,
 )
 
 
@@ -2096,3 +2097,47 @@ async def test_create_file_part_no_display_name_by_default():
     call_kwargs = mock_client.aio.files.upload.call_args
     upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
     assert upload_config.display_name is None
+
+
+@pytest.mark.asyncio
+async def test_chat_message_to_gemini_empty_text_block_not_duplicated() -> None:
+    """An empty TextBlock must not re-emit the previous block's Part.
+
+    `part` was initialized once before the block loop, so a block that produces
+    no Part (empty TextBlock / empty ThinkingBlock) left the previous Part in
+    place and the unconditional append duplicated it.
+    """
+    message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[TextBlock(text="hello"), TextBlock(text="")],
+    )
+
+    content, _ = await chat_message_to_gemini(message)
+
+    assert [part.text for part in content.parts] == ["hello"]
+
+
+@pytest.mark.asyncio
+async def test_chat_message_to_gemini_empty_block_between_content_not_duplicated() -> (
+    None
+):
+    """A reasoning + empty-text + tool-call turn (the exact shape streaming
+    providers emit for a reasoning+tool-call response) must yield one Part per
+    non-empty block, not a duplicated thought.
+    """
+    message = ChatMessage(
+        role=MessageRole.MODEL,
+        blocks=[
+            ThinkingBlock(content="let me think"),
+            TextBlock(text=""),
+            ToolCallBlock(tool_name="get_weather", tool_kwargs={"city": "SF"}),
+        ],
+    )
+
+    content, _ = await chat_message_to_gemini(message)
+
+    assert len(content.parts) == 2
+    assert content.parts[0].text == "let me think"
+    assert content.parts[0].thought is True
+    assert content.parts[1].function_call is not None
+    assert content.parts[1].function_call.name == "get_weather"
