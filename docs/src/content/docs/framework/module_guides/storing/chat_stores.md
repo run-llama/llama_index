@@ -247,6 +247,37 @@ chat_memory = ChatMemoryBuffer.from_defaults(
 )
 ```
 
+## CockroachDBChatStore
+
+Using `CockroachDBChatStore`, you can store your chat history in CockroachDB. Each session's messages are stored as a single `JSONB` column holding a JSON array (CockroachDB does not yet support `ARRAY(JSON)` as a column type), and atomic appends use the JSONB `||` operator.
+
+```bash
+pip install llama-index-cockroachdb
+```
+
+```python
+from llama_index.storage.chat_store.cockroachdb import CockroachDBChatStore
+from llama_index.core.memory import ChatMemoryBuffer
+
+chat_store = CockroachDBChatStore.from_params(
+    host="localhost",
+    port=26257,
+    database="defaultdb",
+    user="root",
+    password="",
+    sslmode="disable",  # local insecure cluster only
+    table_name="chat_history",
+)
+
+chat_memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+```
+
+A more detailed guide can be found [here](/python/examples/chat_store/cockroachdbchatstoredemo).
+
 ## TablestoreChatStore
 
 Using `TablestoreChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
