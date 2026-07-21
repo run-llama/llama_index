@@ -296,7 +296,7 @@ class Maritalk(LLM):
                 content = ""
                 for line in response.iter_lines():
                     if line.startswith(b"data: "):
-                        response_data = line.replace(b"data: ", b"").decode("utf-8")
+                        response_data = line.removeprefix(b"data: ").decode("utf-8")
                         if response_data:
                             parsed_data = json.loads(response_data)
                             if "text" in parsed_data:
@@ -357,7 +357,7 @@ class Maritalk(LLM):
                             content = ""
                             async for line in response.aiter_lines():
                                 if line.startswith("data: "):
-                                    response_data = line.replace("data: ", "")
+                                    response_data = line.removeprefix("data: ")
                                     if response_data:
                                         parsed_data = json.loads(response_data)
                                         if "text" in parsed_data:
