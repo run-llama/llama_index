@@ -202,3 +202,47 @@ def test_invoke_tool_calls() -> None:
         "a": 3,
         "b": 4,
     }
+
+
+def test_get_cohere_chat_request_documents_in_additional_kwargs():
+    """
+    A message carrying additional_kwargs['documents'] must not crash.
+
+    Regression: get_cohere_chat_request read the local `documents` in its guard
+    before binding it with `messages, documents = remove_documents_from_messages(...)`,
+    so a truthy additional_kwargs['documents'] raised UnboundLocalError.
+    """
+    with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
+        llm = Cohere(api_key="dummy", temperature=0.3)
+
+    messages = [
+        ChatMessage(
+            content="What color is the sky?",
+            role=MessageRole.USER,
+            additional_kwargs={"documents": [{"text": "The sky is blue."}]},
+        ),
+    ]
+
+    request = llm.get_cohere_chat_request(messages)
+    assert request["message"] == "What color is the sky?"
+
+
+def test_get_cohere_chat_request_documents_from_both_sources_raises_value_error():
+    """
+    Documents from both a DocumentMessage and additional_kwargs['documents'] must
+    raise the guard's intended ValueError, not UnboundLocalError.
+    """
+    with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
+        llm = Cohere(api_key="dummy", temperature=0.3)
+
+    messages = [
+        DocumentMessage(content="The sky is blue."),
+        ChatMessage(
+            content="What color is the sky?",
+            role=MessageRole.USER,
+            additional_kwargs={"documents": [{"text": "The sky is blue."}]},
+        ),
+    ]
+
+    with pytest.raises(ValueError, match="both as a keyword argument"):
+        llm.get_cohere_chat_request(messages)

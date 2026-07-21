@@ -229,13 +229,13 @@ class Cohere(FunctionCallingLLM):
         """
         additional_kwargs = messages[-1].additional_kwargs
 
+        messages, documents = remove_documents_from_messages(messages)
+
         # cohere SDK will fail loudly if both connectors and documents are provided
         if additional_kwargs.get("documents", []) and documents and len(documents) > 0:
             raise ValueError(
                 "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."
             )
-
-        messages, documents = remove_documents_from_messages(messages)
 
         tool_results: Optional[List[Dict[str, Any]]] = (
             _messages_to_cohere_tool_results_curr_chat_turn(messages)
