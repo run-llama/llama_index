@@ -66,3 +66,48 @@ def test_construction() -> None:
     index.insert_nodes(kg_extractor([]))
 
     assert index._insert_nodes_to_vector_index.call_count == 0
+
+class MockMultiDocDuplicateEntityExtractor(TransformComponent):
+    """Extract the same entity id from multiple source nodes in one batch."""
+
+    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        out: List[BaseNode] = []
+        for i, node in enumerate(nodes):
+            out.append(
+                TextNode(
+                    id_=f"src-{i}",
+                    text=node.get_content() if hasattr(node, "get_content") else str(node),
+                    metadata={
+                        KG_NODES_KEY: [EntityNode(name="Logan", label="PERSON")],
+                        KG_RELATIONS_KEY: [],
+                    },
+                )
+            )
+        return out
+
+
+def test_within_batch_kg_entity_dedup() -> None:
+    """Same entity extracted from multiple sources inserts once (#22394)."""
+    graph_store = SimplePropertyGraphStore()
+    vector_store = SimpleVectorStore()
+    kg_extractor = MockMultiDocDuplicateEntityExtractor()
+
+    index = PropertyGraphIndex.from_documents(
+        [
+            Document(text="Logan lives in Toronto."),
+            Document(text="Logan works in Canada."),
+        ],
+        property_graph_store=graph_store,
+        vector_store=vector_store,
+        llm=MockLLM(),
+        embed_model=MockEmbedding(embed_dim=256),
+        kg_extractors=[kg_extractor],
+    )
+
+    kg_nodes = graph_store.get(ids=["Logan"])
+    assert len(kg_nodes) == 1
+
+    # vector store should also hold a single Logan entry (not two embeddings)
+    embeddings = vector_store.get("Logan")
+    assert len(embeddings) == 256
+
