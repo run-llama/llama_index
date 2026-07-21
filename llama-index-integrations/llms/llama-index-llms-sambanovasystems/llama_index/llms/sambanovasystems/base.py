@@ -551,6 +551,10 @@ class SambaNovaCloud(LLM):
                     ),
                 }
             else:
+                # A usage-only / final chunk has choices == [] and carries no new
+                # text, so its delta must be empty; otherwise the previous chunk's
+                # content_delta is re-emitted and "".join(deltas) != message.content.
+                content_delta = ""
                 additional_kwargs = {
                     "id": partial_response["id"],
                     "finish_reason": finish_reason,
