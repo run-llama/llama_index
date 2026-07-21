@@ -372,35 +372,39 @@ class Perplexity(LLM):
         }
 
         @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
-        async def make_request():
-            async with aiohttp.ClientSession() as session:
-                response = await session.post(
-                    url, json=payload, headers=self.headers, timeout=self.timeout
-                )
-                response.raise_for_status()
-                return response
+        async def make_request(session: aiohttp.ClientSession):
+            response = await session.post(
+                url, json=payload, headers=self.headers, timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response
 
         async def gen() -> CompletionResponseAsyncGen:
-            response = await make_request()
             text = ""
 
-            async for line in response.content:
-                line_text = line.decode("utf-8").strip()
-                if line_text.startswith("data:"):
-                    line_text = line_text[5:]
-                    if line_text.strip() == "[DONE]":
-                        break
-                    try:
-                        data = json.loads(line_text)
-                        if "choices" in data and data["choices"]:
-                            delta = data["choices"][0]["delta"].get("content", "")
-                            if delta:
-                                text += delta
-                                yield CompletionResponse(
-                                    delta=delta, text=text, raw=data
-                                )
-                    except json.JSONDecodeError:
-                        continue  # Skip malformed JSON
+            # Keep the session open while the streamed body is consumed. Returning
+            # the response out of the ``async with`` closed the session before
+            # ``response.content`` was read, which raised at read time. Mirrors
+            # ``_acomplete``, which reads the body inside the client block.
+            async with aiohttp.ClientSession() as session:
+                response = await make_request(session)
+                async for line in response.content:
+                    line_text = line.decode("utf-8").strip()
+                    if line_text.startswith("data:"):
+                        line_text = line_text[5:]
+                        if line_text.strip() == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(line_text)
+                            if "choices" in data and data["choices"]:
+                                delta = data["choices"][0]["delta"].get("content", "")
+                                if delta:
+                                    text += delta
+                                    yield CompletionResponse(
+                                        delta=delta, text=text, raw=data
+                                    )
+                        except json.JSONDecodeError:
+                            continue  # Skip malformed JSON
 
         return gen()
 
@@ -478,37 +482,43 @@ class Perplexity(LLM):
         }
 
         @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
-        async def make_request():
-            async with aiohttp.ClientSession() as session:
-                response = await session.post(
-                    url, json=payload, headers=self.headers, timeout=self.timeout
-                )
-                response.raise_for_status()
-                return response
+        async def make_request(session: aiohttp.ClientSession):
+            response = await session.post(
+                url, json=payload, headers=self.headers, timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response
 
         async def gen():
-            response = await make_request()
             text = ""
 
-            async for line in response.content:
-                line_text = line.decode("utf-8").strip()
-                if line_text.startswith("data:"):
-                    line_text = line_text[5:]
-                    if line_text.strip() == "[DONE]":
-                        break
-                    try:
-                        data = json.loads(line_text)
-                        if "choices" in data and data["choices"]:
-                            delta = data["choices"][0]["delta"].get("content", "")
-                            if delta:
-                                text += delta
-                                yield ChatResponse(
-                                    message=ChatMessage(role="assistant", content=text),
-                                    delta=delta,
-                                    raw=data,
-                                )
-                    except json.JSONDecodeError:
-                        continue  # Skip malformed JSON
+            # Keep the session open while the streamed body is consumed. Returning
+            # the response out of the ``async with`` closed the session before
+            # ``response.content`` was read, which raised at read time. Mirrors
+            # ``_achat``, which reads the body inside the client block.
+            async with aiohttp.ClientSession() as session:
+                response = await make_request(session)
+                async for line in response.content:
+                    line_text = line.decode("utf-8").strip()
+                    if line_text.startswith("data:"):
+                        line_text = line_text[5:]
+                        if line_text.strip() == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(line_text)
+                            if "choices" in data and data["choices"]:
+                                delta = data["choices"][0]["delta"].get("content", "")
+                                if delta:
+                                    text += delta
+                                    yield ChatResponse(
+                                        message=ChatMessage(
+                                            role="assistant", content=text
+                                        ),
+                                        delta=delta,
+                                        raw=data,
+                                    )
+                        except json.JSONDecodeError:
+                            continue  # Skip malformed JSON
 
         return gen()
 
