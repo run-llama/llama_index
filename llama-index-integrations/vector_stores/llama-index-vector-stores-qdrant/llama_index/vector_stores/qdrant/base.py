@@ -1057,6 +1057,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Hybrid search is not enabled. Please build the query with "
                 "`enable_hybrid=True` in the constructor."
             )
+        elif query.mode == VectorStoreQueryMode.SPARSE and not self.enable_hybrid:
+            raise ValueError(
+                "Sparse search requires hybrid mode to be enabled. "
+                "Please build the query with `enable_hybrid=True` in the constructor."
+            )
+        elif query.mode == VectorStoreQueryMode.SPARSE and query.query_str is None:
+            raise ValueError(
+                "Sparse search requires a query string. "
+                "Please provide `query_str` in the VectorStoreQuery."
+            )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE and self._sparse_query_fn is None
+        ):
+            raise ValueError(
+                "Sparse search requires a sparse query function. "
+                "Please provide `sparse_query_fn` in the constructor or via "
+                "`set_query_functions`."
+            )
         elif (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
@@ -1214,6 +1232,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "Hybrid search is not enabled. Please build the query with "
                 "`enable_hybrid=True` in the constructor."
+            )
+        elif query.mode == VectorStoreQueryMode.SPARSE and not self.enable_hybrid:
+            raise ValueError(
+                "Sparse search requires hybrid mode to be enabled. "
+                "Please build the query with `enable_hybrid=True` in the constructor."
+            )
+        elif query.mode == VectorStoreQueryMode.SPARSE and query.query_str is None:
+            raise ValueError(
+                "Sparse search requires a query string. "
+                "Please provide `query_str` in the VectorStoreQuery."
+            )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE and self._sparse_query_fn is None
+        ):
+            raise ValueError(
+                "Sparse search requires a sparse query function. "
+                "Please provide `sparse_query_fn` in the constructor or via "
+                "`set_query_functions`."
             )
         elif (
             query.mode == VectorStoreQueryMode.HYBRID
