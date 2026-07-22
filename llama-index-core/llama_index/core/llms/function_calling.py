@@ -281,6 +281,7 @@ class FunctionCallingLLM(LLM):
         from llama_index.core.tools.calling import (
             acall_tool_with_selection,
         )
+        from llama_index.core.tools.types import ToolOutput
 
         if not self.metadata.is_function_calling_model:
             return await super().apredict_and_call(
@@ -307,7 +308,36 @@ class FunctionCallingLLM(LLM):
             acall_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
         ]
-        tool_outputs = await asyncio.gather(*tool_tasks)
+        # `acall_tool_with_selection` already wraps tool-execution errors into
+        # an errored `ToolOutput`, but it looks up the tool by name with a
+        # plain dict index before that try/except, so a hallucinated or
+        # otherwise unknown tool name still raises `KeyError` straight out of
+        # the task. With the default `asyncio.gather(*tool_tasks)`, that
+        # exception is propagated to the caller immediately while the other
+        # in-flight tool calls are left running unawaited and uncancelled --
+        # under load, those orphaned tasks accumulate open sockets/file
+        # descriptors. `return_exceptions=True` waits for every task to
+        # finish (success or failure) before this line returns, so nothing is
+        # left running in the background, and we convert any exception into
+        # the same errored `ToolOutput` shape callers already handle below.
+        raw_results = await asyncio.gather(*tool_tasks, return_exceptions=True)
+        tool_outputs = []
+        for tool_call, result in zip(tool_calls, raw_results):
+            if isinstance(result, BaseException):
+                tool_outputs.append(
+                    ToolOutput(
+                        content=f"Encountered error: {result}",
+                        tool_name=tool_call.tool_name,
+                        raw_input=tool_call.tool_kwargs,
+                        raw_output=str(result),
+                        is_error=True,
+                        exception=(
+                            result if isinstance(result, Exception) else None
+                        ),
+                    )
+                )
+            else:
+                tool_outputs.append(result)
         tool_outputs_with_error = [
             tool_output for tool_output in tool_outputs if tool_output.is_error
         ]
