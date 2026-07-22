@@ -19,6 +19,7 @@ from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.utils import async_embed_nodes, embed_nodes
 from llama_index.core.schema import (
     BaseNode,
+    Document,
     ImageNode,
     IndexNode,
     MetadataMode,
@@ -28,7 +29,12 @@ from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import iter_batch
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    FilterCondition,
+    MetadataFilter,
+    MetadataFilters,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -410,10 +416,183 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     def _delete_from_index_struct(self, ref_doc_id: str) -> None:
         # delete from index_struct only if needed
         if not self._vector_store.stores_text or self._store_nodes_override:
-            ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
-            if ref_doc_info is not None:
-                for node_id in ref_doc_info.node_ids:
-                    self._index_struct.delete(node_id)
+            for node_id in self._get_node_ids_in_index(ref_doc_id):
+                self._index_struct.delete(node_id)
+
+    def _get_node_ids_in_index(self, ref_doc_id: str) -> List[str]:
+        """Get node ids for a ref doc that are present in this index struct."""
+        node_ids: List[str] = []
+        for vector_id, node_id in list(self._index_struct.nodes_dict.items()):
+            node = self._docstore.get_node(node_id, raise_error=False)
+            if node is not None and node.ref_doc_id == ref_doc_id:
+                node_ids.append(vector_id)
+        return node_ids
+
+    def _get_docstore_node_ids_in_index(self, ref_doc_id: str) -> List[str]:
+        """Get docstore node ids for a ref doc in this index struct."""
+        node_ids: List[str] = []
+        for node_id in list(self._index_struct.nodes_dict.values()):
+            node = self._docstore.get_node(node_id, raise_error=False)
+            if node is not None and node.ref_doc_id == ref_doc_id:
+                node_ids.append(node_id)
+        return node_ids
+
+    async def _aget_node_ids_in_index(self, ref_doc_id: str) -> List[str]:
+        """Get node ids for a ref doc that are present in this index struct."""
+        node_ids: List[str] = []
+        for vector_id, node_id in list(self._index_struct.nodes_dict.items()):
+            node = await self._docstore.aget_node(node_id, raise_error=False)
+            if node is not None and node.ref_doc_id == ref_doc_id:
+                node_ids.append(vector_id)
+        return node_ids
+
+    async def _aget_docstore_node_ids_in_index(self, ref_doc_id: str) -> List[str]:
+        """Get docstore node ids for a ref doc in this index struct."""
+        node_ids: List[str] = []
+        for node_id in list(self._index_struct.nodes_dict.values()):
+            node = await self._docstore.aget_node(node_id, raise_error=False)
+            if node is not None and node.ref_doc_id == ref_doc_id:
+                node_ids.append(node_id)
+        return node_ids
+
+    def _has_index_node_changed(self, document: Document) -> bool:
+        """Check this index's stored nodes rather than only the shared docstore."""
+        nodes = self._get_nodes_for_ref_doc_id(document.id_)
+        if nodes is None:
+            return True
+
+        for node in nodes:
+            if node.source_node is not None:
+                return node.source_node.hash != document.hash
+        return False
+
+    async def _ahas_index_node_changed(self, document: Document) -> bool:
+        """Check this index's stored nodes rather than only the shared docstore."""
+        nodes = await self._aget_nodes_for_ref_doc_id(document.id_)
+        if nodes is None:
+            return True
+
+        for node in nodes:
+            if node.source_node is not None:
+                return node.source_node.hash != document.hash
+        return False
+
+    def _get_ref_doc_filter(self, ref_doc_id: str) -> MetadataFilters:
+        return MetadataFilters(
+            filters=[
+                MetadataFilter(key="doc_id", value=ref_doc_id),
+                MetadataFilter(key="document_id", value=ref_doc_id),
+                MetadataFilter(key="ref_doc_id", value=ref_doc_id),
+            ],
+            condition=FilterCondition.OR,
+        )
+
+    def _get_nodes_for_ref_doc_id(self, ref_doc_id: str) -> Optional[List[BaseNode]]:
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            nodes: List[BaseNode] = []
+            for node_id in self._index_struct.nodes_dict.values():
+                node = self._docstore.get_node(node_id, raise_error=False)
+                if node is not None and node.ref_doc_id == ref_doc_id:
+                    nodes.append(node)
+            return nodes
+
+        try:
+            nodes = self._vector_store.get_nodes(
+                filters=self._get_ref_doc_filter(ref_doc_id)
+            )
+            return [node for node in nodes if node.ref_doc_id == ref_doc_id]
+        except NotImplementedError:
+            return None
+
+    async def _aget_nodes_for_ref_doc_id(
+        self, ref_doc_id: str
+    ) -> Optional[List[BaseNode]]:
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            nodes: List[BaseNode] = []
+            for node_id in self._index_struct.nodes_dict.values():
+                node = await self._docstore.aget_node(node_id, raise_error=False)
+                if node is not None and node.ref_doc_id == ref_doc_id:
+                    nodes.append(node)
+            return nodes
+
+        try:
+            nodes = await self._vector_store.aget_nodes(
+                filters=self._get_ref_doc_filter(ref_doc_id)
+            )
+            return [node for node in nodes if node.ref_doc_id == ref_doc_id]
+        except NotImplementedError:
+            return None
+
+    def _refresh_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
+        """Update this vector index without deleting shared docstore nodes."""
+        old_node_ids = self._get_docstore_node_ids_in_index(document.id_)
+        self.delete_ref_doc(
+            document.id_,
+            delete_from_docstore=False,
+            **update_kwargs.get("delete_kwargs", {}),
+        )
+        for node_id in old_node_ids:
+            self._docstore.delete_document(node_id, raise_error=False)
+        self.insert(document, **update_kwargs.get("insert_kwargs", {}))
+
+    async def _arefresh_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
+        """Update this vector index without deleting shared docstore nodes."""
+        old_node_ids = await self._aget_docstore_node_ids_in_index(document.id_)
+        await self.adelete_ref_doc(
+            document.id_,
+            delete_from_docstore=False,
+            **update_kwargs.get("delete_kwargs", {}),
+        )
+        for node_id in old_node_ids:
+            await self._docstore.adelete_document(node_id, raise_error=False)
+        await self.ainsert(document, **update_kwargs.get("insert_kwargs", {}))
+
+    def refresh_ref_docs(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """Refresh documents in this vector index."""
+        with self._callback_manager.as_trace("refresh_ref_docs"):
+            refreshed_documents = [False] * len(documents)
+            for i, document in enumerate(documents):
+                existing_doc_hash = self._docstore.get_document_hash(document.id_)
+                if existing_doc_hash is None:
+                    self.insert(document, **update_kwargs.get("insert_kwargs", {}))
+                    refreshed_documents[i] = True
+                elif existing_doc_hash != document.hash or self._has_index_node_changed(
+                    document
+                ):
+                    self._refresh_ref_doc(
+                        document, **update_kwargs.get("update_kwargs", {})
+                    )
+                    refreshed_documents[i] = True
+
+            return refreshed_documents
+
+    async def arefresh_ref_docs(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """Asynchronously refresh documents in this vector index."""
+        with self._callback_manager.as_trace("arefresh_ref_docs"):
+            refreshed_documents = [False] * len(documents)
+            for i, document in enumerate(documents):
+                existing_doc_hash = await self._docstore.aget_document_hash(
+                    document.id_
+                )
+                if existing_doc_hash is None:
+                    await self.ainsert(
+                        document, **update_kwargs.get("insert_kwargs", {})
+                    )
+                    refreshed_documents[i] = True
+                elif (
+                    existing_doc_hash != document.hash
+                    or await self._ahas_index_node_changed(document)
+                ):
+                    await self._arefresh_ref_doc(
+                        document, **update_kwargs.get("update_kwargs", {})
+                    )
+                    refreshed_documents[i] = True
+
+            return refreshed_documents
 
     def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
@@ -433,10 +612,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     async def _adelete_from_index_struct(self, ref_doc_id: str) -> None:
         """Delete from index_struct only if needed."""
         if not self._vector_store.stores_text or self._store_nodes_override:
-            ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
-            if ref_doc_info is not None:
-                for node_id in ref_doc_info.node_ids:
-                    self._index_struct.delete(node_id)
+            for node_id in await self._aget_node_ids_in_index(ref_doc_id):
+                self._index_struct.delete(node_id)
 
     async def _adelete_from_docstore(self, ref_doc_id: str) -> None:
         """Delete from docstore only if needed."""

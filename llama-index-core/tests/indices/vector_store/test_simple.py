@@ -1,14 +1,17 @@
 """Test vector store indexes."""
 
 import pickle
-from typing import Any, List, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
-from llama_index.core.schema import Document
+from llama_index.core.schema import BaseNode, Document
+from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
+from llama_index.core.vector_stores.types import MetadataFilters
 
 
 def test_build_simple(
@@ -150,6 +153,172 @@ def test_simple_delete_ref_node_from_docstore(
     docstore = index.docstore.get_ref_doc_info("test_id_1")
 
     assert docstore is None
+
+
+def test_refresh_shared_docstore_updates_each_vector_index(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """Refresh each vector index even when another index updated the docstore."""
+    docstore = SimpleDocumentStore()
+    vector_store_1 = SimpleVectorStore()
+    vector_store_2 = SimpleVectorStore()
+    document = Document(text="Hello world.", id_="doc_id")
+
+    index_1 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_1
+        ),
+        embed_model=mock_embed_model,
+    )
+    index_2 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_2
+        ),
+        embed_model=mock_embed_model,
+    )
+
+    refreshed_document = Document(text="This is a test.", id_="doc_id")
+
+    assert index_1.refresh_ref_docs([refreshed_document]) == [True]
+    assert index_2.refresh_ref_docs([refreshed_document]) == [True]
+
+    assert list(vector_store_1.data.embedding_dict.values()) == [[0, 1, 0, 0, 0]]
+    assert list(vector_store_2.data.embedding_dict.values()) == [[0, 1, 0, 0, 0]]
+    assert len(index_1.index_struct.nodes_dict) == 1
+    assert len(index_2.index_struct.nodes_dict) == 1
+
+
+def test_delete_shared_docstore_removes_only_nodes_for_current_vector_index(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """Deleting one vector index should not remove another index's nodes."""
+    docstore = SimpleDocumentStore()
+    vector_store_1 = SimpleVectorStore()
+    vector_store_2 = SimpleVectorStore()
+    document = Document(text="Hello world.", id_="doc_id")
+
+    index_1 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_1
+        ),
+        embed_model=mock_embed_model,
+    )
+    index_2 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_2
+        ),
+        embed_model=mock_embed_model,
+    )
+
+    index_1.delete_ref_doc("doc_id")
+
+    assert len(index_1.index_struct.nodes_dict) == 0
+    assert len(vector_store_1.data.embedding_dict) == 0
+    assert len(index_2.index_struct.nodes_dict) == 1
+    assert len(vector_store_2.data.embedding_dict) == 1
+
+
+class TextStoringVectorStore(SimpleVectorStore):
+    stores_text: bool = True
+    _nodes: Dict[str, BaseNode] = PrivateAttr(default_factory=dict)
+
+    def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> List[str]:
+        for node in nodes:
+            self._nodes[node.node_id] = node
+        return super().add(nodes, **add_kwargs)
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        del filters
+        nodes = list(self._nodes.values())
+        if node_ids is not None:
+            node_id_set = set(node_ids)
+            nodes = [node for node in nodes if node.node_id in node_id_set]
+        return nodes
+
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        super().delete(ref_doc_id, **delete_kwargs)
+        self._nodes = {
+            node_id: node
+            for node_id, node in self._nodes.items()
+            if node.ref_doc_id != ref_doc_id
+        }
+
+
+def test_refresh_shared_docstore_updates_each_text_storing_vector_index(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    docstore = SimpleDocumentStore()
+    vector_store_1 = TextStoringVectorStore()
+    vector_store_2 = TextStoringVectorStore()
+    document = Document(text="Hello world.", id_="doc_id")
+
+    index_1 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_1
+        ),
+        embed_model=mock_embed_model,
+    )
+    index_2 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_2
+        ),
+        embed_model=mock_embed_model,
+    )
+
+    refreshed_document = Document(text="This is a test.", id_="doc_id")
+
+    assert index_1.refresh_ref_docs([refreshed_document]) == [True]
+    assert index_2.refresh_ref_docs([refreshed_document]) == [True]
+
+    assert list(vector_store_1.data.embedding_dict.values()) == [[0, 1, 0, 0, 0]]
+    assert list(vector_store_2.data.embedding_dict.values()) == [[0, 1, 0, 0, 0]]
+    assert len(index_1.index_struct.nodes_dict) == 0
+    assert len(index_2.index_struct.nodes_dict) == 0
+
+
+def test_refresh_shared_docstore_updates_text_storing_index_without_get_nodes(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    class TextStoreWithoutGetNodes(SimpleVectorStore):
+        stores_text: bool = True
+
+    docstore = SimpleDocumentStore()
+    vector_store_1 = TextStoreWithoutGetNodes()
+    vector_store_2 = TextStoreWithoutGetNodes()
+    document = Document(text="Hello world.", id_="doc_id")
+
+    index_1 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_1
+        ),
+        embed_model=mock_embed_model,
+    )
+    index_2 = VectorStoreIndex.from_documents(
+        [document],
+        storage_context=StorageContext.from_defaults(
+            docstore=docstore, vector_store=vector_store_2
+        ),
+        embed_model=mock_embed_model,
+    )
+
+    refreshed_document = Document(text="This is a test.", id_="doc_id")
+
+    assert index_1.refresh_ref_docs([refreshed_document]) == [True]
+    assert index_2.refresh_ref_docs([refreshed_document]) == [True]
+
+    assert list(vector_store_1.data.embedding_dict.values()) == [[0, 1, 0, 0, 0]]
+    assert list(vector_store_2.data.embedding_dict.values()) == [[0, 1, 0, 0, 0]]
 
 
 def test_delete_ref_doc_nodes_removed_from_docstore(
