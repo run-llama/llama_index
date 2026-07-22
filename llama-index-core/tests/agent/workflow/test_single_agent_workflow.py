@@ -431,6 +431,61 @@ async def test_function_agent_with_mock_function_calling_llm():
 
 
 @pytest.mark.asyncio
+async def test_function_agent_state_refreshed_after_tool_call():
+    """
+    A tool that mutates ctx.store["state"] should have that change reflected
+    in the state_prompt on the *next* LLM step.
+
+    Regression test for GH #22248: setup_agent only reformats the last
+    message with state_prompt while ctx.store["formatted_input_with_state"]
+    is False, and that flag was never reset after a tool call, so the second
+    LLM step saw the raw user message instead of the refreshed state.
+    """
+    from llama_index.core.workflow import Context
+
+    captured_inputs = []
+
+    async def update_state(ctx: Context) -> str:
+        state = await ctx.store.get("state")
+        state["counter"] = 1
+        await ctx.store.set("state", state)
+        return "state updated"
+
+    def response_generator(messages, **kwargs):
+        captured_inputs.append(messages)
+        if len(captured_inputs) == 1:
+            return ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="updating state",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(
+                            tool_id="update-state",
+                            tool_name="update_state",
+                            tool_kwargs={},
+                        )
+                    ]
+                },
+            )
+        return ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[update_state],
+        llm=MockFunctionCallingLLM(response_generator=response_generator),
+        initial_state={"counter": 0},
+        state_prompt="Current state: {state}. User message: {msg}",
+    )
+
+    memory = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda text: text.split())
+    await agent.run(user_msg="test", memory=memory)
+
+    assert "'counter': 0" in str(captured_inputs[0][0].content)
+    assert "'counter': 1" in str(captured_inputs[1][0].content)
+
+
+@pytest.mark.asyncio
 async def test_function_agent_with_context_and_chat_message():
     """Test FunctionAgent with explicit Context and ChatMessage input following the full adoption pattern."""
     from llama_index.core.llms import TextBlock
