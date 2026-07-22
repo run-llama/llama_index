@@ -10,6 +10,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQu
 from llama_index.vector_stores.azureaisearch import (
     AzureAISearchVectorStore,
     IndexManagement,
+    MetadataIndexFieldType,
 )
 
 try:
@@ -503,3 +504,56 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_default_index_mapping_preserves_falsy_metadata_values() -> None:
+    """
+    Regression: falsy metadata values (0, False, '') must not be dropped.
+
+    Previously the guard in ``_default_index_mapping`` was ``if metadata_value:``
+    which silently skipped values like 0, False, and empty strings. The fix
+    changes it to ``if metadata_value is not None:`` so that only missing keys
+    are skipped while falsy-but-present values are preserved.
+    """
+    search_client = mock_client_with_user_agent("search")
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys={
+            "score": ("score_field", MetadataIndexFieldType.INT32),
+            "active": ("active_field", MetadataIndexFieldType.BOOLEAN),
+            "tag": ("tag_field", MetadataIndexFieldType.STRING),
+            "missing": ("missing_field", MetadataIndexFieldType.STRING),
+        },
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+        semantic_configuration_name="default",
+    )
+
+    enriched_doc = {
+        "id": "1",
+        "chunk": "hello",
+        "embedding": [0.1, 0.2],
+        "metadata": "{}",
+        "doc_id": "doc-1",
+    }
+    metadata = {
+        "score": 0,  # falsy int - must be preserved
+        "active": False,  # falsy bool - must be preserved
+        "tag": "",  # falsy string - must be preserved
+        # "missing" is absent - must not appear in the index doc
+    }
+
+    index_doc = vector_store._default_index_mapping(enriched_doc, metadata)
+
+    assert index_doc["score_field"] == 0
+    assert index_doc["active_field"] is False
+    assert index_doc["tag_field"] == ""
+    assert "missing_field" not in index_doc
