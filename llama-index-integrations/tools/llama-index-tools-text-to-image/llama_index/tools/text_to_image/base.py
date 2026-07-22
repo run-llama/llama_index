@@ -13,9 +13,12 @@ class TextToImageToolSpec(BaseToolSpec):
 
     spec_functions = ["generate_images", "show_images", "generate_image_variation"]
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self, api_key: Optional[str] = None, timeout: float = 30.0
+    ) -> None:
         if api_key:
             openai.api_key = api_key
+        self.timeout = timeout
 
     def generate_images(
         self, prompt: str, n: Optional[int] = 1, size: Optional[str] = "256x256"
@@ -52,7 +55,7 @@ class TextToImageToolSpec(BaseToolSpec):
         """
         try:
             response = openai.Image.create_variation(
-                image=BytesIO(requests.get(url).content).getvalue(), n=n, size=size
+                image=BytesIO(requests.get(url, timeout=self.timeout).content).getvalue(), n=n, size=size
             )
             return [image["url"] for image in response["data"]]
         except openai.error.OpenAIError as e:
@@ -71,5 +74,5 @@ class TextToImageToolSpec(BaseToolSpec):
 
         for url in urls:
             plt.figure()
-            plt.imshow(Image.open(BytesIO(requests.get(url).content)))
+            plt.imshow(Image.open(BytesIO(requests.get(url, timeout=self.timeout).content)))
         return "images rendered successfully"
