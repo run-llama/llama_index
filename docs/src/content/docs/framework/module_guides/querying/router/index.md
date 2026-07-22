@@ -149,7 +149,7 @@ keyword_tool = RetrieverTool.from_defaults(
 retriever = RouterRetriever(
     selector=PydanticSingleSelector.from_defaults(llm=llm),
     retriever_tools=[
-        list_tool,
+        keyword_tool,
         vector_tool,
     ],
 )
