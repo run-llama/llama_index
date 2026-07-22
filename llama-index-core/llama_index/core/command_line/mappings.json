@@ -43,7 +43,6 @@
   "SQLContextBuilder": "llama_index.core",
   "PromptHelper": "llama_index.core",
   "IndexStructType": "llama_index.core",
-  "download_loader": "llama_index.core",
   "load_graph_from_storage": "llama_index.core",
   "load_index_from_storage": "llama_index.core",
   "load_indices_from_storage": "llama_index.core",
