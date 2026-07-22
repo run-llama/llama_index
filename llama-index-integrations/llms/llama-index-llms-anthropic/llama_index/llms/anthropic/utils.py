@@ -334,6 +334,54 @@ def blocks_to_anthropic_blocks(
     return anthropic_blocks
 
 
+# Anthropic enforces a hard limit of 4 blocks with cache_control per request.
+# See: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+ANTHROPIC_MAX_CACHE_CONTROL_BLOCKS = 4
+
+
+def _cacheable_message_indices(
+    messages: Sequence[ChatMessage], cache_idx: Optional[int]
+) -> set:
+    """
+    Return the set of message indices that should receive a ``cache_control``
+    breakpoint, capped at Anthropic's hard limit of 4 breakpoints per request.
+
+    Each stamped (non-system) message produces a breakpoint on its last block,
+    so stamping every message up to ``cache_idx`` can easily exceed the limit.
+    Because cache_control caches the whole prefix up to and including the
+    stamped block, the breakpoint closest to the end of the prefix already
+    caches everything before it. We therefore keep only the *last* breakpoints
+    at the prefix boundary, dropping redundant earlier ones.
+
+    ``cache_idx == -1`` means "cache all messages" (the documented
+    recommendation); it resolves to the last cacheable message so a single
+    breakpoint caches the entire conversation prefix.
+    """
+    if cache_idx is None:
+        return set()
+
+    upper = len(messages) - 1 if cache_idx == -1 else cache_idx
+    # System messages are folded into the system prompt and do not emit a
+    # message-level breakpoint, so they don't count against the limit.
+    candidate_indices = [
+        idx
+        for idx, message in enumerate(messages)
+        if idx <= upper and message.role != MessageRole.SYSTEM
+    ]
+    if not candidate_indices:
+        return set()
+
+    if cache_idx == -1:
+        # "Cache all messages": a single breakpoint on the last message caches
+        # the entire conversation prefix, so we don't need (and must not emit)
+        # one breakpoint per message.
+        return {candidate_indices[-1]}
+
+    # For an explicit positive cache_idx, keep the last <=4 breakpoints
+    # (closest to the prefix boundary) so we never exceed the API limit.
+    return set(candidate_indices[-ANTHROPIC_MAX_CACHE_CONTROL_BLOCKS:])
+
+
 def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
     cache_idx: Optional[int] = None,
@@ -355,9 +403,11 @@ def messages_to_anthropic_messages(
     """
     anthropic_messages = []
     system_prompt = []
+    cacheable_indices = _cacheable_message_indices(messages, cache_idx)
     for idx, message in enumerate(messages):
-        # inject cache_control for all messages up to and including the cache_idx
-        if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
+        # inject cache_control for the messages selected by cache_idx, capped at
+        # Anthropic's limit of 4 cache_control breakpoints per request
+        if idx in cacheable_indices:
             if model is None or is_anthropic_prompt_caching_supported_model(model):
                 message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
 
@@ -528,9 +578,11 @@ def messages_to_anthropic_beta_messages(
 ) -> Tuple[Sequence[BetaMessageParam], str]:
     anthropic_messages = []
     system_prompt: list[str] = []
+    cacheable_indices = _cacheable_message_indices(messages, cache_idx)
     for idx, message in enumerate(messages):
-        # inject cache_control for all messages up to and including the cache_idx
-        if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
+        # inject cache_control for the messages selected by cache_idx, capped at
+        # Anthropic's limit of 4 cache_control breakpoints per request
+        if idx in cacheable_indices:
             if model is None or is_anthropic_prompt_caching_supported_model(model):
                 message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
 
