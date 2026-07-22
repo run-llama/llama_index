@@ -3,7 +3,7 @@ from typing import List
 import pytest
 from llama_index.core.agent.workflow import AgentInput
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
-from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
+from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow, handoff
 from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.llms import (
     ChatMessage,
@@ -726,3 +726,38 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_handoff_disallowed_error_message_names_correct_agents():
+    """The error message for a disallowed handoff must name the *current*
+    agent as the one that cannot hand off, and the *target* agent as the
+    one it cannot hand off to -- not the other way around."""
+
+    class _FakeStore:
+        def __init__(self, data: dict) -> None:
+            self.data = data
+
+        async def get(self, key: str, default=None):
+            return self.data.get(key, default)
+
+        async def set(self, key: str, value) -> None:
+            self.data[key] = value
+
+    class _FakeCtx:
+        def __init__(self, data: dict) -> None:
+            self.store = _FakeStore(data)
+
+    ctx = _FakeCtx(
+        {
+            "agents": ["researcher", "writer", "reviewer"],
+            "current_agent_name": "researcher",
+            # researcher may only hand off to writer, not reviewer
+            "can_handoff_to": {"researcher": ["writer"]},
+        }
+    )
+
+    result = await handoff(ctx, to_agent="reviewer", reason="need review")
+
+    assert "researcher cannot hand off to reviewer" in result
+    assert "reviewer cannot hand off to researcher" not in result
