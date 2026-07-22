@@ -42,6 +42,36 @@ By default, VectorStoreIndex stores everything in memory. See [Using Vector Stor
 
     This is especially helpful when you are inserting into a remotely hosted vector database.
 
+### Combining FAISS with Keyword Search (Hybrid-style Retrieval)
+
+For better retrieval results, many developers combine a dense vector store like FAISS with traditional keyword search using `QueryFusionRetriever`.
+
+```python
+from llama_index.core import SimpleKeywordTableIndex
+from llama_index.core.retrievers import (
+    VectorIndexRetriever,
+    KeywordTableSimpleRetriever,
+    QueryFusionRetriever,
+)
+
+# Dense retriever (backed by your FAISS VectorStoreIndex)
+vector_retriever = VectorIndexRetriever(index=index, similarity_top_k=5)
+
+# Keyword retriever
+keyword_index = SimpleKeywordTableIndex.from_documents(documents)
+keyword_retriever = KeywordTableSimpleRetriever(index=keyword_index)
+
+# Fuse the two retrievers
+retriever = QueryFusionRetriever(
+    [vector_retriever, keyword_retriever],
+    num_queries=1,
+    mode="relative_score",
+    similarity_top_k=5,
+)
+```
+
+This approach is commonly used in production RAG systems to improve recall by merging dense (semantic) and keyword-based results.
+
 ### Using the ingestion pipeline to create nodes
 
 If you want more control over how your documents are indexed, we recommend using the ingestion pipeline. This allows you to customize the chunking, metadata, and embedding of the nodes.
