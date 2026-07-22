@@ -296,6 +296,18 @@ async def test_chat_message_asplit_non_recursive_types(
 
 
 @pytest.mark.asyncio
+async def test_text_block_amerge_no_empty_block_when_first_split_oversized():
+    """Merge must not emit an empty TextBlock when the first split exceeds chunk_size."""
+    merged = await TextBlock.amerge(
+        [TextBlock(text="X" * 10), TextBlock(text="ab")],
+        chunk_size=3,
+        tokenizer=lambda s: list(s),
+    )
+    assert [block.text for block in merged] == ["X" * 10, "ab"]
+    assert all(block.text != "" for block in merged)
+
+
+@pytest.mark.asyncio
 async def test_chat_message_asplit_recursive_types(png_1px, mock_pdf_bytes):
     chat_message = ChatMessage(
         blocks=[
