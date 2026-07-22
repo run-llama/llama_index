@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.4",
     "ipython==8.10.0",
@@ -12,7 +12,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==9.0.3",
+    "pytest==9.1.1",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "rank-llm>=0.21.0",
-    "transformers<4.50",
+    "transformers<5.14",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

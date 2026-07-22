@@ -9,7 +9,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==9.0.3",
+    "pytest==9.1.1",
     "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
@@ -40,7 +40,7 @@ dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "sentencepiece",
     "ms-swift",
-    "transformers[torch]>=4.37.0,<5",
+    "transformers[torch]>=4.37.0,<6",
 ]
 
 [tool.codespell]
