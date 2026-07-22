@@ -12,6 +12,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Actian VectorAI DB (`ActianVectorAIVectorStore`). [Quickstart](https://docs.vectoraidb.actian.com/home/quickstart/quickstart).
 - Alibaba Cloud OpenSearch (`AlibabaCloudOpenSearchStore`). [QuickStart](https://help.aliyun.com/zh/open-search/vector-search-edition).
 - Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
@@ -113,6 +114,27 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Actian VectorAI DB**
+
+```python
+from llama_index.vector_stores.actian_vectorai import ActianVectorAIVectorStore
+from llama_index.core.vector_stores.types import VectorStoreQuery
+
+with ActianVectorAIVectorStore() as vector_store:
+    # Add nodes
+    vector_store.add(nodes)
+
+    # Query
+    query = VectorStoreQuery(query_embedding=embedding, similarity_top_k=5)
+    result = vector_store.query(query)
+
+    # Delete by source document ID
+    vector_store.delete("doc_01")
+
+    # Delete the entire collection
+    vector_store.clear()
+```
 
 **Alibaba Cloud OpenSearch**
 
@@ -1208,6 +1230,7 @@ documents = reader.load_data(
 
 ## Vector Store Examples
 
+- [Actian VectorAI DB](/python/examples/vector_stores/actianvectoraivectorstoredemo)
 - [Alibaba Cloud OpenSearch](/python/examples/vector_stores/alibabacloudopensearchindexdemo)
 - [Amazon Neptune - Neptune Analytics](/python/examples/vector_stores/amazonneptunevectordemo)
 - [Astra DB](/python/examples/vector_stores/astradbindexdemo)
