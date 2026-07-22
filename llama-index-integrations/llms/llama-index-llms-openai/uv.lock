@@ -1936,7 +1936,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.7.8"
+version = "0.7.10"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1974,7 +1974,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=23.9.1" },
+    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=26.5.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "ipython", specifier = "==8.10.0" },
