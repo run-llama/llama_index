@@ -118,3 +118,16 @@ def test_split_and_permutated() -> None:
         sentences[2]["combined_sentence"]
         == "I can't carry it for you. But I can carry you!"
     )
+
+
+def test_semantic_splitter_empty_document_returns_no_nodes() -> None:
+    embeddings = MockEmbedding()
+    node_parser = SemanticSplitterNodeParser.from_defaults(embeddings)
+
+    empty_doc = Document(text="")
+    nodes = node_parser.get_nodes_from_documents([empty_doc])
+    assert len(nodes) == 0
+
+    whitespace_doc = Document(text="   \n  \t   ")
+    nodes = node_parser.get_nodes_from_documents([whitespace_doc])
+    assert len(nodes) == 0
