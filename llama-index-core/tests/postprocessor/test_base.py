@@ -300,6 +300,28 @@ def test_time_weighted_postprocessor() -> None:
     assert cast(Dict, nodes[3].metadata)[key] == 3
 
 
+def test_time_weighted_postprocessor_zero_score() -> None:
+    """A node with a legitimate 0.0 score should not be treated as unscored."""
+    key = "__last_accessed__"
+    # same recency for both nodes, so only the embedding score should matter
+    nodes = [
+        TextNode(text="Irrelevant node.", id_="1", metadata={key: 0}),
+        TextNode(text="Relevant node.", id_="2", metadata={key: 0}),
+    ]
+    node_with_scores = [
+        NodeWithScore(node=nodes[0], score=0.0),
+        NodeWithScore(node=nodes[1], score=0.9),
+    ]
+
+    postprocessor = TimeWeightedPostprocessor(
+        top_k=1, time_decay=0.99999, time_access_refresh=False, now=4.0
+    )
+    result_nodes_with_score = postprocessor.postprocess_nodes(node_with_scores)
+
+    assert len(result_nodes_with_score) == 1
+    assert result_nodes_with_score[0].node.get_content() == "Relevant node."
+
+
 @pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor() -> None:
     """Test keyword processor."""
