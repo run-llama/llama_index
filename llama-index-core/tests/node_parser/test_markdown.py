@@ -1,3 +1,4 @@
+import llama_index.core.node_parser.file.markdown as markdown_module
 from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.core.schema import Document
 
@@ -202,3 +203,34 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+# Regression test for quadratic parsing: MarkdownNodeParser must call
+# build_nodes_from_splits once for the whole document instead of once per
+# header section. Calling it per section recomputes the source document hash
+# (ref_doc.as_related_node_info()) for every section, making parsing
+# O(sections * document_size) -- quadratic on header-dense documents.
+def test_builds_all_nodes_in_a_single_call(monkeypatch) -> None:
+    call_sizes = []
+    original = markdown_module.build_nodes_from_splits
+
+    def spy(text_splits, document, *args, **kwargs):
+        call_sizes.append(len(text_splits))
+        return original(text_splits, document, *args, **kwargs)
+
+    monkeypatch.setattr(markdown_module, "build_nodes_from_splits", spy)
+
+    parser = MarkdownNodeParser()
+    splits = parser.get_nodes_from_documents(
+        [Document(text="# A\nalpha\n\n# B\nbeta\n\n# C\ngamma\n")]
+    )
+
+    assert len(splits) == 3
+    # Exactly one batched call covering all sections, not one call per section.
+    assert call_sizes == [3]
+    assert splits[0].text == "# A\nalpha"
+    assert splits[1].text == "# B\nbeta"
+    assert splits[2].text == "# C\ngamma"
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[1].metadata == {"header_path": "/"}
+    assert splits[2].metadata == {"header_path": "/"}
