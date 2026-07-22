@@ -278,7 +278,7 @@ def test_close_does_not_raise_in_running_event_loop():
     client._owns_os_async_client = True
 
     with patch(
-        "llama_index.vector_stores.opensearch.base.asyncio.get_running_loop",
+        "llama_index.core.async_utils.asyncio.get_running_loop",
         return_value=MagicMock(),
     ):
         client.close()
