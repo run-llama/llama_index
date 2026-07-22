@@ -10,6 +10,7 @@ from llama_index.core.storage.kvstore import (
 from llama_index.core.storage.kvstore.types import (
     BaseKVStore as BaseCache,
 )
+from llama_index.core.async_utils import run_async_tasks
 
 DEFAULT_CACHE_NAME = "llama_cache"
 
@@ -23,7 +24,6 @@ class IngestionCache(BaseModel):
     )
     cache: BaseCache = Field(default_factory=SimpleCache, description="Cache to use.")
 
-    # TODO: add async get/put methods?
     def put(
         self, key: str, nodes: Sequence[BaseNode], collection: Optional[str] = None
     ) -> None:
@@ -52,6 +52,36 @@ class IngestionCache(BaseModel):
         for key in data:
             self.cache.delete(key, collection=collection)
 
+    async def aput(
+        self, key: str, nodes: Sequence[BaseNode], collection: Optional[str] = None
+    ) -> None:
+        """Async put a value into the cache."""
+        collection = collection or self.collection
+
+        val = {self.nodes_key: [doc_to_json(node) for node in nodes]}
+        await self.cache.aput(key, val, collection=collection)
+
+    async def aget(
+        self, key: str, collection: Optional[str] = None
+    ) -> Optional[Sequence[BaseNode]]:
+        """Async get a value from the cache."""
+        collection = collection or self.collection
+        node_dicts = await self.cache.aget(key, collection=collection)
+
+        if node_dicts is None:
+            return None
+
+        return [json_to_doc(node_dict) for node_dict in node_dicts[self.nodes_key]]
+
+    async def aclear(self, collection: Optional[str] = None) -> None:
+        """Async clear the cache."""
+        collection = collection or self.collection
+        data = await self.cache.aget_all(collection=collection)
+
+        tasks = [self.cache.adelete(key, collection=collection) for key in data]
+        run_async_tasks(tasks)
+
+    # TODO: add async persist?
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
