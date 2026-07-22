@@ -128,8 +128,12 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
 
-        # get embeddings for each node
-        texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
+        # get embeddings for each node, in the same (date-sorted) order used by
+        # the dedup loop below so ``text_embeddings[idx2]`` lines up with
+        # ``sorted_nodes[idx2]``.
+        texts = [
+            node.get_content(metadata_mode=MetadataMode.EMBED) for node in sorted_nodes
+        ]
         text_embeddings = self.embed_model.get_text_embedding_batch(texts=texts)
 
         node_ids_to_skip: Set[str] = set()
