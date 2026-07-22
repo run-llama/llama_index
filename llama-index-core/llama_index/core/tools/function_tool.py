@@ -246,9 +246,15 @@ class FunctionTool(AsyncBaseTool):
                     ignore_fields=ignore_fields,
                 )
                 if fn_schema is not None and param_docs:
+                    updated = False
                     for param_name, field in fn_schema.model_fields.items():
                         if not field.description and param_name in param_docs:
                             field.description = param_docs[param_name].strip()
+                            updated = True
+                    if updated:
+                        # pydantic builds the core schema at class creation, so
+                        # field edits only reach model_json_schema() after a rebuild
+                        fn_schema.model_rebuild(force=True, raise_errors=False)
 
             tool_metadata = ToolMetadata(
                 name=name,

@@ -393,6 +393,25 @@ def test_docstring_param_extraction_google_style():
     assert fields["b"].description == "string input"
 
 
+def test_docstring_descriptions_reach_json_schema():
+    def tool_fn(a: int, b: str) -> str:
+        """
+        Test tool.
+
+        Args:
+            a (int): integer input
+            b (str): string input
+
+        """
+        return f"{a}-{b}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    properties = tool.metadata.get_parameters_dict()["properties"]
+
+    assert properties["a"]["description"] == "integer input"
+    assert properties["b"]["description"] == "string input"
+
+
 def test_docstring_ignores_unknown_params():
     def tool_fn(a: int) -> str:
         """
