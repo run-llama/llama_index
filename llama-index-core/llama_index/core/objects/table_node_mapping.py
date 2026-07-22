@@ -41,7 +41,11 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         return cls(sql_database)
 
     def _add_object(self, obj: SQLTableSchema) -> None:
-        raise NotImplementedError
+        raise NotImplementedError(
+            "SQLTableNodeMapping._add_object is not supported; table schemas "
+            "are derived from the underlying SQL database rather than added "
+            "programmatically."
+        )
 
     def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""

@@ -124,4 +124,8 @@ class ReActOutputParser(BaseOutputParser):
 
     def format(self, output: str) -> str:
         """Format a query with structured output formatting instructions."""
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"{type(self).__name__}.format is not implemented; subclasses of "
+            "BaseOutputParser must override it to format structured-output "
+            "instructions into a prompt."
+        )

@@ -815,7 +815,10 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if self._retriever_mode not in ["embedding", "keyword_embedding"]:
             return []
         # TBD: will implement this later with vector store.
-        raise NotImplementedError
+        raise NotImplementedError(
+            "KnowledgeGraphIndex does not yet support embedding-based "
+            "retrieval; use 'keyword' or 'hybrid' retriever_mode instead."
+        )
 
     async def _aretrieve_embedding(
         self, query_bundle: QueryBundle
@@ -824,7 +827,10 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if self._retriever_mode not in ["embedding", "keyword_embedding"]:
             return []
         # TBD: will implement this later with vector store.
-        raise NotImplementedError
+        raise NotImplementedError(
+            "KnowledgeGraphIndex does not yet support async embedding-based "
+            "retrieval; use 'keyword' or 'hybrid' retriever_mode instead."
+        )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Build nodes for response."""

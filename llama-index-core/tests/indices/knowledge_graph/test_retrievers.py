@@ -1,10 +1,15 @@
 from typing import Any, List, Tuple
 from unittest.mock import patch
 
+import pytest
+
 from llama_index.core.graph_stores import SimpleGraphStore
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.indices.knowledge_graph.base import KnowledgeGraphIndex
-from llama_index.core.indices.knowledge_graph.retrievers import KGTableRetriever
+from llama_index.core.indices.knowledge_graph.retrievers import (
+    KGTableRetriever,
+    KnowledgeGraphRAGRetriever,
+)
 from llama_index.core.schema import Document, QueryBundle
 from llama_index.core.storage.storage_context import StorageContext
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
@@ -181,3 +186,38 @@ def test_retrieve_similarity(
         " object_next_hop ...`"
         "\n['foo', 'is', 'bar']"
     )
+
+
+@patch.object(
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+def test_retrieve_embedding_mode_raises_descriptive(
+    _patch_extract_triplets: Any, documents: List[Document]
+) -> None:
+    """Embedding-mode retrieval is not implemented; must raise with a message."""
+    graph_store = SimpleGraphStore()
+    storage_context = StorageContext.from_defaults(graph_store=graph_store)
+    retriever = KnowledgeGraphRAGRetriever(
+        storage_context=storage_context,
+        retriever_mode="embedding",
+    )
+    with pytest.raises(NotImplementedError, match="embedding-based"):
+        retriever._retrieve_embedding(QueryBundle("foo"))
+
+
+@patch.object(
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+@pytest.mark.asyncio
+async def test_aretrieve_embedding_mode_raises_descriptive(
+    _patch_extract_triplets: Any, documents: List[Document]
+) -> None:
+    """Async embedding-mode retrieval is not implemented; must raise with a message."""
+    graph_store = SimpleGraphStore()
+    storage_context = StorageContext.from_defaults(graph_store=graph_store)
+    retriever = KnowledgeGraphRAGRetriever(
+        storage_context=storage_context,
+        retriever_mode="embedding",
+    )
+    with pytest.raises(NotImplementedError, match="embedding-based"):
+        await retriever._aretrieve_embedding(QueryBundle("foo"))

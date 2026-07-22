@@ -154,7 +154,17 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         message_chunks: Sequence[ChatMessage],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        raise NotImplementedError
+        """
+        Get a response from a sequence of chat messages.
+
+        Subclasses must override this to synthesize a response from the
+        provided ``ChatMessage`` chunks. The base class does not implement it.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__}.get_response_from_messages is not "
+            "implemented; subclasses of BaseSynthesizer must override it to "
+            "synthesize a response from chat messages."
+        )
 
     async def aget_response_from_messages(
         self,
@@ -162,7 +172,17 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         message_chunks: Sequence[ChatMessage],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        raise NotImplementedError
+        """
+        Asynchronously get a response from a sequence of chat messages.
+
+        Subclasses must override this to synthesize a response from the
+        provided ``ChatMessage`` chunks. The base class does not implement it.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__}.aget_response_from_messages is not "
+            "implemented; subclasses of BaseSynthesizer must override it to "
+            "synthesize a response from chat messages."
+        )
 
     def _log_prompt_and_response(
         self,
