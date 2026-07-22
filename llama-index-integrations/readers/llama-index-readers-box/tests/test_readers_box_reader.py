@@ -1,11 +1,13 @@
 import datetime
-import pytest
+import importlib
+from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+from box_sdk_gen import BoxClient
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.box import BoxReader
-
-from box_sdk_gen import BoxClient
-
 
 from tests.conftest import get_testing_data
 
@@ -29,6 +31,62 @@ def test_reader_init(box_client_ccg_unit_testing: BoxClient):
     # assert new_reader is not None
     # assert new_reader.box_client_id == reader.box_client_id
     # assert new_reader.box_client_secret == reader.box_client_secret
+
+
+def test_reader_preserves_same_named_files_from_different_folders(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    box_reader_module = importlib.import_module(
+        "llama_index.readers.box.BoxReader.base"
+    )
+    box_files = [
+        SimpleNamespace(
+            id="file-2025", name="report.txt", parent=SimpleNamespace(id="folder-2025")
+        ),
+        SimpleNamespace(
+            id="file-2026", name="report.txt", parent=SimpleNamespace(id="folder-2026")
+        ),
+    ]
+    contents = {
+        "file-2025": b"2025 report",
+        "file-2026": b"2026 report",
+    }
+    box_client = SimpleNamespace(
+        downloads=SimpleNamespace(
+            download_file=lambda file_id: BytesIO(contents[file_id])
+        )
+    )
+
+    monkeypatch.setattr(
+        box_reader_module, "add_extra_header_to_box_client", lambda x: x
+    )
+    monkeypatch.setattr(box_reader_module, "box_check_connection", lambda _: None)
+    monkeypatch.setattr(
+        box_reader_module,
+        "get_box_files_details",
+        lambda **_: box_files,
+    )
+    monkeypatch.setattr(
+        box_reader_module,
+        "box_file_to_llama_document_metadata",
+        lambda file: {
+            "box_file_id": file.id,
+            "name": file.name,
+            "parent": file.parent.id,
+        },
+    )
+    reader = BoxReader(box_client=box_client)
+    documents = reader.load_data(file_ids=[file.id for file in box_files])
+
+    documents_by_id = {
+        document.metadata["box_file_id"]: document for document in documents
+    }
+    assert set(documents_by_id) == {"file-2025", "file-2026"}
+    assert documents_by_id["file-2025"].get_content() == "2025 report"
+    assert documents_by_id["file-2026"].get_content() == "2026 report"
+    assert documents_by_id["file-2025"].metadata["parent"] == "folder-2025"
+    assert documents_by_id["file-2026"].metadata["parent"] == "folder-2026"
+    assert all(document.metadata["name"] == "report.txt" for document in documents)
 
 
 ####################################################################################################

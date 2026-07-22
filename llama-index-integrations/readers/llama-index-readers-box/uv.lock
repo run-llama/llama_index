@@ -1837,7 +1837,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-box"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "box-sdk-gen" },
@@ -1875,7 +1875,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=23.9.1" },
+    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=26.5.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "ipython", specifier = "==8.10.0" },
