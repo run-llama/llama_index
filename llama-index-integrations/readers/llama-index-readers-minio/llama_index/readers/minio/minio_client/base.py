@@ -5,6 +5,7 @@ A loader that fetches a file or iterates through a directory on Minio.
 
 """
 
+import hashlib
 import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -110,7 +111,6 @@ class MinioReader(BaseReader):
                     bucket_name=self.bucket, prefix=self.prefix, recursive=True
                 )
                 for i, obj in enumerate(objects):
-                    file_name = obj.object_name.split("/")[-1]
                     if self.num_files_limit is not None and i > self.num_files_limit:
                         break
 
@@ -125,7 +125,10 @@ class MinioReader(BaseReader):
                     if is_dir or is_bad_ext:
                         continue
 
-                    filepath = f"{temp_dir}/{file_name}"
+                    object_digest = hashlib.sha256(
+                        obj.object_name.encode("utf-8")
+                    ).hexdigest()
+                    filepath = str(Path(temp_dir) / f"{object_digest}{suffix}")
                     minio_client.fget_object(self.bucket, obj.object_name, filepath)
 
             loader = SimpleDirectoryReader(
