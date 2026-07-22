@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import os
+import re
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -14,10 +15,15 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     cast,
 )
+
+# Allow only safe identifier characters in metadata-filter keys to prevent
+# SQL injection via the JSON path embedded in the WHERE clause.
+_SAFE_METADATA_KEY = re.compile(r"^[A-Za-z0-9_]+$")
 
 from llama_index.core.schema import (
     BaseNode,
@@ -265,12 +271,23 @@ class DB2LlamaVS(BasePydanticVectorStore):
         return "DB2LlamaVS"
 
     def _append_meta_filter_condition(
-        self, where_str: Optional[str], exact_match_filter: list
+        self,
+        where_str: Optional[str],
+        exact_match_filter: list,
+        bind_values: List[Any],
     ) -> str:
-        filter_str = " AND ".join(
-            f"JSON_VALUE({self.metadata_column}, '$.{filter_item.key}') = '{filter_item.value}'"
-            for filter_item in exact_match_filter
-        )
+        parts: List[str] = []
+        for filter_item in exact_match_filter:
+            if not _SAFE_METADATA_KEY.match(filter_item.key or ""):
+                raise ValueError(
+                    f"Unsafe metadata filter key {filter_item.key!r}; "
+                    f"must match {_SAFE_METADATA_KEY.pattern}"
+                )
+            parts.append(
+                f"JSON_VALUE({self.metadata_column}, '$.{filter_item.key}') = ?"
+            )
+            bind_values.append(filter_item.value)
+        filter_str = " AND ".join(parts)
         if where_str is None:
             where_str = filter_str
         else:
@@ -349,9 +366,10 @@ class DB2LlamaVS(BasePydanticVectorStore):
             f"doc_id in {_stringify_list(query.doc_ids)}" if query.doc_ids else None
         )
 
+        filter_bind_values: List[Any] = []
         if query.filters is not None:
             where_str = self._append_meta_filter_condition(
-                where_str, query.filters.filters
+                where_str, query.filters.filters, filter_bind_values
             )
 
         # build query sql
@@ -362,7 +380,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
         embedding = f"{query.query_embedding}"
         cursor = self._client.cursor()
         try:
-            cursor.execute(query_sql, [embedding])
+            cursor.execute(query_sql, [embedding, *filter_bind_values])
             results = cursor.fetchall()
         finally:
             cursor.close()
