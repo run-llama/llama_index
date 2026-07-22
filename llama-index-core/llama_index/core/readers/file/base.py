@@ -552,6 +552,76 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             return cast(bytes, f.read())
 
     @staticmethod
+    def _resolve_file_reader(
+        input_file: Path | PurePosixPath,
+        file_extractor: dict[str, BaseReader],
+    ) -> BaseReader | None:
+        """
+        Resolve the reader to use for ``input_file``.
+
+        Returns the :class:`BaseReader` registered (or newly instantiated and
+        cached into ``file_extractor``) for the file's suffix, or ``None`` when
+        the file has no dedicated reader and should be read as plain text.
+
+        Shared by :meth:`load_file` and :meth:`aload_file`. Static, like its
+        callers, so it remains usable from parallel worker processes.
+        """
+        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
+        default_file_reader_suffix = list(default_file_reader_cls.keys())
+
+        file_suffix = input_file.suffix.lower()
+        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
+            if file_suffix not in file_extractor:
+                # instantiate file reader if not already
+                reader_cls = default_file_reader_cls[file_suffix]
+                file_extractor[file_suffix] = reader_cls()
+            return file_extractor[file_suffix]
+        return None
+
+    @staticmethod
+    def _reader_load_kwargs(
+        metadata: dict | None,
+        fs: fsspec.AbstractFileSystem | None,
+    ) -> dict[str, Any]:
+        """Build the kwargs passed to ``reader.load_data``/``aload_data``."""
+        kwargs: dict[str, Any] = {"extra_info": metadata}
+        if fs and not is_default_fs(fs):
+            kwargs["fs"] = fs
+        return kwargs
+
+    @staticmethod
+    def _build_reader_documents(
+        docs: list[Document],
+        input_file: Path | PurePosixPath,
+        filename_as_id: bool,
+    ) -> list[Document]:
+        """Apply ``filename_as_id`` doc ids to reader output and return it."""
+        if filename_as_id:
+            for i, doc in enumerate(docs):
+                doc.id_ = f"{input_file!s}_part_{i}"
+        return list(docs)
+
+    @staticmethod
+    def _read_file_as_document(
+        input_file: Path | PurePosixPath,
+        metadata: dict | None,
+        filename_as_id: bool,
+        encoding: str,
+        errors: str,
+        fs: fsspec.AbstractFileSystem | None,
+    ) -> list[Document]:
+        """Read a file with no dedicated reader as a single plain-text Document."""
+        fs = fs or get_default_fs()
+        with fs.open(input_file, errors=errors, encoding=encoding) as f:
+            data = cast(bytes, f.read()).decode(encoding, errors=errors)
+
+        doc = Document(text=data, metadata=metadata or {})  # type: ignore
+        if filename_as_id:
+            doc.id_ = str(input_file)
+
+        return [doc]
+
+    @staticmethod
     def load_file(
         input_file: Path | PurePosixPath,
         file_metadata: Callable[[str], dict],
@@ -587,63 +657,38 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             List[Document]: loaded documents
 
         """
-        # TODO: make this less redundant
-        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
-        default_file_reader_suffix = list(default_file_reader_cls.keys())
-        metadata: dict | None = None
-        documents: list[Document] = []
+        metadata = file_metadata(str(input_file)) if file_metadata is not None else None
 
-        if file_metadata is not None:
-            metadata = file_metadata(str(input_file))
-
-        file_suffix = input_file.suffix.lower()
-        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
-            # use file readers
-            if file_suffix not in file_extractor:
-                # instantiate file reader if not already
-                reader_cls = default_file_reader_cls[file_suffix]
-                file_extractor[file_suffix] = reader_cls()
-            reader = file_extractor[file_suffix]
-
-            # load data -- catch all errors except for ImportError
-            try:
-                kwargs: dict[str, Any] = {"extra_info": metadata}
-                if fs and not is_default_fs(fs):
-                    kwargs["fs"] = fs
-                docs = reader.load_data(input_file, **kwargs)
-            except ImportError as e:
-                # ensure that ImportError is raised so user knows
-                # about missing dependencies
-                raise ImportError(str(e))
-            except Exception as e:
-                if raise_on_error:
-                    raise Exception("Error loading file") from e
-                # otherwise, just skip the file and report the error
-                print(
-                    f"Failed to load file {input_file} with error: {e}. Skipping...",
-                    flush=True,
-                )
-                return []
-
-            # iterate over docs if needed
-            if filename_as_id:
-                for i, doc in enumerate(docs):
-                    doc.id_ = f"{input_file!s}_part_{i}"
-
-            documents.extend(docs)
-        else:
+        reader = SimpleDirectoryReader._resolve_file_reader(input_file, file_extractor)
+        if reader is None:
             # do standard read
-            fs = fs or get_default_fs()
-            with fs.open(input_file, errors=errors, encoding=encoding) as f:
-                data = cast(bytes, f.read()).decode(encoding, errors=errors)
+            return SimpleDirectoryReader._read_file_as_document(
+                input_file, metadata, filename_as_id, encoding, errors, fs
+            )
 
-            doc = Document(text=data, metadata=metadata or {})  # type: ignore
-            if filename_as_id:
-                doc.id_ = str(input_file)
+        # use file readers -- catch all errors except for ImportError
+        try:
+            docs = reader.load_data(
+                input_file,
+                **SimpleDirectoryReader._reader_load_kwargs(metadata, fs),
+            )
+        except ImportError as e:
+            # ensure that ImportError is raised so user knows
+            # about missing dependencies
+            raise ImportError(str(e))
+        except Exception as e:
+            if raise_on_error:
+                raise Exception("Error loading file") from e
+            # otherwise, just skip the file and report the error
+            print(
+                f"Failed to load file {input_file} with error: {e}. Skipping...",
+                flush=True,
+            )
+            return []
 
-            documents.append(doc)
-
-        return documents
+        return SimpleDirectoryReader._build_reader_documents(
+            docs, input_file, filename_as_id
+        )
 
     @staticmethod
     async def aload_file(
@@ -657,63 +702,38 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         fs: fsspec.AbstractFileSystem | None = None,
     ) -> list[Document]:
         """Load file asynchronously."""
-        # TODO: make this less redundant
-        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
-        default_file_reader_suffix = list(default_file_reader_cls.keys())
-        metadata: dict | None = None
-        documents: list[Document] = []
+        metadata = file_metadata(str(input_file)) if file_metadata is not None else None
 
-        if file_metadata is not None:
-            metadata = file_metadata(str(input_file))
-
-        file_suffix = input_file.suffix.lower()
-        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
-            # use file readers
-            if file_suffix not in file_extractor:
-                # instantiate file reader if not already
-                reader_cls = default_file_reader_cls[file_suffix]
-                file_extractor[file_suffix] = reader_cls()
-            reader = file_extractor[file_suffix]
-
-            # load data -- catch all errors except for ImportError
-            try:
-                kwargs: dict[str, Any] = {"extra_info": metadata}
-                if fs and not is_default_fs(fs):
-                    kwargs["fs"] = fs
-                docs = await reader.aload_data(input_file, **kwargs)
-            except ImportError as e:
-                # ensure that ImportError is raised so user knows
-                # about missing dependencies
-                raise ImportError(str(e))
-            except Exception as e:
-                if raise_on_error:
-                    raise
-                # otherwise, just skip the file and report the error
-                print(
-                    f"Failed to load file {input_file} with error: {e}. Skipping...",
-                    flush=True,
-                )
-                return []
-
-            # iterate over docs if needed
-            if filename_as_id:
-                for i, doc in enumerate(docs):
-                    doc.id_ = f"{input_file!s}_part_{i}"
-
-            documents.extend(docs)
-        else:
+        reader = SimpleDirectoryReader._resolve_file_reader(input_file, file_extractor)
+        if reader is None:
             # do standard read
-            fs = fs or get_default_fs()
-            with fs.open(input_file, errors=errors, encoding=encoding) as f:
-                data = cast(bytes, f.read()).decode(encoding, errors=errors)
+            return SimpleDirectoryReader._read_file_as_document(
+                input_file, metadata, filename_as_id, encoding, errors, fs
+            )
 
-            doc = Document(text=data, metadata=metadata or {})  # type: ignore
-            if filename_as_id:
-                doc.id_ = str(input_file)
+        # use file readers -- catch all errors except for ImportError
+        try:
+            docs = await reader.aload_data(
+                input_file,
+                **SimpleDirectoryReader._reader_load_kwargs(metadata, fs),
+            )
+        except ImportError as e:
+            # ensure that ImportError is raised so user knows
+            # about missing dependencies
+            raise ImportError(str(e))
+        except Exception as e:
+            if raise_on_error:
+                raise
+            # otherwise, just skip the file and report the error
+            print(
+                f"Failed to load file {input_file} with error: {e}. Skipping...",
+                flush=True,
+            )
+            return []
 
-            documents.append(doc)
-
-        return documents
+        return SimpleDirectoryReader._build_reader_documents(
+            docs, input_file, filename_as_id
+        )
 
     def load_data(
         self,
