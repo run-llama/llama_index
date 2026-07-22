@@ -318,7 +318,7 @@ class Refine(BaseSynthesizer):
 
     def _update_response(
         self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
-    ) -> Optional[RESPONSE_TEXT_TYPE]:
+    ) -> tuple[Optional[RESPONSE_TEXT_TYPE], bool]:
         """Update response."""
         query_satisfied: bool | None = False
         structured_response: Union[
@@ -340,7 +340,7 @@ class Refine(BaseSynthesizer):
                 )
                 query_satisfied = structured_response.query_satisfied
                 if query_satisfied:
-                    return structured_response.answer
+                    return structured_response.answer, True
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
@@ -362,14 +362,14 @@ class Refine(BaseSynthesizer):
                         structured_response_gen,
                         structured_response,
                         "answer",
-                    )
+                    ), True
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
-        return None
+        return None, False
 
     async def _aupdate_response(
         self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
-    ) -> Optional[RESPONSE_TEXT_TYPE]:
+    ) -> tuple[Optional[RESPONSE_TEXT_TYPE], bool]:
         """Update response."""
         query_satisfied: bool | None = False
         structured_response: Union[
@@ -389,8 +389,9 @@ class Refine(BaseSynthesizer):
                         **response_kwargs,
                     ),
                 )
-                if structured_response.query_satisfied:
-                    return structured_response.answer
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    return structured_response.answer, True
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
@@ -412,10 +413,10 @@ class Refine(BaseSynthesizer):
                         structured_response_gen,
                         structured_response,
                         "answer",
-                    )
+                    ), True
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
-        return None
+        return None, False
 
     def _run_refine_loop(
         self,
@@ -479,8 +480,15 @@ class Refine(BaseSynthesizer):
                 prompt_kwargs = make_refine_prompt_kwargs(chunk)
 
             program = self._program_factory(prompt_template)
-            if resp := self._update_response(program, prompt_kwargs, response_kwargs):
+            resp, query_satisfied = self._update_response(
+                program, prompt_kwargs, response_kwargs
+            )
+            if resp is not None:
                 response = resp
+            if self._structured_answer_filtering and query_satisfied:
+                if isinstance(response, Generator):
+                    response = get_response_text(response)
+                break
 
         if isinstance(response, str):
             if self._output_cls is not None:
@@ -559,10 +567,15 @@ class Refine(BaseSynthesizer):
                 prompt_kwargs = make_refine_prompt_kwargs(chunk)
 
             program = self._program_factory(prompt_template)
-            if resp := await self._aupdate_response(
+            resp, query_satisfied = await self._aupdate_response(
                 program, prompt_kwargs, response_kwargs
-            ):
+            )
+            if resp is not None:
                 response = resp
+            if self._structured_answer_filtering and query_satisfied:
+                if isinstance(response, AsyncGenerator):
+                    response = await aget_response_text(response)
+                break
 
         if isinstance(response, str):
             if self._output_cls is not None:
