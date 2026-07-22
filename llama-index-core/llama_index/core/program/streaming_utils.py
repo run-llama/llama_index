@@ -5,6 +5,7 @@ This module provides utilities for processing streaming responses that contain
 structured data directly in the message content (not in function calls).
 """
 
+import logging
 from typing import Optional, Type, Union
 
 from pydantic import ValidationError
@@ -16,6 +17,8 @@ from llama_index.core.program.utils import (
     create_flexible_model,
 )
 from llama_index.core.types import Model
+
+logger = logging.getLogger(__name__)
 
 
 def process_streaming_content_incremental(
@@ -118,7 +121,10 @@ def _extract_partial_list_progress(
         # Try to create object with updated data
         return partial_output_cls.model_validate(current_data)
 
-    except Exception:
+    except Exception as e:
+        logger.debug(
+            "Failed to extract partial list progress from streaming content: %s", e
+        )
         return None
 
 
@@ -155,5 +161,10 @@ def _parse_partial_list_items(
 
         return items
 
-    except Exception:
+    except Exception as e:
+        logger.debug(
+            "Failed to parse partial list items for field '%s': %s",
+            field_name,
+            e,
+        )
         return []

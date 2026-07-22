@@ -966,6 +966,38 @@ def test_image_block_resolve_image_data_url_invalid():
         b.resolve_image()
 
 
+def test_mimetype_from_inline_url_logs_debug_on_failure(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When both mimetype detection paths fail, a debug log should be emitted."""
+    import logging
+
+    import filetype
+
+    from llama_index.core.base.llms.types import ImageBlock
+
+    def _raise(*args: object, **kwargs: object) -> object:
+        raise RuntimeError("boom")
+
+    # Force the outer get_type and the inner b64decode/guess to raise so the
+    # innermost except (which logs) is exercised.
+    monkeypatch.setattr(filetype, "get_type", _raise)
+    monkeypatch.setattr(filetype, "guess", _raise)
+    monkeypatch.setattr(base64, "b64decode", _raise)
+
+    data_url = "data:image/png;base64,iVBORw0KGgo="
+
+    with caplog.at_level(logging.DEBUG, logger="llama_index.core.base.llms.types"):
+        result = ImageBlock.mimetype_from_inline_url(data_url)
+
+    assert result is None
+    assert any(
+        "Could not determine mimetype from inline data url" in record.message
+        and record.levelno == logging.DEBUG
+        for record in caplog.records
+    ), [r.message for r in caplog.records]
+
+
 def test_image_block_resolve_error():
     with pytest.raises(
         ValueError, match="No valid source provided to resolve binary data!"

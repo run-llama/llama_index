@@ -241,7 +241,10 @@ class BaseContentBlock(ABC, BaseModel):
                     data = url.split(";base64,")[1]
                     decoded_data = base64.b64decode(data)
                     return filetype.guess(decoded_data)
-                except Exception:
+                except Exception as e:
+                    _logger.debug(
+                        "Could not determine mimetype from inline data url: %s", e
+                    )
                     return None
         return None
 

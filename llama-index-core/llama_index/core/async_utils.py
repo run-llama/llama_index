@@ -3,12 +3,14 @@
 import asyncio
 import contextvars
 import concurrent.futures
+import logging
 from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
 
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_asyncio_module(show_progress: bool = False) -> Any:
@@ -102,8 +104,12 @@ def run_async_tasks(
         # run the operation w/o tqdm on hitting a fatal
         # may occur in some environments where tqdm.asyncio
         # is not supported
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(
+                "Falling back to plain asyncio.gather for async tasks; "
+                "tqdm-based progress bar is unavailable: %s",
+                e,
+            )
 
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)

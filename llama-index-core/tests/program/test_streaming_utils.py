@@ -1,6 +1,10 @@
 """Test streaming utilities."""
 
+import logging
 from typing import List, Optional
+
+import pytest
+
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.program.streaming_utils import (
@@ -287,3 +291,58 @@ def test_process_streaming_content_incremental_validation_error_fallback():
     # Should still have the name field
     if hasattr(result, "name"):
         assert result.name == "John"
+
+
+def test_extract_partial_list_progress_logs_debug_on_failure(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When partial-list extraction raises, a debug log should be emitted."""
+    import re
+
+    def _boom(*args: object, **kwargs: object) -> list:
+        raise RuntimeError("regex blew up")
+
+    monkeypatch.setattr(re, "findall", _boom)
+
+    from llama_index.core.program.utils import create_flexible_model
+
+    partial_cls = create_flexible_model(Show)
+    current_show = Show(title="Comedy Show")
+
+    with caplog.at_level(
+        logging.DEBUG, logger="llama_index.core.program.streaming_utils"
+    ):
+        result = _extract_partial_list_progress(
+            '{"jokes": [{"setup": "x"}', Show, current_show, partial_cls
+        )
+
+    assert result is None
+    assert any(
+        "Failed to extract partial list progress" in record.message
+        and record.levelno == logging.DEBUG
+        for record in caplog.records
+    ), [r.message for r in caplog.records]
+
+
+def test_parse_partial_list_items_logs_debug_on_failure(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When partial-list item parsing raises, a debug log should be emitted."""
+    import re
+
+    def _boom(*args: object, **kwargs: object) -> list:
+        raise RuntimeError("regex blew up")
+
+    monkeypatch.setattr(re, "findall", _boom)
+
+    with caplog.at_level(
+        logging.DEBUG, logger="llama_index.core.program.streaming_utils"
+    ):
+        result = _parse_partial_list_items('{"setup": "x"}', "jokes", Show)
+
+    assert result == []
+    assert any(
+        "Failed to parse partial list items" in record.message
+        and record.levelno == logging.DEBUG
+        for record in caplog.records
+    ), [r.message for r in caplog.records]
