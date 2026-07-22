@@ -1,9 +1,13 @@
-from typing import List
+import json
+from typing import Any, List
 from unittest.mock import MagicMock
+
 import pytest
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.vector_stores.types import FilterOperator, MetadataFilter
 from llama_index.vector_stores.analyticdb import AnalyticDBVectorStore
+from llama_index.vector_stores.analyticdb.base import _build_filter_clause
 
 try:
     from alibabacloud_gpdb20160503.client import Client
@@ -60,3 +64,73 @@ def test_adbvector_delete() -> None:
     vector_store.delete(ref_doc_id="31d00b73-41ca-4d5a-a5b4-85a014b2c924")
 
     assert client.delete_collection_data.call_count == 1
+
+
+def test_build_filter_clause_escapes_sql_values() -> None:
+    filter_clause = _build_filter_clause(
+        MetadataFilter(
+            key="author",
+            value="x' OR '1'='1",
+            operator=FilterOperator.EQ,
+        )
+    )
+
+    assert filter_clause == "metadata_->>'author' = 'x'' OR ''1''=''1'"
+
+
+def test_build_filter_clause_escapes_metadata_keys_and_values() -> None:
+    assert (
+        _build_filter_clause(
+            MetadataFilter(
+                key="source.file",
+                value="O'Reilly",
+                operator=FilterOperator.EQ,
+            )
+        )
+        == "metadata_->>'source.file' = 'O''Reilly'"
+    )
+
+    assert (
+        _build_filter_clause(
+            MetadataFilter(
+                key="content type",
+                value="text/plain",
+                operator=FilterOperator.EQ,
+            )
+        )
+        == "metadata_->>'content type' = 'text/plain'"
+    )
+
+    assert (
+        _build_filter_clause(
+            MetadataFilter(
+                key="author' OR '1'='1",
+                value="x' OR '1'='1",
+                operator=FilterOperator.EQ,
+            )
+        )
+        == "metadata_->>'author'' OR ''1''=''1' = 'x'' OR ''1''=''1'"
+    )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        'foo" OR "1"="1',
+        r"foo\bar",
+        "O'Reilly",
+        1,
+        1.5,
+    ],
+)
+def test_build_filter_clause_contains_uses_json_encoding(value: Any) -> None:
+    filter_clause = _build_filter_clause(
+        MetadataFilter(
+            key="tags",
+            value=value,
+            operator=FilterOperator.CONTAINS,
+        )
+    )
+
+    expected_json = json.dumps([value]).replace("'", "''")
+    assert filter_clause == f"metadata_::jsonb->'tags' @> '{expected_json}'"
