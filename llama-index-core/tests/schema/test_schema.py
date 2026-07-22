@@ -15,6 +15,9 @@ from llama_index.core.schema import (
     NodeWithScore,
     ObjectType,
     TextNode,
+    _ssrf_redirect_hook,
+    _ssrf_safe_get,
+    _validate_ssrf_url,
 )
 
 
@@ -431,3 +434,106 @@ def test_media_resource_hash_with_various_content() -> None:
     # Same content should produce same hash
     resource_text2 = MediaResource(text="hello")
     assert resource_text.hash == resource_text2.hash
+
+
+# --- SSRF protection (CWE-918) -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://169.254.169.254/latest/meta-data/iam/security-credentials/",  # cloud metadata
+        "http://127.0.0.1/",  # loopback
+        "http://10.0.0.1/",  # RFC-1918 private
+        "http://172.16.0.5/",  # RFC-1918 private
+        "http://192.168.1.1/",  # RFC-1918 private
+        "http://0.0.0.0/",  # unspecified
+        "http://[::1]/",  # IPv6 loopback
+        "http://2130706433/",  # decimal-obfuscated 127.0.0.1
+        "http://0177.0.0.1/",  # octal-obfuscated 127.0.0.1
+        "http://[::ffff:127.0.0.1]/",  # IPv4-mapped IPv6 loopback
+        "http://[::ffff:169.254.169.254]/",  # IPv4-mapped IPv6 metadata IP
+    ],
+)
+def test_validate_ssrf_url_blocks_private_and_reserved(url: str) -> None:
+    with pytest.raises(ValueError):
+        _validate_ssrf_url(url)
+
+
+def test_validate_ssrf_url_allows_public_host() -> None:
+    # example.com resolves to a public IP; should not raise.
+    _validate_ssrf_url("https://example.com/image.png")
+
+
+@pytest.mark.parametrize("scheme_url", ["file:///etc/passwd", "ftp://example.com/x"])
+def test_validate_ssrf_url_rejects_non_http_scheme(scheme_url: str) -> None:
+    with pytest.raises(ValueError):
+        _validate_ssrf_url(scheme_url)
+
+
+def test_ssrf_redirect_hook_blocks_redirect_to_private_ip() -> None:
+    response = mock.MagicMock()
+    response.is_redirect = True
+    response.url = "https://example.com/redirector"
+    response.headers = {"Location": "http://169.254.169.254/latest/meta-data/"}
+
+    with pytest.raises(ValueError):
+        _ssrf_redirect_hook(response)
+
+
+def test_ssrf_redirect_hook_resolves_relative_redirect() -> None:
+    """A relative Location header must be resolved against response.url before validation."""
+    response = mock.MagicMock()
+    response.is_redirect = True
+    response.url = "http://169.254.169.254/safe-looking-path"
+    response.headers = {"Location": "/latest/meta-data/"}
+
+    with pytest.raises(ValueError):
+        _ssrf_redirect_hook(response)
+
+
+def test_ssrf_redirect_hook_allows_safe_redirect() -> None:
+    response = mock.MagicMock()
+    response.is_redirect = True
+    response.url = "https://example.com/redirector"
+    response.headers = {"Location": "https://example.com/final-image.png"}
+
+    _ssrf_redirect_hook(response)  # should not raise
+
+
+def test_ssrf_safe_get_rejects_blocked_url_before_request() -> None:
+    with mock.patch("requests.Session.get") as mock_get:
+        with pytest.raises(ValueError):
+            _ssrf_safe_get("http://169.254.169.254/latest/meta-data/")
+    mock_get.assert_not_called()
+
+
+def test_ssrf_safe_get_registers_redirect_hook() -> None:
+    fake_session = mock.MagicMock()
+    fake_session.hooks = {"response": []}
+    fake_session.__enter__ = mock.Mock(return_value=fake_session)
+    fake_session.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch("requests.Session", return_value=fake_session):
+        _ssrf_safe_get("https://example.com/image.png")
+
+    # The session used for the request must carry the SSRF redirect hook,
+    # so that every redirect hop (not just the initial URL) gets validated.
+    assert _ssrf_redirect_hook in fake_session.hooks["response"]
+    fake_session.get.assert_called_once()
+
+
+def test_image_node_resolve_image_blocks_ssrf_url() -> None:
+    node = ImageNode(image_url="http://169.254.169.254/latest/meta-data/")
+    with pytest.raises(ValueError):
+        node.resolve_image()
+
+
+def test_image_document_resolve_image_blocks_ssrf_url() -> None:
+    # Set via the setter (post-construction) so this exercises the
+    # ImageDocument.resolve_image() SSRF guard directly, rather than the
+    # separate is_image_url_pil() pre-check performed in __init__.
+    doc = ImageDocument()
+    doc.image_url = "http://169.254.169.254/latest/meta-data/"
+    with pytest.raises(ValueError):
+        doc.resolve_image()
