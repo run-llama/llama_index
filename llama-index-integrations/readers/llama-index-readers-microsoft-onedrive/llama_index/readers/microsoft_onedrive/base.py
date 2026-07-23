@@ -5,7 +5,7 @@ import os
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Union
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
@@ -272,8 +272,21 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         # Download the file.
         file_data = requests.get(file_download_url)
 
-        # Save the downloaded file to the specified local directory.
-        file_path = os.path.join(local_dir, file_name)
+        # Save the downloaded file to a directory keyed by the item id, so
+        # same-named files from different folders do not overwrite each other.
+        # The id must be a single plain path component on every platform so
+        # ids cannot alias each other or escape the download directory.
+        item_id = item["id"]
+        if (
+            item_id in ("", ".", "..")
+            or item_id != PureWindowsPath(item_id).name
+            or item_id != PurePosixPath(item_id).name
+            or item_id != item_id.rstrip(". ")
+        ):
+            raise ValueError(f"Unsafe drive item id: {item_id}")
+        file_dir = Path(local_dir) / item_id
+        file_dir.mkdir(exist_ok=True)
+        file_path = os.path.join(str(file_dir), os.path.basename(file_name))
         with open(file_path, "wb") as f:
             f.write(file_data.content)
 
@@ -667,8 +680,11 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                     temp_dir=temp_dir,
                 )
                 logger.debug("Downloaded %d files from OneDriveReader", len(payloads))
+                # Files are downloaded into per-item subdirectories, so the
+                # local read is always recursive; `recursive` only controls
+                # OneDrive folder traversal above.
                 return self._load_documents_with_metadata(
-                    payloads, temp_dir, recursive=recursive
+                    payloads, temp_dir, recursive=True
                 )
         except Exception as e:
             logger.error(
