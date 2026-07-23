@@ -306,6 +306,79 @@ async def test_invalid_handoff():
 
 
 @pytest.mark.asyncio
+async def test_restricted_handoff_error_message():
+    """Handoff to an agent outside can_handoff_to must name the *source* agent
+    in the error, not the destination agent."""
+    # agent1 may only hand off to agent2; agent3 is explicitly excluded.
+    agent1 = FunctionAgent(
+        name="agent1",
+        description="test",
+        can_handoff_to=["agent2"],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handoff agent3 Trying a forbidden target",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="handoff",
+                                    tool_kwargs={
+                                        "to_agent": "agent3",
+                                        "reason": "Trying a forbidden target",
+                                    },
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content="ok staying here"
+                    ),
+                ]
+            )
+        ),
+    )
+    agent2 = FunctionAgent(
+        **agent1.model_dump(exclude={"llm", "name", "can_handoff_to"}),
+        name="agent2",
+        can_handoff_to=None,
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([])
+        ),
+    )
+    agent3 = FunctionAgent(
+        **agent1.model_dump(exclude={"llm", "name", "can_handoff_to"}),
+        name="agent3",
+        can_handoff_to=None,
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([])
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent1, agent2, agent3],
+        root_agent="agent1",
+    )
+
+    handler = workflow.run(user_msg="test")
+    events = []
+    async for event in handler.stream_events():
+        events.append(event)
+    await handler
+
+    events_str = str(events)
+    # The error must identify the SOURCE (agent1) as the one lacking permission,
+    # not the destination (agent3).  Before the fix these were swapped.
+    assert "agent1" in events_str, "source agent should appear in error"
+    assert "agent3" in events_str, "target agent should appear in error"
+    # Old (buggy) message had agent3 as subject and agent1 as the target.
+    assert "agent3 is not allowed" not in events_str, "target must not be the subject"
+    assert "agent1 is not allowed" in events_str, "source must be the subject"
+
+
+@pytest.mark.asyncio
 async def test_workflow_with_state():
     """Test workflow with state management."""
 
