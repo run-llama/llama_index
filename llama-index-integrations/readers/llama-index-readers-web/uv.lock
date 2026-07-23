@@ -1973,7 +1973,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-web"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },

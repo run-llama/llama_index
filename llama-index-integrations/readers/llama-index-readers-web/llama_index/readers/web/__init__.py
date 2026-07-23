@@ -45,6 +45,9 @@ from llama_index.readers.web.sitemap.base import (
 from llama_index.readers.web.spider_web.base import (
     SpiderWebReader,
 )
+from llama_index.readers.web.thecrawler_web.base import (
+    TheCrawlerWebReader,
+)
 from llama_index.readers.web.trafilatura_web.base import (
     TrafilaturaWebReader,
 )
@@ -80,6 +83,7 @@ __all__ = [
     "SimpleWebPageReader",
     "SitemapReader",
     "SpiderWebReader",
+    "TheCrawlerWebReader",
     "TrafilaturaWebReader",
     "UnstructuredURLLoader",
     "WholeSiteReader",
