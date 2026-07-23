@@ -340,7 +340,7 @@ class Memory(BaseMemory):
             video_token_size_estimate=video_token_size_estimate,
         )
 
-    def _estimate_token_count(
+    async def _estimate_token_count(
         self,
         message_or_blocks: Union[
             str, ChatMessage, List[ChatMessage], List[ContentBlock]
@@ -428,18 +428,8 @@ class Memory(BaseMemory):
         else:
             raise ValueError(f"Invalid message type: {type(message_or_blocks)}")
 
-        # Estimate the token count for each block
         for block in blocks:
-            if isinstance(block, TextBlock):
-                token_count += len(self.tokenizer_fn(block.text))
-            elif isinstance(block, ImageBlock):
-                token_count += self.image_token_size_estimate
-            elif isinstance(block, VideoBlock):
-                token_count += self.video_token_size_estimate
-            elif isinstance(block, AudioBlock):
-                token_count += self.audio_token_size_estimate
-            elif isinstance(block, DocumentBlock):
-                token_count += self.document_token_size_estimate
+            token_count += await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
 
         return token_count
 
@@ -512,12 +502,12 @@ class Memory(BaseMemory):
             )
 
             # Calculate tokens saved
-            original_tokens = self._estimate_token_count(content)
+            original_tokens = await self._estimate_token_count(content)
 
             if truncated_block_content is None:
                 new_tokens = 0
             else:
-                new_tokens = self._estimate_token_count(truncated_block_content)
+                new_tokens = await self._estimate_token_count(truncated_block_content)
 
             tokens_saved = original_tokens - new_tokens
             tokens_to_truncate -= tokens_saved
@@ -539,7 +529,7 @@ class Memory(BaseMemory):
 
             # Truncate content and measure tokens saved
             content = truncated_content.pop(memory_block.name)
-            tokens_to_truncate -= self._estimate_token_count(content)
+            tokens_to_truncate -= await self._estimate_token_count(content)
 
         return truncated_content
 
@@ -629,9 +619,9 @@ class Memory(BaseMemory):
         chat_history = await self.sql_store.get_messages(
             self.session_id, status=MessageStatus.ACTIVE
         )
-        chat_history_tokens = sum(
-            self._estimate_token_count(message) for message in chat_history
-        )
+        chat_history_tokens = 0
+        for message in chat_history:
+            chat_history_tokens += await self._estimate_token_count(message)
 
         # Get memory blocks content
         content_per_memory_block = await self._get_memory_blocks_content(
@@ -639,10 +629,9 @@ class Memory(BaseMemory):
         )
 
         # Calculate memory blocks tokens
-        memory_blocks_tokens = sum(
-            self._estimate_token_count(content)
-            for content in content_per_memory_block.values()
-        )
+        memory_blocks_tokens = 0
+        for content in content_per_memory_block.values():
+            memory_blocks_tokens += await self._estimate_token_count(content)
 
         # Handle truncation if needed
         truncated_content = await self._truncate_memory_blocks(
@@ -688,9 +677,9 @@ class Memory(BaseMemory):
         if not current_queue:
             return
 
-        tokens_in_current_queue = sum(
-            self._estimate_token_count(message) for message in current_queue
-        )
+        tokens_in_current_queue = 0
+        for message in current_queue:
+            tokens_in_current_queue += await self._estimate_token_count(message)
 
         # If we're over the token limit, initiate waterfall
         token_limit = self.token_limit * self.chat_history_token_ratio
@@ -718,7 +707,7 @@ class Memory(BaseMemory):
                 ):
                     message = reversed_queue.pop()
                     messages_to_flush.append(message)
-                    flushed_tokens += self._estimate_token_count(message)
+                    flushed_tokens += await self._estimate_token_count(message)
 
                 # Ensure we keep at least one message
                 if not reversed_queue and messages_to_flush:
@@ -798,10 +787,9 @@ class Memory(BaseMemory):
 
                 # Recalculate remaining tokens
                 chronological_view = reversed_queue[::-1]
-                tokens_in_current_queue = sum(
-                    self._estimate_token_count(message)
-                    for message in chronological_view
-                )
+                tokens_in_current_queue = 0
+                for message in chronological_view:
+                    tokens_in_current_queue += await self._estimate_token_count(message)
                 tokens_to_remove = tokens_in_current_queue - token_limit
 
                 # Exit if we've flushed everything possible but still over limit
