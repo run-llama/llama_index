@@ -68,10 +68,15 @@ ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
 }
 
 ROLES_FROM_GEMINI: dict[str, MessageRole] = {
-    ## Gemini has user, model and function roles.
+    ## Gemini natively uses user, model, and function roles.
     "user": MessageRole.USER,
     "model": MessageRole.ASSISTANT,
     "function": MessageRole.TOOL,
+    ## Gemini-compatible MaaS endpoints (e.g. `gemma-4-26b-a4b-it-maas` via
+    ## Vertex Model Garden) may return `assistant` instead of `model` in the
+    ## role field; accepting it here avoids a `KeyError` when reading the
+    ## response (#21799).
+    "assistant": MessageRole.ASSISTANT,
 }
 
 

@@ -2096,3 +2096,35 @@ async def test_create_file_part_no_display_name_by_default():
     call_kwargs = mock_client.aio.files.upload.call_args
     upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
     assert upload_config.display_name is None
+
+
+def test_chat_from_gemini_response_accepts_assistant_role() -> None:
+    """Regression for #21799: Gemini-compatible MaaS endpoints (e.g.
+    `gemma-4-26b-a4b-it-maas`) may return `assistant` instead of the
+    Gemini-native `model` role. `ROLES_FROM_GEMINI` must accept it so
+    `chat_from_gemini_response` doesn't raise `KeyError: 'assistant'`."""
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "assistant"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Hello from gemma"
+    mock_response.candidates[0].content.parts[0].thought = False
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call.id = ""
+    mock_response.candidates[0].content.parts[0].function_call.name = ""
+    mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.candidates[0].grounding_metadata = None
+    mock_response.candidates[0].model_dump.return_value = {
+        "finish_reason": types.FinishReason.STOP,
+        "content": {"role": "assistant", "parts": [{"text": "Hello from gemma"}]},
+    }
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+    mock_response.function_calls = None
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert chat_response.message.role == MessageRole.ASSISTANT
+    assert chat_response.message.blocks[0].text == "Hello from gemma"
