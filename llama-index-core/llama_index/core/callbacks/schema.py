@@ -27,6 +27,7 @@ class CBEventType(str, Enum):
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
         SUB_QUESTION: Logs for a generated sub question and answer.
+        TOOL: Logs for the start and end of tool execution.
 
     """
 
@@ -44,6 +45,7 @@ class CBEventType(str, Enum):
     RERANKING = "reranking"
     EXCEPTION = "exception"
     AGENT_STEP = "agent_step"
+    TOOL = "tool"
 
 
 class EventPayload(str, Enum):
