@@ -1009,3 +1009,91 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_structured_predict_sends_instance_reasoning_options():
+    """
+    Instance-level reasoning_options must reach responses.parse — the structured
+    path bypasses _get_model_kwargs.
+    See https://github.com/run-llama/llama_index/issues/22358.
+    """
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+
+    llm = OpenAIResponses(
+        model="gpt-5.1", api_key="fake", reasoning_options={"effort": "high"}
+    )
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Alice")
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    llm.structured_predict(
+        output_cls=Person, prompt=PromptTemplate("Create a profile for a person")
+    )
+
+    call_kwargs = llm._client.responses.parse.call_args.kwargs
+    assert call_kwargs["reasoning"] == {"effort": "high"}
+
+
+@pytest.mark.asyncio
+async def test_astructured_predict_sends_instance_reasoning_options():
+    from unittest.mock import AsyncMock
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+
+    llm = OpenAIResponses(
+        model="gpt-5.1", api_key="fake", reasoning_options={"effort": "high"}
+    )
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Bob")
+    llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+
+    await llm.astructured_predict(
+        output_cls=Person, prompt=PromptTemplate("Create a profile for a person")
+    )
+
+    call_kwargs = llm._aclient.responses.parse.call_args.kwargs
+    assert call_kwargs["reasoning"] == {"effort": "high"}
+
+
+def test_structured_predict_non_reasoning_model_sends_no_reasoning():
+    """Mirrors the chat-path gate: non-reasoning models never receive `reasoning`."""
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+
+    llm = OpenAIResponses(
+        model="gpt-4o-mini", api_key="fake", reasoning_options={"effort": "high"}
+    )
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Alice")
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    llm.structured_predict(
+        output_cls=Person, prompt=PromptTemplate("Create a profile for a person")
+    )
+
+    assert "reasoning" not in llm._client.responses.parse.call_args.kwargs
+
+
+def test_structured_predict_llm_kwargs_override_instance_reasoning():
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+
+    llm = OpenAIResponses(
+        model="gpt-5.1", api_key="fake", reasoning_options={"effort": "high"}
+    )
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Alice")
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    llm.structured_predict(
+        output_cls=Person,
+        prompt=PromptTemplate("Create a profile for a person"),
+        llm_kwargs={"reasoning": {"effort": "low"}},
+    )
+
+    call_kwargs = llm._client.responses.parse.call_args.kwargs
+    assert call_kwargs["reasoning"] == {"effort": "low"}
