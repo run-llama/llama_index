@@ -13,6 +13,7 @@ from llama_index.core.utils import (
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
     aretry_on_exceptions_with_backoff,
+    concat_dirs,
     _get_colored_text,
     get_cache_dir,
     get_color_mapping,
@@ -219,6 +220,14 @@ def test_iter_batch() -> None:
     assert list(iter_batch(gen, 3)) == [[0, 1, 2], [3, 4]]
 
     assert list(iter_batch([], 3)) == []
+
+
+def test_concat_dirs() -> None:
+    """Test concat_dirs joins paths and tolerates an empty dirname."""
+    assert concat_dirs("dir", "file.json") == os.path.join("dir/", "file.json")
+    assert concat_dirs("dir/", "file.json") == os.path.join("dir/", "file.json")
+    # An empty dirname should resolve to the current directory, not crash.
+    assert concat_dirs("", "file.json") == "file.json"
 
 
 def test_get_color_mapping() -> None:
