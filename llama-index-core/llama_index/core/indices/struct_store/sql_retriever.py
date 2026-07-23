@@ -138,9 +138,7 @@ class DefaultSQLParser(BaseSQLParser):
         sql_query_start = response.find("SQLQuery:")
         if sql_query_start != -1:
             response = response[sql_query_start:]
-            # TODO: move to removeprefix after Python 3.9+
-            if response.startswith("SQLQuery:"):
-                response = response[len("SQLQuery:") :]
+            response = response.removeprefix("SQLQuery:")
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
@@ -162,9 +160,7 @@ class PGVectorSQLParser(BaseSQLParser):
         sql_query_start = response.find("SQLQuery:")
         if sql_query_start != -1:
             response = response[sql_query_start:]
-            # TODO: move to removeprefix after Python 3.9+
-            if response.startswith("SQLQuery:"):
-                response = response[len("SQLQuery:") :]
+            response = response.removeprefix("SQLQuery:")
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]

@@ -34,6 +34,8 @@ def ai21_model_to_context_size(model: str) -> Union[int, None]:
     token_limit = JAMBA_MODELS.get(model)
 
     if token_limit is None:
+        if "j2-" in model:
+            return 8192
         raise ValueError(f"Model name {model} not found in {JAMBA_MODELS.keys()}")
 
     return token_limit
