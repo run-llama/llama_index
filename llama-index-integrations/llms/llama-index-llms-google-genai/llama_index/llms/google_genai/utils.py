@@ -120,9 +120,25 @@ def merge_neighboring_same_role_messages(
     return merged_messages
 
 
+_TOOL_CALL_FINISH_REASONS = frozenset(
+    {
+        types.FinishReason.MALFORMED_FUNCTION_CALL,
+        types.FinishReason.UNEXPECTED_TOOL_CALL,
+    }
+)
+
+
 def _error_if_finished_early(candidate: types.Candidate) -> None:
     if finish_reason := candidate.finish_reason:
         if finish_reason != types.FinishReason.STOP:
+            if finish_reason in _TOOL_CALL_FINISH_REASONS:
+                logger.warning(
+                    "Gemini returned %s finish reason; treating response as "
+                    "usable and letting the caller decide how to proceed.",
+                    finish_reason.name,
+                )
+                return
+
             reason = finish_reason.name
 
             # Safety reasons have more detail, so include that if we can.
