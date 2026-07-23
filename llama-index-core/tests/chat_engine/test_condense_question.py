@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import Mock
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -48,6 +49,26 @@ def test_condense_question_chat_engine_with_init_history(patch_llm_predictor) ->
         "{'question': 'new human message', 'chat_history': 'user: test human "
         "message\\nassistant: test ai message'}"
     )
+
+
+def test_condense_question_logs_omit_chat_content(caplog, patch_llm_predictor) -> None:
+    query_engine = Mock(spec=BaseQueryEngine)
+    query_engine.query.side_effect = lambda x: Response(response=x)
+    engine = CondenseQuestionChatEngine.from_defaults(query_engine=query_engine)
+
+    engine.chat("remember secret-token-123")
+    caplog.clear()
+
+    with caplog.at_level(logging.DEBUG):
+        engine.chat("use secret-token-456")
+
+    chat_engine_logs = "\n".join(
+        record.getMessage()
+        for record in caplog.records
+        if record.name == "llama_index.core.chat_engine.condense_question"
+    )
+    assert "secret-token-123" not in chat_engine_logs
+    assert "secret-token-456" not in chat_engine_logs
 
 
 def test_stream_chat_history_write_completes_on_early_exit() -> None:
