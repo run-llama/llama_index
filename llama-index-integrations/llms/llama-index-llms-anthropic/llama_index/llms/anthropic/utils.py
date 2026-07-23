@@ -70,6 +70,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-sonnet-5": 1000000,
     "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-opus-4-8": 1000000,
+    "anthropic.claude-sonnet-5": 1000000,
     "anthropic.claude-fable-5": 1000000,
 }
 
@@ -89,6 +90,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-sonnet-5": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
+    "claude-sonnet-5": 1000000,
     "claude-fable-5": 1000000,
 }
 
@@ -119,6 +121,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-5": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
+    "claude-sonnet-5": 1000000,
     "claude-fable-5": 1000000,
 }
 
@@ -135,6 +138,8 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
     "claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "claude-opus-4-8",
+    "anthropic.claude-sonnet-5",
+    "claude-sonnet-5",
     "anthropic.claude-fable-5",
     "claude-fable-5",
     "anthropic.claude-sonnet-5",
@@ -581,6 +586,18 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude Fable 5
+    "claude-fable-5",
+    # Claude 4.8 Opus
+    "claude-opus-4-8",
+    # Claude 4.7 Opus
+    "claude-opus-4-7",
+    # Claude 4.6 Opus
+    "claude-opus-4-6",
+    # Claude 5 Sonnet
+    "claude-sonnet-5",
+    # Claude 4.6 Sonnet
+    "claude-sonnet-4-6",
     # Claude 4.5 Opus
     "claude-opus-4-5-20251101",
     "claude-opus-4-5",
