@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "rank-llm>=0.21.0",
-    "transformers<4.50",
+    "transformers<5.1",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
