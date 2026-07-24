@@ -56,6 +56,32 @@ def test_get_default_headers_preserves_default_when_no_conflict():
     assert headers["User-Agent"].startswith("llama-index/")
 
 
+def test_anthropic_vertex_initialization_with_gcp_credentials():
+    """Test that Vertex AI client is initialized with gcp_credentials and gcp_access_token."""
+    mock_credentials = MagicMock()
+
+    llm = Anthropic(
+        model="claude-sonnet-4-5@20250929",
+        region="us-east5",
+        project_id="my-project-id",
+        gcp_credentials=mock_credentials,
+        gcp_access_token="fake-access-token",
+    )
+
+    import anthropic
+
+    assert isinstance(llm._client, anthropic.AnthropicVertex)
+    assert isinstance(llm._aclient, anthropic.AsyncAnthropicVertex)
+    assert llm._client.region == "us-east5"
+    assert llm._client.project_id == "my-project-id"
+    assert llm._client.credentials is mock_credentials
+    assert llm._client.access_token == "fake-access-token"
+    assert llm._aclient.region == "us-east5"
+    assert llm._aclient.project_id == "my-project-id"
+    assert llm._aclient.credentials is mock_credentials
+    assert llm._aclient.access_token == "fake-access-token"
+
+
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_PROJECT_ID") is None,
     reason="Project ID not available to test Vertex AI integration",

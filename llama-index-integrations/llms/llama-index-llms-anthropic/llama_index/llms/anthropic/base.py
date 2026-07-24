@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import llama_index.core.instrumentation as instrument
@@ -81,7 +83,7 @@ from anthropic.types import (
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
     from llama_index.core.program.utils import FlexibleModel
-
+    from google.auth.credentials import Credentials as GoogleCredentials  # type: ignore
 
 logger = logging.getLogger(__name__)
 dispatcher = instrument.get_dispatcher(__name__)
@@ -234,6 +236,8 @@ class Anthropic(FunctionCallingLLM):
         output_parser: Optional[BaseOutputParser] = None,
         region: Optional[str] = None,
         project_id: Optional[str] = None,
+        gcp_credentials: Optional[GoogleCredentials] = None,
+        gcp_access_token: Optional[str] = None,
         aws_region: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -272,21 +276,20 @@ class Anthropic(FunctionCallingLLM):
         merged_headers = _get_default_headers(default_headers)
 
         if region and project_id and not aws_region:
-            self._client = anthropic.AnthropicVertex(
-                region=region,
-                project_id=project_id,
-                timeout=timeout,
-                max_retries=max_retries,
-                default_headers=merged_headers,
-            )
+            vertex_kwargs: Dict[str, Any] = {
+                "region": region,
+                "project_id": project_id,
+                "timeout": timeout,
+                "max_retries": max_retries,
+                "default_headers": merged_headers,
+            }
+            if gcp_credentials is not None:
+                vertex_kwargs["credentials"] = gcp_credentials
+            if gcp_access_token is not None:
+                vertex_kwargs["access_token"] = gcp_access_token
 
-            self._aclient = anthropic.AsyncAnthropicVertex(
-                region=region,
-                project_id=project_id,
-                timeout=timeout,
-                max_retries=max_retries,
-                default_headers=merged_headers,
-            )
+            self._client = anthropic.AnthropicVertex(**vertex_kwargs)
+            self._aclient = anthropic.AsyncAnthropicVertex(**vertex_kwargs)
         elif aws_region:
             self._client = anthropic.AnthropicBedrock(
                 aws_region=aws_region,
