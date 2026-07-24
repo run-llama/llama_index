@@ -103,6 +103,46 @@ async def test_estimate_token_count_document(memory):
 
 
 @pytest.mark.asyncio
+async def test_estimate_token_count_image_url_only(memory):
+    """URL-only ImageBlock falls back to image_token_size_estimate (no network I/O)."""
+    block = ImageBlock(url="https://example.com/photo.jpg")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.image_token_size_estimate
+    assert count == 256
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_video_url_only(memory):
+    """URL-only VideoBlock falls back to video_token_size_estimate (no network I/O)."""
+    block = VideoBlock(url="https://example.com/video.mp4")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.video_token_size_estimate
+    assert count == 256
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_audio_url_only(memory):
+    """URL-only AudioBlock falls back to audio_token_size_estimate (no network I/O)."""
+    block = AudioBlock(url="https://example.com/audio.mp3")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.audio_token_size_estimate
+    assert count == 256
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_document_url_only(memory):
+    """URL-only DocumentBlock falls back to document_token_size_estimate (no network I/O)."""
+    block = DocumentBlock(url="https://example.com/doc.pdf")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.document_token_size_estimate
+    assert count == 2048
+
+
+@pytest.mark.asyncio
 async def test_manage_queue_under_limit(memory):
     """Test queue management when under token limit."""
     # Set up a case where we're under the token limit

@@ -426,9 +426,49 @@ class Memory(BaseMemory):
             raise ValueError(f"Invalid message type: {type(message_or_blocks)}")
 
         for block in blocks:
-            token_count += await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
+            token_count += await self._estimate_block_tokens(block)
 
         return token_count
+
+    async def _estimate_block_tokens(
+        self,
+        block: Union[
+            TextBlock,
+            ImageBlock,
+            AudioBlock,
+            VideoBlock,
+            DocumentBlock,
+            CitableBlock,
+            CitationBlock,
+            ThinkingBlock,
+        ],
+    ) -> int:
+        """Estimate tokens for a single content block.
+
+        Uses the block's own aestimate_tokens() when the data is already
+        available locally (embedded bytes).  For URL-only blocks this avoids
+        network I/O in the hot path by falling back to the user-configurable
+        ``*_token_size_estimate`` fields on Memory, which also keeps those
+        fields meaningful.
+        """
+        if isinstance(block, ImageBlock):
+            if block.image is not None or block.path is not None:
+                return await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
+            return self.image_token_size_estimate
+        elif isinstance(block, AudioBlock):
+            if block.audio is not None or block.path is not None:
+                return await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
+            return self.audio_token_size_estimate
+        elif isinstance(block, VideoBlock):
+            if block.video is not None or block.path is not None:
+                return await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
+            return self.video_token_size_estimate
+        elif isinstance(block, DocumentBlock):
+            if block.data is not None or block.path is not None:
+                return await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
+            return self.document_token_size_estimate
+        else:
+            return await block.aestimate_tokens(tokenizer=self.tokenizer_fn)
 
     async def _get_memory_blocks_content(
         self,
