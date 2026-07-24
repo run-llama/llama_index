@@ -45,11 +45,11 @@ babel==2.17.0
     # via jupyterlab-server
 backcall==0.2.0
     # via ipython
-banks==2.1.3
+banks==2.4.2
     # via llama-index-core
 beautifulsoup4==4.13.4
     # via nbconvert
-black==26.5.1
+black==26.3.1
 bleach==6.2.0
     # via nbconvert
 certifi==2026.4.22
@@ -92,7 +92,7 @@ comm==0.2.2
     #   ipywidgets
 coverage==7.9.2
     # via pytest-cov
-cryptography==45.0.5
+cryptography==46.0.7
     # via
     #   types-pyopenssl
     #   types-redis
@@ -129,7 +129,7 @@ executing==2.2.0
     # via stack-data
 fastjsonschema==2.21.1
     # via nbformat
-filelock==3.18.0
+filelock==3.20.3
     # via virtualenv
 filetype==1.2.0
     # via llama-index-core
@@ -155,7 +155,7 @@ httpx==0.28.1
     #   llama-index-core
 identify==2.6.12
     # via pre-commit
-idna==3.15
+idna==3.17
     # via
     #   anyio
     #   httpx
@@ -234,7 +234,7 @@ jupyter-events==0.12.0
     # via jupyter-server
 jupyter-lsp==2.2.5
     # via jupyterlab
-jupyter-server==2.16.0
+jupyter-server==2.18.0
     # via
     #   jupyter-lsp
     #   jupyterlab
@@ -243,7 +243,7 @@ jupyter-server==2.16.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.4.8
+jupyterlab==4.5.7
     # via
     #   jupyter
     #   notebook
@@ -287,7 +287,7 @@ mypy-extensions==1.1.0
     #   typing-inspect
 nbclient==0.10.2
     # via nbconvert
-nbconvert==7.17.0
+nbconvert==7.17.1
     # via
     #   jupyter
     #   jupyter-server
@@ -310,7 +310,7 @@ nltk==3.9.4
     # via llama-index-core
 nodeenv==1.9.1
     # via pre-commit
-notebook==7.4.4
+notebook==7.5.6
     # via jupyter
 notebook-shim==0.2.4
     # via
@@ -436,7 +436,7 @@ regex==2024.11.6
     # via
     #   nltk
     #   tiktoken
-requests==2.32.5
+requests==2.33.0
     # via
     #   jupyterlab-server
     #   llama-index-core
@@ -572,7 +572,7 @@ typing-inspection==0.4.1
     # via pydantic
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   pysnc
     #   requests
