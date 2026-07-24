@@ -430,6 +430,51 @@ def test_prepare_chat_with_no_tools_tool_not_required():
     assert len(result["tools"]) == 0
 
 
+def test_map_tool_choice_to_anthropic_named_tool():
+    """A specific tool name must be mapped to Anthropic's {"type": "tool", "name": ...} object."""
+    llm = Anthropic()
+
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=False, allow_parallel_tool_calls=False, tool_choice="search_tool"
+    )
+    assert tool_choice == {
+        "disable_parallel_tool_use": True,
+        "type": "tool",
+        "name": "search_tool",
+    }
+
+
+def test_map_tool_choice_to_anthropic_named_tool_with_thinking():
+    """Anthropic rejects forced tool use (named tool) when extended thinking is enabled."""
+    llm = Anthropic(thinking_dict={"type": "enabled", "budget_tokens": 1024})
+
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=False, allow_parallel_tool_calls=False, tool_choice="search_tool"
+    )
+    assert tool_choice["type"] == "auto"
+    assert "name" not in tool_choice
+
+
+def test_prepare_chat_with_tools_named_tool_choice():
+    """
+    Regression test: passing a specific tool name via tool_choice (as FunctionAgent's
+    initial_tool_choice does) must produce Anthropic's object format, not the raw
+    tool name string, otherwise the Anthropic API rejects the request with
+    "tool_choice: Input should be an object".
+    """
+    llm = Anthropic()
+
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], tool_choice="search_tool"
+    )
+
+    assert result["tool_choice"] == {
+        "disable_parallel_tool_use": True,
+        "type": "tool",
+        "name": "search_tool",
+    }
+
+
 def test_cache_point_to_cache_control() -> None:
     messages = [
         ChatMessage(role="system", blocks=[TextBlock(text="Hello1")]),

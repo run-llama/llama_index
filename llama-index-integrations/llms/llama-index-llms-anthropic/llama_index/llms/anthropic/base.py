@@ -957,13 +957,33 @@ class Anthropic(FunctionCallingLLM):
         return gen()
 
     def _map_tool_choice_to_anthropic(
-        self, tool_required: bool, allow_parallel_tool_calls: bool
+        self,
+        tool_required: bool,
+        allow_parallel_tool_calls: bool,
+        tool_choice: Optional[str] = None,
     ) -> dict:
         is_thinking_enabled = (
             self.thinking_dict and self.thinking_dict.get("type") == "enabled"
         )
+        disable_parallel_tool_use = not allow_parallel_tool_calls
+
+        # A specific tool name forces tool use, same as tool_required, so it is
+        # subject to the same restriction: Anthropic rejects forced tool use
+        # ("any" or a named tool) when extended thinking is enabled.
+        if tool_choice and tool_choice not in ("auto", "any", "none"):
+            if is_thinking_enabled:
+                return {
+                    "disable_parallel_tool_use": disable_parallel_tool_use,
+                    "type": "auto",
+                }
+            return {
+                "disable_parallel_tool_use": disable_parallel_tool_use,
+                "type": "tool",
+                "name": tool_choice,
+            }
+
         return {
-            "disable_parallel_tool_use": not allow_parallel_tool_calls,
+            "disable_parallel_tool_use": disable_parallel_tool_use,
             "type": "any" if tool_required and not is_thinking_enabled else "auto",
         }
 
@@ -975,6 +995,7 @@ class Anthropic(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_required: bool = False,
+        tool_choice: Optional[str] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -1009,10 +1030,10 @@ class Anthropic(FunctionCallingLLM):
         # anthropic doesn't like you specifying a tool choice if you don't have any tools
         tool_choice_dict = (
             {}
-            if not tools and not tool_required
+            if not tools and not tool_required and not tool_choice
             else {
                 "tool_choice": self._map_tool_choice_to_anthropic(
-                    tool_required, allow_parallel_tool_calls
+                    tool_required, allow_parallel_tool_calls, tool_choice
                 )
             }
         )
