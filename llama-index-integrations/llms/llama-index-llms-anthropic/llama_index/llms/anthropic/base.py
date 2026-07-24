@@ -237,6 +237,7 @@ class Anthropic(FunctionCallingLLM):
         aws_region: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
+        aws_bearer_token_bedrock: Optional[str] = None,
         cache_idx: Optional[int] = None,
         thinking_dict: Optional[Dict[str, Any]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
@@ -288,21 +289,30 @@ class Anthropic(FunctionCallingLLM):
                 default_headers=merged_headers,
             )
         elif aws_region:
+            aws_credentials_provided = {}
+            if aws_access_key_id and aws_secret_access_key:
+                aws_credentials_provided["aws_access_key"] = aws_access_key_id
+                aws_credentials_provided["aws_secret_key"] = aws_secret_access_key
+            if aws_bearer_token_bedrock:
+                if aws_credentials_provided:
+                    logger.warning(
+                        "Both AWS credentials ('aws_access_key_id' and 'aws_secret_access_key') and AWS bearer token provided. AWS bearer token will be ignored."
+                    )
+                else:
+                    aws_credentials_provided["api_key"] = aws_bearer_token_bedrock
             self._client = anthropic.AnthropicBedrock(
                 aws_region=aws_region,
-                aws_access_key=aws_access_key_id,
-                aws_secret_key=aws_secret_access_key,
                 max_retries=max_retries,
                 default_headers=merged_headers,
                 timeout=timeout,
+                **aws_credentials_provided,
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
-                aws_access_key=aws_access_key_id,
-                aws_secret_key=aws_secret_access_key,
                 max_retries=max_retries,
                 default_headers=merged_headers,
                 timeout=timeout,
+                **aws_credentials_provided,
             )
         else:
             self._client = anthropic.Anthropic(

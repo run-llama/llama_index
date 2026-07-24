@@ -83,12 +83,13 @@ def test_anthropic_through_vertex_ai():
     os.getenv("ANTHROPIC_AWS_REGION") is None,
     reason="AWS region not available to test Bedrock integration",
 )
-def test_anthropic_through_bedrock():
+def test_anthropic_through_bedrock():  # Load environment variables from .env file if present
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        aws_bearer_token_bedrock=os.getenv("AWS_BEARER_TOKEN_BEDROCK"),
     )
 
     completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
@@ -164,6 +165,7 @@ async def test_anthropic_through_bedrock_async():
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        aws_bearer_token_bedrock=os.getenv("AWS_BEARER_TOKEN_BEDROCK"),
     )
 
     # Test standard async completion
@@ -1074,3 +1076,29 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+def test_init_with_aws_credentials_and_bearer_token():
+    llm = Anthropic(
+        model="claude-sonnet-4-5",
+        aws_region="us-east-1",
+        aws_access_key_id="aws_access_key_id",
+        aws_secret_access_key="aws_secret_access_key",
+        aws_bearer_token_bedrock="aws_bearer_token_bedrock",
+    )
+    assert llm._client is not None
+    assert llm._client.aws_access_key == "aws_access_key_id"
+    assert llm._client.aws_secret_key == "aws_secret_access_key"
+    assert llm._client.api_key is None
+
+
+def test_init_with_aws_bearer_token_only():
+    llm = Anthropic(
+        model="claude-sonnet-4-5",
+        aws_region="us-east-1",
+        aws_bearer_token_bedrock="aws_bearer_token_bedrock",
+    )
+    assert llm._client is not None
+    assert llm._client.aws_access_key is None
+    assert llm._client.aws_secret_key is None
+    assert llm._client.api_key == "aws_bearer_token_bedrock"
