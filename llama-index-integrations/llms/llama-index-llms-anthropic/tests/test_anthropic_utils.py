@@ -418,3 +418,80 @@ class TestCacheControlOnlyLastBlock:
         )
         # Verify it's on the last block
         assert "cache_control" in result[-1]
+
+
+def _count_cache_control_breakpoints(ant_messages) -> int:
+    """Count total cache_control breakpoints across all message blocks."""
+    count = 0
+    for message in ant_messages:
+        content = message["content"]
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and "cache_control" in block:
+                    count += 1
+    return count
+
+
+class TestCacheIdxBreakpointCap:
+    """
+    Regression tests for cache_idx stamping cache_control across messages.
+
+    Anthropic enforces a hard limit of 4 cache_control breakpoints per
+    request. Stamping every message up to cache_idx (especially cache_idx=-1,
+    the documented "cache all messages" recommendation) put one breakpoint per
+    message and produced a 400 once there were more than 4 messages. This is a
+    distinct bug from the intra-message capping in #20854/#20875: those capped
+    breakpoints within a single message; here we cap across messages.
+    """
+
+    def _make_messages(self, n: int):
+        return [
+            ChatMessage(role="user", blocks=[TextBlock(text=f"message {i}")])
+            for i in range(n)
+        ]
+
+    def test_cache_idx_minus_one_many_messages_stays_under_limit(self):
+        """cache_idx=-1 with >4 messages must not exceed 4 breakpoints."""
+        messages = self._make_messages(6)
+        ant_messages, _ = messages_to_anthropic_messages(messages, cache_idx=-1)
+
+        breakpoints = _count_cache_control_breakpoints(ant_messages)
+        assert breakpoints <= 4, (
+            f"cache_idx=-1 produced {breakpoints} breakpoints, exceeding the "
+            "Anthropic limit of 4"
+        )
+        # A single breakpoint on the last message caches the whole prefix.
+        assert breakpoints == 1
+        assert "cache_control" in ant_messages[-1]["content"][-1]
+
+    def test_cache_idx_minus_one_beta_many_messages_stays_under_limit(self):
+        """Beta path: cache_idx=-1 with >4 messages must stay <=4 breakpoints."""
+        messages = self._make_messages(6)
+        ant_messages, _ = messages_to_anthropic_beta_messages(
+            messages, cache_idx=-1
+        )
+
+        breakpoints = _count_cache_control_breakpoints(ant_messages)
+        assert breakpoints <= 4, (
+            f"cache_idx=-1 (beta) produced {breakpoints} breakpoints, exceeding "
+            "the Anthropic limit of 4"
+        )
+        assert breakpoints == 1
+
+    def test_positive_cache_idx_beyond_limit_stays_under_limit(self):
+        """A large positive cache_idx must also be capped at 4 breakpoints."""
+        messages = self._make_messages(10)
+        ant_messages, _ = messages_to_anthropic_messages(messages, cache_idx=8)
+
+        breakpoints = _count_cache_control_breakpoints(ant_messages)
+        assert breakpoints <= 4, (
+            f"cache_idx=8 produced {breakpoints} breakpoints, exceeding the "
+            "Anthropic limit of 4"
+        )
+
+    def test_cache_idx_none_no_breakpoints(self):
+        """cache_idx=None disables caching: no breakpoints at all."""
+        messages = self._make_messages(6)
+        ant_messages, _ = messages_to_anthropic_messages(messages, cache_idx=None)
+
+        assert _count_cache_control_breakpoints(ant_messages) == 0
