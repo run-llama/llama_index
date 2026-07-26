@@ -468,7 +468,6 @@ class Ollama(FunctionCallingLLM):
 
             response_txt = ""
             thinking_txt = ""
-            seen_tool_calls = set()
             all_tool_calls = []
 
             for r in response:
@@ -480,20 +479,14 @@ class Ollama(FunctionCallingLLM):
                 response_txt += r["message"].get("content", "") or ""
                 thinking_txt += r["message"].get("thinking", "") or ""
 
+                # Ollama streams each tool call exactly once, in its own chunk (never
+                # split across chunks, never repeated), so every entry here is new.
+                # Do not dedupe by (name, arguments): two distinct calls can legitimately
+                # share identical arguments, and the client's ToolCall type drops Ollama's
+                # own per-call `id`, so content is the only signal we'd have to key on,
+                # and it is not a safe stand-in for identity.
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
-                for tool_call in new_tool_calls:
-                    if (
-                        str(tool_call["function"]["name"]),
-                        str(tool_call["function"]["arguments"]),
-                    ) in seen_tool_calls:
-                        continue
-                    seen_tool_calls.add(
-                        (
-                            str(tool_call["function"]["name"]),
-                            str(tool_call["function"]["arguments"]),
-                        )
-                    )
-                    all_tool_calls.append(tool_call)
+                all_tool_calls.extend(new_tool_calls)
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
@@ -552,7 +545,6 @@ class Ollama(FunctionCallingLLM):
 
             response_txt = ""
             thinking_txt = ""
-            seen_tool_calls = set()
             all_tool_calls = []
 
             async for r in response:
@@ -564,20 +556,12 @@ class Ollama(FunctionCallingLLM):
                 response_txt += r["message"].get("content", "") or ""
                 thinking_txt += r["message"].get("thinking", "") or ""
 
+                # See the matching comment in stream_chat: Ollama streams each tool
+                # call exactly once, so accumulate unconditionally rather than
+                # deduping by (name, arguments), which drops distinct calls that
+                # happen to share identical arguments.
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
-                for tool_call in new_tool_calls:
-                    if (
-                        str(tool_call["function"]["name"]),
-                        str(tool_call["function"]["arguments"]),
-                    ) in seen_tool_calls:
-                        continue
-                    seen_tool_calls.add(
-                        (
-                            str(tool_call["function"]["name"]),
-                            str(tool_call["function"]["arguments"]),
-                        )
-                    )
-                    all_tool_calls.append(tool_call)
+                all_tool_calls.extend(new_tool_calls)
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts

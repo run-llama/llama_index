@@ -493,3 +493,92 @@ async def test_chat_methods_with_tool_input() -> None:
         ablocks.extend(r.message.blocks)
     assert len([block for block in ablocks if isinstance(block, TextBlock)]) > 0
     assert len([block for block in ablocks if isinstance(block, ToolCallBlock)]) == 0
+
+
+def _duplicate_tool_call_chunks():
+    """
+    Two distinct roll_die calls that happen to share identical arguments.
+
+    Mirrors Ollama's real streaming shape (verified against a live server): each
+    tool call arrives whole, in its own chunk, with no repeats.
+    """
+    tool_call = {"function": {"name": "roll_die", "arguments": {}}}
+    return [
+        {"message": {"role": "assistant", "content": "", "tool_calls": [tool_call]}},
+        {"message": {"role": "assistant", "content": "", "tool_calls": [tool_call]}},
+        {"message": {"role": "assistant", "content": ""}},
+    ]
+
+
+class _FakeStream:
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    def __iter__(self):
+        return iter(self._chunks)
+
+
+class _FakeAsyncStream:
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self._chunks:
+            yield chunk
+
+
+class _FakeSyncClient:
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    def chat(self, **kwargs):
+        return _FakeStream(self._chunks)
+
+
+class _FakeAsyncClient:
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    async def chat(self, **kwargs):
+        return _FakeAsyncStream(self._chunks)
+
+
+def test_stream_chat_keeps_distinct_tool_calls_with_identical_arguments() -> None:
+    """
+    Two genuinely separate tool calls that share name+arguments must both survive.
+
+    Regression test: stream_chat() used to dedupe accumulated tool calls by
+    (name, arguments), so a second call identical in content to an earlier one in
+    the same turn was silently dropped, even though chat() (non-streaming) has
+    always kept both.
+    """
+    chunks = _duplicate_tool_call_chunks()
+    llm = Ollama(
+        model="test-model", context_window=4096, client=_FakeSyncClient(chunks)
+    )
+    final = None
+    for final in llm.stream_chat([ChatMessage(role="user", content="roll it twice")]):
+        pass
+    tool_call_blocks = [
+        block for block in final.message.blocks if isinstance(block, ToolCallBlock)
+    ]
+    assert len(tool_call_blocks) == 2
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_keeps_distinct_tool_calls_with_identical_arguments() -> (
+    None
+):
+    chunks = _duplicate_tool_call_chunks()
+    llm = Ollama(
+        model="test-model", context_window=4096, async_client=_FakeAsyncClient(chunks)
+    )
+    final = None
+    async for final in await llm.astream_chat(
+        [ChatMessage(role="user", content="roll it twice")]
+    ):
+        pass
+    tool_call_blocks = [
+        block for block in final.message.blocks if isinstance(block, ToolCallBlock)
+    ]
+    assert len(tool_call_blocks) == 2
