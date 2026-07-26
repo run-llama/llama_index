@@ -1,7 +1,8 @@
 """
 Pandas csv structured store.
 
-DEPRECATED: Please use :class:`PandasQueryEngine` in `llama-index-experimental` instead.
+DEPRECATED AND REMOVED: This class has been removed due to security concerns
+in the related PandasQueryEngine. See PandasQueryEngine module for details.
 """
 
 from typing import Any
@@ -14,11 +15,10 @@ class PandasIndex:
         **kwargs: Any,
     ) -> None:
         raise DeprecationWarning(
-            "PandasQueryEngine has been moved to `llama-index-experimental`.\n"
-            "`pip install llama-index-experimental`\n"
-            "`from llama_index.experimental.query_engine import PandasQueryEngine`\n"
-            "Note that the PandasQueryEngine allows for arbitrary code execution, \n"
-            "and should be used in a secure environment."
+            "PandasIndex has been removed along with PandasQueryEngine due to\n"
+            "inherent security vulnerabilities in the sandboxed execution model.\n\n"
+            "See llama_index.core.query_engine.pandas.PandasQueryEngine for details\n"
+            "and suggested alternatives."
         )
 
 
