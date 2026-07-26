@@ -94,6 +94,18 @@ workflow = LoudWorkflow()
 mcp = workflow_as_mcp(workflow, start_event_model=RunEvent)
 ```
 
+By default, the same workflow instance handles every tool invocation. If the
+workflow stores mutable state on the instance, provide a factory to isolate that
+state between invocations:
+
+```python
+mcp = workflow_as_mcp(
+    LoudWorkflow(),
+    start_event_model=RunEvent,
+    workflow_factory=LoudWorkflow,
+)
+```
+
 Then, you can launch the MCP server (assuming you have the `mcp[cli]` extra installed):
 
 ```bash

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP, Context
@@ -79,6 +79,7 @@ def workflow_as_mcp(
     workflow_name: Optional[str] = None,
     workflow_description: Optional[str] = None,
     start_event_model: Optional[BaseModel] = None,
+    workflow_factory: Optional[Callable[[], Workflow]] = None,
     **fastmcp_init_kwargs: Any,
 ) -> FastMCP:
     """
@@ -97,6 +98,10 @@ def workflow_as_mcp(
         start_event_model (optional):
             The start event model of the workflow. Can be a `BaseModel` or a `StartEvent` class.
             Defaults to the workflow's custom `StartEvent` class.
+        workflow_factory (optional):
+            A callable that creates a fresh workflow for each tool invocation. The
+            returned workflow must accept the same start event as `workflow`. By
+            default, the provided workflow instance is reused.
         **fastmcp_init_kwargs:
             Additional keyword arguments to pass to the FastMCP constructor.
 
@@ -119,16 +124,21 @@ def workflow_as_mcp(
 
     @app.tool(name=workflow_name, description=workflow_description)
     async def _workflow_tool(run_args: StartEventCLS, context: Context) -> Any:
+        active_workflow = workflow_factory() if workflow_factory else workflow
+
         # Handle edge cases where the start event is an Event or a BaseModel
         # If the workflow does not have a custom StartEvent class, then we need to handle the event differently
 
-        if isinstance(run_args, Event) and workflow._start_event_class != StartEvent:
-            handler = workflow.run(start_event=run_args)
+        if (
+            isinstance(run_args, Event)
+            and active_workflow._start_event_class != StartEvent
+        ):
+            handler = active_workflow.run(start_event=run_args)
         elif isinstance(run_args, BaseModel):
-            handler = workflow.run(**run_args.model_dump())
+            handler = active_workflow.run(**run_args.model_dump())
         elif isinstance(run_args, dict):
             start_event = StartEventCLS.model_validate(run_args)
-            handler = workflow.run(start_event=start_event)
+            handler = active_workflow.run(start_event=start_event)
         else:
             raise ValueError(f"Invalid start event type: {type(run_args)}")
 
