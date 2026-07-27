@@ -4,50 +4,88 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "ipython==8.10.0",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "ipykernel>=6.29.5,<7",
+    "ipython>=8.10.0",
     "jupyter>=1.0.0,<2",
-    "mypy==0.991",
+    "mypy==1.20.0",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-mock==3.11.1",
+    "pytest-asyncio>=0.23.8",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.0",
+    "pytest>=8.2.1",
     "ruff==0.11.11",
+    "tox-uv>=1.35.2",
+    "tox>=4.55.0",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
-    "codespell[toml]>=v2.2.6",
-    "diff-cover>=9.2.0",
-    "pytest-cov>=6.1.1",
+    "tomli>=2.2.1",
+]
+# dev dependency to ensure CI behavior in the top-level repo
+# correctly captures the test coverage in this repo
+ci = [
+    # this is identical to the 'v2' extra
+    "google-cloud-vectorsearch>=0.11.0",
 ]
 
 [project]
 name = "llama-index-vector-stores-vertexaivectorsearch"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index vector_stores Vertex AI Vector Search integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-embeddings-vertex>=0.4.0,<0.5",
+    "annotated-types>=0.7.0",
+    "google-api-core[grpc]>=2.17.1",
+    "google-auth>=2.14.1",
     "google-cloud-aiplatform>=1.39.0,<2",
     "google-cloud-storage>=2.16.0,<3",
     "llama-index-core>=0.13.0,<0.15",
+    "llama-index-embeddings-vertex>=0.4.0,<0.5",
+    "pydantic>=2.8.0",
+    "typing-extensions>=4.5.0",
 ]
 
 [project.optional-dependencies]
 v2 = [
-    "google-cloud-vectorsearch>=0.1.0",
+    "google-cloud-vectorsearch>=0.11.0",
 ]
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self\\.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if (typing\\.)?TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "assert_never\\(.*\\)",
+]
+ignore_errors = true
+
+[tool.coverage.run]
+omit = [
+    ".venv/*",
+    "tests/*",
+]
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
@@ -65,7 +103,126 @@ import_path = "llama_index.vector_stores.vertexaivectorsearch"
 VertexAIVectorStore = "llama-index"
 
 [tool.mypy]
-disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
+python_version = "3.10"
+disallow_untyped_defs = true
 ignore_missing_imports = true
-python_version = "3.8"
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_unused_configs = true
+no_implicit_optional = true
+namespace_packages = true
+explicit_package_bases = true
+warn_unreachable = true
+show_error_context = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+plugins = [
+    "pydantic.mypy",
+]
+
+[tool.pytest.ini_options]
+# see https://pytest-asyncio.readthedocs.io/en/latest/reference/configuration.html
+asyncio_mode = "auto"
+
+[tool.ruff]
+extend = "../../../pyproject.toml"
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = [
+    "ASYNC",  # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "B",  # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "D417",  # https://docs.astral.sh/ruff/rules/undocumented-param/
+    "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "E",  # https://docs.astral.sh/ruff/rules/#error-e
+    "F",  # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "FURB",  # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "G",  # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "I",  # https://docs.astral.sh/ruff/rules/#isort-i
+    "ICN",  # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    "LOG",  # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
+    "RUF",  # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "UP",  # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "W",  # https://docs.astral.sh/ruff/rules/#warning-w
+]
+extend-ignore = [
+    "E501",  # too strict
+    "G004",  # too aggressive for existing code
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["llama_index.core", "llama_index.embeddings"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
+]
+
+[tool.tox]
+requires = ["tox>=4.55", "tox-uv"]
+env_list = [
+    # version-specific clean tasks
+    {product = [{prefix = "3.", start = 10, stop = 14}, ["clean"]]},
+    # test environments for each supported Python version, with and without 'v2' extra
+    {product = [{prefix = "3.", start = 10, stop = 14}, ["default", "v2"]]},
+    # coverage report creation for each version, across 'default' and 'v2' environments
+    {product = [{prefix = "3.", start = 10, stop = 14}, ["report"]]},
+]
+
+[tool.tox.env_run_base]
+description = "Run tests with coverage under {base_python}"
+runner = "uv-venv-lock-runner"
+set_env = {COVERAGE_FILE = ".coverage.{py_dot_ver}"}
+only_groups = ["dev"]
+# install 'v2' extra only in tests for v2 environment
+extras = [
+    {replace = "if", condition = "factor.v2", then = ["v2"], extend = true},
+]
+# show command-line coverage report when running in parallel
+parallel_show_output = {replace = "if", condition = "factor.report", then = true, "else" = false, extend = true}
+depends = [
+    # always clean up .coverage before running pytest with coverage
+    {replace = "if", condition = "not factor.clean and not factor.report", then = [
+        "{py_dot_ver}-clean",
+    ], extend = true},
+    # ensure tests run prior to reporting in parallel runs
+    {replace = "if", condition = "factor.report", then = [
+        "{py_dot_ver}-default",
+        "{py_dot_ver}-v2",
+    ], extend = true},
+]
+commands = [
+    # command for pytest with coverage
+    {replace = "if", condition = "not factor.clean and not factor.report", then = [
+        [
+            "pytest",
+            "--cov=llama_index.vector_stores.vertexaivectorsearch",
+            "--cov-append",  # for multienvironment coverage aggregation
+            "--cov-branch",
+            "--cov-config=pyproject.toml",
+            "--cov-report=term-missing",
+        ],
+    ], extend = true},
+    # report compilation for each python version across 'default' and 'v2' environments
+    {replace = "if", condition = "factor.report", then = [
+        ["coverage", "xml", "--data-file=.coverage.{py_dot_ver}", "-o", "coverage-{py_dot_ver}.xml"],
+        ["coverage", "report", "--data-file=.coverage.{py_dot_ver}", "--show-missing"],
+    ], extend = true},
+    # command for cleaning up coverage files prior to test runs
+    {replace = "if", condition = "factor.clean", then = [
+        ["coverage", "erase", "--data-file=.coverage.{py_dot_ver}"],
+    ], extend = true},
+]
+
+[tool.uv]
+default-groups = [
+    "dev",
+    "ci",
+]

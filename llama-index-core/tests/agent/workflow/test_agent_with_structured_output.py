@@ -286,6 +286,89 @@ async def test_astructured_output_fn_agentworkflow(
 
 
 @pytest.mark.asyncio
+async def test_agent_output_cls_in_agentworkflow(
+    function_agent_output_cls: FunctionAgent,
+) -> None:
+    """The agent's own output_cls should be honored when the workflow sets none."""
+    wf = AgentWorkflow(
+        agents=[function_agent_output_cls],
+        root_agent=function_agent_output_cls.name,
+    )
+    handler = wf.run(user_msg="test")
+    streaming_event = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+    assert streaming_event
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(hello="hello", world=1)
+
+
+@pytest.mark.asyncio
+async def test_agent_structured_fn_in_agentworkflow(
+    function_agent_struct_fn: FunctionAgent,
+) -> None:
+    """The agent's own structured_output_fn should be honored when the workflow sets none."""
+    wf = AgentWorkflow(
+        agents=[function_agent_struct_fn],
+        root_agent=function_agent_struct_fn.name,
+    )
+    handler = wf.run(user_msg="test")
+    streaming_event = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+    assert streaming_event
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(hello="bonjour", world=2)
+
+
+@pytest.mark.asyncio
+async def test_agent_astructured_fn_in_agentworkflow(
+    function_agent_astruct_fn: FunctionAgent,
+) -> None:
+    """An async structured_output_fn on the agent should also be honored via the workflow."""
+    wf = AgentWorkflow(
+        agents=[function_agent_astruct_fn],
+        root_agent=function_agent_astruct_fn.name,
+    )
+    handler = wf.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(
+        hello="guten tag", world=3
+    )
+
+
+@pytest.mark.asyncio
+async def test_workflow_structured_output_overrides_agent(
+    function_agent_struct_fn: FunctionAgent,
+) -> None:
+    """A workflow-level structured_output_fn takes precedence over the agent's own."""
+    wf = AgentWorkflow(
+        agents=[function_agent_struct_fn],
+        root_agent=function_agent_struct_fn.name,
+        structured_output_fn=astructured_function_fn,
+    )
+    handler = wf.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(
+        hello="guten tag", world=3
+    )
+
+
+@pytest.mark.asyncio
 @pytest.mark.skipif(condition=skip_condition, reason="OPENAI_API_KEY is not available.")
 async def test_multi_agent_openai() -> None:
     from llama_index.llms.openai import OpenAI
