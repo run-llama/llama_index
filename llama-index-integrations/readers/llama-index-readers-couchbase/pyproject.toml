@@ -41,6 +41,7 @@ keywords = [
 dependencies = [
     "couchbase>=4.1.11,<5",
     "llama-index-core>=0.13.0,<0.15",
+    "reo-census>=0.1.2",
 ]
 
 [tool.codespell]
