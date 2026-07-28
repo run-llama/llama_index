@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from sqlalchemy import (
@@ -75,6 +75,14 @@ class PostgresChatStore(BaseChatStore):
     schema_name: Optional[str] = Field(
         default="public", description="Postgres schema name."
     )
+    create_engine_kwargs: Dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Additional keyword arguments to pass to SQLAlchemy's "
+            "create_engine and create_async_engine (e.g. pool_size, "
+            "pool_pre_ping, connect_args)."
+        ),
+    )
 
     _table_class: Optional[Any] = PrivateAttr()
     _session: Optional[sessionmaker] = PrivateAttr()
@@ -82,16 +90,36 @@ class PostgresChatStore(BaseChatStore):
 
     def __init__(
         self,
-        session: sessionmaker,
-        async_session: sessionmaker,
-        table_name: str,
+        session: Optional[sessionmaker] = None,
+        async_session: Optional[sessionmaker] = None,
+        table_name: str = "chatstore",
         schema_name: str = "public",
         use_jsonb: bool = False,
+        connection_string: Optional[str] = None,
+        async_connection_string: Optional[str] = None,
+        debug: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             table_name=table_name.lower(),
             schema_name=schema_name.lower(),
+            create_engine_kwargs=create_engine_kwargs or {},
         )
+
+        # Build the sessions from connection strings when they are not provided
+        # directly, forwarding any extra create_engine_kwargs to the engines.
+        if session is None or async_session is None:
+            if connection_string is None or async_connection_string is None:
+                raise ValueError(
+                    "Either `session` and `async_session`, or `connection_string` "
+                    "and `async_connection_string`, must be provided."
+                )
+            session, async_session = self._connect(
+                connection_string,
+                async_connection_string,
+                debug,
+                self.create_engine_kwargs,
+            )
 
         # Check if legacy table (with 'data_' prefix) exists
         use_legacy_table_name = self._check_legacy_table_exists(
@@ -125,6 +153,7 @@ class PostgresChatStore(BaseChatStore):
         async_connection_string: Optional[str] = None,
         debug: bool = False,
         use_jsonb: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PostgresChatStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -134,13 +163,14 @@ class PostgresChatStore(BaseChatStore):
         async_conn_str = async_connection_string or (
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
         )
-        session, async_session = cls._connect(conn_str, async_conn_str, debug)
         return cls(
-            session=session,
-            async_session=async_session,
             table_name=table_name,
             schema_name=schema_name,
             use_jsonb=use_jsonb,
+            connection_string=conn_str,
+            async_connection_string=async_conn_str,
+            debug=debug,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @classmethod
@@ -151,6 +181,7 @@ class PostgresChatStore(BaseChatStore):
         schema_name: str = "public",
         debug: bool = False,
         use_jsonb: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PostgresChatStore":
         """Return connection string from database parameters."""
         params = params_from_uri(uri)
@@ -160,16 +191,24 @@ class PostgresChatStore(BaseChatStore):
             schema_name=schema_name,
             debug=debug,
             use_jsonb=use_jsonb,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @classmethod
     def _connect(
-        cls, connection_string: str, async_connection_string: str, debug: bool
+        cls,
+        connection_string: str,
+        async_connection_string: str,
+        debug: bool,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> tuple[sessionmaker, sessionmaker]:
-        _engine = create_engine(connection_string, echo=debug)
+        create_engine_kwargs = create_engine_kwargs or {}
+        _engine = create_engine(connection_string, echo=debug, **create_engine_kwargs)
         session = sessionmaker(_engine)
 
-        _async_engine = create_async_engine(async_connection_string)
+        _async_engine = create_async_engine(
+            async_connection_string, **create_engine_kwargs
+        )
         async_session = sessionmaker(_async_engine, class_=AsyncSession)
         return session, async_session
 
