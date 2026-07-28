@@ -1,15 +1,24 @@
-from enum import Enum
-from fsspec import AbstractFileSystem
-from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Protocol, runtime_checkable
 import json
 import uuid
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, Iterable, Optional, Protocol, runtime_checkable
 
+from docling.datamodel.document import ConversionResult
 from docling.document_converter import DocumentConverter
 from docling_core.types import DoclingDocument as DLDocument
-from llama_index.core.readers.base import BasePydanticReader
+from fsspec import AbstractFileSystem
 from llama_index.core import Document as LIDocument
+from llama_index.core.readers.base import BasePydanticReader
 from pydantic import Field
+
+
+@runtime_checkable
+class DoclingConverter(Protocol):
+    """A Docling converter that returns a standard conversion result."""
+
+    def convert(self, source: str | Path) -> ConversionResult:
+        ...
 
 
 class DoclingReader(BasePydanticReader):
@@ -20,7 +29,9 @@ class DoclingReader(BasePydanticReader):
 
     Args:
         export_type (Literal["markdown", "json"], optional): The type to export to. Defaults to "markdown".
-        doc_converter (DocumentConverter, optional): The Docling converter to use. Default factory: `DocumentConverter`.
+        doc_converter (DoclingConverter, optional): A local `DocumentConverter`,
+            remote `DoclingServiceClient`, or another compatible converter.
+            Default factory: `DocumentConverter`.
         md_export_kwargs (Dict[str, Any], optional): Kwargs to use in case of markdown export. Defaults to `{"image_placeholder": ""}`.
         id_func: (DocIDGenCallable, optional): Doc ID generation function to use. Default: `_uuid4_doc_id_gen`
 
@@ -32,14 +43,15 @@ class DoclingReader(BasePydanticReader):
 
     @runtime_checkable
     class DocIDGenCallable(Protocol):
-        def __call__(self, doc: DLDocument, file_path: str | Path) -> str: ...
+        def __call__(self, doc: DLDocument, file_path: str | Path) -> str:
+            ...
 
     @staticmethod
     def _uuid4_doc_id_gen(doc: DLDocument, file_path: str | Path) -> str:
         return str(uuid.uuid4())
 
     export_type: ExportType = ExportType.MARKDOWN
-    doc_converter: DocumentConverter = Field(default_factory=DocumentConverter)
+    doc_converter: DoclingConverter = Field(default_factory=DocumentConverter)
     md_export_kwargs: Dict[str, Any] = {"image_placeholder": ""}
     id_func: DocIDGenCallable = _uuid4_doc_id_gen
 

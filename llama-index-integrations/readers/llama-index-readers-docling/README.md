@@ -12,6 +12,10 @@ pip install llama-index-readers-docling
 
 ## Usage
 
+`DoclingReader` accepts either the local `DocumentConverter` used by default or
+any compatible converter returning Docling's standard `ConversionResult`, such
+as `DoclingServiceClient`.
+
 ### Markdown export
 
 By default, Docling Reader exports to Markdown. Basic usage looks like this:
@@ -43,6 +47,42 @@ print(f"{docs[0].text[:53]}...")
 > [!IMPORTANT]
 > To appropriately parse Docling's native format, when using JSON export make sure
 > to use a Docling Node Parser in your pipeline.
+
+### Managed Docling service
+
+To process documents with
+[Docling for IBM watsonx](https://www.ibm.com/products/docling), or with a
+self-hosted Docling Serve endpoint, supply Docling's existing service client.
+Conversion features are configured with Docling's native
+`ConvertDocumentsOptions` model:
+
+```python
+import os
+
+from docling.datamodel.service.options import ConvertDocumentsOptions
+from docling.service_client import DoclingServiceClient
+from llama_index.readers.docling import DoclingReader
+
+options = ConvertDocumentsOptions(
+    do_ocr=True,
+    table_mode="accurate",
+)
+
+with DoclingServiceClient(
+    url=os.environ["DOCLING_SERVICE_URL"],
+    api_key=os.environ["DOCLING_API_KEY"],
+    options=options,
+) as client:
+    reader = DoclingReader(doc_converter=client)
+    docs = reader.load_data(
+        file_path="https://arxiv.org/pdf/2408.09869",
+    )
+```
+
+The service client and local converter return the same conversion result, so
+the reader's Markdown and JSON export behavior is unchanged. See the
+[Docling service API documentation](https://docling-project.github.io/docling/usage/api_server/rest_api/)
+for the full set of conversion options.
 
 ### With Simple Directory Reader
 

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from docling.datamodel.document import ConversionResult
 from docling_core.types import DoclingDocument as DLDocument
 from llama_index.readers.docling.base import DoclingReader
 
@@ -89,45 +90,38 @@ def _deterministic_id_func(doc: DLDocument, file_path: str | Path) -> str:
     return f"{file_path}"
 
 
-def test_lazy_load_data_with_md_export(monkeypatch):
-    mock_dl_doc = DLDocument.model_validate_json(in_json_str)
-    mock_response = MagicMock()
-    mock_response.document = mock_dl_doc
+class FakeDoclingConverter:
+    def __init__(self, document: DLDocument) -> None:
+        self.document = document
+        self.sources: list[str | Path] = []
 
-    monkeypatch.setattr(
-        "docling.document_converter.DocumentConverter.__init__",
-        lambda *args, **kwargs: None,
-    )
-    monkeypatch.setattr(
-        "docling.document_converter.DocumentConverter.convert",
-        lambda *args, **kwargs: mock_response,
-    )
+    def convert(self, source: str | Path) -> ConversionResult:
+        self.sources.append(source)
+        result = MagicMock(spec=ConversionResult)
+        result.document = self.document
+        return result
 
-    reader = DoclingReader(id_func=_deterministic_id_func)
+
+def test_lazy_load_data_with_md_export():
+    converter = FakeDoclingConverter(DLDocument.model_validate_json(in_json_str))
+    reader = DoclingReader(
+        doc_converter=converter,
+        id_func=_deterministic_id_func,
+    )
     doc_iter = reader.lazy_load_data(file_path="https://example.com/foo.pdf")
     act_li_docs = list(doc_iter)
     assert len(act_li_docs) == 1
+    assert converter.sources == ["https://example.com/foo.pdf"]
 
     act_data = {"root": [li_doc.model_dump() for li_doc in act_li_docs]}
     assert len(act_data["root"]) == 1
     assert act_data["root"][0]["id_"] == "https://example.com/foo.pdf"
 
 
-def test_lazy_load_data_with_json_export(monkeypatch):
-    mock_dl_doc = DLDocument.model_validate_json(in_json_str)
-    mock_response = MagicMock()
-    mock_response.document = mock_dl_doc
-
-    monkeypatch.setattr(
-        "docling.document_converter.DocumentConverter.__init__",
-        lambda *args, **kwargs: None,
-    )
-    monkeypatch.setattr(
-        "docling.document_converter.DocumentConverter.convert",
-        lambda *args, **kwargs: mock_response,
-    )
-
+def test_lazy_load_data_with_json_export():
+    converter = FakeDoclingConverter(DLDocument.model_validate_json(in_json_str))
     reader = DoclingReader(
+        doc_converter=converter,
         export_type=DoclingReader.ExportType.JSON,
         id_func=_deterministic_id_func,
     )
