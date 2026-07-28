@@ -11,7 +11,8 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
-from rank_llm.rerank.reranker import Reranker, PromptMode
+from rank_llm.rerank.rankllm import PromptMode
+from rank_llm.rerank.reranker import Reranker
 from rank_llm.data import Request, Query, Candidate
 
 

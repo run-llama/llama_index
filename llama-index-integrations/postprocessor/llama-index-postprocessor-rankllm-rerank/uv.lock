@@ -2649,7 +2649,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-postprocessor-rankllm-rerank"
-version = "0.6.1"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
