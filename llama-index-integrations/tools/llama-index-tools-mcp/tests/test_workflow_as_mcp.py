@@ -32,8 +32,13 @@ class CountingWorkflow(Workflow):
         )
 
 
-def _tool_payload(result: list[Any]) -> dict[str, Any]:
-    return json.loads(result[0].text)
+def _tool_payload(result: Any) -> dict[str, Any]:
+    # `call_tool` returns the content list on its own, or `(content, structured)` when
+    # the tool has an output schema. The workflow tool is annotated `-> Any`, which
+    # FastMCP wraps into an output model on Python 3.10 but not on 3.11+ (where `Any`
+    # became a class), so both shapes are reachable and both carry the same payload.
+    content = result[0] if isinstance(result, tuple) else result
+    return json.loads(content[0].text)
 
 
 @pytest.mark.asyncio
