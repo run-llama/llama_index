@@ -688,6 +688,12 @@ class PGVectorStore(BasePydanticVectorStore):
             return "="
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+        # Bind the metadata key as a SQL parameter so that keys coming from
+        # untrusted sources (e.g. an agent choosing which field to filter on)
+        # cannot alter the query.  A unique parameter name per filter object
+        # avoids collisions when multiple clauses are combined with AND/OR.
+        key_param = f"mkey_{id(filter_)}"
+
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
 
@@ -696,10 +702,10 @@ class PGVectorStore(BasePydanticVectorStore):
             filter_value = ", ".join(f"'{e}'" for e in filter_.value)
 
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"metadata_->>:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
             # Expects a text array stored in the metadata, and a list of values to compare
             # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
@@ -707,49 +713,49 @@ class PGVectorStore(BasePydanticVectorStore):
             filter_value = ", ".join(f"'{e}'" for e in filter_.value)
 
             return text(
-                f"metadata_::jsonb->'{filter_.key}' "
+                f"metadata_::jsonb->:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"array[{filter_value}]"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
             return text(
-                f"metadata_::jsonb->'{filter_.key}' "
+                f"metadata_::jsonb->:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif (
             filter_.operator == FilterOperator.TEXT_MATCH
             or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
         ):
             # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"metadata_->>:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'%{filter_.value}%'"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif filter_.operator == FilterOperator.IS_EMPTY:
             # Where the operator is is_empty, we need to check if the metadata is null
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"metadata_->>:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)}"
-            )
+            ).bindparams(**{key_param: filter_.key})
         else:
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
                 return text(
-                    f"(metadata_->>'{filter_.key}')::float "
+                    f"(metadata_->>:{key_param})::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"{float(filter_.value)}"
-                )
+                ).bindparams(**{key_param: filter_.key})
             except ValueError:
                 # If not a number, then treat it as a string
                 return text(
-                    f"metadata_->>'{filter_.key}' "
+                    f"metadata_->>:{key_param} "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"'{filter_.value}'"
-                )
+                ).bindparams(**{key_param: filter_.key})
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
