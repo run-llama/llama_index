@@ -699,6 +699,28 @@ class OpenAI(FunctionCallingLLM):
                 total_tokens = raw_response.usage.total_tokens
             except AttributeError:
                 return {}
+
+            result: dict = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            }
+            # Cached prompt tokens: present when the prompt was served from
+            # OpenAI's KV cache (prompt caching feature).
+            prompt_details = getattr(raw_response.usage, "prompt_tokens_details", None)
+            if prompt_details is not None:
+                cached = getattr(prompt_details, "cached_tokens", None)
+                if cached:
+                    result["cached_tokens"] = cached
+            # Reasoning tokens: present for o1/o3 chain-of-thought models.
+            completion_details = getattr(
+                raw_response.usage, "completion_tokens_details", None
+            )
+            if completion_details is not None:
+                reasoning = getattr(completion_details, "reasoning_tokens", None)
+                if reasoning:
+                    result["reasoning_tokens"] = reasoning
+            return result
         elif isinstance(raw_response, dict):
             usage = raw_response.get("usage", {})
             # NOTE: other model providers that use the OpenAI client may not report usage
@@ -708,14 +730,22 @@ class OpenAI(FunctionCallingLLM):
             prompt_tokens = usage.get("prompt_tokens", 0)
             completion_tokens = usage.get("completion_tokens", 0)
             total_tokens = usage.get("total_tokens", 0)
+            result = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            }
+            prompt_details = usage.get("prompt_tokens_details") or {}
+            cached = prompt_details.get("cached_tokens")
+            if cached:
+                result["cached_tokens"] = cached
+            completion_details = usage.get("completion_tokens_details") or {}
+            reasoning = completion_details.get("reasoning_tokens")
+            if reasoning:
+                result["reasoning_tokens"] = reasoning
+            return result
         else:
             return {}
-
-        return {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": total_tokens,
-        }
 
     # ===== Async Endpoints =====
     @llm_chat_callback()
