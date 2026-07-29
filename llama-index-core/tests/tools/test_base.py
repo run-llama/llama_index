@@ -429,6 +429,90 @@ def test_docstring_with_self_and_context():
     assert "self" not in fields
 
 
+def test_docstring_descriptions_reach_json_schema():
+    """Round-trip test: parsed docstring descriptions must survive serialization.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/22413.
+    Previously, descriptions were mutated onto model_fields after Pydantic v2
+    froze the core schema at create_model() time, so model_json_schema() and
+    to_openai_tool() silently dropped them.
+    """
+
+    def tool_fn(query: str, top_k: int = 5) -> str:
+        """Search the web.
+
+        Args:
+            query (str): The search query string.
+            top_k (int): Number of results to return.
+        """
+        return "ok"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+
+    # 1. model_fields must have descriptions (internal state)
+    fields = tool.metadata.fn_schema.model_fields
+    assert fields["query"].description == "The search query string."
+    assert fields["top_k"].description == "Number of results to return."
+
+    # 2. model_json_schema must also have descriptions (serialized output)
+    schema = tool.metadata.fn_schema.model_json_schema()
+    props = schema["properties"]
+    assert props["query"]["description"] == "The search query string."
+    assert props["top_k"]["description"] == "Number of results to return."
+
+    # 3. to_openai_tool() must also have descriptions (LLM-facing output)
+    oai_props = tool.metadata.to_openai_tool()["function"]["parameters"]["properties"]
+    assert oai_props["query"]["description"] == "The search query string."
+    assert oai_props["top_k"]["description"] == "Number of results to return."
+
+
+def test_docstring_descriptions_reach_json_schema_sphinx_style():
+    """Sphinx-style docstring descriptions must also survive serialization."""
+
+    def tool_fn(a: int, b: str = "default") -> str:
+        """
+        Test tool.
+
+        :param a: integer input value
+        :param b: string input value
+        """
+        return f"{a}-{b}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    schema = tool.metadata.fn_schema.model_json_schema()
+    props = schema["properties"]
+
+    assert props["a"]["description"] == "integer input value"
+    assert props["b"]["description"] == "string input value"
+
+
+def test_annotated_description_takes_precedence_over_docstring():
+    """Annotated/Field descriptions must not be overridden by docstring descriptions."""
+    from typing import Annotated
+
+    def tool_fn(
+        a: Annotated[int, "Annotated description"],
+        b: str = "default",
+    ) -> str:
+        """
+        Test tool.
+
+        Args:
+            a (int): Docstring description for a.
+            b (str): Docstring description for b.
+        """
+        return f"{a}-{b}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    schema = tool.metadata.fn_schema.model_json_schema()
+    props = schema["properties"]
+
+    # Annotated description wins
+    assert props["a"]["description"] == "Annotated description"
+    # Docstring description used as fallback
+    assert props["b"]["description"] == "Docstring description for b."
+
+
 def test_function_tool_output_document_and_nodes():
     def get_document() -> Document:
         return Document(text="Hello" * 1024)
