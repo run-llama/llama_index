@@ -85,6 +85,7 @@ def run_async_tasks(
     """Run a list of async tasks."""
     tasks_to_execute: List[Any] = tasks
     if show_progress:
+        tqdm_setup_ok = False
         try:
             import nest_asyncio
             from tqdm.asyncio import tqdm
@@ -97,13 +98,16 @@ def run_async_tasks(
             async def _tqdm_gather() -> List[Any]:
                 return await tqdm.gather(*tasks_to_execute, desc=progress_bar_desc)
 
-            tqdm_outputs: List[Any] = loop.run_until_complete(_tqdm_gather())
-            return tqdm_outputs
-        # run the operation w/o tqdm on hitting a fatal
+            tqdm_setup_ok = True
+        # fall back to non-tqdm path on import/setup failure
         # may occur in some environments where tqdm.asyncio
         # is not supported
         except Exception:
             pass
+
+        if tqdm_setup_ok:
+            tqdm_outputs: List[Any] = loop.run_until_complete(_tqdm_gather())
+            return tqdm_outputs
 
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
