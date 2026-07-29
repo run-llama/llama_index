@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document, ImageDocument
-
+from llama_index.core.utils import infer_torch_device
 
 class ImageTabularChartReader(BaseReader):
     """
@@ -36,8 +36,8 @@ class ImageTabularChartReader(BaseReader):
                     "`pip install torch transformers Pillow`"
                 )
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            device = infer_torch_device()
+            dtype = torch.float16 if device != "cpu" else torch.float32
             processor = Pix2StructProcessor.from_pretrained("google/deplot")
             model = Pix2StructForConditionalGeneration.from_pretrained(
                 "google/deplot", torch_dtype=dtype
