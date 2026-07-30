@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-observability-otel-genai"
+version = "0.1.0"
+description = "Native OpenTelemetry GenAI observability for LlamaIndex"
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "llama-index-instrumentation>=0.5.0,<0.6",
+    "opentelemetry-sdk>=1.43.0,<2",
+    "opentelemetry-util-genai>=1.0b0,<2",
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.observability.otel_genai"
