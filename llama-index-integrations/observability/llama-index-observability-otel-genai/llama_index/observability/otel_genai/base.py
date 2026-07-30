@@ -70,20 +70,66 @@ def _event_key(event: BaseEvent) -> str | None:
 
 
 class GenAIEventHandler(BaseEventHandler):
-    """Map LlamaIndex LLM and embedding events to GenAI invocations."""
+    """
+    Map LlamaIndex LLM and embedding events to GenAI invocations.
+
+    The handler consumes dispatcher events emitted by LlamaIndex and maintains
+    an invocation until its corresponding end event arrives. It uses
+    :class:`opentelemetry.util.genai.handler.TelemetryHandler` to create spans,
+    metrics, and optional GenAI detail events that conform to OpenTelemetry's
+    GenAI semantic conventions.
+
+    This handler is registered by
+    :class:`LlamaIndexOtelGenAIInstrumentor`; users generally should not
+    instantiate it directly.
+
+    Args:
+        telemetry (TelemetryHandler): The GenAI telemetry handler used to create
+            and complete invocations.
+
+    """
 
     _telemetry: TelemetryHandler = PrivateAttr()
     _active: dict[str, _Invocation] = PrivateAttr(default_factory=dict)
 
     def __init__(self, telemetry: TelemetryHandler) -> None:
+        """
+        Initialize the event handler.
+
+        Args:
+            telemetry (TelemetryHandler): The configured GenAI telemetry
+                handler.
+
+        """
         super().__init__()
         self._telemetry = telemetry
 
     @classmethod
     def class_name(cls) -> str:
+        """
+        Return the event handler's stable instrumentation name.
+
+        Returns:
+            str: ``"GenAIEventHandler"``.
+
+        """
         return "GenAIEventHandler"
 
     def handle(self, event: BaseEvent, **_: Any) -> None:
+        """
+        Translate a supported LlamaIndex event into GenAI telemetry.
+
+        Start events create an invocation and retain it by dispatcher span ID.
+        Matching end events enrich and complete that invocation. Events outside
+        of a dispatcher span, and event types not currently supported by this
+        integration, are ignored.
+
+        Args:
+            event (BaseEvent): The LlamaIndex dispatcher event to process.
+            **_: Additional dispatcher event-handler arguments, ignored by this
+                integration.
+
+        """
         key = _event_key(event)
         if key is None:
             return
@@ -207,8 +253,28 @@ class GenAIEventHandler(BaseEventHandler):
         invocation.stop()
 
 
-class LlamaIndexOpenTelemetryGenAI:
-    """Register native LlamaIndex GenAI semantic-convention instrumentation."""
+class LlamaIndexOtelGenAIInstrumentor:
+    """
+    Register native OpenTelemetry GenAI instrumentation for LlamaIndex.
+
+    This opt-in integration translates LlamaIndex dispatcher events into
+    OpenTelemetry GenAI semantic-convention telemetry. It currently supports
+    LLM chat/completion and embedding operations. Prompt and response content
+    remains disabled unless enabled through the standard
+    ``OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`` configuration.
+
+    Args:
+        tracer_provider (Optional[TracerProvider]): Provider used to create
+            GenAI spans. Uses OpenTelemetry's configured global provider when
+            omitted.
+        meter_provider (Optional[MeterProvider]): Provider used to record GenAI
+            duration and token-usage metrics. Uses the configured global meter
+            provider when omitted.
+        logger_provider (Optional[LoggerProvider]): Provider used to emit
+            optional GenAI detail events. Uses the configured global logger
+            provider when omitted.
+
+    """
 
     def __init__(
         self,
@@ -216,6 +282,22 @@ class LlamaIndexOpenTelemetryGenAI:
         meter_provider: MeterProvider | None = None,
         logger_provider: LoggerProvider | None = None,
     ) -> None:
+        """
+        Configure native GenAI telemetry for later registration.
+
+        Registration is intentionally separate from construction so callers can
+        configure OpenTelemetry providers before LlamaIndex starts emitting
+        events.
+
+        Args:
+            tracer_provider (Optional[TracerProvider]): Provider for generated
+                spans.
+            meter_provider (Optional[MeterProvider]): Provider for generated
+                metrics.
+            logger_provider (Optional[LoggerProvider]): Provider for optional
+                GenAI detail events.
+
+        """
         self._telemetry = TelemetryHandler(
             tracer_provider=tracer_provider,
             meter_provider=meter_provider,
@@ -224,5 +306,10 @@ class LlamaIndexOpenTelemetryGenAI:
         self._handler = GenAIEventHandler(self._telemetry)
 
     def start_registering(self) -> None:
-        """Start translating LlamaIndex dispatcher events into GenAI telemetry."""
+        """
+        Register the handler with LlamaIndex's global dispatcher.
+
+        After this call, supported LlamaIndex operations emit OpenTelemetry
+        GenAI telemetry through the configured providers.
+        """
         instrument.get_dispatcher().add_event_handler(self._handler)

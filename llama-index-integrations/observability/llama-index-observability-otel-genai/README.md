@@ -4,9 +4,9 @@ This optional integration maps LlamaIndex's native instrumentation events to
 OpenTelemetry GenAI semantic-convention spans and metrics.
 
 ```python
-from llama_index.observability.otel_genai import LlamaIndexOpenTelemetryGenAI
+from llama_index.observability.otel_genai import LlamaIndexOtelGenAIInstrumentor
 
-instrumentor = LlamaIndexOpenTelemetryGenAI()
+instrumentor = LlamaIndexOtelGenAIInstrumentor()
 instrumentor.start_registering()
 ```
 

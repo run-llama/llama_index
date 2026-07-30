@@ -10,6 +10,7 @@ from llama_index.core.instrumentation.events.llm import (
     LLMCompletionEndEvent,
     LLMCompletionStartEvent,
 )
+from llama_index.observability.otel_genai import LlamaIndexOtelGenAIInstrumentor
 from llama_index.observability.otel_genai.base import GenAIEventHandler
 from opentelemetry.util.genai.handler import TelemetryHandler
 
@@ -33,6 +34,10 @@ def _handler():
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     return GenAIEventHandler(TelemetryHandler(tracer_provider=provider)), exporter
+
+
+def test_public_instrumentor_name():
+    assert LlamaIndexOtelGenAIInstrumentor.__name__ == "LlamaIndexOtelGenAIInstrumentor"
 
 
 def test_completion_records_genai_model_and_usage():
