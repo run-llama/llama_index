@@ -108,3 +108,49 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_top_k_zero() -> None:
+    """
+    An explicit similarity_top_k of 0 must return no results.
+
+    `similarity_top_k` is optional and defaults to None, which means "no
+    limit". Because 0 is falsy, `if similarity_top_k and ...` conflated the two
+    and returned every embedding when a caller explicitly asked for none.
+    """
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0], [0.7, 0.7]]
+
+    _, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert result_ids == []
+
+    # None still means "no limit".
+    _, unset_ids = get_top_k_embeddings(query_embedding, embeddings)
+    assert len(unset_ids) == len(embeddings)
+
+    # An ordinary limit is unaffected.
+    _, top_2_ids = get_top_k_embeddings(query_embedding, embeddings, similarity_top_k=2)
+    assert len(top_2_ids) == 2
+
+
+def test_get_top_k_mmr_embeddings_top_k_zero() -> None:
+    """An explicit similarity_top_k of 0 must return no results under MMR too."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0], [0.7, 0.7]]
+
+    _, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert result_ids == []
+
+    # None still means "no limit".
+    _, unset_ids = get_top_k_mmr_embeddings(query_embedding, embeddings)
+    assert len(unset_ids) == len(embeddings)
+
+    # An ordinary limit is unaffected.
+    _, top_2_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=2
+    )
+    assert len(top_2_ids) == 2
