@@ -6,6 +6,11 @@ from types import TracebackType
 
 from llama_index.core.graph_stores.types import GraphStore
 
+from llama_index.graph_stores.neo4j.cypher_escape import (
+    escape_identifier,
+    escape_int,
+)
+
 import neo4j
 
 logger = logging.getLogger(__name__)
@@ -93,14 +98,14 @@ class Neo4jGraphStore(GraphStore):
                 """
                 CREATE CONSTRAINT IF NOT EXISTS FOR (n:%s) REQUIRE n.id IS UNIQUE;
                 """
-                % (self.node_label)
+                % (escape_identifier(self.node_label))
             )
         except Exception:  # Using Neo4j <5
             self.query(
                 """
                 CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS UNIQUE;
                 """
-                % (self.node_label)
+                % (escape_identifier(self.node_label))
             )
 
     @property
@@ -115,7 +120,8 @@ class Neo4jGraphStore(GraphStore):
             RETURN type(r), n2.id;
         """
 
-        prepared_statement = query % (self.node_label, self.node_label)
+        label = escape_identifier(self.node_label)
+        prepared_statement = query % (label, label)
 
         with self._driver.session(database=self._database) as session:
             data = session.run(prepared_statement, {"subj": subj})
@@ -141,9 +147,13 @@ class Neo4jGraphStore(GraphStore):
             # unlike simple graph_store, we don't do get_all here
             return rel_map
 
+        label = escape_identifier(self.node_label)
+        depth = escape_int(depth, "depth")
+        limit = escape_int(limit, "limit")
+
         query = (
-            f"""MATCH p=(n1:{self.node_label})-[*1..{depth}]->() """
-            f"""WHERE toLower(n1.id) IN {[subj.lower() for subj in subjs] if subjs else []}"""
+            f"""MATCH p=(n1:{label})-[*1..{depth}]->() """
+            """WHERE toLower(n1.id) IN [s IN $subjs | toLower(s)] """
             "UNWIND relationships(p) AS rel "
             "WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet("
             "collect([type(rel), endNode(rel).id]))) AS flattened_rels "
@@ -161,15 +171,16 @@ class Neo4jGraphStore(GraphStore):
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
         query = """
-            MERGE (n1:`%s` {id:$subj})
-            MERGE (n2:`%s` {id:$obj})
-            MERGE (n1)-[:`%s`]->(n2)
+            MERGE (n1:%s {id:$subj})
+            MERGE (n2:%s {id:$obj})
+            MERGE (n1)-[:%s]->(n2)
         """
 
+        label = escape_identifier(self.node_label)
         prepared_statement = query % (
-            self.node_label,
-            self.node_label,
-            rel.replace(" ", "_").upper(),
+            label,
+            label,
+            escape_identifier(rel.replace(" ", "_").upper()),
         )
 
         with self._driver.session(database=self._database) as session:
@@ -184,14 +195,19 @@ class Neo4jGraphStore(GraphStore):
                     (
                         "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND n2.id"
                         " = $obj DELETE r"
-                    ).format(self.node_label, rel, self.node_label),
+                    ).format(
+                        escape_identifier(self.node_label),
+                        escape_identifier(rel),
+                        escape_identifier(self.node_label),
+                    ),
                     {"subj": subj, "obj": obj},
                 )
 
         def delete_entity(entity: str) -> None:
             with self._driver.session(database=self._database) as session:
                 session.run(
-                    "MATCH (n:%s) WHERE n.id = $entity DELETE n" % self.node_label,
+                    "MATCH (n:%s) WHERE n.id = $entity DELETE n"
+                    % escape_identifier(self.node_label),
                     {"entity": entity},
                 )
 
@@ -199,7 +215,7 @@ class Neo4jGraphStore(GraphStore):
             with self._driver.session(database=self._database) as session:
                 is_exists_result = session.run(
                     "MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)"
-                    % (self.node_label),
+                    % (escape_identifier(self.node_label)),
                     {"entity": entity},
                 )
                 return bool(list(is_exists_result))

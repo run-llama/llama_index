@@ -7,6 +7,11 @@ import redis
 from falkordb import FalkorDB
 from llama_index.core.graph_stores.types import GraphStore
 
+from llama_index.graph_stores.falkordb.cypher_escape import (
+    escape_identifier,
+    escape_int,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +42,9 @@ class FalkorDBGraphStore(GraphStore):
         self._graph = self._driver.select_graph(database)
 
         try:
-            self._graph.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+            self._graph.query(
+                f"CREATE INDEX FOR (n:{escape_identifier(self._node_label)}) ON (n.id)"
+            )
         except redis.ResponseError as e:
             # TODO: to find an appropriate way to handle this issue.
             logger.warning("Create index failed: %s", e)
@@ -45,8 +52,9 @@ class FalkorDBGraphStore(GraphStore):
         self._database = database
 
         self.schema = ""
+        escaped_label = escape_identifier(self._node_label)
         self.get_query = f"""
-            MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`)
+            MATCH (n1:{escaped_label})-[r]->(n2:{escaped_label})
             WHERE n1.id = $subj RETURN type(r), n2.id
         """
 
@@ -80,11 +88,11 @@ class FalkorDBGraphStore(GraphStore):
             return rel_map
 
         query = f"""
-            MATCH (n1:{self._node_label})
+            MATCH (n1:{escape_identifier(self._node_label)})
             WHERE n1.id IN $subjs
             WITH n1
-            MATCH p=(n1)-[e*1..{depth}]->(z)
-            RETURN p LIMIT {limit}
+            MATCH p=(n1)-[e*1..{escape_int(depth, "depth")}]->(z)
+            RETURN p LIMIT {escape_int(limit, "limit")}
         """
 
         data = self.query(query, params={"subjs": subjs})
@@ -112,15 +120,18 @@ class FalkorDBGraphStore(GraphStore):
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
         query = """
-            MERGE (n1:`%s` {id:$subj})
-            MERGE (n2:`%s` {id:$obj})
-            MERGE (n1)-[:`%s`]->(n2)
+            MERGE (n1:%s {id:$subj})
+            MERGE (n2:%s {id:$obj})
+            MERGE (n1)-[:%s]->(n2)
         """
 
+        label = escape_identifier(self._node_label)
+        # .replace(" ", "_").upper() is retained because it normalises stored
+        # relationship-type names; escaping is what makes it safe.
         prepared_statement = query % (
-            self._node_label,
-            self._node_label,
-            rel.replace(" ", "_").upper(),
+            label,
+            label,
+            escape_identifier(rel.replace(" ", "_").upper()),
         )
 
         # Call FalkorDB with prepared statement
@@ -130,9 +141,10 @@ class FalkorDBGraphStore(GraphStore):
         """Delete triplet."""
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
-            rel = rel.replace(" ", "_").upper()
+            label = escape_identifier(self._node_label)
+            escaped_rel = escape_identifier(rel.replace(" ", "_").upper())
             query = f"""
-                MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`)
+                MATCH (n1:{label})-[r:{escaped_rel}]->(n2:{label})
                 WHERE n1.id = $subj AND n2.id = $obj DELETE r
             """
 
@@ -140,14 +152,17 @@ class FalkorDBGraphStore(GraphStore):
             self._graph.query(query, params={"subj": subj, "obj": obj})
 
         def delete_entity(entity: str) -> None:
-            query = f"MATCH (n:`{self._node_label}`) WHERE n.id = $entity DELETE n"
+            query = (
+                f"MATCH (n:{escape_identifier(self._node_label)}) "
+                "WHERE n.id = $entity DELETE n"
+            )
 
             # Call FalkorDB with prepared statement
             self._graph.query(query, params={"entity": entity})
 
         def check_edges(entity: str) -> bool:
             query = f"""
-                MATCH (n1:`{self._node_label}`)--()
+                MATCH (n1:{escape_identifier(self._node_label)})--()
                 WHERE n1.id = $entity RETURN count(*)
             """
 

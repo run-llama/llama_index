@@ -21,6 +21,11 @@ from llama_index.core.graph_stores.utils import (
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
+from llama_index.graph_stores.memgraph.cypher_escape import (
+    escape_identifier,
+    escape_int,
+)
+
 
 def remove_empty_values(input_dict):
     """
@@ -197,7 +202,10 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 ]
                 if rel_type and properties:
                     rel_properties.append(
-                        {"properties": properties, "type": f":`{rel_type}`"}
+                        {
+                            "properties": properties,
+                            "type": f":{escape_identifier(rel_type)}",
+                        }
                     )
 
                 start = edge.get("start_node_labels", [None])[0]
@@ -579,7 +587,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             UNWIND range(0, size(id_list) - 1) AS idx
             MATCH (e:__Node__)
             WHERE e.id = id_list[idx]
-            MATCH p=(e)-[r*1..{depth}]-(other)
+            MATCH p=(e)-[r*1..{escape_int(depth, "depth")}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel
             WITH DISTINCT rel, idx
@@ -719,7 +727,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             )
         if relation_names:
             for rel in relation_names:
-                self.structured_query(f"MATCH ()-[r:`{rel}`]->() DELETE r")
+                self.structured_query(
+                    f"MATCH ()-[r:{escape_identifier(rel)}]->() DELETE r"
+                )
 
         if properties:
             cypher = "MATCH (e) WHERE "
@@ -739,9 +749,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         is_relationship: bool = False,
     ) -> str:
         if is_relationship:
-            match_clause = f"MATCH ()-[n:`{label_or_type}`]->()"
+            match_clause = f"MATCH ()-[n:{escape_identifier(label_or_type)}]->()"
         else:
-            match_clause = f"MATCH (n:`{label_or_type}`)"
+            match_clause = f"MATCH (n:{escape_identifier(label_or_type)})"
 
         with_clauses = []
         return_clauses = []
@@ -820,7 +830,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         and prop_index[0].get("distinctValues") <= DISTINCT_VALUE_LIMIT
                     ):
                         distinct_values_query = f"""
-                            MATCH (n:{label_or_type})
+                            MATCH (n:{escape_identifier(label_or_type)})
                             RETURN DISTINCT n.`{prop_name}` AS value
                             LIMIT {DISTINCT_VALUE_LIMIT}
                         """
