@@ -12,6 +12,7 @@ Build powerful AI assistants with LlamaIndex's agent capabilities:
 - [React Agent](/python/examples/agent/react_agent) - Use the ReAct (Reasoning and Acting) pattern with agents
 - [Code Act Agent](/python/examples/agent/code_act_agent) - Agents that can write and execute code
 - [Multi-Agent Workflow](/python/examples/agent/agent_workflow_multi) - Build a multi-agent workflow with `AgentWorkflow`
+- [Governed Action Boundary](/python/examples/agent/governed_action_boundary) - Gate sensitive tool actions with an external checkpoint
 
 You might also be interested in the [general introduction to agents](/python/framework/understanding/agent).
 
