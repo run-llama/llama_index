@@ -17,6 +17,12 @@ from llama_index.core.graph_stores.utils import (
 )
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
+
+from llama_index.graph_stores.neo4j.cypher_escape import (
+    escape_identifier,
+    escape_int,
+    escape_string_literal,
+)
 import neo4j
 
 
@@ -512,7 +518,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL (e) {{
             WITH e
-            MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:`{BASE_ENTITY_LABEL}`)
+            MATCH (e)-[r{":" + "|".join(escape_identifier(name) for name in relation_names) if relation_names else ""}]->(t:`{BASE_ENTITY_LABEL}`)
             RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -521,7 +527,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]-(t:`{BASE_ENTITY_LABEL}`)
+            MATCH (e)<-[r{":" + "|".join(escape_identifier(name) for name in relation_names) if relation_names else ""}]-(t:`{BASE_ENTITY_LABEL}`)
             RETURN t.name AS source_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    t{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -574,7 +580,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             UNWIND range(0, size(id_list) - 1) AS idx
             MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE e.id = id_list[idx]
-            MATCH p=(e)-[r*1..{depth}]-(other)
+            MATCH p=(e)-[r*1..{escape_int(depth, "depth")}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel
             WITH distinct rel, idx
@@ -757,7 +763,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         if relation_names:
             for rel in relation_names:
-                self.structured_query(f"MATCH ()-[r:`{rel}`]->() DELETE r")
+                self.structured_query(
+                    f"MATCH ()-[r:{escape_identifier(rel)}]->() DELETE r"
+                )
 
         if properties:
             cypher = "MATCH (e) WHERE "
@@ -777,9 +785,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         is_relationship: bool = False,
     ) -> str:
         if is_relationship:
-            match_clause = f"MATCH ()-[n:`{label_or_type}`]->()"
+            match_clause = f"MATCH ()-[n:{escape_identifier(label_or_type)}]->()"
         else:
-            match_clause = f"MATCH (n:`{label_or_type}`)"
+            match_clause = f"MATCH (n:{escape_identifier(label_or_type)})"
 
         with_clauses = []
         return_clauses = []
@@ -852,7 +860,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     ):
                         distinct_values = self.query(
                             f"CALL apoc.schema.properties.distinct("
-                            f"'{label_or_type}', '{prop_name}') YIELD value"
+                            f"'{escape_string_literal(label_or_type)}', "
+                            f"'{escape_string_literal(prop_name)}') YIELD value"
                         )[0]["value"]
                         return_clauses.append(
                             f"values: {distinct_values},"

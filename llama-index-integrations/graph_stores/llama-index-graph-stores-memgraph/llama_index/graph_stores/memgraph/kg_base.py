@@ -5,6 +5,11 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.core.graph_stores.types import GraphStore
 
+from llama_index.graph_stores.memgraph.cypher_escape import (
+    escape_identifier,
+    escape_int,
+)
+
 logger = logging.getLogger(__name__)
 
 node_properties_query = """
@@ -68,7 +73,7 @@ class MemgraphGraphStore(GraphStore):
             """
             CREATE CONSTRAINT ON (n:%s) ASSERT n.id IS UNIQUE;
             """
-            % (self.node_label)
+            % (escape_identifier(self.node_label))
         )
 
         # create index
@@ -76,7 +81,7 @@ class MemgraphGraphStore(GraphStore):
             """
             CREATE INDEX ON :%s(id);
             """
-            % (self.node_label)
+            % (escape_identifier(self.node_label))
         )
 
     @property
@@ -91,8 +96,9 @@ class MemgraphGraphStore(GraphStore):
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
+        label = escape_identifier(self.node_label)
         query = f"""
-            MATCH (n1:{self.node_label})-[r]->(n2:{self.node_label})
+            MATCH (n1:{label})-[r]->(n2:{label})
             WHERE n1.id = $subj
             RETURN type(r), n2.id;
         """
@@ -109,8 +115,11 @@ class MemgraphGraphStore(GraphStore):
         if subjs is None or len(subjs) == 0:
             return rel_map
 
+        label = escape_identifier(self.node_label)
+        depth = escape_int(depth, "depth")
+
         query = (
-            f"""MATCH p=(n1:{self.node_label})-[*1..{depth}]->() """
+            f"""MATCH p=(n1:{label})-[*1..{depth}]->() """
             f"""{"WHERE n1.id IN $subjs" if subjs else ""} """
             "UNWIND relationships(p) AS rel "
             "WITH n1.id AS subj, collect([type(rel), endNode(rel).id]) AS rels "
@@ -128,17 +137,23 @@ class MemgraphGraphStore(GraphStore):
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
+        label = escape_identifier(self.node_label)
+        # .replace(" ", "_").upper() is retained because it normalises stored
+        # relationship-type names; escaping is what makes it safe.
+        escaped_rel = escape_identifier(rel.replace(" ", "_").upper())
         query = f"""
-            MERGE (n1:`{self.node_label}` {{id:$subj}})
-            MERGE (n2:`{self.node_label}` {{id:$obj}})
-            MERGE (n1)-[:`{rel.replace(" ", "_").upper()}`]->(n2)
+            MERGE (n1:{label} {{id:$subj}})
+            MERGE (n2:{label} {{id:$obj}})
+            MERGE (n1)-[:{escaped_rel}]->(n2)
         """
         self.query(query, {"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
+        label = escape_identifier(self.node_label)
+        escaped_rel = escape_identifier(rel)
         query = f"""
-            MATCH (n1:`{self.node_label}`)-[r:`{rel}`]->(n2:`{self.node_label}`)
+            MATCH (n1:{label})-[r:{escaped_rel}]->(n2:{label})
             WHERE n1.id = $subj AND n2.id = $obj
             DELETE r
         """
