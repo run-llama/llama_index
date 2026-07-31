@@ -66,14 +66,14 @@ graph_store = FalkorDBPropertyGraphStore(
 
 ## Configuration
 
-| Argument | Default | Description |
-| --- | --- | --- |
-| `url` | — | Connection URL, e.g. `redis://localhost:6379`. |
-| `database` | `"falkor"` | Name of the graph to read from and write to. |
-| `refresh_schema` | `True` | Read the graph schema on startup. |
-| `sanitize_query_output` | `True` | Strip oversized values (such as embeddings) from query results. |
-| `create_indexes` | `True` | Create the range and vector indexes used for lookups and vector search. |
-| `timeout` | `None` | Per-query timeout in milliseconds. |
+| Argument                | Default    | Description                                                             |
+| ----------------------- | ---------- | ----------------------------------------------------------------------- |
+| `url`                   | —          | Connection URL, e.g. `redis://localhost:6379`.                          |
+| `database`              | `"falkor"` | Name of the graph to read from and write to.                            |
+| `refresh_schema`        | `True`     | Read the graph schema on startup.                                       |
+| `sanitize_query_output` | `True`     | Strip oversized values (such as embeddings) from query results.         |
+| `create_indexes`        | `True`     | Create the range and vector indexes used for lookups and vector search. |
+| `timeout`               | `None`     | Per-query timeout in milliseconds.                                      |
 
 ### Indexes
 
@@ -92,7 +92,7 @@ when you change embedding model.
 
 `refresh_schema()` enumerates every label and relationship type in the graph, then
 samples up to 1000 nodes per label to infer property types. Labels are therefore
-always complete, while the reported property *types* are a best-effort sample. The
+always complete, while the reported property _types_ are a best-effort sample. The
 `embedding` property is excluded so it never reaches the text-to-Cypher prompt.
 
 ## Legacy graph store
