@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Protocol, runtime_checkable
 
 from docling.datamodel.document import ConversionResult
-from docling.document_converter import DocumentConverter
 from docling_core.types import DoclingDocument as DLDocument
 from fsspec import AbstractFileSystem
 from llama_index.core import Document as LIDocument
@@ -18,6 +17,18 @@ class DoclingConverter(Protocol):
     """A Docling converter that returns a standard conversion result."""
 
     def convert(self, source: str | Path) -> ConversionResult: ...
+
+
+def _default_document_converter() -> DoclingConverter:
+    try:
+        from docling.document_converter import DocumentConverter
+    except ModuleNotFoundError as exc:
+        raise ImportError(
+            "Local document conversion requires the full `docling` package. "
+            "Install it with `pip install 'docling>=2.92.0,<3'`, or pass a "
+            "`DoclingServiceClient` as `doc_converter`."
+        ) from exc
+    return DocumentConverter()
 
 
 class DoclingReader(BasePydanticReader):
@@ -49,7 +60,7 @@ class DoclingReader(BasePydanticReader):
         return str(uuid.uuid4())
 
     export_type: ExportType = ExportType.MARKDOWN
-    doc_converter: DoclingConverter = Field(default_factory=DocumentConverter)
+    doc_converter: DoclingConverter = Field(default_factory=_default_document_converter)
     md_export_kwargs: Dict[str, Any] = {"image_placeholder": ""}
     id_func: DocIDGenCallable = _uuid4_doc_id_gen
 

@@ -10,11 +10,20 @@ Docling Reader uses [Docling](https://github.com/DS4SD/docling) to enable fast a
 pip install llama-index-readers-docling
 ```
 
+This installs Docling's lightweight service client without the local models or
+PyTorch. To use the local `DocumentConverter`, install the full Docling package
+as well:
+
+```console
+pip install "docling>=2.92.0,<3"
+```
+
 ## Usage
 
-`DoclingReader` accepts either the local `DocumentConverter` used by default or
-any compatible converter returning Docling's standard `ConversionResult`, such
-as `DoclingServiceClient`.
+`DoclingReader` accepts either the local `DocumentConverter` used by default
+(when the full Docling package is installed) or any compatible converter
+returning Docling's standard `ConversionResult`, such as
+`DoclingServiceClient`.
 
 ### Markdown export
 
