@@ -1,159 +1,566 @@
-import time
-import unittest
-import docker
-from llama_index.graph_stores.falkordb import FalkorDBPropertyGraphStore
-from llama_index.core.graph_stores.types import Relation, EntityNode
+from typing import Iterator
+
+import pytest
+
+from llama_index.core.graph_stores.types import (
+    ChunkNode,
+    EntityNode,
+    PropertyGraphStore,
+    Relation,
+)
 from llama_index.core.schema import TextNode
+from llama_index.core.vector_stores.types import (
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+)
+from llama_index.graph_stores.falkordb import (
+    FalkorDBPGStore,
+    FalkorDBPropertyGraphStore,
+)
+from llama_index.graph_stores.falkordb import falkordb_property_graph
 
-# Set up Docker client
-docker_client = docker.from_env()
+
+def test_class() -> None:
+    names_of_base_classes = [b.__name__ for b in FalkorDBPropertyGraphStore.__mro__]
+    assert PropertyGraphStore.__name__ in names_of_base_classes
+    assert FalkorDBPGStore is FalkorDBPropertyGraphStore
 
 
-class TestFalkorDBPropertyGraphStore(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Setup method called once for the entire test class."""
-        # Start FalkorDB container
-        try:
-            cls.container = docker_client.containers.run(
-                "falkordb/falkordb:latest",
-                detach=True,
-                name="falkordb_test_instance_pg",
-                ports={"6379/tcp": 6380},
+@pytest.fixture()
+def pg_store(
+    falkordb_url: str, graph_name: str
+) -> Iterator[FalkorDBPropertyGraphStore]:
+    store = FalkorDBPropertyGraphStore(url=falkordb_url, database=graph_name)
+    store.structured_query("MATCH (n) DETACH DELETE n")
+    yield store
+    store.close()
+
+
+def test_upsert_nodes_and_get(pg_store: FalkorDBPropertyGraphStore) -> None:
+    entity = EntityNode(label="PERSON", name="Alice", properties={"age": 30})
+    chunk = ChunkNode(text="Alice is a software engineer.")
+    pg_store.upsert_nodes([entity, chunk])
+
+    retrieved_entities = pg_store.get(ids=[entity.id])
+    assert len(retrieved_entities) == 1
+    assert isinstance(retrieved_entities[0], EntityNode)
+    assert retrieved_entities[0].name == "Alice"
+    assert retrieved_entities[0].label == "PERSON"
+
+    retrieved_chunks = pg_store.get(ids=[chunk.id])
+    assert len(retrieved_chunks) == 1
+    assert isinstance(retrieved_chunks[0], ChunkNode)
+    assert retrieved_chunks[0].text == "Alice is a software engineer."
+
+    retrieved_by_prop = pg_store.get(properties={"age": 30})
+    assert [node.id for node in retrieved_by_prop] == [entity.id]
+
+    assert pg_store.get(properties={"non_existent_prop": "foo"}) == []
+
+
+def test_get_with_ids_and_properties(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """Regression: combining `ids` and `properties` produced invalid Cypher."""
+    alice = EntityNode(label="PERSON", name="Alice", properties={"age": 30})
+    bob = EntityNode(label="PERSON", name="Bob", properties={"age": 40})
+    pg_store.upsert_nodes([alice, bob])
+
+    assert [n.name for n in pg_store.get(ids=[alice.id], properties={"age": 30})] == [
+        "Alice"
+    ]
+    assert pg_store.get(ids=[alice.id], properties={"age": 40}) == []
+
+
+def test_get_triplets_with_entity_names_and_ids(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """Regression: combining `entity_names` and `ids` produced invalid Cypher."""
+    alice = EntityNode(label="PERSON", name="Alice")
+    acme = EntityNode(label="ORGANIZATION", name="Acme")
+    pg_store.upsert_nodes([alice, acme])
+    pg_store.upsert_relations(
+        [Relation(label="WORKS_FOR", source_id=alice.id, target_id=acme.id)]
+    )
+
+    triplets = pg_store.get_triplets(entity_names=["Alice"], ids=[alice.id])
+    assert [t[1].label for t in triplets] == ["WORKS_FOR"]
+
+
+def test_upsert_relations_is_idempotent(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """Regression: relations were CREATEd, duplicating on every re-ingest."""
+    alice = EntityNode(label="PERSON", name="Alice")
+    acme = EntityNode(label="ORGANIZATION", name="Acme")
+    pg_store.upsert_nodes([alice, acme])
+    relation = Relation(
+        label="WORKS_FOR",
+        source_id=alice.id,
+        target_id=acme.id,
+        properties={"since": 2023},
+    )
+
+    for _ in range(3):
+        pg_store.upsert_relations([relation])
+
+    count = pg_store.structured_query(
+        "MATCH ()-[r:WORKS_FOR]->() RETURN count(r) AS count"
+    )
+    assert count[0]["count"] == 1
+
+
+def test_labels_with_special_characters(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """Regression: labels were interpolated unquoted, breaking on spaces."""
+    node = EntityNode(label="Business Unit", name="Sales")
+    pg_store.upsert_nodes([node])
+
+    assert [n.label for n in pg_store.get(ids=[node.id])] == ["Business Unit"]
+
+
+def test_label_injection_is_neutralised(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """A backtick in an (LLM generated) label must not escape the identifier."""
+    node = EntityNode(label="A` REMOVE e:`__Entity__", name="Injected")
+    pg_store.upsert_nodes([node])
+
+    labels = pg_store.structured_query(
+        "MATCH (n) WHERE n.id = 'Injected' RETURN labels(n) AS labels"
+    )[0]["labels"]
+    assert "__Entity__" in labels
+
+
+def test_relation_labels_with_special_characters(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    alice = EntityNode(label="PERSON", name="Alice")
+    acme = EntityNode(label="ORGANIZATION", name="Acme")
+    pg_store.upsert_nodes([alice, acme])
+    pg_store.upsert_relations(
+        [Relation(label="WORKS FOR", source_id=alice.id, target_id=acme.id)]
+    )
+
+    triplets = pg_store.get_triplets(entity_names=["Alice"])
+    assert [t[1].label for t in triplets] == ["WORKS FOR"]
+
+
+def test_get_schema_str(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """Regression: `get_schema_str` raised TypeError on a non-empty graph."""
+    alice = EntityNode(label="PERSON", name="Alice", properties={"age": 30})
+    acme = EntityNode(label="ORGANIZATION", name="Acme")
+    pg_store.upsert_nodes([alice, acme])
+    pg_store.upsert_relations(
+        [Relation(label="WORKS_FOR", source_id=alice.id, target_id=acme.id)]
+    )
+
+    schema_str = pg_store.get_schema_str(refresh=True)
+    assert "PERSON {" in schema_str
+    assert "age: INTEGER" in schema_str
+    assert "WORKS_FOR" in schema_str
+    # embeddings must never be advertised to the LLM
+    assert "embedding" not in schema_str
+
+    node_props = pg_store.get_schema()["node_props"]["PERSON"]
+    assert {"property": "age", "type": "INTEGER"} in node_props
+
+
+def test_vector_query_returns_similarity(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """Regression: a distance was returned, inverting the retriever ranking."""
+    match = EntityNode(label="PERSON", name="Match", embedding=[1.0, 0.0, 0.0])
+    other = EntityNode(label="PERSON", name="Other", embedding=[0.0, 1.0, 0.0])
+    pg_store.upsert_nodes([match, other])
+
+    nodes, scores = pg_store.vector_query(
+        VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=2)
+    )
+
+    assert [node.name for node in nodes] == ["Match", "Other"]
+    assert scores == sorted(scores, reverse=True)
+    assert scores[0] == pytest.approx(1.0, abs=1e-4)
+
+
+def test_vector_index_is_created(pg_store: FalkorDBPropertyGraphStore) -> None:
+    pg_store.upsert_nodes(
+        [EntityNode(label="PERSON", name="Alice", embedding=[1.0, 0.0, 0.0])]
+    )
+    assert pg_store._vector_index_dimensions == {"__Entity__": 3}
+
+
+def test_vector_query_with_filters(pg_store: FalkorDBPropertyGraphStore) -> None:
+    """Regression: filter values were interpolated instead of parameterised."""
+    alice = EntityNode(label="PERSON", name="Alice", embedding=[1.0, 0.0, 0.0])
+    bob = EntityNode(label="PERSON", name="Bob", embedding=[0.9, 0.1, 0.0])
+    pg_store.upsert_nodes([alice, bob])
+
+    nodes, _ = pg_store.vector_query(
+        VectorStoreQuery(
+            query_embedding=[1.0, 0.0, 0.0],
+            similarity_top_k=2,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="name", value="Bob", operator=FilterOperator.EQ)
+                ]
+            ),
+        )
+    )
+    assert [node.name for node in nodes] == ["Bob"]
+
+
+def test_vector_query_filter_value_is_not_executed(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """A malicious filter value must be treated as data, not as Cypher."""
+    pg_store.upsert_nodes(
+        [EntityNode(label="PERSON", name="Alice", embedding=[1.0, 0.0, 0.0])]
+    )
+
+    nodes, _ = pg_store.vector_query(
+        VectorStoreQuery(
+            query_embedding=[1.0, 0.0, 0.0],
+            similarity_top_k=2,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="name",
+                        value="' OR true RETURN 1 //",
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+        )
+    )
+    assert nodes == []
+    assert (
+        pg_store.structured_query("MATCH (n) RETURN count(n) AS count")[0]["count"] == 1
+    )
+
+
+def test_structured_query_returns_plain_values(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """Regression: raw driver objects leaked into the LLM context."""
+    pg_store.upsert_nodes([EntityNode(label="PERSON", name="Alice")])
+
+    row = pg_store.structured_query("MATCH (n) RETURN n")[0]["n"]
+    assert isinstance(row, dict)
+    assert row["name"] == "Alice"
+
+    path = pg_store.structured_query("MATCH (n) RETURN [n] AS nodes")[0]["nodes"]
+    assert isinstance(path, list)
+    assert isinstance(path[0], dict)
+
+
+def test_structured_query_sanitizes_embeddings(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """Regression: `sanitize_query_output` never applied to node objects."""
+    pg_store.upsert_nodes(
+        [EntityNode(label="PERSON", name="Alice", embedding=[0.1] * 256)]
+    )
+
+    row = pg_store.structured_query("MATCH (n) RETURN n")[0]["n"]
+    assert "embedding" not in row
+
+
+def test_range_indexes_are_created(pg_store: FalkorDBPropertyGraphStore) -> None:
+    labels = {
+        index["label"] for index in pg_store.structured_query("CALL db.indexes()")
+    }
+    assert {"__Entity__", "Chunk"} <= labels
+
+
+def test_create_indexes_can_be_disabled(falkordb_url: str, graph_name: str) -> None:
+    store = FalkorDBPropertyGraphStore(
+        url=falkordb_url, database=graph_name, create_indexes=False
+    )
+    try:
+        assert store.structured_query("CALL db.indexes()") == []
+    finally:
+        store.close()
+
+
+def test_upsert_preserves_existing_embedding(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    pg_store.upsert_nodes(
+        [EntityNode(label="PERSON", name="Alice", embedding=[1.0, 0.0, 0.0])]
+    )
+    pg_store.upsert_nodes(
+        [EntityNode(label="PERSON", name="Alice", properties={"age": 30})]
+    )
+
+    has_embedding = pg_store.structured_query(
+        "MATCH (n) WHERE n.id = 'Alice' RETURN n.embedding IS NOT NULL AS has_embedding"
+    )[0]["has_embedding"]
+    assert has_embedding
+
+
+def test_get_rel_map(pg_store: FalkorDBPropertyGraphStore) -> None:
+    alice = EntityNode(label="PERSON", name="Alice")
+    acme = EntityNode(label="ORGANIZATION", name="Acme")
+    pg_store.upsert_nodes([alice, acme])
+    pg_store.upsert_relations(
+        [
+            Relation(
+                label="WORKS_FOR",
+                source_id=alice.id,
+                target_id=acme.id,
+                properties={"since": 2023},
             )
-            time.sleep(2)  # Allow time for the container to initialize
-        except Exception as e:
-            print(f"Error starting FalkorDB container: {e}")
-            raise
-
-        # Set up the property graph store and clear database
-        cls.pg_store = FalkorDBPropertyGraphStore(url="redis://localhost:6380")
-        cls.pg_store.structured_query("MATCH (n) DETACH DELETE n")  # Clear the database
-
-    @classmethod
-    def tearDownClass(cls):
-        """Teardown method called once after all tests are done."""
-        try:
-            cls.container.stop()
-            cls.container.remove()
-        except Exception as e:
-            print(f"Error stopping/removing container: {e}")
-
-    def test_pg_graph(self):
-        # Create two entity nodes
-        entity1 = EntityNode(label="PERSON", name="Logan", properties={"age": 28})
-        entity2 = EntityNode(label="ORGANIZATION", name="LlamaIndex")
-
-        # Create a relation
-        relation = Relation(
-            label="WORKS_FOR",
-            source_id=entity1.id,
-            target_id=entity2.id,
-            properties={"since": 2023},
-        )
-
-        self.pg_store.upsert_nodes([entity1, entity2])
-        self.pg_store.upsert_relations([relation])
-
-        source_node = TextNode(text="Logan (age 28), works for LlamaIndex since 2023.")
-        relations = [
-            Relation(
-                label="MENTIONS",
-                target_id=entity1.id,
-                source_id=source_node.node_id,
-            ),
-            Relation(
-                label="MENTIONS",
-                target_id=entity2.id,
-                source_id=source_node.node_id,
-            ),
         ]
+    )
 
-        self.pg_store.upsert_llama_nodes([source_node])
-        self.pg_store.upsert_relations(relations)
+    paths = pg_store.get_rel_map(pg_store.get(ids=[alice.id]), depth=1)
+    assert len(paths) == 1
+    source, relation, target = paths[0]
+    assert source.id == alice.id
+    assert target.id == acme.id
+    # relationship properties used to be dropped
+    assert relation.properties == {"since": 2023}
 
-        kg_nodes = self.pg_store.get(ids=[entity1.id])
-        self.assertEqual(len(kg_nodes), 1)
-        self.assertEqual(kg_nodes[0].label, "PERSON")
-        self.assertEqual(kg_nodes[0].name, "Logan")
-
-        kg_nodes = self.pg_store.get(properties={"age": 28})
-        self.assertEqual(len(kg_nodes), 1)
-        self.assertEqual(kg_nodes[0].label, "PERSON")
-        self.assertEqual(kg_nodes[0].name, "Logan")
-
-        # Get paths from a node
-        paths = self.pg_store.get_rel_map(kg_nodes, depth=1)
-        for path in paths:
-            self.assertEqual(path[0].id, entity1.id)
-            self.assertEqual(path[2].id, entity2.id)
-            self.assertEqual(path[1].id, relation.id)
-
-        query = "MATCH (n:`__Entity__`) RETURN n"
-        result = self.pg_store.structured_query(query)
-        self.assertEqual(len(result), 2)
-
-        # Get the original text node back
-        llama_nodes = self.pg_store.get_llama_nodes([source_node.node_id])
-        self.assertEqual(len(llama_nodes), 1)
-        self.assertEqual(llama_nodes[0].text, source_node.text)
-
-        # Upsert a new node
-        new_node = EntityNode(
-            label="PERSON", name="Logan", properties={"age": 28, "location": "Canada"}
+    assert (
+        pg_store.get_rel_map(
+            pg_store.get(ids=[alice.id]), depth=1, ignore_rels=["WORKS_FOR"]
         )
-        self.pg_store.upsert_nodes([new_node])
-        kg_nodes = self.pg_store.get(properties={"age": 28})
-        self.assertEqual(len(kg_nodes), 1)
-        self.assertEqual(kg_nodes[0].label, "PERSON")
-        self.assertEqual(kg_nodes[0].name, "Logan")
-        self.assertEqual(kg_nodes[0].properties["location"], "Canada")
+        == []
+    )
 
-        # Deleting
-        # Delete our entities
-        self.pg_store.delete(ids=[entity1.id, entity2.id])
 
-        # Delete our text nodes
-        self.pg_store.delete(ids=[source_node.node_id])
+def test_llama_nodes_round_trip(pg_store: FalkorDBPropertyGraphStore) -> None:
+    source_node = TextNode(text="Alice works for Acme since 2023.")
+    entity = EntityNode(label="PERSON", name="Alice")
+    pg_store.upsert_llama_nodes([source_node])
+    pg_store.upsert_nodes([entity])
+    pg_store.upsert_relations(
+        [Relation(label="MENTIONS", source_id=source_node.node_id, target_id=entity.id)]
+    )
 
-        nodes = self.pg_store.get(ids=[entity1.id, entity2.id])
-        self.assertEqual(len(nodes), 0)
+    llama_nodes = pg_store.get_llama_nodes([source_node.node_id])
+    assert [node.text for node in llama_nodes] == [source_node.text]
 
-        text_nodes = self.pg_store.get_llama_nodes([source_node.node_id])
-        self.assertEqual(len(text_nodes), 0)
+    pg_store.delete_llama_nodes(node_ids=[source_node.node_id])
+    assert pg_store.get_llama_nodes([source_node.node_id]) == []
 
-        self.pg_store.switch_graph("new_graph")
-        self.pg_store.refresh_schema()
 
-    def test_mentions_relationship_with_triplet_source_id(self):
-        """Test that MENTIONS relationships are created when entities have triplet_source_id."""
-        # Create a chunk node first
-        from llama_index.core.graph_stores.types import ChunkNode
+def test_mentions_relationship_from_triplet_source_id(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    pg_store.upsert_nodes([ChunkNode(id_="chunk_1", text="Test chunk with entities")])
+    pg_store.upsert_nodes(
+        [
+            EntityNode(
+                label="PERSON",
+                name="TestEntity",
+                properties={"triplet_source_id": "chunk_1"},
+            )
+        ]
+    )
 
-        chunk = ChunkNode(id_="chunk_1", text="Test chunk with entities", properties={})
-        self.pg_store.upsert_nodes([chunk])
-
-        # Create entity with triplet_source_id
-        entity = EntityNode(
-            label="PERSON",
-            name="TestEntity",
-            properties={"triplet_source_id": "chunk_1"},
-        )
-
-        self.pg_store.upsert_nodes([entity])
-
-        # Verify MENTIONS relationship exists
-        mentions_query = """
-            MATCH (c:Chunk {id: 'chunk_1'})-[r:MENTIONS]->(e:__Entity__ {name: 'TestEntity'})
-            RETURN count(r) AS mention_count
+    result = pg_store.structured_query(
         """
-        result = self.pg_store.structured_query(mentions_query)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["mention_count"], 1)
+        MATCH (c:Chunk {id: 'chunk_1'})-[r:MENTIONS]->(e:__Entity__ {name: 'TestEntity'})
+        RETURN count(r) AS mention_count
+        """
+    )
+    assert result[0]["mention_count"] == 1
 
-        # Clean up
-        self.pg_store.delete(ids=[entity.id, chunk.id_])
+
+def test_delete(pg_store: FalkorDBPropertyGraphStore) -> None:
+    alice = EntityNode(label="PERSON", name="Alice", properties={"age": 30})
+    acme = EntityNode(label="ORGANIZATION", name="Acme")
+    pg_store.upsert_nodes([alice, acme])
+    pg_store.upsert_relations(
+        [Relation(label="WORKS_FOR", source_id=alice.id, target_id=acme.id)]
+    )
+
+    pg_store.delete(relation_names=["WORKS_FOR"])
+    assert pg_store.get_triplets(entity_names=["Alice"]) == []
+
+    pg_store.delete(properties={"age": 30})
+    assert pg_store.get(ids=[alice.id]) == []
+
+    pg_store.delete(entity_names=["Acme"])
+    assert pg_store.get(ids=[acme.id]) == []
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_switch_graph(pg_store: FalkorDBPropertyGraphStore, graph_name: str) -> None:
+    pg_store.upsert_nodes([EntityNode(label="PERSON", name="Alice")])
+    pg_store.switch_graph(f"{graph_name}_other")
+
+    assert pg_store.get(ids=["Alice"]) == []
+    labels = {
+        index["label"] for index in pg_store.structured_query("CALL db.indexes()")
+    }
+    assert "__Entity__" in labels
+
+
+def test_context_manager_closes_connection(falkordb_url: str, graph_name: str) -> None:
+    with FalkorDBPropertyGraphStore(url=falkordb_url, database=graph_name) as store:
+        store.upsert_nodes([EntityNode(label="PERSON", name="Alice")])
+    assert not hasattr(store, "_driver")
+
+
+def test_client_kwargs_are_forwarded(falkordb_url: str, graph_name: str) -> None:
+    store = FalkorDBPropertyGraphStore(
+        url=falkordb_url, database=graph_name, socket_timeout=30
+    )
+    try:
+        assert store.structured_query("RETURN 1 AS one")[0]["one"] == 1
+    finally:
+        store.close()
+
+
+def test_batched_upserts(
+    pg_store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Force several batches per label so the batching loops (and the per-label
+    # grouping inside them) are actually exercised.
+    monkeypatch.setattr(falkordb_property_graph, "CHUNK_SIZE", 10)
+
+    entities = [
+        EntityNode(
+            label="PERSON" if i % 2 else "ORG",
+            name=f"person_{i}",
+            properties={"triplet_source_id": f"chunk_{i}"},
+        )
+        for i in range(105)
+    ]
+    relations = [
+        Relation(label="KNOWS", source_id=f"person_{i}", target_id=f"person_{i + 1}")
+        for i in range(104)
+    ]
+    pg_store.upsert_nodes(entities)
+    pg_store.upsert_relations(relations)
+
+    counts = pg_store.structured_query(
+        "MATCH (n:`__Entity__`) RETURN count(n) AS nodes"
+    )
+    assert counts[0]["nodes"] == 105
+    for label, expected in (("PERSON", 52), ("ORG", 53)):
+        rows = pg_store.structured_query(
+            f"MATCH (n:`{label}`) RETURN count(n) AS nodes"
+        )
+        assert rows[0]["nodes"] == expected
+    rels = pg_store.structured_query("MATCH ()-[r:KNOWS]->() RETURN count(r) AS rels")
+    assert rels[0]["rels"] == 104
+    # MENTIONS is batched separately and must survive the batch boundary too.
+    mentions = pg_store.structured_query(
+        "MATCH (:Chunk)-[r:MENTIONS]->(:`__Entity__`) RETURN count(r) AS rels"
+    )
+    assert mentions[0]["rels"] == 105
+
+
+def test_upsert_relations_before_nodes_does_not_duplicate(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """Relation endpoints must be reused by a later upsert_nodes, not duplicated."""
+    pg_store.upsert_relations(
+        [Relation(label="WORKS_FOR", source_id="Alice", target_id="Acme")]
+    )
+    pg_store.upsert_nodes(
+        [
+            EntityNode(label="PERSON", name="Alice", properties={"age": 30}),
+            EntityNode(label="ORG", name="Acme"),
+        ]
+    )
+
+    counts = pg_store.structured_query(
+        "MATCH (n {id: 'Alice'}) RETURN count(n) AS nodes"
+    )
+    assert counts[0]["nodes"] == 1
+
+    nodes = pg_store.get(ids=["Alice"])
+    assert len(nodes) == 1
+    assert nodes[0].properties["age"] == 30
+
+    # The relation must still hang off that same node.
+    triplets = pg_store.get_triplets(entity_names=["Alice"])
+    assert len(triplets) == 1
+    assert triplets[0][1].label == "WORKS_FOR"
+
+
+def test_upsert_relations_uses_indexed_merge(
+    pg_store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The MERGE must be label-scoped so FalkorDB can use the `id` index."""
+    pg_store.upsert_nodes([EntityNode(label="PERSON", name="Alice")])
+
+    captured = []
+    original = pg_store.structured_query
+
+    def spy(query, param_map=None):
+        captured.append((query, param_map))
+        return original(query, param_map)
+
+    monkeypatch.setattr(pg_store, "structured_query", spy)
+    pg_store.upsert_relations(
+        [Relation(label="KNOWS", source_id="Alice", target_id="Bob")]
+    )
+
+    merges = [(q, p) for q, p in captured if "MERGE (source" in q]
+    assert merges, "upsert_relations issued no MERGE statement"
+    for query, param_map in merges:
+        plan = str(pg_store._graph.explain(query, params=param_map))
+        assert "All Node Scan" not in plan, plan
+
+
+def test_get_triplets_returns_correct_properties_for_incoming_rels(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """Traversing an incoming edge must not swap the two nodes' property bags."""
+    pg_store.upsert_nodes(
+        [
+            EntityNode(label="PERSON", name="Alice", properties={"city": "NYC"}),
+            EntityNode(label="ORG", name="Acme", properties={"industry": "tech"}),
+        ]
+    )
+    pg_store.upsert_relations(
+        [
+            Relation(
+                label="WORKS_FOR",
+                source_id="Alice",
+                target_id="Acme",
+                properties={"since": 2020},
+            )
+        ]
+    )
+
+    # Anchored on the *target*, so the store has to walk the edge backwards.
+    triplets = pg_store.get_triplets(entity_names=["Acme"])
+    assert len(triplets) == 1
+    source, relation, target = triplets[0]
+
+    assert source.name == "Alice"
+    assert source.properties["city"] == "NYC"
+    assert source.properties["id"] == "Alice"
+    assert target.name == "Acme"
+    assert target.properties["industry"] == "tech"
+    assert target.properties["id"] == "Acme"
+    assert relation.properties["since"] == 2020
+
+    # The forward direction must agree with the reverse one.
+    forward = pg_store.get_triplets(entity_names=["Alice"])
+    assert [n.properties for n in (forward[0][0], forward[0][2])] == [
+        source.properties,
+        target.properties,
+    ]
+
+
+def test_refresh_schema_includes_rare_labels(
+    pg_store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A label outside the sampling window must still appear in the schema."""
+    monkeypatch.setattr(falkordb_property_graph, "SCHEMA_SAMPLE_SIZE", 5)
+
+    pg_store.upsert_nodes(
+        [EntityNode(label="BULK", name=f"bulk_{i}") for i in range(50)]
+        + [EntityNode(label="RARE", name="rare_1", properties={"rare_prop": "x"})]
+    )
+
+    pg_store.refresh_schema()
+    node_props = pg_store.structured_schema["node_props"]
+    assert {"BULK", "RARE"} <= set(node_props)
+
+    rare_props = {prop["property"] for prop in node_props["RARE"]}
+    assert "rare_prop" in rare_props
+    assert "embedding" not in rare_props
+
+    # ...and the rendered schema the LLM sees must mention it too.
+    assert "RARE" in pg_store.get_schema_str()
