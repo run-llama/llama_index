@@ -936,6 +936,63 @@ def test_cached_content_without_cached_content() -> None:
     assert "cached_content" not in chat_response.raw
 
 
+def _make_mock_response_with_usage(
+    cached_content_token_count: int,
+) -> MagicMock:
+    """Build a minimal mock GenerateContentResponse with usage_metadata."""
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Hello"
+    mock_response.candidates[0].content.parts[0].thought = False
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.prompt_feedback = None
+    mock_response.function_calls = None
+    del mock_response.cached_content
+
+    mock_usage = MagicMock()
+    mock_usage.model_dump.return_value = {
+        "prompt_token_count": 150,
+        "candidates_token_count": 30,
+        "total_token_count": 180,
+        "cached_content_token_count": cached_content_token_count,
+        "thoughts_token_count": 0,
+    }
+    mock_usage.prompt_token_count = 150
+    mock_usage.candidates_token_count = 30
+    mock_usage.total_token_count = 180
+    mock_usage.cached_content_token_count = cached_content_token_count
+    mock_usage.thoughts_token_count = 0
+    mock_response.usage_metadata = mock_usage
+    return mock_response
+
+
+def test_cached_content_token_count_surfaced_in_additional_kwargs() -> None:
+    """cached_content_tokens appears in additional_kwargs when cache hits are non-zero."""
+    mock_response = _make_mock_response_with_usage(cached_content_token_count=100)
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert chat_response.additional_kwargs["prompt_tokens"] == 150
+    assert chat_response.additional_kwargs["completion_tokens"] == 30
+    assert chat_response.additional_kwargs["total_tokens"] == 180
+    assert chat_response.additional_kwargs["cached_content_tokens"] == 100
+
+
+def test_cached_content_token_count_absent_when_zero() -> None:
+    """cached_content_tokens is absent from additional_kwargs when no cache hits."""
+    mock_response = _make_mock_response_with_usage(cached_content_token_count=0)
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert "cached_content_tokens" not in chat_response.additional_kwargs
+    assert chat_response.additional_kwargs["prompt_tokens"] == 150
+
+
 def test_thoughts_in_response() -> None:
     """Test response processing when thought summaries are present."""
     # Mock response without cached_content
