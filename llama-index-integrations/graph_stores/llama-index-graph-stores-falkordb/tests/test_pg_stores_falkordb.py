@@ -564,3 +564,151 @@ def test_refresh_schema_includes_rare_labels(
 
     # ...and the rendered schema the LLM sees must mention it too.
     assert "RARE" in pg_store.get_schema_str()
+
+
+def _capture_queries(
+    store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> list:
+    """Record every Cypher statement a store method issues."""
+    captured: list = []
+    original = store.structured_query
+
+    def spy(query, param_map=None):
+        captured.append((query, param_map))
+        return original(query, param_map)
+
+    monkeypatch.setattr(store, "structured_query", spy)
+    return captured
+
+
+def _plans(store: FalkorDBPropertyGraphStore, captured: list) -> list:
+    plans = []
+    for query, params in captured:
+        try:
+            plans.append((query, str(store._graph.explain(query, params=params))))
+        except Exception:
+            # Procedure calls such as `CALL db.labels()` cannot be explained.
+            continue
+    return plans
+
+
+def _seed_graph(store: FalkorDBPropertyGraphStore) -> None:
+    store.upsert_nodes(
+        [
+            EntityNode(label="PERSON", name="Alice", properties={"city": "NYC"}),
+            EntityNode(label="ORG", name="Acme"),
+            ChunkNode(text="some chunk text", id_="chunk_1"),
+        ]
+    )
+    store.upsert_relations(
+        [Relation(label="WORKS_FOR", source_id="Alice", target_id="Acme")]
+    )
+
+
+def test_get_uses_indexes_instead_of_scanning_the_graph(
+    pg_store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`get()` runs twice per ingestion batch to dedup - it must not full-scan."""
+    _seed_graph(pg_store)
+
+    captured = _capture_queries(pg_store, monkeypatch)
+    pg_store.get(ids=["Alice", "chunk_1"])
+
+    plans = _plans(pg_store, captured)
+    assert plans, "get() issued no explainable query"
+    for query, plan in plans:
+        assert "All Node Scan" not in plan, f"{query}\n{plan}"
+        assert "Node By Index Scan" in plan, f"{query}\n{plan}"
+
+
+def test_get_still_returns_entities_and_chunks(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    """Splitting the lookup per label must not change what `get()` returns."""
+    _seed_graph(pg_store)
+
+    by_id = {node.id: node for node in pg_store.get(ids=["Alice", "chunk_1"])}
+    assert set(by_id) == {"Alice", "chunk_1"}
+    assert isinstance(by_id["Alice"], EntityNode)
+    assert by_id["Alice"].properties["city"] == "NYC"
+    assert isinstance(by_id["chunk_1"], ChunkNode)
+    assert by_id["chunk_1"].text == "some chunk text"
+
+    # No filters must still return every node the store manages, exactly once.
+    all_ids = [node.id for node in pg_store.get()]
+    assert sorted(all_ids) == ["Acme", "Alice", "chunk_1"]
+
+    # Property filters keep working across both labels.
+    assert [n.id for n in pg_store.get(properties={"city": "NYC"})] == ["Alice"]
+
+
+def test_get_deduplicates_nodes_carrying_both_labels(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    _seed_graph(pg_store)
+    pg_store.structured_query("MATCH (n {id: 'Alice'}) SET n:Chunk")
+
+    assert [node.id for node in pg_store.get(ids=["Alice"])] == ["Alice"]
+
+
+def test_refresh_schema_does_not_traverse_every_relationship(
+    pg_store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PropertyGraphIndex refreshes the schema after every ingestion batch."""
+    _seed_graph(pg_store)
+
+    captured = _capture_queries(pg_store, monkeypatch)
+    pg_store.refresh_schema()
+
+    traversals = [
+        (query, plan)
+        for query, plan in _plans(pg_store, captured)
+        if "Conditional Traverse" in plan
+    ]
+    assert traversals, "expected refresh_schema to inspect relationships"
+    for query, plan in traversals:
+        assert "Limit" in plan, f"unbounded relationship traversal:\n{query}\n{plan}"
+
+
+def test_refresh_schema_still_reports_relationships(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    _seed_graph(pg_store)
+    pg_store.refresh_schema()
+
+    triples = {
+        (rel["start"], rel["type"], rel["end"])
+        for rel in pg_store.structured_schema["relationships"]
+    }
+    assert ("PERSON", "WORKS_FOR", "ORG") in triples
+    assert ("Chunk", "MENTIONS", "PERSON") not in triples  # no source id seeded
+    assert "(:PERSON)-[:WORKS_FOR]->(:ORG)" in pg_store.get_schema_str()
+
+
+def test_delete_uses_indexes_instead_of_scanning_the_graph(
+    pg_store: FalkorDBPropertyGraphStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _seed_graph(pg_store)
+
+    captured = _capture_queries(pg_store, monkeypatch)
+    pg_store.delete(ids=["chunk_1"])
+
+    plans = _plans(pg_store, captured)
+    assert plans, "delete() issued no explainable query"
+    for query, plan in plans:
+        assert "All Node Scan" not in plan, f"{query}\n{plan}"
+
+    assert [n.id for n in pg_store.get(ids=["chunk_1"])] == []
+    assert sorted(n.id for n in pg_store.get()) == ["Acme", "Alice"]
+
+
+def test_delete_by_entity_names_and_properties_still_works(
+    pg_store: FalkorDBPropertyGraphStore,
+) -> None:
+    _seed_graph(pg_store)
+
+    pg_store.delete(entity_names=["Acme"])
+    assert sorted(n.id for n in pg_store.get()) == ["Alice", "chunk_1"]
+
+    pg_store.delete(properties={"city": "NYC"})
+    assert sorted(n.id for n in pg_store.get()) == ["chunk_1"]

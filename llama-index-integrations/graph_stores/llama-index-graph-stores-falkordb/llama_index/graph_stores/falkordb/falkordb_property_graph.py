@@ -43,6 +43,9 @@ def remove_empty_values(input_dict):
 
 BASE_ENTITY_LABEL = "__Entity__"
 CHUNK_LABEL = "Chunk"
+# Every node written by this store carries one of these labels. FalkorDB indexes
+# are label-scoped, so lookups have to name a label to be able to use them.
+STORE_NODE_LABELS = (BASE_ENTITY_LABEL, CHUNK_LABEL)
 EMBEDDING_KEY = "embedding"
 EXCLUDED_LABELS = []
 EXCLUDED_RELS = []
@@ -128,15 +131,6 @@ def _batched(rows: List[dict], size: Optional[int] = None) -> Iterator[List[dict
     size = size or CHUNK_SIZE
     for index in range(0, len(rows), size):
         yield rows[index : index + size]
-
-
-rel_query = """
-MATCH (n)-[r]->(m)
-UNWIND labels(n) as src_label
-UNWIND labels(m) as dst_label
-UNWIND type(r) as rel_type
-RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
-"""
 
 
 class FalkorDBPropertyGraphStore(PropertyGraphStore):
@@ -350,19 +344,53 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             outputs.append({"type": rel_type, "keys": rows[0]["keys"] if rows else []})
         return outputs
 
+    def _sample_rel_triples(self) -> List[dict]:
+        """
+        Derive the (start label, type, end label) triples present in the graph.
+
+        Relationship types are enumerated exhaustively and their endpoint labels
+        are sampled per type. The obvious `MATCH (n)-[r]->(m)` instead traverses
+        every relationship in the graph, and `PropertyGraphIndex` refreshes the
+        schema after *every* ingestion batch, so that cost is paid over and over
+        and grows with the graph.
+        """
+        triples: List[dict] = []
+        seen: Set[Tuple[str, str, str]] = set()
+
+        for row in self.structured_query("CALL db.relationshipTypes()") or []:
+            rel_type = row["relationshipType"]
+            if rel_type in EXCLUDED_RELS:
+                continue
+
+            rows = self.structured_query(
+                f"""
+                MATCH (n)-[r:{escape_identifier(rel_type)}]->(m)
+                WITH n, m LIMIT $SAMPLE_SIZE
+                UNWIND labels(n) AS start_label
+                UNWIND labels(m) AS end_label
+                RETURN DISTINCT start_label, end_label
+                """,
+                param_map={"SAMPLE_SIZE": SCHEMA_SAMPLE_SIZE},
+            )
+            for record in rows or []:
+                key = (record["start_label"], rel_type, record["end_label"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                triples.append(
+                    {
+                        "start": record["start_label"],
+                        "type": rel_type,
+                        "end": record["end_label"],
+                    }
+                )
+        return triples
+
     def refresh_schema(self) -> None:
         """Refresh the schema."""
         node_properties = self._sample_node_properties()
         rel_properties = self._sample_rel_properties()
-        rel_objs_query_result = self.structured_query(
-            rel_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
-        )
-        relationships = (
-            [el["output"] for el in rel_objs_query_result]
-            if rel_objs_query_result
-            else []
-        )
+        relationships = self._sample_rel_triples()
 
         # Get constraints & indexes
         try:
@@ -597,14 +625,48 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
     ### ----- Reads ----- ###
 
+    def _match_store_nodes(
+        self, conditions: List[str], params: Dict[str, Any]
+    ) -> List[dict]:
+        """
+        Run a node lookup once per store-managed label and merge the results.
+
+        Every node this store writes carries either ``BASE_ENTITY_LABEL`` or
+        ``CHUNK_LABEL``. Scoping the match to those labels is what lets FalkorDB
+        use the `id` range indexes: its indexes are label-scoped, so an
+        unlabelled `MATCH (e)` degrades to an `All Node Scan` of the whole
+        graph. That matters because `PropertyGraphIndex` calls `get()` twice per
+        ingestion batch to deduplicate, making ingestion quadratic.
+        """
+        where = f"WHERE {' AND '.join(conditions)} " if conditions else ""
+        return_statement = f"""
+        WITH e
+        RETURN e.id AS name,
+               [l in labels(e) WHERE l <> '{BASE_ENTITY_LABEL}' | l][0] AS type,
+               e{{.* , embedding: Null, id: Null}} AS properties
+        """
+
+        records: List[dict] = []
+        seen: Set[str] = set()
+        for label in STORE_NODE_LABELS:
+            rows = self.structured_query(
+                f"MATCH (e:{escape_identifier(label)}) {where}{return_statement}",
+                param_map=params,
+            )
+            for record in rows or []:
+                # A node carrying both labels would otherwise be returned twice.
+                if record["name"] in seen:
+                    continue
+                seen.add(record["name"])
+                records.append(record)
+        return records
+
     def get(
         self,
         properties: Optional[dict] = None,
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        cypher_statement = "MATCH (e) "
-
         params: Dict[str, Any] = {}
         conditions: List[str] = []
 
@@ -617,19 +679,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                 conditions.append(f"e.{escape_identifier(prop)} = $property_{i}")
                 params[f"property_{i}"] = properties[prop]
 
-        if conditions:
-            cypher_statement += "WHERE " + " AND ".join(conditions) + " "
-
-        return_statement = """
-        WITH e
-        RETURN e.id AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
-               e{.* , embedding: Null, id: Null} AS properties
-        """
-        cypher_statement += return_statement
-
-        response = self.structured_query(cypher_statement, param_map=params)
-        response = response if response else []
+        response = self._match_store_nodes(conditions, params)
 
         nodes = []
         for record in response:
@@ -917,17 +967,22 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> None:
         """Delete matching data."""
+
+        # As in `get()`, the match has to name a label for FalkorDB to be able
+        # to use its (label-scoped) indexes instead of scanning the graph.
+        def delete_by(condition: str, param_map: Dict[str, Any]) -> None:
+            for label in STORE_NODE_LABELS:
+                self.structured_query(
+                    f"MATCH (e:{escape_identifier(label)}) WHERE {condition} "
+                    "DETACH DELETE e",
+                    param_map=param_map,
+                )
+
         if entity_names:
-            self.structured_query(
-                "MATCH (n) WHERE n.name IN $entity_names DETACH DELETE n",
-                param_map={"entity_names": entity_names},
-            )
+            delete_by("e.name IN $entity_names", {"entity_names": entity_names})
 
         if ids:
-            self.structured_query(
-                "MATCH (n) WHERE n.id IN $ids DETACH DELETE n",
-                param_map={"ids": ids},
-            )
+            delete_by("e.id IN $ids", {"ids": ids})
 
         if relation_names:
             for rel in relation_names:
@@ -936,14 +991,12 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                 )
 
         if properties:
-            cypher = "MATCH (e) WHERE "
             prop_list = []
-            params = {}
+            params: Dict[str, Any] = {}
             for i, prop in enumerate(properties):
                 prop_list.append(f"e.{escape_identifier(prop)} = $property_{i}")
                 params[f"property_{i}"] = properties[prop]
-            cypher += " AND ".join(prop_list)
-            self.structured_query(cypher + " DETACH DELETE e", param_map=params)
+            delete_by(" AND ".join(prop_list), params)
 
     ### ----- Connection management ----- ###
 

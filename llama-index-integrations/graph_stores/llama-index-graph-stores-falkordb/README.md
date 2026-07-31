@@ -91,9 +91,23 @@ when you change embedding model.
 ### Schema
 
 `refresh_schema()` enumerates every label and relationship type in the graph, then
-samples up to 1000 nodes per label to infer property types. Labels are therefore
-always complete, while the reported property _types_ are a best-effort sample. The
-`embedding` property is excluded so it never reaches the text-to-Cypher prompt.
+samples up to 1000 nodes per label to infer property types, and up to 1000
+relationships per type to infer which labels they connect. Labels and relationship
+types are therefore always complete, while the reported property _types_ and
+`(:Start)-[:REL]->(:End)` pairs are a best-effort sample — a combination that occurs
+in fewer than 1 in 1000 relationships of its type may be missed. The `embedding`
+property is excluded so it never reaches the text-to-Cypher prompt.
+
+Sampling matters because `PropertyGraphIndex` refreshes the schema after **every**
+ingestion batch; traversing all relationships instead would make ingestion cost grow
+with the size of the graph.
+
+### Ingestion performance
+
+Every read this store issues is scoped to `__Entity__` or `Chunk` so FalkorDB's
+label-scoped range indexes apply. This is what keeps the per-batch deduplication that
+`PropertyGraphIndex` performs (`get()` twice, plus a schema refresh) from degrading
+into full-graph scans as the graph grows.
 
 ## Legacy graph store
 
