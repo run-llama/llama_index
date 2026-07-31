@@ -31,8 +31,10 @@ def get_top_k_embeddings(
         similarity = similarity_fn(query_embedding_np, emb)  # type: ignore[arg-type]
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
-            if similarity_top_k and len(similarity_heap) > similarity_top_k:
+            if similarity_top_k is not None and len(similarity_heap) > similarity_top_k:
                 heapq.heappop(similarity_heap)
+    if similarity_top_k == 0:
+        return [], []
     result_tups = sorted(similarity_heap, key=lambda x: x[0], reverse=True)
 
     result_similarities = [s for s, _ in result_tups]
@@ -137,31 +139,32 @@ def get_top_k_mmr_embeddings(
 
     embedding_length = len(embeddings or [])
     similarity_top_k_count = similarity_top_k or embedding_length
-    while len(results) < min(similarity_top_k_count, embedding_length):
-        # Calculate the similarity score the for the leading one.
-        results.append((score, high_score_id))
-
-        # Reset so a new high scoring result can be found
+    if similarity_top_k == 0:
+        return [], []
+    for _ in range(similarity_top_k_count):
+        if not embed_map:
+            break
+        for i, emb in enumerate(embeddings):
+            if embedding_ids[i] not in embed_map:
+                continue
+            similarity = similarity_fn(query_embedding, emb)
+            if similarity_cutoff is None or similarity > similarity_cutoff:
+                if high_score_id is None or similarity * threshold > embed_similarity[high_score_id] * threshold:
+                    high_score_id = embedding_ids[i]
+                    score = similarity * threshold
+        if high_score_id is None:
+            break
+        results.append((embed_similarity[high_score_id], high_score_id))
         del embed_map[high_score_id]
-        recent_embedding_id = high_score_id
+        for i, emb in enumerate(embeddings):
+            if embedding_ids[i] not in embed_map:
+                continue
+            similarity = similarity_fn(embeddings[embedding_ids.index(high_score_id)], emb)
+            embed_similarity[embedding_ids[i]] *= (1 - similarity * (1 - threshold))
+            if embed_similarity[embedding_ids[i]] < similarity_cutoff:
+                del embed_map[embedding_ids[i]]
+        high_score_id = None
         score = -math.inf
-
-        # Iterate through results to find high score
-        for embed_id in embed_map:
-            overlap_with_recent = similarity_fn(
-                embeddings[embed_map[embed_id]],
-                embeddings[full_embed_map[recent_embedding_id]],
-            )
-            if (
-                threshold * embed_similarity[embed_id]
-                - ((1 - threshold) * overlap_with_recent)
-                > score
-            ):
-                score = threshold * embed_similarity[embed_id] - (
-                    (1 - threshold) * overlap_with_recent
-                )
-                high_score_id = embed_id
-
     result_similarities = [s for s, _ in results]
     result_ids = [n for _, n in results]
 
