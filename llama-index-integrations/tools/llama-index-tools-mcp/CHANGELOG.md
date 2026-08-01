@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.5.0] - 2026-08-01
+
+- Extracted the JSON Schema → Pydantic conversion into a standalone public
+  `JsonSchemaToPydantic` class (exported from `llama_index.tools.mcp`) that works
+  without an MCP client. `McpToolSpec` now delegates to it, so existing callers and
+  `to_tool_list_async` are unchanged and produce identical models.
+
 ## [0.4.0] - 2025-08-06
 
 - Reworked function `create_model_from_json_schema` in `llama_index.tools.mcp.base`.

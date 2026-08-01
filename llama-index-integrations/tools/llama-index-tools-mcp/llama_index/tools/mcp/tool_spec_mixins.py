@@ -1,8 +1,5 @@
-from typing import Any, Dict, List, Union, Literal, Type, TYPE_CHECKING
-from pydantic import Field
-
-if TYPE_CHECKING:
-    from llama_index.tools.mcp.base import McpToolSpec
+from typing import Any, Dict, List, Set, Union, Literal, Type
+from pydantic import BaseModel, Field, create_model
 
 # Map JSON Schema types to Python types
 json_type_mapping: Dict[str, Type] = {
@@ -17,7 +14,7 @@ json_type_mapping: Dict[str, Type] = {
 
 class TypeResolutionMixin:
     def _resolve_field_type(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         field_schema: dict,
         defs: dict,
     ) -> Any:
@@ -31,7 +28,7 @@ class TypeResolutionMixin:
         return self._resolve_basic_type(field_schema, defs)
 
     def _resolve_reference(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         field_schema: dict,
         defs: dict,
     ) -> Any:
@@ -56,7 +53,7 @@ class TypeResolutionMixin:
         )
 
     def _resolve_union_type(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         schema: dict,
         defs: dict,
     ) -> Any:
@@ -67,7 +64,7 @@ class TypeResolutionMixin:
         return Union[tuple(union_types)] if len(union_types) > 1 else union_types[0]
 
     def _resolve_union_option(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         option: dict,
         defs: dict,
     ) -> Any:
@@ -81,7 +78,7 @@ class TypeResolutionMixin:
         return self._resolve_basic_type(option, defs)
 
     def _resolve_basic_type(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         schema: dict,
         defs: dict,
     ) -> Any:
@@ -97,12 +94,16 @@ class TypeResolutionMixin:
 
 
 class TypeCreationMixin:
-    def _create_list_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
+    def _create_list_type(
+        self: "JsonSchemaToPydantic", schema: dict, defs: dict
+    ) -> type:
         """Create a List type from schema."""
         item_type = self._resolve_field_type(schema["items"], defs)
         return List[item_type]
 
-    def _create_dict_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
+    def _create_dict_type(
+        self: "JsonSchemaToPydantic", schema: dict, defs: dict
+    ) -> type:
         """Create a Dict type from schema."""
         additional_props = schema.get("additionalProperties")
 
@@ -115,11 +116,11 @@ class TypeCreationMixin:
 
         return Dict[str, Any]
 
-    def _is_simple_array(self: "McpToolSpec", schema: dict) -> bool:
+    def _is_simple_array(self: "JsonSchemaToPydantic", schema: dict) -> bool:
         """Check if schema is a simple array type."""
         return schema.get("type") == "array" and "items" in schema
 
-    def _is_simple_object(self: "McpToolSpec", schema: dict) -> bool:
+    def _is_simple_object(self: "JsonSchemaToPydantic", schema: dict) -> bool:
         """Check if schema is a simple object type."""
         additional_props = schema.get("additionalProperties")
         return (
@@ -129,13 +130,13 @@ class TypeCreationMixin:
             and isinstance(additional_props, dict)
         )
 
-    def _extract_ref_name(self: "McpToolSpec", ref_path: str) -> str:
+    def _extract_ref_name(self: "JsonSchemaToPydantic", ref_path: str) -> str:
         """Extract reference name from $ref path."""
         return ref_path.split("#/$defs/")[-1]
 
 
 class FieldExtractionMixin:
-    def _extract_fields(self: "McpToolSpec", schema: dict, defs: dict) -> dict:
+    def _extract_fields(self: "JsonSchemaToPydantic", schema: dict, defs: dict) -> dict:
         """Extract Pydantic fields from schema."""
         properties = self._get_properties(schema)
         required_fields = set(schema.get("required", []))
@@ -161,7 +162,7 @@ class FieldExtractionMixin:
 
         return fields
 
-    def _get_properties(self: "McpToolSpec", schema: dict) -> dict:
+    def _get_properties(self: "JsonSchemaToPydantic", schema: dict) -> dict:
         """Get properties from schema, handling enum types."""
         if "enum" in schema:
             # For enum types, create a property with the schema name as the key
@@ -183,3 +184,89 @@ class FieldExtractionMixin:
         if default_value is None:
             ftype = ftype | type(None)
         return default_value, ftype
+
+
+class JsonSchemaToPydantic(
+    TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
+):
+    """
+    Convert the JSON Schema of an MCP tool into a Pydantic model.
+
+    This is the schema-conversion half of :class:`~llama_index.tools.mcp.base.McpToolSpec`,
+    extracted so it can be used without an MCP client. It depends only on its own
+    ``properties_cache`` and never touches a ``ClientSession``, so callers that already
+    hold ``mcp.types.Tool`` definitions can convert a tool's ``inputSchema`` directly::
+
+        from llama_index.tools.mcp import JsonSchemaToPydantic
+
+        converter = JsonSchemaToPydantic()
+        fn_schema = converter.create_model_from_json_schema(
+            tool.inputSchema, model_name=f"{tool.name}_Schema"
+        )
+
+    ``McpToolSpec`` delegates to an instance of this class, so the models it produces
+    are identical to the ones ``to_tool_list_async`` builds.
+    """
+
+    def __init__(self) -> None:
+        self.properties_cache: Dict[str, Type[BaseModel]] = {}
+
+    def create_model_from_json_schema(
+        self,
+        schema: dict[str, Any],
+        model_name: str = "DynamicModel",
+    ) -> type[BaseModel]:
+        """
+        Create a Pydantic model from the JSON Schema of an MCP tool.
+
+        Args:
+            schema: A JSON Schema dictionary containing properties and required fields.
+            model_name: The name of the model.
+
+        Returns:
+            A Pydantic model class.
+
+        """
+        defs = schema.get("$defs", {})
+
+        # Process all type definitions
+        for cls_name, cls_schema in defs.items():
+            self.properties_cache[cls_name] = self._create_model(
+                cls_schema,
+                cls_name,
+                defs,
+            )
+
+        return self._create_model(schema, model_name)
+
+    def _create_model(
+        self,
+        schema: dict,
+        model_name: str,
+        defs: dict = {},
+    ) -> type[BaseModel]:
+        """Create a Pydantic model from a schema."""
+        if model_name in self.properties_cache:
+            return self.properties_cache[model_name]
+
+        fields = self._extract_fields(schema, defs)
+        model = create_model(model_name, **fields)
+        self.properties_cache[model_name] = model
+        return model
+
+    def remove_model_fields(
+        self,
+        model: type[BaseModel],
+        fields_to_remove: Set[str],
+        model_name: str,
+    ) -> type[BaseModel]:
+        """Return a copy of ``model`` with ``fields_to_remove`` dropped."""
+        fields = {
+            name: (
+                field.annotation,
+                field.default if field.is_required() else field.default,
+            )
+            for name, field in model.model_fields.items()
+            if name not in fields_to_remove
+        }
+        return create_model(model_name, **fields)
