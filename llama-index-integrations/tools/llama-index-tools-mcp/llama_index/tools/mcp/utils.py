@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional
 
 from mcp.client.session import ClientSession
-from mcp.server.fastmcp import FastMCP, Context
 from pydantic import BaseModel
 
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Event, StartEvent, StopEvent, Workflow
+from llama_index.tools.mcp._compat import MCPServerApp, Context
 from llama_index.tools.mcp.base import McpToolSpec
 from llama_index.tools.mcp.client import BasicMCPClient
 
@@ -80,7 +80,7 @@ def workflow_as_mcp(
     workflow_description: Optional[str] = None,
     start_event_model: Optional[BaseModel] = None,
     **fastmcp_init_kwargs: Any,
-) -> FastMCP:
+) -> MCPServerApp:
     """
     Convert a workflow to an MCP app.
 
@@ -98,13 +98,16 @@ def workflow_as_mcp(
             The start event model of the workflow. Can be a `BaseModel` or a `StartEvent` class.
             Defaults to the workflow's custom `StartEvent` class.
         **fastmcp_init_kwargs:
-            Additional keyword arguments to pass to the FastMCP constructor.
+            Additional keyword arguments to pass to the MCP server constructor.
+            Note: under mcp 2.0 the high-level server is ``MCPServer`` and no
+            longer accepts ``host``/``port`` here — pass those to ``app.run(...)``
+            instead.
 
     Returns:
         The MCP app object.
 
     """
-    app = FastMCP(**fastmcp_init_kwargs)
+    app = MCPServerApp(**fastmcp_init_kwargs)
 
     # Dynamically get the start event class -- this is a bit of a hack
     StartEventCLS = start_event_model or workflow._start_event_class
@@ -134,7 +137,9 @@ def workflow_as_mcp(
 
         async for event in handler.stream_events():
             if not isinstance(event, StopEvent):
-                await context.log("info", message=event.model_dump_json())
+                # Second arg passed positionally: mcp 1.x names it ``message``,
+                # 2.0 renamed it to ``data``.
+                await context.log("info", event.model_dump_json())
 
         return await handler
 

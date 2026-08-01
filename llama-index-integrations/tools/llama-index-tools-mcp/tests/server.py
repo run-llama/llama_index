@@ -6,8 +6,12 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Dict, Optional
 
-from mcp.server.fastmcp import FastMCP, Context, Image
-from mcp.server.fastmcp.prompts import base
+from llama_index.tools.mcp._compat import (
+    MCPServerApp as FastMCP,
+    Context,
+    Image,
+    prompt_base as base,
+)
 from PIL import Image as PILImage
 import numpy as np
 import io

@@ -9,6 +9,7 @@ from pydantic import BaseModel, create_model
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
+from llama_index.tools.mcp._compat import compat_getattr
 from llama_index.tools.mcp.tool_spec_mixins import (
     TypeResolutionMixin,
     TypeCreationMixin,
@@ -82,10 +83,10 @@ class McpToolSpec(
         static_resources = (
             static_response.resources if hasattr(static_response, "resources") else []
         )
-        dynamic_resources = (
-            dynamic_response.resourceTemplates
-            if hasattr(dynamic_response, "resourceTemplates")
-            else []
+        # mcp 2.0 renamed this field resourceTemplates -> resource_templates;
+        # read whichever exists so template resources are not silently dropped.
+        dynamic_resources = compat_getattr(
+            dynamic_response, "resource_templates", "resourceTemplates", default=[]
         )
         resources = static_resources + dynamic_resources
         if self.allowed_tools is None:
@@ -135,9 +136,11 @@ class McpToolSpec(
         function_tool_list: List[FunctionTool] = []
         for tool in tools_list:
             fn = self._create_tool_fn(tool.name)
-            # Create a Pydantic model based on the tool inputSchema
+            # Create a Pydantic model based on the tool input schema
+            # (mcp 2.0 renamed Tool.inputSchema -> input_schema).
             model_schema = self.create_model_from_json_schema(
-                tool.inputSchema, model_name=f"{tool.name}_Schema"
+                compat_getattr(tool, "input_schema", "inputSchema"),
+                model_name=f"{tool.name}_Schema",
             )
             # Set up global partial params as default
             tool_partial_params = dict(self.global_partial_params or {})

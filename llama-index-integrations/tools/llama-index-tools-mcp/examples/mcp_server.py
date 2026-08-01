@@ -1,5 +1,5 @@
 import argparse
-from mcp.server.fastmcp import FastMCP
+from llama_index.tools.mcp._compat import MCPServerApp as FastMCP
 from pydantic import BaseModel, IPvAnyAddress
 import ipinfo
 import os

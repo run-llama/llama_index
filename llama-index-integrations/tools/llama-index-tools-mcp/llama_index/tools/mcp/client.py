@@ -3,7 +3,6 @@ import logging
 import io
 
 from contextlib import asynccontextmanager
-from datetime import timedelta
 from typing import (
     Optional,
     List,
@@ -15,10 +14,8 @@ from typing import (
     Any,
 )
 from urllib.parse import urlparse, parse_qs
-from httpx import AsyncClient, Timeout
 from mcp.client.session import ClientSession
 from mcp.shared._httpx_utils import create_mcp_http_client
-from mcp.shared.session import ProgressFnT
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
 from mcp.client.streamable_http import streamable_http_client
@@ -28,6 +25,13 @@ from mcp import types
 from pydantic import AnyUrl
 
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.tools.mcp._compat import (
+    AsyncClient,
+    Timeout,
+    ProgressFnT,
+    compat_getattr,
+    read_timeout_seconds,
+)
 
 
 class StreamingHandler(logging.Handler):
@@ -242,7 +246,7 @@ class BasicMCPClient(ClientSession):
                 ) as streams:
                     async with ClientSession(
                         *streams,
-                        read_timeout_seconds=timedelta(seconds=self.timeout),
+                        read_timeout_seconds=read_timeout_seconds(self.timeout),
                         sampling_callback=self.sampling_callback,
                     ) as session:
                         await session.initialize()
@@ -252,11 +256,14 @@ class BasicMCPClient(ClientSession):
                 async with streamable_http_client(
                     url=self.command_or_url,
                     http_client=self.http_client,
-                ) as (read, write, _):
+                ) as streams:
+                    # mcp 1.x yields (read, write, get_session_id); 2.0 yields
+                    # (read, write). Take the first two either way.
+                    read, write = streams[0], streams[1]
                     async with ClientSession(
                         read,
                         write,
-                        read_timeout_seconds=timedelta(seconds=self.timeout),
+                        read_timeout_seconds=read_timeout_seconds(self.timeout),
                         sampling_callback=self.sampling_callback,
                     ) as session:
                         await session.initialize()
@@ -269,7 +276,7 @@ class BasicMCPClient(ClientSession):
             async with stdio_client(server_parameters) as streams:
                 async with ClientSession(
                     *streams,
-                    read_timeout_seconds=timedelta(seconds=self.timeout),
+                    read_timeout_seconds=read_timeout_seconds(self.timeout),
                     sampling_callback=self.sampling_callback,
                 ) as session:
                     await session.initialize()
@@ -393,7 +400,9 @@ class BasicMCPClient(ClientSession):
                             blocks=[
                                 ImageBlock(
                                     image=message.content.data,
-                                    image_mimetype=message.content.mimeType,
+                                    image_mimetype=compat_getattr(
+                                        message.content, "mime_type", "mimeType"
+                                    ),
                                 )
                             ],
                         )
