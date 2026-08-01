@@ -710,7 +710,7 @@ class OpenAI(FunctionCallingLLM):
             prompt_details = getattr(raw_response.usage, "prompt_tokens_details", None)
             if prompt_details is not None:
                 cached = getattr(prompt_details, "cached_tokens", None)
-                if cached:
+                if cached is not None:
                     result["cached_tokens"] = cached
             # Reasoning tokens: present for o1/o3 chain-of-thought models.
             completion_details = getattr(
@@ -718,7 +718,7 @@ class OpenAI(FunctionCallingLLM):
             )
             if completion_details is not None:
                 reasoning = getattr(completion_details, "reasoning_tokens", None)
-                if reasoning:
+                if reasoning is not None:
                     result["reasoning_tokens"] = reasoning
             return result
         elif isinstance(raw_response, dict):
@@ -737,11 +737,11 @@ class OpenAI(FunctionCallingLLM):
             }
             prompt_details = usage.get("prompt_tokens_details") or {}
             cached = prompt_details.get("cached_tokens")
-            if cached:
+            if cached is not None:
                 result["cached_tokens"] = cached
             completion_details = usage.get("completion_tokens_details") or {}
             reasoning = completion_details.get("reasoning_tokens")
-            if reasoning:
+            if reasoning is not None:
                 result["reasoning_tokens"] = reasoning
             return result
         else:
