@@ -177,6 +177,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index."""
+        self._bump_version()
         for node in nodes:
             self.data.embedding_dict[node.node_id] = node.get_embedding()
             self.data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
@@ -201,6 +202,8 @@ class SimpleVectorStore(BasePydanticVectorStore):
             if ref_doc_id == ref_doc_id_:
                 text_ids_to_delete.add(text_id)
 
+        if text_ids_to_delete:
+            self._bump_version()
         for text_id in text_ids_to_delete:
             del self.data.embedding_dict[text_id]
             del self.data.text_id_to_ref_doc_id[text_id]
@@ -231,6 +234,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
             def node_filter_fn(node_id: str) -> bool:
                 return filter_fn(node_id)
 
+        self._bump_version()
         for node_id in list(self.data.embedding_dict.keys()):
             if node_filter_fn(node_id):
                 del self.data.embedding_dict[node_id]
@@ -239,7 +243,28 @@ class SimpleVectorStore(BasePydanticVectorStore):
 
     def clear(self) -> None:
         """Clear the store."""
+        self._bump_version()
         self.data = SimpleVectorStoreData()
+
+    def _bump_version(self) -> None:
+        self.__dict__["_emb_cache"] = None
+
+    def _stacked_embeddings(self):
+        """
+        Return (ids, matrix) for the whole store, rebuilding only when a
+        mutation has invalidated the cache. Rebuilding the matrix from the
+        stored list-of-lists dominates an unfiltered query, and the matrix is
+        identical across queries between mutations.
+        """
+        import numpy as np
+
+        cached = self.__dict__.get("_emb_cache")
+        if cached is not None and cached[2] == len(self.data.embedding_dict):
+            return cached[0], cached[1]
+        ids = list(self.data.embedding_dict.keys())
+        matrix = np.array([self.data.embedding_dict[i] for i in ids])
+        self.__dict__["_emb_cache"] = (ids, matrix, len(ids))
+        return ids, matrix
 
     def query(
         self,
@@ -273,13 +298,16 @@ class SimpleVectorStore(BasePydanticVectorStore):
             def node_filter_fn(node_id: str) -> bool:
                 return True
 
-        node_ids = []
-        embeddings = []
-        # TODO: consolidate with get_query_text_embedding_similarities
-        for node_id, embedding in self.data.embedding_dict.items():
-            if node_filter_fn(node_id) and query_filter_fn(node_id):
-                node_ids.append(node_id)
-                embeddings.append(embedding)
+        if query.node_ids is None and query.filters is None:
+            node_ids, embeddings = self._stacked_embeddings()
+        else:
+            node_ids = []
+            embeddings = []
+            # TODO: consolidate with get_query_text_embedding_similarities
+            for node_id, embedding in self.data.embedding_dict.items():
+                if node_filter_fn(node_id) and query_filter_fn(node_id):
+                    node_ids.append(node_id)
+                    embeddings.append(embedding)
 
         query_embedding = cast(List[float], query.query_embedding)
 
