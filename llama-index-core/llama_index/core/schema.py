@@ -124,6 +124,10 @@ class BaseComponent(BaseModel):
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
 
+        # pydantic returns the live self.__dict__ here, so copy it before
+        # removing keys below -- otherwise pickling mutates the instance
+        state["__dict__"] = dict(state["__dict__"])
+
         # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []
         for key, val in state["__dict__"].items():
