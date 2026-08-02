@@ -186,7 +186,7 @@ class DashScopeCloudRetriever(BaseRetriever):
         }
         # extract query_history for multi-turn query rewrite
         if "query_history" in kwargs:
-            params["query_hisory"] = kwargs.get("query_history")
+            params["query_history"] = kwargs.get("query_history")
 
         response_data = utils.post(self.base_url, headers=self.headers, params=params)
         nodes = []
