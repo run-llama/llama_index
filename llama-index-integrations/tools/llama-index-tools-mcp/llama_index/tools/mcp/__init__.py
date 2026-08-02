@@ -1,4 +1,4 @@
-from llama_index.tools.mcp.base import McpToolSpec
+from llama_index.tools.mcp.base import JsonSchemaToPydantic, McpToolSpec
 from llama_index.tools.mcp.client import BasicMCPClient
 from llama_index.tools.mcp.utils import (
     workflow_as_mcp,
@@ -8,6 +8,7 @@ from llama_index.tools.mcp.utils import (
 
 __all__ = [
     "McpToolSpec",
+    "JsonSchemaToPydantic",
     "BasicMCPClient",
     "workflow_as_mcp",
     "get_tools_from_mcp_url",

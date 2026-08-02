@@ -1,4 +1,3 @@
-import os
 from typing import Literal, get_args
 
 import pytest
@@ -6,19 +5,11 @@ import pytest
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.mcp import (
     BasicMCPClient,
+    JsonSchemaToPydantic,
     McpToolSpec,
     get_tools_from_mcp_url,
     aget_tools_from_mcp_url,
 )
-
-# Path to the test server script - adjust as needed
-SERVER_SCRIPT = os.path.join(os.path.dirname(__file__), "server.py")
-
-
-@pytest.fixture(scope="session")
-def client() -> BasicMCPClient:
-    """Create a basic MCP client connected to the test server."""
-    return BasicMCPClient("python", args=[SERVER_SCRIPT], timeout=5)
 
 
 def test_class():
@@ -143,9 +134,9 @@ def test_resolve_union_option_with_enum(client: BasicMCPClient):
     _resolve_union_option should handle enum entries in anyOf schemas,
     resolving them to Literal types instead of falling through to str.
     """
-    tool_spec = McpToolSpec(client)
+    converter = JsonSchemaToPydantic()
 
-    result = tool_spec._resolve_union_option({"enum": ["red", "green", "blue"]}, {})
+    result = converter._resolve_union_option({"enum": ["red", "green", "blue"]}, {})
     assert result == Literal["red", "green", "blue"]
 
 
@@ -153,7 +144,7 @@ def test_resolve_union_type_multiple_enums(client: BasicMCPClient):
     """
     Test that anyOf with multiple enum entries resolves to a Union of Literals.
     """
-    tool_spec = McpToolSpec(client)
+    converter = JsonSchemaToPydantic()
 
     schema = {
         "anyOf": [
@@ -161,7 +152,7 @@ def test_resolve_union_type_multiple_enums(client: BasicMCPClient):
             {"enum": ["cyan", "magenta", "yellow"]},
         ]
     }
-    resolved = tool_spec._resolve_union_type(schema, {})
+    resolved = converter._resolve_union_type(schema, {})
     args = get_args(resolved)
     assert len(args) == 2
     assert Literal["red", "green", "blue"] in args
@@ -172,7 +163,7 @@ def test_resolve_optional_literal(client: BasicMCPClient):
     """
     Test that anyOf with enum + null resolves to Optional[Literal[...]].
     """
-    tool_spec = McpToolSpec(client)
+    converter = JsonSchemaToPydantic()
 
     schema = {
         "anyOf": [
@@ -180,7 +171,7 @@ def test_resolve_optional_literal(client: BasicMCPClient):
             {"type": "null"},
         ]
     }
-    resolved = tool_spec._resolve_union_type(schema, {})
+    resolved = converter._resolve_union_type(schema, {})
     args = get_args(resolved)
     assert len(args) == 2
     assert type(None) in args
@@ -191,7 +182,7 @@ def test_resolve_field_type_delegates_anyof_enums(client: BasicMCPClient):
     """
     Test that _resolve_field_type correctly delegates anyOf with enum entries.
     """
-    tool_spec = McpToolSpec(client)
+    converter = JsonSchemaToPydantic()
 
     schema = {
         "anyOf": [
@@ -199,7 +190,7 @@ def test_resolve_field_type_delegates_anyof_enums(client: BasicMCPClient):
             {"enum": ["z"]},
         ]
     }
-    resolved = tool_spec._resolve_field_type(schema, {})
+    resolved = converter._resolve_field_type(schema, {})
     args = get_args(resolved)
     assert len(args) == 2
     assert Literal["x", "y"] in args
@@ -210,23 +201,23 @@ def test_additional_properties_false_parsing(client: BasicMCPClient):
     """Test that schemas with additionalProperties: false are parsed correctly."""
     from typing import Dict, Any
 
-    tool_spec = McpToolSpec(client)
+    converter = JsonSchemaToPydantic()
 
     # Test case 1: additionalProperties is False
     schema_false = {"type": "object", "additionalProperties": False}
-    assert not tool_spec._is_simple_object(schema_false)
-    result_type = tool_spec._create_dict_type(schema_false, {})
+    assert not converter._is_simple_object(schema_false)
+    result_type = converter._create_dict_type(schema_false, {})
     assert result_type == Dict[str, Any]
 
     # Test case 2: additionalProperties is None
     schema_none = {"type": "object", "additionalProperties": None}
-    result_type = tool_spec._create_dict_type(schema_none, {})
+    result_type = converter._create_dict_type(schema_none, {})
     assert result_type == Dict[str, Any]
 
     # Test case 3: additionalProperties is a dict (should be treated as simple object)
     schema_dict = {"type": "object", "additionalProperties": {"type": "string"}}
-    assert tool_spec._is_simple_object(schema_dict)
-    result_type = tool_spec._create_dict_type(schema_dict, {})
+    assert converter._is_simple_object(schema_dict)
+    result_type = converter._create_dict_type(schema_dict, {})
     assert result_type == Dict[str, str]
 
 

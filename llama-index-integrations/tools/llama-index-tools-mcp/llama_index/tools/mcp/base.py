@@ -16,9 +16,82 @@ from llama_index.tools.mcp.tool_spec_mixins import (
 )
 
 
-class McpToolSpec(
-    BaseToolSpec, TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
+class JsonSchemaToPydantic(
+    TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
 ):
+    """
+    Converts the JSON Schema of an MCP tool into a Pydantic model.
+
+    This class is client-free: it does not require an MCP ``ClientSession``
+    and can be used standalone whenever you already hold an
+    ``mcp.types.Tool`` (or any JSON Schema dict) and just need the
+    corresponding Pydantic model.
+    """
+
+    def __init__(self) -> None:
+        self.properties_cache: dict[str, type[BaseModel]] = {}
+
+    def create_model_from_json_schema(
+        self,
+        schema: dict[str, Any],
+        model_name: str = "DynamicModel",
+    ) -> type[BaseModel]:
+        """
+        Create a Pydantic model from a JSON Schema.
+
+        Args:
+            schema: A JSON Schema dictionary containing properties and required fields.
+            model_name: The name of the model.
+
+        Returns:
+            A Pydantic model class.
+
+        """
+        defs = schema.get("$defs", {})
+
+        for cls_name, cls_schema in defs.items():
+            self.properties_cache[cls_name] = self._create_model(
+                cls_schema,
+                cls_name,
+                defs,
+            )
+
+        return self._create_model(schema, model_name)
+
+    def _create_model(
+        self,
+        schema: dict,
+        model_name: str,
+        defs: dict = {},
+    ) -> type[BaseModel]:
+        """Create a Pydantic model from a schema."""
+        if model_name in self.properties_cache:
+            return self.properties_cache[model_name]
+
+        fields = self._extract_fields(schema, defs)
+        model = create_model(model_name, **fields)
+        self.properties_cache[model_name] = model
+        return model
+
+    def remove_model_fields(
+        self,
+        model: type[BaseModel],
+        fields_to_remove: Set[str],
+        model_name: str,
+    ) -> type[BaseModel]:
+        """Remove specified fields from a Pydantic model, returning a new model."""
+        fields = {
+            name: (
+                field.annotation,
+                field.default if field.is_required() else field.default,
+            )
+            for name, field in model.model_fields.items()
+            if name not in fields_to_remove
+        }
+        return create_model(model_name, **fields)
+
+
+class McpToolSpec(BaseToolSpec):
     """
     MCPToolSpec will get the tools from MCP Client (only need to implement ClientSession) and convert them to LlamaIndex's FunctionTool objects.
 
@@ -48,7 +121,12 @@ class McpToolSpec(
         self.global_partial_params = global_partial_params
         self.partial_params_by_tool = partial_params_by_tool
         self.include_resources = include_resources
-        self.properties_cache = {}
+        self._converter = JsonSchemaToPydantic()
+
+    @property
+    def properties_cache(self) -> dict[str, type[BaseModel]]:
+        """Backward-compatible access to the converter's properties cache."""
+        return self._converter.properties_cache
 
     async def fetch_tools(self) -> List[Any]:
         """
@@ -62,7 +140,6 @@ class McpToolSpec(
         tools = response.tools if hasattr(response, "tools") else []
 
         if self.allowed_tools is None:
-            # get all tools by default
             return tools
 
         if any(self.allowed_tools):
@@ -135,24 +212,18 @@ class McpToolSpec(
         function_tool_list: List[FunctionTool] = []
         for tool in tools_list:
             fn = self._create_tool_fn(tool.name)
-            # Create a Pydantic model based on the tool inputSchema
             model_schema = self.create_model_from_json_schema(
                 tool.inputSchema, model_name=f"{tool.name}_Schema"
             )
-            # Set up global partial params as default
             tool_partial_params = dict(self.global_partial_params or {})
-            # Override with tool-specific partial params
             if self.partial_params_by_tool and tool.name in self.partial_params_by_tool:
                 tool_overrides = self.partial_params_by_tool[tool.name]
                 for key, value in tool_overrides.items():
                     if value is None:
-                        # Remove the param if set to None
                         tool_partial_params.pop(key, None)
                     else:
-                        # Override or add the param
                         tool_partial_params[key] = value
 
-            # Remove fields that are set as partial params
             if tool_partial_params:
                 model_schema = self.remove_model_fields(
                     model_schema,
@@ -204,43 +275,8 @@ class McpToolSpec(
         schema: dict[str, Any],
         model_name: str = "DynamicModel",
     ) -> type[BaseModel]:
-        """
-        To create a Pydantic model from the JSON Schema of MCP tools.
-
-        Args:
-            schema: A JSON Schema dictionary containing properties and required fields.
-            model_name: The name of the model.
-
-        Returns:
-            A Pydantic model class.
-
-        """
-        defs = schema.get("$defs", {})
-
-        # Process all type definitions
-        for cls_name, cls_schema in defs.items():
-            self.properties_cache[cls_name] = self._create_model(
-                cls_schema,
-                cls_name,
-                defs,
-            )
-
-        return self._create_model(schema, model_name)
-
-    def _create_model(
-        self,
-        schema: dict,
-        model_name: str,
-        defs: dict = {},
-    ) -> type[BaseModel]:
-        """Create a Pydantic model from a schema."""
-        if model_name in self.properties_cache:
-            return self.properties_cache[model_name]
-
-        fields = self._extract_fields(schema, defs)
-        model = create_model(model_name, **fields)
-        self.properties_cache[model_name] = model
-        return model
+        """Convert a JSON Schema to a Pydantic model. Delegates to the internal converter."""
+        return self._converter.create_model_from_json_schema(schema, model_name)
 
     def remove_model_fields(
         self,
@@ -248,15 +284,8 @@ class McpToolSpec(
         fields_to_remove: Set[str],
         model_name: str,
     ) -> type[BaseModel]:
-        fields = {
-            name: (
-                field.annotation,
-                field.default if field.is_required() else field.default,
-            )
-            for name, field in model.model_fields.items()
-            if name not in fields_to_remove
-        }
-        return create_model(model_name, **fields)
+        """Remove fields from a Pydantic model. Delegates to the internal converter."""
+        return self._converter.remove_model_fields(model, fields_to_remove, model_name)
 
 
 def patch_sync(func_async: Callable) -> Callable:
@@ -265,7 +294,6 @@ def patch_sync(func_async: Callable) -> Callable:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = None
-        # If the current environment is asynchronous, raise an exception to prompt the use of the asynchronous interface
         if loop and loop.is_running():
             raise RuntimeError(
                 "In an asynchronous environment, synchronous calls are not supported. Please use the asynchronous interface (e.g., to_tool_list_async) instead."
