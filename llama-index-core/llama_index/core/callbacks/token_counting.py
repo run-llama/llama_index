@@ -67,6 +67,21 @@ def get_tokens_from_response(
             prompt_tokens = usage[input_key]
             break
 
+    # Anthropic reports `input_tokens` NET of the prompt cache and puts the cached
+    # tokens in their own fields, so reading `input_tokens` alone drops every token
+    # served from cache. All three are billed. With a warm cache `input_tokens` can be
+    # single digits while `cache_read_input_tokens` is tens of thousands.
+    #
+    # This is deliberately narrow. OpenAI's `prompt_tokens` and Gemini's
+    # `prompt_token_count` ALREADY include their cached tokens
+    # (`prompt_tokens_details.cached_tokens`, `cached_content_token_count`), so adding
+    # a cache count for those providers would double-count. Only the Anthropic-shaped
+    # keys are summed, and only when they are actually present.
+    prompt_tokens += sum(
+        usage.get(cache_key) or 0
+        for cache_key in ("cache_read_input_tokens", "cache_creation_input_tokens")
+    )
+
     completion_tokens = 0
     for output_key in possible_output_keys:
         if output_key in usage:
