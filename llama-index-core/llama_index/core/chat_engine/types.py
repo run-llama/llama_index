@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
@@ -40,6 +41,11 @@ def is_function(message: ChatMessage) -> bool:
         "tool_calls" in message.additional_kwargs
         and len(message.additional_kwargs["tool_calls"]) > 0
     )
+
+
+def _set_message_content(message: ChatMessage, content: str) -> None:
+    """Update streamed message text without using the legacy content setter."""
+    message.blocks = [TextBlock(text=content)]
 
 
 class ChatResponseMode(str, Enum):
@@ -191,7 +197,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                _set_message_content(chat.message, final_text.strip())  # final message
                 self.response = final_text.strip()
                 memory.put(chat.message)
         except Exception as e:
@@ -250,7 +256,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                _set_message_content(chat.message, final_text.strip())  # final message
                 self.response = final_text.strip()
                 await memory.aput(chat.message)
         except Exception as e:
