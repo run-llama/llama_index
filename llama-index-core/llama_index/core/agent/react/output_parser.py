@@ -33,16 +33,28 @@ def action_input_parser(json_str: str) -> dict:
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
-    pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
-
-    match = re.search(pattern, input_text, re.DOTALL)
-    if not match:
+    # Split on the first "Answer:" rather than matching thought and answer in one
+    # pattern. Mirrors `extract_tool_use`: the prompt asks the model to always
+    # start with "Thought:", but models drop it, so whatever precedes "Answer:"
+    # is taken as the thought instead of failing the parse.
+    #
+    # Deliberately not a single regex with a lazy prefix: `.*?Answer:(.*?)$`
+    # under DOTALL backtracks quadratically when "Answer:" is absent, which is
+    # the failure mode fixed in #22334 for the sibling tool-use pattern.
+    answer_match = re.search(r"Answer:", input_text)
+    if not answer_match:
         raise ValueError(
             f"Could not extract final answer from input text: {input_text}"
         )
 
-    thought = match.group(1).strip()
-    answer = match.group(2).strip()
+    before_answer = input_text[: answer_match.start()]
+    answer = input_text[answer_match.end() :].strip()
+
+    thought_match = re.search(r"Thought:", before_answer)
+    thought = (
+        before_answer[thought_match.end() :] if thought_match else before_answer
+    ).strip()
+
     return thought, answer
 
 

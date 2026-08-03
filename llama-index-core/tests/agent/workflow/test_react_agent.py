@@ -1,5 +1,9 @@
+import pytest
+
 from llama_index.core.agent.workflow import ReActAgent
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import MockLLM
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.prompts import PromptTemplate
 
 
@@ -25,3 +29,40 @@ def test_react_agent_prompts():
     prompts = agent.get_prompts()
     assert len(prompts) == 1
     assert new_prompt == prompts["react_header"]
+
+
+def _no_thought_agent(content: str) -> ReActAgent:
+    """A ReActAgent whose LLM never emits the "Thought:" prefix."""
+    return ReActAgent(
+        name="calculator",
+        description="Answers questions",
+        tools=[],
+        llm=MockFunctionCallingLLM(
+            response_generator=lambda messages, **kwargs: ChatMessage(
+                role=MessageRole.ASSISTANT, content=content
+            )
+        ),
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "content",
+    [
+        "I worked it out.\nAnswer: The sum is 8",
+        "Answer: The sum is 8",
+    ],
+    ids=["preamble_instead_of_thought", "answer_only"],
+)
+async def test_react_agent_answer_without_thought(content: str) -> None:
+    """
+    An answer without "Thought:" ends the run instead of looping to max iterations.
+
+    The LLM here always replies in the same shape, so if the answer does not
+    parse the agent retries until it hits the iteration ceiling.
+    """
+    agent = _no_thought_agent(content)
+
+    response = await agent.run(user_msg="Can you add 5 and 3?")
+
+    assert "The sum is 8" in str(response.response)
