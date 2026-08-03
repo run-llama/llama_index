@@ -197,3 +197,105 @@ class TestGoogleDriveReader(unittest.TestCase):
             assert filename == google_drive_id + ".pdf"
             # also should have tried to write the file
             mock_file().write.assert_called_once()
+
+    def _reader(self):
+        return GoogleDriveReader(
+            client_config={
+                "client_id": "example_client_id",
+                "client_secret": "example_client_secret",
+            },
+        )
+
+    def test_load_data_returns_a_list_when_a_folder_load_fails(self):
+        """
+        A swallowed error must still produce a list, not None.
+
+        load_data is annotated and documented as returning List[Document], and
+        its own "neither folder_id nor file_ids" branch returns []. When
+        raise_errors is False (the default) an error used to fall off the end
+        of _load_from_folder, so callers doing `for doc in reader.load_data()`
+        got a TypeError far away from the failure that was actually logged.
+        """
+        reader = self._reader()
+        reader._creds = MagicMock()
+
+        with (
+            patch.object(reader, "_get_credentials", return_value=MagicMock()),
+            patch.object(
+                reader, "_get_fileids_meta", side_effect=RuntimeError("drive is down")
+            ),
+        ):
+            documents = reader.load_data(folder_id="some_folder")
+
+        assert documents == []
+
+    def test_load_data_returns_a_list_when_a_file_id_load_fails(self):
+        reader = self._reader()
+        reader._creds = MagicMock()
+
+        with (
+            patch.object(reader, "_get_credentials", return_value=MagicMock()),
+            patch.object(
+                reader, "_get_fileids_meta", side_effect=RuntimeError("drive is down")
+            ),
+        ):
+            documents = reader.load_data(file_ids=["some_file"])
+
+        assert documents == []
+
+    def test_load_data_still_raises_when_raise_errors_is_set(self):
+        """Opting in to raise_errors must keep propagating."""
+        reader = GoogleDriveReader(
+            client_config={
+                "client_id": "example_client_id",
+                "client_secret": "example_client_secret",
+            },
+            raise_errors=True,
+        )
+        reader._creds = MagicMock()
+
+        with (
+            patch.object(reader, "_get_credentials", return_value=MagicMock()),
+            patch.object(
+                reader, "_get_fileids_meta", side_effect=RuntimeError("drive is down")
+            ),
+            pytest.raises(RuntimeError, match="drive is down"),
+        ):
+            reader.load_data(folder_id="some_folder")
+
+    def test_download_file_returns_none_when_the_error_is_swallowed(self):
+        reader = self._reader()
+        reader._creds = MagicMock()
+
+        with patch("googleapiclient.discovery.build", side_effect=RuntimeError("boom")):
+            assert reader._download_file("fileid", "filename") is None
+
+    def test_a_failed_download_does_not_poison_the_metadata_map(self):
+        """A file that failed to download is skipped rather than keyed by None."""
+        reader = self._reader()
+        reader._creds = MagicMock()
+
+        captured = {}
+
+        def fake_reader(temp_dir, file_extractor=None, file_metadata=None):
+            loader = MagicMock()
+            loader.load_data.return_value = []
+            captured["file_metadata"] = file_metadata
+            return loader
+
+        fileids_meta = [["id1", "author", "path", "mime", "created", "modified"]]
+
+        with (
+            patch.object(reader, "_download_file", return_value=None),
+            patch(
+                "llama_index.readers.google.drive.base.SimpleDirectoryReader",
+                side_effect=fake_reader,
+            ),
+        ):
+            documents = reader._load_data_fileids_meta(fileids_meta)
+
+        assert documents == []
+        with pytest.raises(KeyError):
+            # nothing was recorded for the failed file, and in particular
+            # nothing was recorded under the key None
+            captured["file_metadata"](None)
