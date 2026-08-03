@@ -5,6 +5,7 @@ Memory backed by a vector database.
 
 """
 
+import json
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
@@ -39,10 +40,26 @@ def _get_starter_node_for_new_batch() -> TextNode:
     return TextNode(
         id_=str(uuid.uuid4()),
         text="",
-        metadata={"sub_dicts": []},
+        # `sub_dicts` is stored as a JSON string (rather than a raw list of
+        # dicts) so that the metadata value stays a flat scalar. Some vector
+        # stores (e.g. Chroma) reject non-scalar metadata values.
+        metadata={"sub_dicts": json.dumps([])},
         excluded_embed_metadata_keys=["sub_dicts"],
         excluded_llm_metadata_keys=["sub_dicts"],
     )
+
+
+def _get_sub_dicts(node_metadata: Dict[str, Any]) -> List[Dict]:
+    """
+    Read the `sub_dicts` list back out of node metadata.
+
+    Handles both the current JSON-string encoding and the raw list encoding
+    used before this was fixed, so previously-persisted stores keep working.
+    """
+    sub_dicts = node_metadata.get("sub_dicts", [])
+    if isinstance(sub_dicts, str):
+        return json.loads(sub_dicts)
+    return sub_dicts
 
 
 class VectorMemory(BaseMemory):
@@ -147,7 +164,7 @@ class VectorMemory(BaseMemory):
         return [
             ChatMessage.model_validate(sub_dict)
             for node in nodes
-            for sub_dict in node.metadata["sub_dicts"]
+            for sub_dict in _get_sub_dicts(node.metadata)
         ]
 
     def get_all(self) -> List[ChatMessage]:
@@ -189,7 +206,9 @@ class VectorMemory(BaseMemory):
             self.cur_batch_textnode.text += sub_dict["content"] or ""
         else:
             self.cur_batch_textnode.text += " " + (sub_dict["content"] or "")
-        self.cur_batch_textnode.metadata["sub_dicts"].append(sub_dict)
+        sub_dicts = _get_sub_dicts(self.cur_batch_textnode.metadata)
+        sub_dicts.append(sub_dict)
+        self.cur_batch_textnode.metadata["sub_dicts"] = json.dumps(sub_dicts)
         self._commit_node(override_last=True)
 
     def set(self, messages: List[ChatMessage]) -> None:
