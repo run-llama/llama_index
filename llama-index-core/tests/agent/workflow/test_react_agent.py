@@ -32,7 +32,6 @@ def test_react_agent_prompts():
 
 
 def _no_thought_agent(content: str) -> ReActAgent:
-    """A ReActAgent whose LLM never emits the "Thought:" prefix."""
     return ReActAgent(
         name="calculator",
         description="Answers questions",
@@ -55,12 +54,7 @@ def _no_thought_agent(content: str) -> ReActAgent:
     ids=["preamble_instead_of_thought", "answer_only"],
 )
 async def test_react_agent_answer_without_thought(content: str) -> None:
-    """
-    An answer without "Thought:" ends the run instead of looping to max iterations.
-
-    The LLM here always replies in the same shape, so if the answer does not
-    parse the agent retries until it hits the iteration ceiling.
-    """
+    # The LLM always replies in the same shape, so a failed parse loops to max iterations.
     agent = _no_thought_agent(content)
 
     response = await agent.run(user_msg="Can you add 5 and 3?")
