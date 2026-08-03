@@ -278,6 +278,7 @@ async def create_file_part(
     mime_type: str,
     file_mode: Literal["inline", "fileapi", "hybrid"],
     client: Optional[Client],
+    display_name: Optional[str] = None,
 ) -> tuple[types.Part, Optional[str]]:
     """Create a Part or File object for the given file depending on its size."""
     if file_mode in ("inline", "hybrid"):
@@ -286,19 +287,28 @@ async def create_file_part(
         file_buffer.seek(0)  # Reset to beginning
 
         if size < 20 * 1024 * 1024:  # 20MB is the Gemini inline data size limit
-            return types.Part.from_bytes(
-                data=file_buffer.read(),
-                mime_type=mime_type,
-            ), None
+            return (
+                types.Part.from_bytes(
+                    data=file_buffer.read(),
+                    mime_type=mime_type,
+                ),
+                None,
+            )
         elif file_mode == "inline":
             raise ValueError("Files in inline mode must be smaller than 20MB.")
+        elif client is not None and client.vertexai:
+            # The vertexai client doesn't support uploads, so rather than falling through and
+            # letting it fail we'll produce a nicer error here.
+            raise ValueError("Files with vertexai client must be smaller than 20MB.")
 
     if client is None:
         raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
 
-    file = await client.aio.files.upload(
-        file=file_buffer, config=types.UploadFileConfig(mime_type=mime_type)
-    )
+    upload_config = types.UploadFileConfig(mime_type=mime_type)
+    if display_name is not None:
+        upload_config.display_name = display_name
+
+    file = await client.aio.files.upload(file=file_buffer, config=upload_config)
 
     # Wait for file processing
     while file.state.name == "PROCESSING":
@@ -308,10 +318,13 @@ async def create_file_part(
     if file.state.name == "FAILED":
         raise ValueError("Failed to upload the file with FileAPI")
 
-    return types.Part.from_uri(
-        file_uri=file.uri,
-        mime_type=mime_type,
-    ), file.name
+    return (
+        types.Part.from_uri(
+            file_uri=file.uri,
+            mime_type=mime_type,
+        ),
+        file.name,
+    )
 
 
 async def adelete_uploaded_files(file_api_names: list[str], client: Client) -> None:
@@ -378,7 +391,7 @@ async def chat_message_to_gemini(
             )
 
             part, file_api_name = await create_file_part(
-                file_buffer, mime_type, file_mode, client
+                file_buffer, mime_type, file_mode, client, display_name=block.title
             )
         elif isinstance(block, ThinkingBlock):
             if block.content:
@@ -437,14 +450,20 @@ async def chat_message_to_gemini(
             name=message.additional_kwargs.get("tool_call_id"),
             response={"result": message.content},
         )
-        return types.Content(
-            role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
-        ), file_api_names
+        return (
+            types.Content(
+                role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
+            ),
+            file_api_names,
+        )
 
-    return types.Content(
-        role=ROLES_TO_GEMINI[message.role],
-        parts=parts,
-    ), file_api_names
+    return (
+        types.Content(
+            role=ROLES_TO_GEMINI[message.role],
+            parts=parts,
+        ),
+        file_api_names,
+    )
 
 
 def convert_schema_to_function_declaration(
@@ -604,9 +623,12 @@ def handle_streaming_flexible_model(
             return output_cls.model_validate_json(current_json), current_json
         except ValidationError:
             try:
-                return flexible_model.model_validate_json(
-                    _repair_incomplete_json(current_json)
-                ), current_json
+                return (
+                    flexible_model.model_validate_json(
+                        _repair_incomplete_json(current_json)
+                    ),
+                    current_json,
+                )
             except ValidationError:
                 return None, current_json
 

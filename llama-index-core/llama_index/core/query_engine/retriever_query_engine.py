@@ -73,10 +73,13 @@ class RetrieverQueryEngine(BaseQueryEngine):
         refine_template: Optional[BasePromptTemplate] = None,
         summary_template: Optional[BasePromptTemplate] = None,
         simple_template: Optional[BasePromptTemplate] = None,
+        chat_content_qa_template: Optional[BasePromptTemplate] = None,
+        chat_content_refine_template: Optional[BasePromptTemplate] = None,
         output_cls: Optional[Type[BaseModel]] = None,
         use_async: bool = False,
         streaming: bool = False,
         verbose: bool = False,
+        multimodal: bool = False,
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
         """
@@ -96,11 +99,17 @@ class RetrieverQueryEngine(BaseQueryEngine):
             refine_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
             summary_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
             simple_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
+            chat_content_qa_template (Optional[BasePromptTemplate]): Multimodal QA
+                prompt used when ``multimodal=True``.
+            chat_content_refine_template (Optional[BasePromptTemplate]): Multimodal
+                refine prompt used when ``multimodal=True``.
             output_cls (Optional[Type[BaseModel]]): The pydantic model to pass to the
                 response synthesizer.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
             verbose (bool): Whether to print verbose output.
+            multimodal (bool): If True, configure the synthesizer to consume
+                multimodal content blocks from retrieved nodes.
 
         """
         llm = llm or Settings.llm
@@ -111,11 +120,14 @@ class RetrieverQueryEngine(BaseQueryEngine):
             refine_template=refine_template,
             summary_template=summary_template,
             simple_template=simple_template,
+            chat_content_qa_template=chat_content_qa_template,
+            chat_content_refine_template=chat_content_refine_template,
             response_mode=response_mode,
             output_cls=output_cls,
             use_async=use_async,
             streaming=streaming,
             verbose=verbose,
+            multimodal=multimodal,
         )
 
         callback_manager = callback_manager or Settings.callback_manager

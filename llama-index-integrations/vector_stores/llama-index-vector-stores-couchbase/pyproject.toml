@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
@@ -36,6 +36,7 @@ dependencies = [
     "couchbase>=4.2.0,<5",
     "llama-index-embeddings-openai>=0.6.0,<0.7",
     "llama-index-core>=0.13.0,<0.15",
+    "reo-census>=0.1.2",
 ]
 
 [tool.codespell]

@@ -1,11 +1,14 @@
 import asyncio
 from typing import Any, Optional, Sequence, Type
 
+from llama_index.core.base.llms.types import ChatMessage
+
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
+from llama_index.core.prompts.chat_prompts import CHAT_CONTENT_TREE_SUMMARIZE_PROMPT
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
@@ -32,31 +35,44 @@ class TreeSummarize(BaseSynthesizer):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        chat_prompt_helper: Optional[ChatPromptHelper] = None,
         summary_template: Optional[BasePromptTemplate] = None,
+        chat_summary_template: Optional[BasePromptTemplate] = None,
         output_cls: Optional[Type[BaseModel]] = None,
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
+        multimodal: bool = False,
     ) -> None:
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
+            chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             output_cls=output_cls,
+            multimodal=multimodal,
         )
         self._summary_template = summary_template or DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
+        self._chat_summary_template = (
+            chat_summary_template or CHAT_CONTENT_TREE_SUMMARIZE_PROMPT
+        )
         self._use_async = use_async
         self._verbose = verbose
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
-        return {"summary_template": self._summary_template}
+        return {
+            "summary_template": self._summary_template,
+            "chat_summary_template": self._chat_summary_template,
+        }
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "summary_template" in prompts:
             self._summary_template = prompts["summary_template"]
+        if "chat_summary_template" in prompts:
+            self._chat_summary_template = prompts["chat_summary_template"]
 
     async def aget_response(
         self,
@@ -240,4 +256,170 @@ class TreeSummarize(BaseSynthesizer):
             # recursively summarize the summaries
             return self.get_response(
                 query_str=query_str, text_chunks=summaries, **response_kwargs
+            )
+
+    async def aget_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        summary_template = self._chat_summary_template.partial_format(
+            query_str=query_str
+        )
+        message_chunks = self._chat_prompt_helper.repack(
+            summary_template, messages=list(message_chunks), llm=self._llm
+        )
+
+        if self._verbose:
+            print(f"{len(message_chunks)} message chunks after repacking")
+
+        if len(message_chunks) == 1:
+            response: RESPONSE_TEXT_TYPE
+            if self._streaming:
+                response = await self._llm.astream(
+                    summary_template,
+                    context_messages=[message_chunks[0]],
+                    **response_kwargs,
+                )
+            else:
+                if self._output_cls is None:
+                    response = await self._llm.apredict(
+                        summary_template,
+                        context_messages=[message_chunks[0]],
+                        **response_kwargs,
+                    )
+                else:
+                    response = await self._llm.astructured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_messages=[message_chunks[0]],
+                        **response_kwargs,
+                    )
+            return response
+
+        else:
+            if self._output_cls is None:
+                str_tasks = [
+                    self._llm.apredict(
+                        summary_template,
+                        context_messages=[chunk],
+                        **response_kwargs,
+                    )
+                    for chunk in message_chunks
+                ]
+                summaries = await asyncio.gather(*str_tasks)
+            else:
+                model_tasks = [
+                    self._llm.astructured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_messages=[chunk],
+                        **response_kwargs,
+                    )
+                    for chunk in message_chunks
+                ]
+                summary_models = await asyncio.gather(*model_tasks)
+                summaries = [summary.model_dump_json() for summary in summary_models]
+
+            return await self.aget_response_from_messages(
+                query_str=query_str,
+                message_chunks=[ChatMessage(content=s) for s in summaries],
+                **response_kwargs,
+            )
+
+    def get_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        summary_template = self._chat_summary_template.partial_format(
+            query_str=query_str
+        )
+        message_chunks = self._chat_prompt_helper.repack(
+            summary_template, messages=list(message_chunks), llm=self._llm
+        )
+
+        if self._verbose:
+            print(f"{len(message_chunks)} message chunks after repacking")
+
+        if len(message_chunks) == 1:
+            response: RESPONSE_TEXT_TYPE
+            if self._streaming:
+                response = self._llm.stream(
+                    summary_template,
+                    context_messages=[message_chunks[0]],
+                    **response_kwargs,
+                )
+            else:
+                if self._output_cls is None:
+                    response = self._llm.predict(
+                        summary_template,
+                        context_messages=[message_chunks[0]],
+                        **response_kwargs,
+                    )
+                else:
+                    response = self._llm.structured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_messages=[message_chunks[0]],
+                        **response_kwargs,
+                    )
+            return response
+
+        else:
+            if self._use_async:
+                if self._output_cls is None:
+                    tasks = [
+                        self._llm.apredict(
+                            summary_template,
+                            context_messages=[chunk],
+                            **response_kwargs,
+                        )
+                        for chunk in message_chunks
+                    ]
+                else:
+                    tasks = [
+                        self._llm.astructured_predict(
+                            self._output_cls,
+                            summary_template,
+                            context_messages=[chunk],
+                            **response_kwargs,
+                        )
+                        for chunk in message_chunks
+                    ]
+
+                summary_responses = run_async_tasks(tasks)
+
+                if self._output_cls is not None:
+                    summaries = [s.model_dump_json() for s in summary_responses]
+                else:
+                    summaries = summary_responses
+            else:
+                if self._output_cls is None:
+                    summaries = [
+                        self._llm.predict(
+                            summary_template,
+                            context_messages=[chunk],
+                            **response_kwargs,
+                        )
+                        for chunk in message_chunks
+                    ]
+                else:
+                    summaries = [
+                        self._llm.structured_predict(
+                            self._output_cls,
+                            summary_template,
+                            context_messages=[chunk],
+                            **response_kwargs,
+                        )
+                        for chunk in message_chunks
+                    ]
+                    summaries = [s.model_dump_json() for s in summaries]
+
+            return self.get_response_from_messages(
+                query_str=query_str,
+                message_chunks=[ChatMessage(content=s) for s in summaries],
+                **response_kwargs,
             )

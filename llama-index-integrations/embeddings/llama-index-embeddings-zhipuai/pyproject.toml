@@ -35,6 +35,7 @@ license = "MIT"
 dependencies = [
     "zhipuai>=2.1.5.20230904,<3",
     "llama-index-core>=0.13.0,<0.15",
+    "sniffio",
 ]
 
 [tool.codespell]

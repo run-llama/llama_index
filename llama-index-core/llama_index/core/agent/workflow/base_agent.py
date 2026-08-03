@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import copy
 import functools
 import warnings
 import inspect
@@ -289,7 +290,7 @@ class BaseWorkflowAgent(
             )
             await ctx.store.set("memory", default_memory)
         if not await ctx.store.get("state", default=None):
-            await ctx.store.set("state", self.initial_state.copy())
+            await ctx.store.set("state", copy.deepcopy(self.initial_state))
 
         if not await ctx.store.get("max_iterations", default=None):
             max_iterations = (

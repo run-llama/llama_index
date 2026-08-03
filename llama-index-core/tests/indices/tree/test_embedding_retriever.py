@@ -73,3 +73,6 @@ def test_embedding_query(
     retriever = tree.as_retriever(retriever_mode="select_leaf_embedding")
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert nodes[0].node.get_content() == "Hello world."
+
+    response = retriever._query(QueryBundle(query_str))
+    assert response.source_nodes[0].node.get_content() == "Hello world."

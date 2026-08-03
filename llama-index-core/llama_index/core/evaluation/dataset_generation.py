@@ -99,13 +99,13 @@ class QueryResponseDataset(BaseModel):
 
     def save_json(self, path: str) -> None:
         """Save json."""
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(self.model_dump(), f, indent=4)
 
     @classmethod
     def from_json(cls, path: str) -> QueryResponseDataset:
         """Load json."""
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return cls(**data)
 

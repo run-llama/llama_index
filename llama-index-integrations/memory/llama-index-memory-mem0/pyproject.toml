@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=25.11.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
@@ -12,7 +12,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==8.4.2",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-memory-mem0"
-version = "1.0.0"
+version = "2.0.0"
 description = "llama-index memory mem0 integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = "<4.0,>=3.9"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "mem0ai>=1.0.0,<2",
+    "mem0ai>=2.0.0,<3.0.0",
 ]
 
 [tool.codespell]
