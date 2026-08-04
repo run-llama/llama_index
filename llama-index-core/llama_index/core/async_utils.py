@@ -23,6 +23,32 @@ def get_asyncio_module(show_progress: bool = False) -> Any:
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
+    """Return the asyncio module, optionally substituted with tqdm_asyncio for progress display.
+
+    .. deprecated::
+        Use :func:`get_asyncio_module` instead.  This function is a thin
+        compatibility shim and will be removed in a future release.
+
+    Args:
+        show_progress (bool): When *True*, returns ``tqdm.asyncio.tqdm_asyncio`` so
+            that coroutine gathering calls automatically render a progress bar.
+            When *False* (default), returns the standard :mod:`asyncio` module.
+
+    Returns:
+        Any: Either the built-in :mod:`asyncio` module or
+        ``tqdm.asyncio.tqdm_asyncio``, depending on *show_progress*.
+
+    Example:
+        >>> import asyncio
+        >>> from llama_index.core.async_utils import asyncio_module
+        >>> import warnings
+        >>> with warnings.catch_warnings():
+        ...     warnings.simplefilter("ignore", DeprecationWarning)
+        ...     mod = asyncio_module(show_progress=False)
+        >>> mod is asyncio
+        True
+
+    """
     import warnings
 
     warnings.warn(
@@ -173,3 +199,5 @@ async def run_jobs(
         results = await asyncio.gather(*pool_jobs)
 
     return results
+
+# Co-authored-by: Hermes Agent <hermes-agent@nousresearch.com>

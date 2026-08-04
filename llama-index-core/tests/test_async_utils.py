@@ -37,3 +37,31 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+# Tests for the deprecated asyncio_module() shim
+# Co-authored-by: Hermes Agent <hermes-agent@nousresearch.com>
+
+import asyncio as _asyncio
+import warnings as _warnings
+
+from llama_index.core.async_utils import asyncio_module
+
+
+def test_asyncio_module_returns_asyncio_when_no_progress() -> None:
+    """asyncio_module(show_progress=False) should return the standard asyncio module."""
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("ignore", DeprecationWarning)
+        mod = asyncio_module(show_progress=False)
+    assert mod is _asyncio
+
+
+def test_asyncio_module_emits_deprecation_warning() -> None:
+    """asyncio_module() must emit a DeprecationWarning pointing to get_asyncio_module."""
+    with _warnings.catch_warnings(record=True) as caught:
+        _warnings.simplefilter("always")
+        asyncio_module()
+    assert len(caught) == 1
+    w = caught[0]
+    assert issubclass(w.category, DeprecationWarning)
+    assert "get_asyncio_module" in str(w.message)
