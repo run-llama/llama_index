@@ -33,17 +33,25 @@ def action_input_parser(json_str: str) -> dict:
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
-    pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
+    # Try with "Thought:" prefix first (existing behavior)
+    pattern_thought = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
+    match = re.search(pattern_thought, input_text, re.DOTALL)
+    if match:
+        thought = match.group(1).strip()
+        answer = match.group(2).strip()
+        return thought, answer
 
-    match = re.search(pattern, input_text, re.DOTALL)
-    if not match:
-        raise ValueError(
-            f"Could not extract final answer from input text: {input_text}"
-        )
+    # Fallback: no "Thought:" prefix (matching extract_tool_use behavior)
+    pattern_no_thought = r"\s*(.*?)Answer:(.*?)(?:$)"
+    match = re.search(pattern_no_thought, input_text, re.DOTALL)
+    if match:
+        thought = match.group(1).strip()
+        answer = match.group(2).strip()
+        return thought, answer
 
-    thought = match.group(1).strip()
-    answer = match.group(2).strip()
-    return thought, answer
+    raise ValueError(
+        f"Could not extract final answer from input text: {input_text}"
+    )
 
 
 def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
