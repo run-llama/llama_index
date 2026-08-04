@@ -703,7 +703,9 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     async def adelete_ref_doc(self, ref_doc_id: str, **delete_kwargs):
         if self.connection_config.use_async:
             self._table = cast(AsyncTable, self._table)
-            await self._table.delete(where="id = '" + ref_doc_id.replace("'", "''") + "'")
+            await self._table.delete(
+                where="id = '" + ref_doc_id.replace("'", "''") + "'"
+            )
         else:
             raise ValueError(
                 "Attempting to delete data asynchronously with a synchronous connection!"
@@ -712,7 +714,11 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     def delete_nodes(self, ref_doc_ids: List[str]) -> None:
         if not self.connection_config.use_async:
             self._table = cast(Table, self._table)
-            delete_where = "id IN ('" + "', '".join(i.replace("'", "''") for i in ref_doc_ids) + "')"
+            delete_where = (
+                "id IN ('"
+                + "', '".join(i.replace("'", "''") for i in ref_doc_ids)
+                + "')"
+            )
             self._table.delete(where=delete_where)
         else:
             raise ValueError(
@@ -722,7 +728,11 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     async def adelete_nodes(self, ref_doc_ids: List[str]) -> None:
         if self.connection_config.use_async:
             self._table = cast(AsyncTable, self._table)
-            delete_where = "id IN ('" + "', '".join(i.replace("'", "''") for i in ref_doc_ids) + "')"
+            delete_where = (
+                "id IN ('"
+                + "', '".join(i.replace("'", "''") for i in ref_doc_ids)
+                + "')"
+            )
             await self._table.delete(where=delete_where)
         else:
             raise ValueError(
