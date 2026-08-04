@@ -278,6 +278,32 @@ def test_delete(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
+def test_delete_escapes_ref_doc_id(
+    tmp_path: Path, text_node_list: list[TextNode]
+) -> None:
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    quoted_ref_doc_id = 'customer\'s "draft"'
+    quoted_node = TextNode(
+        text="quoted document",
+        id_="quoted-ref-doc-node",
+        embedding=[0.1, 0.2, 0.3],
+        relationships={
+            NodeRelationship.SOURCE: RelatedNodeInfo(node_id=quoted_ref_doc_id)
+        },
+    )
+    vector_store.add([*text_node_list, quoted_node])
+
+    vector_store.delete(ref_doc_id=quoted_ref_doc_id)
+
+    assert vector_store._table.count_rows() == len(text_node_list)
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
 def test_delete_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     # given
     vector_store = LanceDBVectorStore(
@@ -290,6 +316,29 @@ def test_delete_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
 
     # then
     assert vector_store._table.count_rows() == len(text_node_list) - 2
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_delete_nodes_escapes_node_ids(
+    tmp_path: Path, text_node_list: list[TextNode]
+) -> None:
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    quoted_node_id = 'node\'s "draft"'
+    quoted_node = TextNode(
+        text="quoted node",
+        id_=quoted_node_id,
+        embedding=[0.1, 0.2, 0.3],
+    )
+    vector_store.add([*text_node_list, quoted_node])
+
+    vector_store.delete_nodes(node_ids=[quoted_node_id])
+
+    assert vector_store._table.count_rows() == len(text_node_list)
 
 
 @pytest.mark.skipif(
