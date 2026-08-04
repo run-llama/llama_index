@@ -453,6 +453,17 @@ def test_media_resource_hash_with_various_content() -> None:
         "http://0177.0.0.1/",  # octal-obfuscated 127.0.0.1
         "http://[::ffff:127.0.0.1]/",  # IPv4-mapped IPv6 loopback
         "http://[::ffff:169.254.169.254]/",  # IPv4-mapped IPv6 metadata IP
+        "http://100.100.100.200/",  # Alibaba Cloud metadata, RFC 6598 CGNAT range;
+        # not `is_private` in Python's ipaddress, only caught via `not is_global`
+        "http://168.63.129.16/",  # Azure WireServer virtual IP; IANA-registered as
+        # ordinary public space, only caught via the explicit _EXTRA_BLOCKED denylist
+        "http://[::ffff:168.63.129.16]/",  # IPv4-mapped form of the Azure WireServer
+        # IP above; only caught if ipv4_mapped normalization runs before the
+        # denylist check
+        "http://[64:ff9b::a9fe:a9fe]/",  # NAT64-mapped form of 169.254.169.254
+        # (cloud metadata IMDS); regression check that adding `not is_global`
+        # does not replace/weaken the existing `is_reserved` handling that
+        # blocks this address (`is_global` alone would incorrectly allow it)
     ],
 )
 def test_validate_ssrf_url_blocks_private_and_reserved(url: str) -> None:

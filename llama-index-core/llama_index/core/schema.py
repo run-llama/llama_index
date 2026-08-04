@@ -1317,12 +1317,42 @@ def is_image_pil(file_path: str) -> bool:
         return False
 
 
+# IPs that must be blocked but are not caught by any ipaddress.IPvXAddress
+# is_* classification (they are IANA-registered as ordinary public/global
+# addresses). 168.63.129.16 is the Azure platform's special virtual IP used
+# for host<->guest communication (WireServer/DNS/health signals) — it is
+# NOT a traditional IMDS metadata endpoint, but reachability from a guest VM
+# still allows platform-level information/control access, so it must be
+# denylisted explicitly.
+_EXTRA_BLOCKED = frozenset(
+    {
+        ipaddress.ip_address("168.63.129.16"),
+    }
+)
+
+
 def _validate_ssrf_url(url: str) -> None:
     """
     Raise ValueError if *url* resolves to a private/reserved address (SSRF guard).
 
     Blocks RFC-1918 private ranges, loopback, link-local (169.254/16 – cloud
-    metadata endpoints), and other reserved address space.
+    metadata endpoints), non-globally-routable address space (e.g. RFC 6598
+    CGNAT 100.64.0.0/10, used by some cloud metadata services), and a small
+    explicit denylist of known platform addresses that IANA classifies as
+    ordinary public space (e.g. Azure's 168.63.129.16 WireServer IP).
+
+    TOCTOU / DNS-rebinding caveat: this function resolves *hostname* via
+    socket.getaddrinfo exactly once, at validation time. The actual HTTP
+    request is performed afterwards by requests/urllib3, which independently
+    re-resolves the hostname when it opens the connection. If the DNS record
+    changes between these two resolutions (a "DNS rebinding" attack — first
+    query returns a public IP so validation passes, second query returns a
+    private/internal IP that the connection actually uses), this check can be
+    bypassed. This function alone is therefore not a complete defense against
+    that class of attack; a full fix requires pinning the *validated* IP to
+    the connection that is actually made (e.g. via a custom HTTPAdapter /
+    connection-pool override that forces the socket to connect to the
+    already-validated address rather than re-resolving the hostname).
     """
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
@@ -1342,12 +1372,19 @@ def _validate_ssrf_url(url: str) -> None:
             ip = ipaddress.ip_address(ip_str)
         except ValueError:
             continue
+        # Normalize IPv4-mapped IPv6 addresses (::ffff:a.b.c.d) to their
+        # IPv4 form *before* any classification/denylist checks below, so
+        # that e.g. ::ffff:168.63.129.16 is recognized as 168.63.129.16.
+        if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+            ip = ip.ipv4_mapped
         if (
             ip.is_private
             or ip.is_loopback
             or ip.is_link_local
             or ip.is_reserved
             or ip.is_multicast
+            or not ip.is_global
+            or ip in _EXTRA_BLOCKED
         ):
             raise ValueError(
                 f"SSRF protection: URL '{url}' resolves to a disallowed address "
