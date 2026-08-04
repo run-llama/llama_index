@@ -1333,7 +1333,7 @@ _EXTRA_BLOCKED = frozenset(
 
 def _validate_ssrf_url(url: str) -> None:
     """
-    Raise ValueError if *url* resolves to a private/reserved address (SSRF guard).
+    Validate that *url* is safe to fetch (SSRF guard).
 
     Blocks RFC-1918 private ranges, loopback, link-local (169.254/16 – cloud
     metadata endpoints), non-globally-routable address space (e.g. RFC 6598
@@ -1353,19 +1353,29 @@ def _validate_ssrf_url(url: str) -> None:
     the connection that is actually made (e.g. via a custom HTTPAdapter /
     connection-pool override that forces the socket to connect to the
     already-validated address rather than re-resolving the hostname).
+
+    Raises:
+        requests.exceptions.InvalidURL:
+            If the URL uses an unsupported scheme, has no hostname, cannot be
+            resolved, or resolves to an address blocked by the SSRF policy.
+            ``InvalidURL`` subclasses both ``requests.RequestException`` and
+            ``ValueError``, so callers catching either one still handle it.
+
     """
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
-        raise ValueError(
+        raise requests.exceptions.InvalidURL(
             f"Unsupported URL scheme '{parsed.scheme}'. Only http/https are allowed."
         )
     hostname = parsed.hostname
     if not hostname:
-        raise ValueError(f"Invalid URL (no hostname): {url!r}")
+        raise requests.exceptions.InvalidURL(f"Invalid URL (no hostname): {url!r}")
     try:
         resolved = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
     except socket.gaierror as exc:
-        raise ValueError(f"Cannot resolve hostname '{hostname}': {exc}") from exc
+        raise requests.exceptions.InvalidURL(
+            f"Cannot resolve hostname '{hostname}': {exc}"
+        ) from exc
     for *_, sockaddr in resolved:
         ip_str = sockaddr[0]
         try:
@@ -1386,7 +1396,7 @@ def _validate_ssrf_url(url: str) -> None:
             or not ip.is_global
             or ip in _EXTRA_BLOCKED
         ):
-            raise ValueError(
+            raise requests.exceptions.InvalidURL(
                 f"SSRF protection: URL '{url}' resolves to a disallowed address "
                 f"({ip_str}). Requests to private/reserved IP ranges are blocked."
             )
