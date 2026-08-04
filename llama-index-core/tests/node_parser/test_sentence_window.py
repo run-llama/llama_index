@@ -21,4 +21,3 @@ def test_split_and_window() -> None:
         == "This is a test 1.  This is a test 2.  This is a test 3."
     )
     assert nodes[0].metadata["original_text"] == "This is a test 1. "
-
