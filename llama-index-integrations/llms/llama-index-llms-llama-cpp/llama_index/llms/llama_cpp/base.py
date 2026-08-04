@@ -184,7 +184,10 @@ class LlamaCPP(CustomLLM):
             model_path=model_path,
             model_url=model_url,
             temperature=temperature,
-            context_window=context_window,
+            # llama.cpp resolves the effective context (model default when n_ctx is 0,
+            # clamped to what the model supports), so read it back off the loaded model
+            # instead of trusting the requested value.
+            context_window=model.n_ctx(),
             max_new_tokens=max_new_tokens,
             callback_manager=callback_manager,
             generate_kwargs=generate_kwargs,
