@@ -83,15 +83,18 @@ class SimpleChatStore(BaseChatStore):
         self,
         persist_path: str = "chat_store.json",
         fs: Optional[fsspec.AbstractFileSystem] = None,
+        encoding: Optional[str] = "utf-8",
     ) -> None:
         """Persist the docstore to a file."""
         fs = fs or fsspec.filesystem("file")
         dirpath = os.path.dirname(persist_path)
-        if not fs.exists(dirpath):
+        if dirpath and not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w", encoding="utf-8") as f:
-            f.write(self.json())
+        with fs.open(persist_path, "w", encoding=encoding) as f:
+            # ensure_ascii=False preserves non-ASCII characters (e.g. Persian, Arabic)
+            # in their native form instead of Unicode escape sequences (\u0633\u0644\u0627\u0645).
+            f.write(self.json(ensure_ascii=False))
 
     @classmethod
     def from_persist_path(
