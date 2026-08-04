@@ -37,6 +37,7 @@ def get_response_synthesizer(
     streaming: bool = False,
     qa_function_mappings: Optional[Dict[str, Callable]] = None,
     refine_function_mappings: Optional[Dict[str, Callable]] = None,
+    fallback_to_llm: bool = False,
 ) -> CompactAndRefine:
     return CompactAndRefine(
         llm=llm,
@@ -50,6 +51,7 @@ def get_response_synthesizer(
             function_mappings=refine_function_mappings,
         ),
         streaming=streaming,
+        fallback_to_llm=fallback_to_llm,
     )
 
 

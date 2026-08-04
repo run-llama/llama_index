@@ -71,6 +71,7 @@ class ContextChatEngine(BaseChatEngine):
         context_template: Optional[Union[str, PromptTemplate]] = None,
         context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        fallback_to_llm: bool = False,
     ) -> None:
         self._retriever = retriever
         self._llm = llm
@@ -87,6 +88,7 @@ class ContextChatEngine(BaseChatEngine):
         if isinstance(context_refine_template, str):
             context_refine_template = PromptTemplate(context_refine_template)
         self._context_refine_template = context_refine_template
+        self._fallback_to_llm = fallback_to_llm
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
@@ -104,6 +106,7 @@ class ContextChatEngine(BaseChatEngine):
         context_template: Optional[Union[str, PromptTemplate]] = None,
         context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         llm: Optional[LLM] = None,
+        fallback_to_llm: bool = False,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
@@ -135,6 +138,7 @@ class ContextChatEngine(BaseChatEngine):
             callback_manager=Settings.callback_manager,
             context_template=context_template,
             context_refine_template=context_refine_template,
+            fallback_to_llm=fallback_to_llm,
         )
 
     def _get_nodes(self, message: str) -> List[NodeWithScore]:
@@ -195,6 +199,7 @@ class ContextChatEngine(BaseChatEngine):
             streaming,
             qa_function_mappings=self._context_template.function_mappings,
             refine_function_mappings=self._context_refine_template.function_mappings,
+            fallback_to_llm=self._fallback_to_llm,
         )
 
     @trace_method("chat")
