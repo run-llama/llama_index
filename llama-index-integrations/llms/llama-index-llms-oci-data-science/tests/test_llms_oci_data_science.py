@@ -298,6 +298,18 @@ def test_prepare_chat_with_tools_tool_not_required(llm):
     assert result["tools"][0]["function"]["name"] == "search_tool"
 
 
+def test_prepare_chat_with_tools_allows_disabling_strict_per_call(llm):
+    llm.strict = True
+
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+        user_msg="Search for information about Python",
+        strict=False,
+    )
+
+    assert "strict" not in result["tools"][0]["function"]
+
+
 def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(llm):
     """Test that explicit tool_choice parameter overrides tool_required."""
     user_msg = "Search for information about Python"
