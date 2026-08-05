@@ -1,6 +1,7 @@
 import warnings
 import logging
 import io
+import base64
 
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -13,6 +14,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Any,
+    Union,
 )
 from urllib.parse import urlparse, parse_qs
 from httpx import AsyncClient, Timeout
@@ -27,7 +29,91 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import (
+    AudioBlock,
+    ChatMessage,
+    DocumentBlock,
+    ImageBlock,
+    TextBlock,
+)
+
+
+PromptContentBlock = Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]
+
+
+def _audio_format_from_mime_type(mime_type: Optional[str]) -> Optional[str]:
+    if not mime_type or "/" not in mime_type:
+        return None
+    return mime_type.split("/", 1)[1].split(";", 1)[0]
+
+
+def _decode_base64_data(data: str) -> bytes:
+    return base64.b64decode(data.encode("utf-8"))
+
+
+def _resource_contents_to_block(
+    resource: Union[types.TextResourceContents, types.BlobResourceContents],
+) -> PromptContentBlock:
+    mime_type = resource.mimeType
+    if isinstance(resource, types.TextResourceContents):
+        return TextBlock(text=resource.text)
+
+    if mime_type and mime_type.startswith("image/"):
+        return ImageBlock(image=resource.blob, image_mimetype=mime_type)
+    if mime_type and mime_type.startswith("audio/"):
+        return AudioBlock(
+            audio=resource.blob,
+            format=_audio_format_from_mime_type(mime_type),
+        )
+
+    return DocumentBlock(
+        data=_decode_base64_data(resource.blob),
+        document_mimetype=mime_type,
+        title=str(resource.uri),
+    )
+
+
+def _resource_link_to_block(resource_link: types.ResourceLink) -> PromptContentBlock:
+    mime_type = resource_link.mimeType
+    uri = str(resource_link.uri)
+    if mime_type and mime_type.startswith("image/"):
+        return ImageBlock(url=uri, image_mimetype=mime_type)
+    if mime_type and mime_type.startswith("audio/"):
+        return AudioBlock(
+            url=uri,
+            format=_audio_format_from_mime_type(mime_type),
+        )
+
+    return DocumentBlock(
+        url=uri,
+        title=resource_link.title or resource_link.name,
+        document_mimetype=mime_type,
+    )
+
+
+def _mcp_content_to_blocks(content: types.ContentBlock) -> List[PromptContentBlock]:
+    if isinstance(content, types.TextContent):
+        return [TextBlock(text=content.text)]
+    if isinstance(content, types.ImageContent):
+        return [
+            ImageBlock(
+                image=content.data,
+                image_mimetype=content.mimeType,
+            )
+        ]
+    if isinstance(content, types.AudioContent):
+        return [
+            AudioBlock(
+                audio=content.data,
+                format=_audio_format_from_mime_type(content.mimeType),
+            )
+        ]
+    if isinstance(content, types.EmbeddedResource):
+        return [_resource_contents_to_block(content.resource)]
+    if isinstance(content, types.ResourceLink):
+        return [_resource_link_to_block(content)]
+
+    raise ValueError(f"Unsupported content type: {type(content)}")
 
 
 class StreamingHandler(logging.Handler):
@@ -379,32 +465,11 @@ class BasicMCPClient(ClientSession):
             prompt = await session.get_prompt(prompt_name, arguments)
             llama_messages = []
             for message in prompt.messages:
-                if isinstance(message.content, types.TextContent):
-                    llama_messages.append(
-                        ChatMessage(
-                            role=message.role,
-                            blocks=[TextBlock(text=message.content.text)],
-                        )
+                llama_messages.append(
+                    ChatMessage(
+                        role=message.role,
+                        blocks=_mcp_content_to_blocks(message.content),
                     )
-                elif isinstance(message.content, types.ImageContent):
-                    llama_messages.append(
-                        ChatMessage(
-                            role=message.role,
-                            blocks=[
-                                ImageBlock(
-                                    image=message.content.data,
-                                    image_mimetype=message.content.mimeType,
-                                )
-                            ],
-                        )
-                    )
-                elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
-                    )
-                else:
-                    raise ValueError(
-                        f"Unsupported content type: {type(message.content)}"
-                    )
+                )
 
             return llama_messages

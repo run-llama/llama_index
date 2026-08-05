@@ -1,9 +1,11 @@
+import base64
 import os
 from httpx import AsyncClient
 import pytest
 
+from llama_index.core.llms import AudioBlock, DocumentBlock, TextBlock
 from llama_index.tools.mcp import BasicMCPClient
-from llama_index.tools.mcp.client import enable_sse
+from llama_index.tools.mcp.client import _mcp_content_to_blocks, enable_sse
 from mcp import types
 
 
@@ -117,6 +119,56 @@ async def test_get_prompts(client: BasicMCPClient):
     result = await client.get_prompt("analyze_data", {"data": "1,2,3,4,5"})
     assert len(result) > 1
     assert any("1,2,3,4,5" in msg.content for msg in result)
+
+
+def test_mcp_prompt_content_blocks():
+    """Test converting all MCP prompt content variants into LlamaIndex blocks."""
+    audio = types.AudioContent(
+        type="audio",
+        data=base64.b64encode(b"audio").decode("utf-8"),
+        mimeType="audio/wav",
+    )
+    audio_blocks = _mcp_content_to_blocks(audio)
+    assert isinstance(audio_blocks[0], AudioBlock)
+    assert audio_blocks[0].format == "wav"
+
+    embedded_text = types.EmbeddedResource(
+        type="resource",
+        resource=types.TextResourceContents(
+            uri="file:///tmp/context.txt",
+            mimeType="text/plain",
+            text="embedded context",
+        ),
+    )
+    text_blocks = _mcp_content_to_blocks(embedded_text)
+    assert isinstance(text_blocks[0], TextBlock)
+    assert text_blocks[0].text == "embedded context"
+
+    blob = base64.b64encode(b"document bytes").decode("utf-8")
+    embedded_document = types.EmbeddedResource(
+        type="resource",
+        resource=types.BlobResourceContents(
+            uri="file:///tmp/context.pdf",
+            mimeType="application/pdf",
+            blob=blob,
+        ),
+    )
+    document_blocks = _mcp_content_to_blocks(embedded_document)
+    assert isinstance(document_blocks[0], DocumentBlock)
+    assert document_blocks[0].document_mimetype == "application/pdf"
+    assert document_blocks[0].title == "file:///tmp/context.pdf"
+
+    resource_link = types.ResourceLink(
+        type="resource_link",
+        name="manual",
+        title="Operator Manual",
+        uri="https://example.com/manual.pdf",
+        mimeType="application/pdf",
+    )
+    link_blocks = _mcp_content_to_blocks(resource_link)
+    assert isinstance(link_blocks[0], DocumentBlock)
+    assert link_blocks[0].url == "https://example.com/manual.pdf"
+    assert link_blocks[0].title == "Operator Manual"
 
 
 @pytest.mark.asyncio
