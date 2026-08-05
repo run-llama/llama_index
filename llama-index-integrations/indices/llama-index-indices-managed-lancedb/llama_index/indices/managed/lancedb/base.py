@@ -168,7 +168,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
             class TextSchema(LanceModel):
                 id: str
                 metadata: str = Field(default=json.dumps({}))
-                text: str = self._embedding_model.embedding_modxel.SourceField()
+                text: str = self._embedding_model.embedding_model.SourceField()
                 vector: Vector(self._embedding_model.embedding_model.ndims()) = (
                     self._embedding_model.embedding_model.VectorField()
                 )
@@ -387,7 +387,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         else:
             assert all(isinstance(document, ImageDocument) for document in documents)
             for document in documents:
-                label = json.dumps(document.metadata).get("image_label", None) or ""
+                label = document.metadata.get("image_label") or ""
                 if document.image:
                     data.append(
                         {
@@ -546,7 +546,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         else:
             assert all(isinstance(document, ImageDocument) for document in documents)
             for document in documents:
-                label = json.dumps(document.metadata).get("image_label", None) or ""
+                label = document.metadata.get("image_label") or ""
                 if document.image:
                     data.append(
                         {
@@ -616,7 +616,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         else:
             assert all(isinstance(document, ImageDocument) for document in documents)
             for document in documents:
-                label = json.dumps(document.metadata).get("image_label", None) or ""
+                label = document.metadata.get("image_label") or ""
                 if document.image:
                     data.append(
                         {
@@ -694,7 +694,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     def delete_ref_doc(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         if not self.connection_config.use_async:
             self._table = cast(Table, self._table)
-            self._table.delete(where="id = '" + ref_doc_id + "'")
+            self._table.delete(where="id = '" + ref_doc_id.replace("'", "''") + "'")
         else:
             raise ValueError(
                 "Attempting to delete data synchronously with an asynchronous connection!"
@@ -703,7 +703,9 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     async def adelete_ref_doc(self, ref_doc_id: str, **delete_kwargs):
         if self.connection_config.use_async:
             self._table = cast(AsyncTable, self._table)
-            await self._table.delete(where="id = '" + ref_doc_id + "'")
+            await self._table.delete(
+                where="id = '" + ref_doc_id.replace("'", "''") + "'"
+            )
         else:
             raise ValueError(
                 "Attempting to delete data asynchronously with a synchronous connection!"
@@ -712,7 +714,11 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     def delete_nodes(self, ref_doc_ids: List[str]) -> None:
         if not self.connection_config.use_async:
             self._table = cast(Table, self._table)
-            delete_where = "id IN ('" + "', '".join(ref_doc_ids) + "')"
+            delete_where = (
+                "id IN ('"
+                + "', '".join(i.replace("'", "''") for i in ref_doc_ids)
+                + "')"
+            )
             self._table.delete(where=delete_where)
         else:
             raise ValueError(
@@ -722,7 +728,11 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
     async def adelete_nodes(self, ref_doc_ids: List[str]) -> None:
         if self.connection_config.use_async:
             self._table = cast(AsyncTable, self._table)
-            delete_where = "id IN ('" + "', '".join(ref_doc_ids) + "')"
+            delete_where = (
+                "id IN ('"
+                + "', '".join(i.replace("'", "''") for i in ref_doc_ids)
+                + "')"
+            )
             await self._table.delete(where=delete_where)
         else:
             raise ValueError(
