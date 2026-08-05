@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-index-store-couchbase"
-version = "0.4.0"
+version = "0.4.1"
 description = "llama-index index_store couchbase integration"
 authors = [{name = "Couchbase", email = "devadvocates@couchbase.com"}]
 requires-python = ">=3.10,<4.0"
@@ -35,6 +35,7 @@ license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "llama-index-kvstore-couchbase>=0.3.0,<0.4",
+    "reo-census>=0.1.2",
 ]
 
 [tool.codespell]
