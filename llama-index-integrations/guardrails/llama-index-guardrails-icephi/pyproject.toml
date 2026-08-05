@@ -19,3 +19,7 @@ Repository = "https://github.com/run-llama/llama_index"
 
 [tool.flit.module]
 name = "llama_index.guardrails.icephi"
+
+[tool.llamahub]
+contains_notebooks = false
+class_authors = { IcePhiPromptGuard = "Ice Phi Security" }
