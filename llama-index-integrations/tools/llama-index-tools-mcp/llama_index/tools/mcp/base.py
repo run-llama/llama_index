@@ -9,16 +9,10 @@ from pydantic import BaseModel, create_model
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
-from llama_index.tools.mcp.tool_spec_mixins import (
-    TypeResolutionMixin,
-    TypeCreationMixin,
-    FieldExtractionMixin,
-)
+from llama_index.tools.mcp.schema_converter import SchemaConverter
 
 
-class McpToolSpec(
-    BaseToolSpec, TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
-):
+class McpToolSpec(BaseToolSpec):
     """
     MCPToolSpec will get the tools from MCP Client (only need to implement ClientSession) and convert them to LlamaIndex's FunctionTool objects.
 
@@ -48,7 +42,7 @@ class McpToolSpec(
         self.global_partial_params = global_partial_params
         self.partial_params_by_tool = partial_params_by_tool
         self.include_resources = include_resources
-        self.properties_cache = {}
+        self._schema_converter = SchemaConverter()
 
     async def fetch_tools(self) -> List[Any]:
         """
@@ -136,7 +130,7 @@ class McpToolSpec(
         for tool in tools_list:
             fn = self._create_tool_fn(tool.name)
             # Create a Pydantic model based on the tool inputSchema
-            model_schema = self.create_model_from_json_schema(
+            model_schema = self._schema_converter.create_model_from_json_schema(
                 tool.inputSchema, model_name=f"{tool.name}_Schema"
             )
             # Set up global partial params as default
@@ -154,7 +148,7 @@ class McpToolSpec(
 
             # Remove fields that are set as partial params
             if tool_partial_params:
-                model_schema = self.remove_model_fields(
+                model_schema = self._schema_converter.remove_model_fields(
                     model_schema,
                     fields_to_remove=set(tool_partial_params),
                     model_name=f"{tool.name}_Schema",
@@ -202,74 +196,16 @@ class McpToolSpec(
     def create_model_from_json_schema(
         self,
         schema: dict[str, Any],
-        model_name: str = "DynamicModel",
-    ) -> type[BaseModel]:
-        """
-        To create a Pydantic model from the JSON Schema of MCP tools.
-
-        Args:
-            schema: A JSON Schema dictionary containing properties and required fields.
-            model_name: The name of the model.
-
-        Returns:
-            A Pydantic model class.
-
-        """
-        defs = schema.get("$defs", {})
-
-        # Process all type definitions
-        for cls_name, cls_schema in defs.items():
-            self.properties_cache[cls_name] = self._create_model(
-                cls_schema,
-                cls_name,
-                defs,
-            )
-
-        return self._create_model(schema, model_name)
-
-    def _create_model(
-        self,
-        schema: dict,
         model_name: str,
-        defs: dict = {},
-    ) -> type[BaseModel]:
-        """Create a Pydantic model from a schema."""
-        if model_name in self.properties_cache:
-            return self.properties_cache[model_name]
-
-        fields = self._extract_fields(schema, defs)
-        model = create_model(model_name, **fields)
-        self.properties_cache[model_name] = model
-        return model
+    ) -> type:
+        """Create a Pydantic model from JSON Schema."""
+        return self._schema_converter.create_model_from_json_schema(schema, model_name)
 
     def remove_model_fields(
         self,
-        model: type[BaseModel],
-        fields_to_remove: Set[str],
+        model: type,
+        fields_to_remove: set[str],
         model_name: str,
-    ) -> type[BaseModel]:
-        fields = {
-            name: (
-                field.annotation,
-                field.default if field.is_required() else field.default,
-            )
-            for name, field in model.model_fields.items()
-            if name not in fields_to_remove
-        }
-        return create_model(model_name, **fields)
-
-
-def patch_sync(func_async: Callable) -> Callable:
-    def patched_sync(*args: Any, **kwargs: Any) -> Any:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        # If the current environment is asynchronous, raise an exception to prompt the use of the asynchronous interface
-        if loop and loop.is_running():
-            raise RuntimeError(
-                "In an asynchronous environment, synchronous calls are not supported. Please use the asynchronous interface (e.g., to_tool_list_async) instead."
-            )
-        return asyncio.run(func_async(*args, **kwargs))
-
-    return patched_sync
+    ) -> type:
+        """Remove specified fields from a Pydantic model."""
+        return self._schema_converter.remove_model_fields(model, fields_to_remove, model_name)
