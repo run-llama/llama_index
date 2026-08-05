@@ -23,7 +23,7 @@ def test_clean_prompt_allows_nodes(mock_post):
 
     result = guard.postprocess_nodes(nodes, query)
     assert len(result) == 1
-    
+
     # Verify destination host and headers
     args, kwargs = mock_post.call_args
     assert args[0] == "https://api.icephi.com/shield"
