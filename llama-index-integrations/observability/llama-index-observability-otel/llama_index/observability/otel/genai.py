@@ -1,26 +1,21 @@
-"""OpenTelemetry GenAI instrumentation backed by LlamaIndex dispatcher events."""
+"""OpenTelemetry GenAI semantic-convention event handling for LlamaIndex."""
 
 from __future__ import annotations
 
 from typing import Any, Union
 
-import llama_index_instrumentation as instrument
-from llama_index_instrumentation.base.event import BaseEvent
-from llama_index_instrumentation.event_handlers import BaseEventHandler
-from opentelemetry._logs import LoggerProvider
-from opentelemetry.metrics import MeterProvider
-from opentelemetry.trace import TracerProvider
-from opentelemetry.util.genai.handler import TelemetryHandler
-from opentelemetry.util.genai.invocation import (
-    EmbeddingInvocation,
-    InferenceInvocation,
-)
-from opentelemetry.util.genai.types import InputMessage, OutputMessage, Text
-from pydantic import PrivateAttr
-
 from llama_index.core.instrumentation.events.embedding import (
     EmbeddingEndEvent,
     EmbeddingStartEvent,
+)
+from llama_index.core.instrumentation.events.agent import (
+    AgentChatWithStepEndEvent,
+    AgentChatWithStepStartEvent,
+    AgentRunStepEndEvent,
+    AgentRunStepStartEvent,
+    AgentToolCallEvent,
+    AgentToolCallEndEvent,
+    AgentToolCallStartEvent,
 )
 from llama_index.core.instrumentation.events.llm import (
     LLMChatEndEvent,
@@ -28,9 +23,32 @@ from llama_index.core.instrumentation.events.llm import (
     LLMCompletionEndEvent,
     LLMCompletionStartEvent,
 )
+from llama_index.core.instrumentation.events.retrieval import (
+    RetrievalEndEvent,
+    RetrievalStartEvent,
+)
+from llama_index_instrumentation.base.event import BaseEvent
+from llama_index_instrumentation.event_handlers import BaseEventHandler
+from opentelemetry.trace import TracerProvider
+from opentelemetry.util.genai.handler import TelemetryHandler
+from opentelemetry.util.genai.invocation import (
+    AgentInvocation,
+    EmbeddingInvocation,
+    InferenceInvocation,
+    RetrievalInvocation,
+    ToolInvocation,
+)
+from opentelemetry.util.genai.types import InputMessage, OutputMessage, Text
+from pydantic import PrivateAttr
 
 
-_Invocation = Union[InferenceInvocation, EmbeddingInvocation]
+_Invocation = Union[
+    AgentInvocation,
+    EmbeddingInvocation,
+    InferenceInvocation,
+    RetrievalInvocation,
+    ToolInvocation,
+]
 
 
 def _model_value(model_dict: dict[str, Any], *names: str) -> str | None:
@@ -42,14 +60,12 @@ def _model_value(model_dict: dict[str, Any], *names: str) -> str | None:
 
 
 def _provider_and_model(model_dict: dict[str, Any]) -> tuple[str, str | None]:
-    """Extract portable provider/model values from LlamaIndex model payloads."""
     provider = _model_value(model_dict, "provider", "model_provider")
     model = _model_value(model_dict, "model_name", "model", "model_id")
     return provider or "llama_index", model
 
 
 def _usage_value(response: Any, *names: str) -> int | None:
-    """Read token counts from normalized or provider-specific response metadata."""
     metadata = getattr(response, "additional_kwargs", {}) or {}
     raw = getattr(response, "raw", None)
     if isinstance(raw, dict):
@@ -64,73 +80,68 @@ def _usage_value(response: Any, *names: str) -> int | None:
     return None
 
 
-def _event_key(event: BaseEvent) -> str | None:
-    """Use the dispatcher-stamped span id to pair start and end events."""
-    return event.span_id
+def _query_text(query: Any) -> str:
+    return query if isinstance(query, str) else str(getattr(query, "query_str", query))
+
+
+def _retrieval_documents(nodes: list[Any]) -> list[dict[str, Any]]:
+    """Convert LlamaIndex retrieval results to the GenAI document representation."""
+    documents = []
+    for node_with_score in nodes:
+        node = node_with_score.node
+        documents.append(
+            {
+                "id": node.node_id,
+                "content": node.get_content(),
+                "score": node_with_score.score,
+            }
+        )
+    return documents
 
 
 class GenAIEventHandler(BaseEventHandler):
     """
-    Map LlamaIndex LLM and embedding events to GenAI invocations.
+    Translate LlamaIndex events into OpenTelemetry GenAI telemetry.
 
-    The handler consumes dispatcher events emitted by LlamaIndex and maintains
-    an invocation until its corresponding end event arrives. It uses
-    :class:`opentelemetry.util.genai.handler.TelemetryHandler` to create spans,
-    metrics, and optional GenAI detail events that conform to OpenTelemetry's
-    GenAI semantic conventions.
-
-    This handler is registered by
-    :class:`LlamaIndexOtelGenAIInstrumentor`; users generally should not
-    instantiate it directly.
+    The handler creates GenAI invocations for LLM chat/completion and embedding
+    events. It supports LLM, embedding, retrieval, tool, and agent operations.
+    It is registered only when ``LlamaIndexOpenTelemetry`` is configured with
+    ``genai_enabled=True``.
 
     Args:
-        telemetry (TelemetryHandler): The GenAI telemetry handler used to create
-            and complete invocations.
+        tracer_provider (TracerProvider): The provider used for generated GenAI
+            spans and metrics.
 
     """
 
     _telemetry: TelemetryHandler = PrivateAttr()
     _active: dict[str, _Invocation] = PrivateAttr(default_factory=dict)
 
-    def __init__(self, telemetry: TelemetryHandler) -> None:
+    def __init__(self, tracer_provider: TracerProvider) -> None:
         """
-        Initialize the event handler.
+        Initialize the GenAI event handler.
 
         Args:
-            telemetry (TelemetryHandler): The configured GenAI telemetry
-                handler.
+            tracer_provider (TracerProvider): The provider shared with the
+                generic LlamaIndex OpenTelemetry integration.
 
         """
         super().__init__()
-        self._telemetry = telemetry
-
-    @classmethod
-    def class_name(cls) -> str:
-        """
-        Return the event handler's stable instrumentation name.
-
-        Returns:
-            str: ``"GenAIEventHandler"``.
-
-        """
-        return "GenAIEventHandler"
+        self._telemetry = TelemetryHandler(tracer_provider=tracer_provider)
 
     def handle(self, event: BaseEvent, **_: Any) -> None:
-        """
-        Translate a supported LlamaIndex event into GenAI telemetry.
+        """Process a LlamaIndex event and complete its matching invocation."""
+        if isinstance(event, AgentToolCallEvent):
+            self._record_tool_call(event)
+            return
+        if isinstance(event, AgentToolCallStartEvent):
+            self._start_tool_call(event)
+            return
+        if isinstance(event, AgentToolCallEndEvent):
+            self._finish_tool_call(event)
+            return
 
-        Start events create an invocation and retain it by dispatcher span ID.
-        Matching end events enrich and complete that invocation. Events outside
-        of a dispatcher span, and event types not currently supported by this
-        integration, are ignored.
-
-        Args:
-            event (BaseEvent): The LlamaIndex dispatcher event to process.
-            **_: Additional dispatcher event-handler arguments, ignored by this
-                integration.
-
-        """
-        key = _event_key(event)
+        key = event.span_id
         if key is None:
             return
 
@@ -170,6 +181,32 @@ class GenAIEventHandler(BaseEventHandler):
                 if event.embeddings:
                     invocation.dimension_count = len(event.embeddings[0])
                 invocation.stop()
+        elif isinstance(event, RetrievalStartEvent):
+            invocation = self._telemetry.retrieval()
+            invocation.query_text = _query_text(event.str_or_query_bundle)
+            self._active[key] = invocation
+        elif isinstance(event, RetrievalEndEvent):
+            invocation = self._pop(key, RetrievalInvocation)
+            if invocation is not None:
+                invocation.documents = _retrieval_documents(event.nodes)
+                invocation.stop()
+        elif isinstance(event, AgentChatWithStepStartEvent):
+            invocation = self._telemetry.invoke_local_agent()
+            self._set_agent_input(invocation, event.user_msg)
+            self._active[key] = invocation
+        elif isinstance(event, AgentChatWithStepEndEvent):
+            invocation = self._pop(key, AgentInvocation)
+            if invocation is not None:
+                self._finish_agent(invocation, event.response)
+        elif isinstance(event, AgentRunStepStartEvent):
+            invocation = self._telemetry.invoke_local_agent()
+            invocation.agent_id = event.task_id
+            self._set_agent_input(invocation, event.input)
+            self._active[key] = invocation
+        elif isinstance(event, AgentRunStepEndEvent):
+            invocation = self._pop(key, AgentInvocation)
+            if invocation is not None:
+                self._finish_agent(invocation, event.step_output)
 
     def _pop(self, key: str, expected_type: type[_Invocation]) -> _Invocation | None:
         invocation = self._active.pop(key, None)
@@ -252,64 +289,62 @@ class GenAIEventHandler(BaseEventHandler):
         )
         invocation.stop()
 
-
-class LlamaIndexOtelGenAIInstrumentor:
-    """
-    Register native OpenTelemetry GenAI instrumentation for LlamaIndex.
-
-    This opt-in integration translates LlamaIndex dispatcher events into
-    OpenTelemetry GenAI semantic-convention telemetry. It currently supports
-    LLM chat/completion and embedding operations. Prompt and response content
-    remains disabled unless enabled through the standard
-    ``OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`` configuration.
-
-    Args:
-        tracer_provider (Optional[TracerProvider]): Provider used to create
-            GenAI spans. Uses OpenTelemetry's configured global provider when
-            omitted.
-        meter_provider (Optional[MeterProvider]): Provider used to record GenAI
-            duration and token-usage metrics. Uses the configured global meter
-            provider when omitted.
-        logger_provider (Optional[LoggerProvider]): Provider used to emit
-            optional GenAI detail events. Uses the configured global logger
-            provider when omitted.
-
-    """
-
-    def __init__(
-        self,
-        tracer_provider: TracerProvider | None = None,
-        meter_provider: MeterProvider | None = None,
-        logger_provider: LoggerProvider | None = None,
-    ) -> None:
-        """
-        Configure native GenAI telemetry for later registration.
-
-        Registration is intentionally separate from construction so callers can
-        configure OpenTelemetry providers before LlamaIndex starts emitting
-        events.
-
-        Args:
-            tracer_provider (Optional[TracerProvider]): Provider for generated
-                spans.
-            meter_provider (Optional[MeterProvider]): Provider for generated
-                metrics.
-            logger_provider (Optional[LoggerProvider]): Provider for optional
-                GenAI detail events.
-
-        """
-        self._telemetry = TelemetryHandler(
-            tracer_provider=tracer_provider,
-            meter_provider=meter_provider,
-            logger_provider=logger_provider,
+    def _record_tool_call(self, event: AgentToolCallEvent) -> None:
+        """Record the currently single-event LlamaIndex tool lifecycle."""
+        tool = event.tool
+        invocation: ToolInvocation = self._telemetry.tool(
+            tool.name or "unknown",
+            tool_type="function",
+            tool_description=tool.description,
         )
-        self._handler = GenAIEventHandler(self._telemetry)
+        if self._telemetry.should_capture_content():
+            invocation.arguments = event.arguments
+        invocation.stop()
 
-    def start_registering(self) -> None:
-        """
-        Register the handler with LlamaIndex's global dispatcher.
+    @staticmethod
+    def _tool_key(tool_id: str) -> str:
+        return f"tool:{tool_id}"
 
-        After this call, supported LlamaIndex operations emit OpenTelemetry
-        GenAI telemetry through the configured providers.
-        """
-        instrument.get_dispatcher().add_event_handler(self._handler)
+    def _start_tool_call(self, event: AgentToolCallStartEvent) -> None:
+        invocation: ToolInvocation = self._telemetry.tool(
+            event.tool_name,
+            tool_call_id=event.tool_id,
+            tool_type="function",
+            tool_description=event.tool_description,
+        )
+        if self._telemetry.should_capture_content():
+            invocation.arguments = event.tool_kwargs
+        self._active[self._tool_key(event.tool_id)] = invocation
+
+    def _finish_tool_call(self, event: AgentToolCallEndEvent) -> None:
+        invocation = self._pop(self._tool_key(event.tool_id), ToolInvocation)
+        if invocation is None:
+            return
+        output = event.tool_output
+        if self._telemetry.should_capture_content():
+            invocation.tool_result = output.content
+        if output.is_error:
+            invocation.fail(
+                output.exception
+                or RuntimeError(output.content or f"Tool {event.tool_name} failed")
+            )
+            return
+        invocation.stop()
+
+    def _set_agent_input(self, invocation: AgentInvocation, value: Any) -> None:
+        if self._telemetry.should_capture_content() and value is not None:
+            invocation.input_messages = [
+                InputMessage(role="user", parts=[Text(content=str(value))])
+            ]
+
+    def _finish_agent(self, invocation: AgentInvocation, output: Any) -> None:
+        if self._telemetry.should_capture_content() and output is not None:
+            response = getattr(output, "response", output)
+            invocation.output_messages = [
+                OutputMessage(
+                    role="assistant",
+                    parts=[Text(content=str(response))],
+                    finish_reason="stop",
+                )
+            ]
+        invocation.stop()

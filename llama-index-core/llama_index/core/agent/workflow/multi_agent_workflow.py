@@ -44,6 +44,11 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
+import llama_index.core.instrumentation as instrument
+from llama_index.core.instrumentation.events.agent import (
+    AgentToolCallEndEvent,
+    AgentToolCallStartEvent,
+)
 from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -68,6 +73,9 @@ from llama_index.core.workflow import (
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
 from llama_index.core.settings import Settings
+
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
@@ -665,7 +673,24 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
         else:
             tool = tools_by_name[ev.tool_name]
+        dispatcher.event(
+            AgentToolCallStartEvent(
+                tool_id=ev.tool_id,
+                tool_name=ev.tool_name,
+                tool_kwargs=ev.tool_kwargs,
+                tool_description=tool.metadata.description if tool else None,
+            )
+        )
+        if tool is not None:
             result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+
+        dispatcher.event(
+            AgentToolCallEndEvent(
+                tool_id=ev.tool_id,
+                tool_name=ev.tool_name,
+                tool_output=result,
+            )
+        )
 
         result_ev = ToolCallResult(
             tool_name=ev.tool_name,
