@@ -128,7 +128,7 @@ class BaseVoiceAgent(ABC):
 
         """
         messages = self._messages
-        if limit:
+        if limit is not None:
             if limit <= len(messages):
                 messages = messages[:limit]
         if filter:
@@ -154,7 +154,7 @@ class BaseVoiceAgent(ABC):
 
         """
         events = self._events
-        if limit:
+        if limit is not None:
             if limit <= len(events):
                 events = events[:limit]
         if filter:
