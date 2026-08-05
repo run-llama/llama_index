@@ -180,6 +180,14 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             split_len = len(self._tokenizer(split))
             if split_len <= chunk_size:
                 new_splits.append(split)
+            elif len(splits) == 1:
+                # The text could not be broken down any further (e.g. a single
+                # character whose token count already exceeds chunk_size, which
+                # happens for multi-token CJK / emoji characters with a small
+                # chunk_size). Recursing on the same text would loop forever and
+                # raise RecursionError, so keep it as an oversized split here --
+                # _merge() already tolerates splits larger than chunk_size.
+                new_splits.append(split)
             else:
                 # recursively split
                 new_splits.extend(self._split(split, chunk_size=chunk_size))
@@ -223,7 +231,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 # keep popping off the first element of the previous chunk until:
                 #   1. the current chunk length is less than chunk overlap
                 #   2. the total length is less than chunk size
-                while cur_len > self.chunk_overlap or cur_len + split_len > chunk_size:
+                while cur_chunk and (
+                    cur_len > self.chunk_overlap or cur_len + split_len > chunk_size
+                ):
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
                     cur_len -= len(self._tokenizer(first_chunk))

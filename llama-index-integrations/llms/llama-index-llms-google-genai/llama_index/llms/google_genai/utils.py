@@ -287,10 +287,13 @@ async def create_file_part(
         file_buffer.seek(0)  # Reset to beginning
 
         if size < 20 * 1024 * 1024:  # 20MB is the Gemini inline data size limit
-            return types.Part.from_bytes(
-                data=file_buffer.read(),
-                mime_type=mime_type,
-            ), None
+            return (
+                types.Part.from_bytes(
+                    data=file_buffer.read(),
+                    mime_type=mime_type,
+                ),
+                None,
+            )
         elif file_mode == "inline":
             raise ValueError("Files in inline mode must be smaller than 20MB.")
         elif client is not None and client.vertexai:
@@ -315,10 +318,13 @@ async def create_file_part(
     if file.state.name == "FAILED":
         raise ValueError("Failed to upload the file with FileAPI")
 
-    return types.Part.from_uri(
-        file_uri=file.uri,
-        mime_type=mime_type,
-    ), file.name
+    return (
+        types.Part.from_uri(
+            file_uri=file.uri,
+            mime_type=mime_type,
+        ),
+        file.name,
+    )
 
 
 async def adelete_uploaded_files(file_api_names: list[str], client: Client) -> None:
@@ -444,14 +450,20 @@ async def chat_message_to_gemini(
             name=message.additional_kwargs.get("tool_call_id"),
             response={"result": message.content},
         )
-        return types.Content(
-            role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
-        ), file_api_names
+        return (
+            types.Content(
+                role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
+            ),
+            file_api_names,
+        )
 
-    return types.Content(
-        role=ROLES_TO_GEMINI[message.role],
-        parts=parts,
-    ), file_api_names
+    return (
+        types.Content(
+            role=ROLES_TO_GEMINI[message.role],
+            parts=parts,
+        ),
+        file_api_names,
+    )
 
 
 def convert_schema_to_function_declaration(
@@ -611,9 +623,12 @@ def handle_streaming_flexible_model(
             return output_cls.model_validate_json(current_json), current_json
         except ValidationError:
             try:
-                return flexible_model.model_validate_json(
-                    _repair_incomplete_json(current_json)
-                ), current_json
+                return (
+                    flexible_model.model_validate_json(
+                        _repair_incomplete_json(current_json)
+                    ),
+                    current_json,
+                )
             except ValidationError:
                 return None, current_json
 

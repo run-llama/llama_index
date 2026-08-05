@@ -54,8 +54,7 @@ def llm_chat_callback() -> Callable:
                 callback_manager.as_trace("chat"),
             ):
                 span_id = active_span_id.get()
-                model_dict = _self.to_dict()
-                model_dict.pop("api_key", None)
+                model_dict = _self.to_payload()
                 dispatcher.event(
                     LLMChatStartEvent(
                         model_dict=model_dict,
@@ -69,7 +68,7 @@ def llm_chat_callback() -> Callable:
                     payload={
                         EventPayload.MESSAGES: messages,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
-                        EventPayload.SERIALIZED: _self.to_dict(),
+                        EventPayload.SERIALIZED: model_dict,
                     },
                 )
                 if _self.rate_limiter is not None:
@@ -156,8 +155,7 @@ def llm_chat_callback() -> Callable:
                 callback_manager.as_trace("chat"),
             ):
                 span_id = active_span_id.get()
-                model_dict = _self.to_dict()
-                model_dict.pop("api_key", None)
+                model_dict = _self.to_payload()
                 dispatcher.event(
                     LLMChatStartEvent(
                         model_dict=model_dict,
@@ -171,7 +169,7 @@ def llm_chat_callback() -> Callable:
                     payload={
                         EventPayload.MESSAGES: messages,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
-                        EventPayload.SERIALIZED: _self.to_dict(),
+                        EventPayload.SERIALIZED: model_dict,
                     },
                 )
                 if _self.rate_limiter is not None:
@@ -320,8 +318,7 @@ def llm_completion_callback() -> Callable:
                 callback_manager.as_trace("completion"),
             ):
                 span_id = active_span_id.get()
-                model_dict = _self.to_dict()
-                model_dict.pop("api_key", None)
+                model_dict = _self.to_payload()
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=model_dict,
@@ -335,7 +332,7 @@ def llm_completion_callback() -> Callable:
                     payload={
                         EventPayload.PROMPT: prompt,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
-                        EventPayload.SERIALIZED: _self.to_dict(),
+                        EventPayload.SERIALIZED: model_dict,
                     },
                 )
 
@@ -422,8 +419,7 @@ def llm_completion_callback() -> Callable:
                 callback_manager.as_trace("completion"),
             ):
                 span_id = active_span_id.get()
-                model_dict = _self.to_dict()
-                model_dict.pop("api_key", None)
+                model_dict = _self.to_payload()
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=model_dict,
@@ -437,7 +433,7 @@ def llm_completion_callback() -> Callable:
                     payload={
                         EventPayload.PROMPT: prompt,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
-                        EventPayload.SERIALIZED: _self.to_dict(),
+                        EventPayload.SERIALIZED: model_dict,
                     },
                 )
                 if _self.rate_limiter is not None:
