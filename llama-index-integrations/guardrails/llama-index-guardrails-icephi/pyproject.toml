@@ -1,0 +1,21 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "llama-index-guardrails-icephi"
+version = "0.1.0"
+description = "LlamaIndex guardrail integration querying the Ice Phi Shield API."
+readme = "README.md"
+authors = [{ name = "Ice Phi" }]
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "requests>=2.28.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/run-llama/llama_index"
+Repository = "https://github.com/run-llama/llama_index"
+
+[tool.flit.module]
+name = "llama_index.guardrails.icephi"
