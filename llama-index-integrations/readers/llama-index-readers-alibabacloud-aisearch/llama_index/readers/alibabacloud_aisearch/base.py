@@ -123,8 +123,10 @@ class AlibabaCloudAISearchDocumentReader(BasePydanticReader):
             file_name = os.path.basename(file_path)
             if not file_type:
                 file_type = os.path.splitext(file_name)[1][1:]
+            with open(file_path, "rb") as f:
+                file_content = base64.b64encode(f.read()).decode()
             document = CreateDocumentAnalyzeTaskRequestDocument(
-                content=base64.b64encode(open(file_path, "rb").read()).decode(),
+                content=file_content,
                 file_name=file_name,
                 file_type=file_type,
             )
@@ -261,8 +263,10 @@ class AlibabaCloudAISearchImageReader(AlibabaCloudAISearchDocumentReader):
             file_name = os.path.basename(file_path)
             if not file_type:
                 file_type = os.path.splitext(file_name)[1][1:]
+            with open(file_path, "rb") as f:
+                file_content = base64.b64encode(f.read()).decode()
             document = CreateImageAnalyzeTaskRequestDocument(
-                content=base64.b64encode(open(file_path, "rb").read()).decode(),
+                content=file_content,
                 file_name=file_name,
                 file_type=file_type,
             )
