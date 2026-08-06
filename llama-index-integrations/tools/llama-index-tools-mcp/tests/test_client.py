@@ -1,7 +1,12 @@
+import base64
 import os
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
+
 from httpx import AsyncClient
 import pytest
 
+from llama_index.core.llms import AudioBlock, DocumentBlock, ImageBlock, TextBlock
 from llama_index.tools.mcp import BasicMCPClient
 from llama_index.tools.mcp.client import enable_sse
 from mcp import types
@@ -117,6 +122,112 @@ async def test_get_prompts(client: BasicMCPClient):
     result = await client.get_prompt("analyze_data", {"data": "1,2,3,4,5"})
     assert len(result) > 1
     assert any("1,2,3,4,5" in msg.content for msg in result)
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_converts_mcp_content_blocks(monkeypatch):
+    """Test converting all MCP prompt content block variants."""
+    image_data = b"image-bytes"
+    audio_data = b"audio-bytes"
+    document_data = b"document-bytes"
+
+    class FakeSession:
+        async def get_prompt(self, prompt_name, arguments=None):
+            return SimpleNamespace(
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(type="text", text="plain text"),
+                    ),
+                    types.PromptMessage(
+                        role="user",
+                        content=types.ImageContent(
+                            type="image",
+                            data=base64.b64encode(image_data).decode(),
+                            mimeType="image/png",
+                        ),
+                    ),
+                    types.PromptMessage(
+                        role="assistant",
+                        content=types.AudioContent(
+                            type="audio",
+                            data=base64.b64encode(audio_data).decode(),
+                            mimeType="audio/wav",
+                        ),
+                    ),
+                    types.PromptMessage(
+                        role="user",
+                        content=types.EmbeddedResource(
+                            type="resource",
+                            resource=types.TextResourceContents(
+                                uri="config://app",
+                                text="embedded text",
+                                mimeType="text/plain",
+                            ),
+                        ),
+                    ),
+                    types.PromptMessage(
+                        role="user",
+                        content=types.EmbeddedResource(
+                            type="resource",
+                            resource=types.BlobResourceContents(
+                                uri="file:///doc.pdf",
+                                blob=base64.b64encode(document_data).decode(),
+                                mimeType="application/pdf",
+                            ),
+                        ),
+                    ),
+                    types.PromptMessage(
+                        role="user",
+                        content=types.ResourceLink(
+                            type="resource_link",
+                            name="linked-doc",
+                            title="Linked Doc",
+                            uri="file:///linked.pdf",
+                            mimeType="application/pdf",
+                        ),
+                    ),
+                ]
+            )
+
+    @asynccontextmanager
+    async def fake_run_session():
+        yield FakeSession()
+
+    client = BasicMCPClient("python")
+    monkeypatch.setattr(client, "_run_session", fake_run_session)
+
+    result = await client.get_prompt("mixed_content")
+
+    text_block = result[0].blocks[0]
+    assert isinstance(text_block, TextBlock)
+    assert text_block.text == "plain text"
+
+    image_block = result[1].blocks[0]
+    assert isinstance(image_block, ImageBlock)
+    assert image_block.image == base64.b64encode(image_data)
+    assert image_block.image_mimetype == "image/png"
+
+    audio_block = result[2].blocks[0]
+    assert isinstance(audio_block, AudioBlock)
+    assert audio_block.audio == base64.b64encode(audio_data)
+    assert audio_block.format == "wav"
+
+    embedded_text_block = result[3].blocks[0]
+    assert isinstance(embedded_text_block, TextBlock)
+    assert embedded_text_block.text == "embedded text"
+
+    document_block = result[4].blocks[0]
+    assert isinstance(document_block, DocumentBlock)
+    assert document_block.data == base64.b64encode(document_data)
+    assert document_block.document_mimetype == "application/pdf"
+    assert document_block.title == "file:///doc.pdf"
+
+    link_block = result[5].blocks[0]
+    assert isinstance(link_block, DocumentBlock)
+    assert str(link_block.url) == "file:///linked.pdf"
+    assert link_block.document_mimetype == "application/pdf"
+    assert link_block.title == "Linked Doc"
 
 
 @pytest.mark.asyncio
