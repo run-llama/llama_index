@@ -579,6 +579,67 @@ def test_get_all_items_with_pagination_empty_result():
     assert len(items) == 0
 
 
+def test_list_drive_contents_non_recursive_skips_folders():
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/22320.
+
+    When recursive=False, _list_drive_contents must not descend into subfolders.
+    """
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+    )
+    reader._drive_id_endpoint = "https://graph.microsoft.com/v1.0/sites/s/drives"
+    reader._drive_id = "d1"
+
+    items = [
+        {"id": "folder1_id", "name": "Subfolder", "folder": {"childCount": 2}},
+        {"id": "file1_id", "name": "root_file.txt", "file": {}},
+    ]
+
+    with (
+        patch.object(
+            SharePointReader,
+            "_get_all_items_with_pagination",
+            return_value=items,
+        ),
+        patch.object(
+            SharePointReader, "_list_folder_contents"
+        ) as mock_list_folder,
+    ):
+        paths = reader._list_drive_contents(recursive=False)
+
+    mock_list_folder.assert_not_called()
+    assert paths == [Path("root_file.txt")]
+
+
+def test_download_files_passes_recursive_false_to_list_resources(sharepoint_reader):
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/22320.
+
+    _download_files_and_extract_metadata must forward include_subfolders=False
+    to list_resources as recursive=False.
+    """
+    import tempfile
+
+    with (
+        patch.object(
+            SharePointReader, "list_resources", return_value=[]
+        ) as mock_list,
+        tempfile.TemporaryDirectory() as tmpdir,
+    ):
+        sharepoint_reader._download_files_and_extract_metadata(
+            folder_id="dummy_folder_id",
+            download_dir=tmpdir,
+            include_subfolders=False,
+        )
+
+    mock_list.assert_called_once()
+    _, kwargs = mock_list.call_args
+    assert kwargs.get("recursive") is False
+
+
 def test_drive_id_endpoint_set_when_drive_id_provided():
     """
     Test that _drive_id_endpoint is set even when drive_id is provided directly.
