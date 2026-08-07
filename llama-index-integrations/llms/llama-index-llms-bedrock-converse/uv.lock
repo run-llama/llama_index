@@ -1935,12 +1935,16 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-bedrock-converse"
-version = "0.14.17"
+version = "0.14.18"
 source = { editable = "." }
 dependencies = [
-    { name = "aioboto3" },
     { name = "boto3" },
     { name = "llama-index-core" },
+]
+
+[package.optional-dependencies]
+async = [
+    { name = "aioboto3" },
 ]
 
 [package.dev-dependencies]
@@ -1970,10 +1974,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioboto3", specifier = ">=15.0.0,<16" },
+    { name = "aioboto3", marker = "extra == 'async'", specifier = ">=13.0.0" },
     { name = "boto3", specifier = ">=1.38.27,<2" },
     { name = "llama-index-core", specifier = ">=0.14.5,<0.15" },
 ]
+provides-extras = ["async"]
 
 [package.metadata.requires-dev]
 dev = [
