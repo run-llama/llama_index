@@ -94,6 +94,14 @@ class SimpleVectorStoreTest(unittest.TestCase):
         )
         self.assertEqual(result.ids[0], _NODE_ID_WEIGHT_3_RANK_C)
 
+    def test_query_with_zero_top_k_returns_no_rows(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=0)
+        result = simple_vector_store.query(query)
+        self.assertEqual(result.ids, [])
+
     def test_query_with_filters_returns_multiple_matches(self) -> None:
         simple_vector_store = SimpleVectorStore()
         simple_vector_store.add(_node_embeddings_for_test())
