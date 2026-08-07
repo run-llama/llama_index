@@ -119,3 +119,47 @@ class LLMRerank(BaseNodePostprocessor):
         return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
             : self.top_n
         ]
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
+        if len(nodes) == 0:
+            return []
+
+        initial_results: List[NodeWithScore] = []
+        for idx in range(0, len(nodes), self.choice_batch_size):
+            nodes_batch = [
+                node.node for node in nodes[idx : idx + self.choice_batch_size]
+            ]
+
+            query_str = query_bundle.query_str
+            # Don't include non text types for non-chat models
+            fmt_batch = self._format_node_batch_fn(nodes_batch)
+            # call each batch independently
+            kwargs = {"query_str": query_str}
+            if is_chat_model(self.llm):
+                kwargs["context_messages"] = fmt_batch
+            else:
+                kwargs["context_str"] = fmt_batch
+            raw_response = await self.llm.apredict(self.choice_select_prompt, **kwargs)
+
+            raw_choices, relevances = self._parse_choice_select_answer_fn(
+                raw_response, len(nodes_batch)
+            )
+            choice_idxs = [int(choice) - 1 for choice in raw_choices]
+            choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
+            relevances = relevances or [1.0 for _ in choice_nodes]
+            initial_results.extend(
+                [
+                    NodeWithScore(node=node, score=relevance)
+                    for node, relevance in zip(choice_nodes, relevances)
+                ]
+            )
+
+        return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
+            : self.top_n
+        ]

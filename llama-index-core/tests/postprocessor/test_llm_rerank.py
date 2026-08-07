@@ -96,6 +96,13 @@ def mock_llm_chat_or_complete(
     )
 
 
+async def mock_llm_achat_or_acomplete(
+    self: Any, messages_or_formatted_prompt, **kwargs
+) -> ChatResponse:
+    """Async patch for llm predictor predict."""
+    return mock_llm_chat_or_complete(self, messages_or_formatted_prompt, **kwargs)
+
+
 def mock_format_node_batch_fn(nodes: List[BaseNode]) -> str:
     """Mock format node batch fn."""
     return "\n".join([node.get_content() for node in nodes])
@@ -169,3 +176,36 @@ def test_llm_rerank_multimodal(png_1px_b64, mp3_bytes, mp4_bytes) -> None:
     assert result_nodes[1].node.get_content_blocks() == [ImageBlock(image=png_1px_b64)]
     assert result_nodes[2].node.get_content_blocks() == [ImageBlock(image=png_1px_b64)]
     assert result_nodes[3].node.get_content_blocks() == [TextBlock(text="Test3")]
+
+
+@pytest.mark.asyncio
+@patch.object(
+    MockLLM,
+    "acomplete",
+    mock_llm_achat_or_acomplete,
+)
+async def test_llm_rerank_async() -> None:
+    """Test LLM rerank (async)."""
+    nodes = [
+        TextNode(text="Test"),
+        TextNode(text="Test2"),
+        TextNode(text="Test3"),
+        TextNode(text="Test4"),
+        TextNode(text="Test5"),
+        TextNode(text="Test6"),
+        TextNode(text="Test7"),
+        TextNode(text="Test8"),
+    ]
+    nodes_with_score = [NodeWithScore(node=n) for n in nodes]
+
+    # choice batch size 4 (so two batches)
+    # take top-3 across all data
+    llm_rerank = LLMRerank(choice_batch_size=4, top_n=3)
+    query_str = "What is?"
+    result_nodes = await llm_rerank.apostprocess_nodes(
+        nodes_with_score, QueryBundle(query_str)
+    )
+    assert len(result_nodes) == 3
+    assert result_nodes[0].node.get_content() == "Test7"
+    assert result_nodes[1].node.get_content() == "Test5"
+    assert result_nodes[2].node.get_content() == "Test3"
