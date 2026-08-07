@@ -119,7 +119,7 @@ class LLMRerank(BaseNodePostprocessor):
         return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
             : self.top_n
         ]
-    
+
     async def _apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
