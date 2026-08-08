@@ -8,7 +8,6 @@ from botocore.response import StreamingBody
 from botocore.stub import ANY as BOTOCORE_ANY
 from botocore.stub import Stubber
 from llama_index.embeddings.bedrock import BedrockEmbedding, Models
-from llama_index.embeddings.bedrock.base import PROVIDERS
 
 exp_embed = [
     0.017410278,
@@ -326,7 +325,7 @@ class TestBedrockEmbedding(TestCase):
         with pytest.raises(
             ValueError, match="Cohere embedding payload must contain at least one text"
         ):
-            bedrock_embedding._get_request_body(PROVIDERS.COHERE.value, [], "text")
+            bedrock_embedding._get_request_body("cohere", [], "text")
 
     def test_get_text_embedding_cohere_empty_list_raises(self) -> None:
         bedrock_embedding = BedrockEmbedding(
@@ -334,9 +333,9 @@ class TestBedrockEmbedding(TestCase):
             client=self.bedrock_client,
         )
 
-        # A non-empty batch that resolves to an empty list of texts to embed
-        # (e.g. via `_get_embedding` called directly) must raise locally
-        # instead of sending an invalid request to AWS Bedrock.
+        # An empty list of texts to embed (e.g. via `_get_embedding` called
+        # directly) must raise locally instead of sending an invalid request
+        # to AWS Bedrock.
         with pytest.raises(
             ValueError, match="Cohere embedding payload must contain at least one text"
         ):
