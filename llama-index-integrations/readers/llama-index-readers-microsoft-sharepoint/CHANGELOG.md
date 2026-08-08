@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.9.2] - 2026-08-08
+
+### Fixed
+
+- Prevent silent overwrite of same-named files from different SharePoint folders by staging downloads with a Graph item-id key while preserving the original filename in metadata (#22318)
+
 ## [0.8.0] - 2026-02-15
 
 ### Added
