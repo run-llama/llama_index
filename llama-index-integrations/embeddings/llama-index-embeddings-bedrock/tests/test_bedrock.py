@@ -323,9 +323,24 @@ class TestBedrockEmbedding(TestCase):
         )
 
         with pytest.raises(
-            ValueError, match="Cohere embedding payload must contain at least one text"
+            ValueError,
+            match="Cohere embedding payload must contain at least one non-empty text",
         ):
             bedrock_embedding._get_request_body("cohere", [], "text")
+
+    def test_get_request_body_cohere_blank_only_list_raises(self) -> None:
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        # A non-empty list whose entries are all empty/whitespace-only is
+        # equally un-embeddable and must raise the same as an empty list.
+        with pytest.raises(
+            ValueError,
+            match="Cohere embedding payload must contain at least one non-empty text",
+        ):
+            bedrock_embedding._get_request_body("cohere", ["", "   ", "\n"], "text")
 
     def test_get_text_embedding_cohere_empty_list_raises(self) -> None:
         bedrock_embedding = BedrockEmbedding(
@@ -337,7 +352,8 @@ class TestBedrockEmbedding(TestCase):
         # directly) must raise locally instead of sending an invalid request
         # to AWS Bedrock.
         with pytest.raises(
-            ValueError, match="Cohere embedding payload must contain at least one text"
+            ValueError,
+            match="Cohere embedding payload must contain at least one non-empty text",
         ):
             bedrock_embedding._get_embedding([], "text")
 

@@ -521,9 +521,9 @@ class BedrockEmbedding(BaseEmbedding):
                 "query": "search_query",
             }
             payload = [payload] if isinstance(payload, str) else payload
-            if not payload:
+            if not payload or all(not p.strip() for p in payload):
                 raise ValueError(
-                    "Cohere embedding payload must contain at least one text."
+                    "Cohere embedding payload must contain at least one non-empty text."
                 )
             payload = [p[:2048] if len(p) > 2048 else p for p in payload]
             request_body = json.dumps(
