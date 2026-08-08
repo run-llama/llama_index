@@ -40,6 +40,27 @@ def test_class():
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
 
 
+def test_import_without_qdrant_fastembed_reexport(monkeypatch) -> None:
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/22612.
+
+    qdrant-client 1.19.0 removed the ``IDF_EMBEDDING_MODELS`` re-export from
+    ``qdrant_client.qdrant_fastembed``; its canonical location is
+    ``qdrant_client.fastembed_common``. Simulate the 1.19.0 module layout and
+    make sure the integration can still be imported.
+    """
+    import importlib
+
+    import qdrant_client.qdrant_fastembed
+    import llama_index.vector_stores.qdrant.base as qdrant_base
+
+    monkeypatch.delattr(
+        qdrant_client.qdrant_fastembed, "IDF_EMBEDDING_MODELS", raising=False
+    )
+    reloaded = importlib.reload(qdrant_base)
+    assert isinstance(reloaded.IDF_EMBEDDING_MODELS, set)
+
+
 def test_delete__and_get_nodes(vector_store: QdrantVectorStore) -> None:
     vector_store.delete_nodes(node_ids=["11111111-1111-1111-1111-111111111111"])
 

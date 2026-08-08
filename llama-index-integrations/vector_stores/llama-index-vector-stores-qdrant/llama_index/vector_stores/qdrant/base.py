@@ -51,7 +51,14 @@ from qdrant_client.http.models import (
     HasIdCondition,
     IsEmptyCondition,
 )
-from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
+
+try:
+    # canonical location since qdrant-client 1.14.1; the re-export from
+    # qdrant_client.qdrant_fastembed was removed in qdrant-client 1.19.0
+    from qdrant_client.fastembed_common import IDF_EMBEDDING_MODELS
+except ImportError:
+    # fallback for qdrant-client < 1.14.1
+    from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
