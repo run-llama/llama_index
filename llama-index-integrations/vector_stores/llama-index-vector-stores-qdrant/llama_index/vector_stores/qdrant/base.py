@@ -6,7 +6,8 @@ An index that is built on top of an existing Qdrant collection.
 """
 
 import logging
-from typing import Any, Callable, List, Optional, Tuple, Union, cast
+from importlib import import_module
+from typing import Any, Callable, List, Optional, Set, Tuple, Union, cast
 
 import qdrant_client
 from qdrant_client import QdrantClient, AsyncQdrantClient
@@ -51,7 +52,6 @@ from qdrant_client.http.models import (
     HasIdCondition,
     IsEmptyCondition,
 )
-from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,27 @@ LEGACY_UNNAMED_VECTOR = (
     ""  # The empty string used for unnamed vectors in older collections
 )
 DOCUMENT_ID_KEY = "doc_id"
+
+
+def _load_idf_embedding_models() -> Set[str]:
+    """Load Qdrant FastEmbed sparse models that need IDF modifiers."""
+    for module_name in (
+        "qdrant_client.fastembed_common",
+        "qdrant_client.qdrant_fastembed",
+    ):
+        try:
+            module = import_module(module_name)
+        except ImportError:
+            continue
+
+        idf_embedding_models = getattr(module, "IDF_EMBEDDING_MODELS", None)
+        if idf_embedding_models is not None:
+            return cast(Set[str], idf_embedding_models)
+
+    return set()
+
+
+IDF_EMBEDDING_MODELS = _load_idf_embedding_models()
 
 
 class QdrantVectorStore(BasePydanticVectorStore):

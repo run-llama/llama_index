@@ -2,6 +2,7 @@ import pytest
 import os
 import requests
 import httpx
+from types import SimpleNamespace
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
@@ -13,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
+from llama_index.vector_stores.qdrant.base import _load_idf_embedding_models
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
@@ -38,6 +40,40 @@ requires_qdrant_server = pytest.mark.skipif(
 def test_class():
     names_of_base_classes = [b.__name__ for b in QdrantVectorStore.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
+
+
+def test_load_idf_embedding_models_prefers_fastembed_common(monkeypatch) -> None:
+    def import_module_mock(module_name: str) -> SimpleNamespace:
+        if module_name == "qdrant_client.fastembed_common":
+            return SimpleNamespace(IDF_EMBEDDING_MODELS={"new"})
+        if module_name == "qdrant_client.qdrant_fastembed":
+            return SimpleNamespace(IDF_EMBEDDING_MODELS={"old"})
+        raise ImportError
+
+    monkeypatch.setattr(
+        "llama_index.vector_stores.qdrant.base.import_module",
+        import_module_mock,
+    )
+
+    assert _load_idf_embedding_models() == {"new"}
+
+
+def test_load_idf_embedding_models_falls_back_to_qdrant_fastembed(
+    monkeypatch,
+) -> None:
+    def import_module_mock(module_name: str) -> SimpleNamespace:
+        if module_name == "qdrant_client.fastembed_common":
+            return SimpleNamespace()
+        if module_name == "qdrant_client.qdrant_fastembed":
+            return SimpleNamespace(IDF_EMBEDDING_MODELS={"old"})
+        raise ImportError
+
+    monkeypatch.setattr(
+        "llama_index.vector_stores.qdrant.base.import_module",
+        import_module_mock,
+    )
+
+    assert _load_idf_embedding_models() == {"old"}
 
 
 def test_delete__and_get_nodes(vector_store: QdrantVectorStore) -> None:
