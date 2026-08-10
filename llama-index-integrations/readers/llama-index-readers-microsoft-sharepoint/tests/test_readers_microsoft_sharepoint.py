@@ -614,6 +614,48 @@ def test_list_drive_contents_non_recursive_skips_folders():
     assert paths == [Path("root_file.txt")]
 
 
+def test_list_drive_contents_recursive_includes_subfolder_files():
+    """
+    Complement to test_list_drive_contents_non_recursive_skips_folders.
+
+    When recursive=True, _list_drive_contents must descend into subfolders and
+    return both the root-level file and the file inside the subfolder.  Root files
+    are returned as plain paths (no container prefix); subfolder files are returned
+    under the subfolder name — neither is silently omitted.
+    """
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+    )
+    reader._drive_id_endpoint = "https://graph.microsoft.com/v1.0/sites/s/drives"
+    reader._drive_id = "d1"
+
+    root_items = [
+        {"id": "folder1_id", "name": "Subfolder", "folder": {"childCount": 1}},
+        {"id": "file1_id", "name": "root_file.txt", "file": {}},
+    ]
+
+    def mock_pagination(url):
+        return root_items
+
+    with patch.object(
+        SharePointReader,
+        "_get_all_items_with_pagination",
+        side_effect=mock_pagination,
+    ), patch.object(
+        SharePointReader,
+        "_list_folder_contents",
+        return_value=[Path("Subfolder/nested_file.txt")],
+    ) as mock_list_folder:
+        paths = reader._list_drive_contents(recursive=True)
+
+    mock_list_folder.assert_called_once_with("folder1_id", recursive=True, current_path="Subfolder")
+    assert Path("root_file.txt") in paths
+    assert Path("Subfolder/nested_file.txt") in paths
+    assert len(paths) == 2
+
+
 def test_download_files_passes_recursive_false_to_list_resources(sharepoint_reader):
     """
     Regression test for https://github.com/run-llama/llama_index/issues/22320.
