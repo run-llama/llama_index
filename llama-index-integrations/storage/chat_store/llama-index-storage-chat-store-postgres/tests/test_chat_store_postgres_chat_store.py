@@ -12,6 +12,21 @@ from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.postgres import PostgresChatStore
 from llama_index.storage.chat_store.postgres.base import get_data_model
 
+TOOL_CALLS_KEY = "tool_calls"
+TOOL_NAME_KEY = "name"
+TOOL_NAME = "lookup"
+SERIALIZATION_TEST_KEY = "provider_tool_call"
+
+
+class ProtoMessage:
+    @classmethod
+    def to_dict(cls, value):
+        return {TOOL_NAME_KEY: value.name}
+
+    def __init__(self, name: str):
+        self.name = name
+
+
 try:
     import asyncpg  # noqa
     import psycopg  # noqa
@@ -99,6 +114,19 @@ def test_postgres_add_message(postgres_chat_store: PostgresChatStore):
     result = postgres_chat_store.get_messages(key)
 
     assert result[0].content == "add_message_test" and result[0].role == "user"
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_postgres_add_message_with_class_level_to_dict(
+    postgres_chat_store: PostgresChatStore,
+):
+    message = ChatMessage(additional_kwargs={TOOL_CALLS_KEY: [ProtoMessage(TOOL_NAME)]})
+
+    postgres_chat_store.add_message(SERIALIZATION_TEST_KEY, message=message)
+
+    assert postgres_chat_store.get_messages(SERIALIZATION_TEST_KEY)[
+        0
+    ].additional_kwargs == {TOOL_CALLS_KEY: [{TOOL_NAME_KEY: TOOL_NAME}]}
 
 
 @pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
