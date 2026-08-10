@@ -3231,7 +3231,8 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
 
 
 def _bare_store() -> PGVectorStore:
-    """Instantiate PGVectorStore without running __init__ (no DB needed).
+    """
+    Instantiate PGVectorStore without running __init__ (no DB needed).
 
     _build_filter_clause / _to_postgres_operator are stateless with respect to
     instance attributes, so a bare instance is enough to exercise them.
@@ -3267,8 +3268,12 @@ def test_filter_key_is_bound_not_interpolated(operator):
     store = _bare_store()
     malicious_key = "author' = 'alice' OR '1'='1' --"
 
-    if operator in (FilterOperator.IN, FilterOperator.NIN,
-                    FilterOperator.ANY, FilterOperator.ALL):
+    if operator in (
+        FilterOperator.IN,
+        FilterOperator.NIN,
+        FilterOperator.ANY,
+        FilterOperator.ALL,
+    ):
         value = ["a", "b"]
     elif operator == FilterOperator.IS_EMPTY:
         value = None
@@ -3285,18 +3290,18 @@ def test_filter_key_is_bound_not_interpolated(operator):
     assert "OR '1'='1'" not in sql
     assert malicious_key not in sql
     # The key is referenced through a bind parameter instead.
-    assert ":mkey_" in sql
+    assert ":filter_key_" in sql
     # And the bound value is exactly the (malicious) key, safely parameterized.
-    bound = list(clause._bindparams.values())[0]
+    bound = next(iter(clause._bindparams.values()))
     assert bound.value == malicious_key
 
 
 def test_filter_key_param_names_are_unique_across_filters():
-    """Combined filters must not collide on the key bind-parameter name.
+    """
+    Combined filters must not collide on the key bind-parameter name.
 
-    Filters combined via AND/OR are held simultaneously in a MetadataFilters
-    list, so their object ids (used to name the bind parameter) are distinct.
-    We keep both alive here to mirror that real usage.
+    Filters combined via AND/OR each receive a UUID-based key parameter, so
+    their names are distinct without depending on object lifetimes.
     """
     store = _bare_store()
     f1 = MetadataFilter(key="k1", value="v1", operator=FilterOperator.EQ)

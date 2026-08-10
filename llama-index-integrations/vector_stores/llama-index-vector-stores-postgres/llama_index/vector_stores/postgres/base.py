@@ -1,5 +1,6 @@
 import logging
 import re
+import uuid
 from typing import (
     Any,
     Dict,
@@ -690,9 +691,10 @@ class PGVectorStore(BasePydanticVectorStore):
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
         # Bind the metadata key as a SQL parameter so that keys coming from
         # untrusted sources (e.g. an agent choosing which field to filter on)
-        # cannot alter the query.  A unique parameter name per filter object
-        # avoids collisions when multiple clauses are combined with AND/OR.
-        key_param = f"mkey_{id(filter_)}"
+        # cannot alter the query. Use a UUID rather than an object id so the
+        # uniqueness does not depend on CPython object lifetimes. This matches
+        # the parameter naming scheme used by the companion value-binding fix.
+        key_param = f"filter_key_{uuid.uuid4().hex}"
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
