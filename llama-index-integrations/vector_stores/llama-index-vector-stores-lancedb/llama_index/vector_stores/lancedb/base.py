@@ -2,7 +2,7 @@
 
 import os
 import logging
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import warnings
 
 import lancedb.rerankers
@@ -30,7 +30,6 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from pandas import DataFrame
 
 import lancedb
 import lancedb.remote.table  # type: ignore
@@ -80,13 +79,17 @@ def _to_lance_filter(
         return " AND ".join(filters)
 
 
-def _to_llama_similarities(results: DataFrame) -> List[float]:
-    keys = results.keys()
+def _to_llama_similarities(results: List[Dict[str, Any]]) -> List[float]:
+    if not results:
+        return []
+    keys = results[0].keys()
     normalized_similarities: np.ndarray
     if "score" in keys:
-        normalized_similarities = np.exp(results["score"] - np.max(results["score"]))
+        scores = np.array([item["score"] for item in results])
+        normalized_similarities = np.exp(scores - np.max(scores))
     elif "_distance" in keys:
-        normalized_similarities = np.exp(-results["_distance"])
+        distances = np.array([item["_distance"] for item in results])
+        normalized_similarities = np.exp(-distances)
     else:
         normalized_similarities = np.linspace(1, 0, len(results))
     return normalized_similarities.tolist()
@@ -457,20 +460,20 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         if node_ids is not None:
             where = f'id in ("' + '","'.join(node_ids) + '")'
 
-        results = self.table.search().where(where).to_pandas()
+        results = self.table.search().where(where).to_list()
 
         nodes = []
 
-        for _, item in results.iterrows():
+        for item in results:
             try:
-                node = metadata_dict_to_node(item.metadata)
+                node = metadata_dict_to_node(item["metadata"])
                 node.embedding = list(item[self.vector_column_name])
             except Exception:
                 # deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                if item.metadata:
+                if item["metadata"]:
                     metadata, node_info, _relation = legacy_metadata_dict_to_node(
                         item.metadata, text_key=self.text_key
                     )
@@ -478,7 +481,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     metadata, node_info = {}, {}
                 node = TextNode(
                     text=item[self.text_key] or "",
-                    id_=item.id,
+                    id_=item["id"],
                     metadata=metadata,
                     start_char_idx=node_info.get("start"),
                     end_char_idx=node_info.get("end"),
@@ -557,23 +560,23 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         if self.refine_factor is not None:
             lance_query.refine_factor(self.refine_factor)
 
-        results = lance_query.to_pandas()
+        results = lance_query.to_list()
 
         if len(results) == 0:
             raise Warning("query results are empty..")
 
         nodes = []
 
-        for _, item in results.iterrows():
+        for item in results:
             try:
-                node = metadata_dict_to_node(item.metadata)
+                node = metadata_dict_to_node(item["metadata"])
                 node.embedding = list(item[self.vector_column_name])
             except Exception:
                 # deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                if item.metadata:
+                if item["metadata"]:
                     metadata, node_info, _relation = legacy_metadata_dict_to_node(
                         item.metadata, text_key=self.text_key
                     )
@@ -581,7 +584,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     metadata, node_info = {}, {}
                 node = TextNode(
                     text=item[self.text_key] or "",
-                    id_=item.id,
+                    id_=item["id"],
                     metadata=metadata,
                     start_char_idx=node_info.get("start"),
                     end_char_idx=node_info.get("end"),
@@ -597,5 +600,5 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         return VectorStoreQueryResult(
             nodes=nodes,
             similarities=_to_llama_similarities(results),
-            ids=results["id"].tolist(),
+            ids=[item["id"] for item in results],
         )
