@@ -94,6 +94,32 @@ workflow = LoudWorkflow()
 mcp = workflow_as_mcp(workflow, start_event_model=RunEvent)
 ```
 
+If your workflow stores per-request state on `self`, pass a factory so every
+MCP tool call runs on a fresh workflow instance:
+
+```python
+mcp = workflow_as_mcp(
+    LoudWorkflow(),
+    start_event_model=RunEvent,
+    workflow_factory=lambda: LoudWorkflow(),
+)
+```
+
+The factory may also be async, which is useful when building the workflow needs
+to await setup work such as opening a connection:
+
+```python
+async def build_workflow() -> LoudWorkflow:
+    return LoudWorkflow()
+
+
+mcp = workflow_as_mcp(
+    LoudWorkflow(),
+    start_event_model=RunEvent,
+    workflow_factory=build_workflow,
+)
+```
+
 Then, you can launch the MCP server (assuming you have the `mcp[cli]` extra installed):
 
 ```bash

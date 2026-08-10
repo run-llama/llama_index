@@ -1856,7 +1856,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-mcp"
-version = "0.4.8"
+version = "0.4.9"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
