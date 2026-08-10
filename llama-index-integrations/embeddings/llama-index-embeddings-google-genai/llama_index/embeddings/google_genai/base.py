@@ -1,6 +1,7 @@
 """Gemini embeddings file."""
 
 import os
+import warnings
 from importlib.metadata import PackageNotFoundError, version
 from tenacity import (
     retry,
@@ -9,7 +10,17 @@ from tenacity import (
     retry_if_exception,
     AsyncRetrying,
 )
-from typing import Any, Dict, List, Optional, TypedDict, Callable, TypeVar, Awaitable
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    TypedDict,
+)
 
 import requests
 from llama_index.core.base.embeddings.base import (
@@ -23,6 +34,32 @@ import google.genai
 import google.auth.credentials
 import google.genai.types as types
 from google.genai.errors import APIError
+
+
+DEFAULT_EMBEDDING_MODEL = "gemini-embedding-2"
+RETRIEVAL_QUERY_TASK = "RETRIEVAL_QUERY"
+RETRIEVAL_DOCUMENT_TASK = "RETRIEVAL_DOCUMENT"
+GEMINI_EMBEDDING_2_MODELS = {
+    DEFAULT_EMBEDDING_MODEL,
+    f"models/{DEFAULT_EMBEDDING_MODEL}",
+}
+GEMINI_EMBEDDING_2_INSTRUCTIONS = {
+    RETRIEVAL_QUERY_TASK: "task: search result | query: {text}",
+    RETRIEVAL_DOCUMENT_TASK: "title: none | text: {text}",
+    "QUESTION_ANSWERING": "task: question answering | query: {text}",
+    "FACT_VERIFICATION": "task: fact checking | query: {text}",
+    "CODE_RETRIEVAL_QUERY": "task: code retrieval | query: {text}",
+    "SEMANTIC_SIMILARITY": "task: sentence similarity | query: {text}",
+    "CLASSIFICATION": "task: classification | query: {text}",
+    "CLUSTERING": "task: clustering | query: {text}",
+}
+GEMINI_EMBEDDING_2_DEFAULT_TASK = RETRIEVAL_QUERY_TASK
+GEMINI_EMBEDDING_2_DOCUMENT_PREFIX = "title: "
+GEMINI_EMBEDDING_2_DOCUMENT_SEPARATOR = " | text: "
+UNKNOWN_TASK_WARNING = (
+    "Unknown Gemini embedding task type {task_type!r}; using RETRIEVAL_QUERY"
+)
+WARNING_CALLER_STACKLEVEL = 2
 
 # Define generic types for functions that will be wrapped with retry
 T = TypeVar("T")
@@ -122,7 +159,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     Args:
         model_name (str): Model for embedding.
-            Defaults to "gemini-embedding-2-preview".
+            Defaults to "gemini-embedding-2".
         api_key (Optional[str]): API key to access the model. Defaults to None.
         embedding_config (Optional[types.EmbedContentConfigOrDict]): Embedding config to access the model. Defaults to None.
         vertexai_config (Optional[VertexAIConfig]): Vertex AI config to access the model. Defaults to None.
@@ -142,7 +179,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         ```python
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2-preview", api_key="...")
+        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2", api_key="...")
         ```
 
     """
@@ -167,7 +204,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "gemini-embedding-2-preview",
+        model_name: str = DEFAULT_EMBEDDING_MODEL,
         api_key: Optional[str] = None,
         embedding_config: Optional[types.EmbedContentConfigOrDict] = None,
         vertexai_config: Optional[VertexAIConfig] = None,
@@ -247,18 +284,62 @@ class GoogleGenAIEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "GeminiEmbedding"
 
+    def _prepare_request(
+        self, texts: List[str], task_type: Optional[str]
+    ) -> Tuple[List[str], Optional[types.EmbedContentConfigOrDict]]:
+        if self.model_name in GEMINI_EMBEDDING_2_MODELS:
+            embedding_config = (
+                {
+                    key: value
+                    for key, value in dict(self.embedding_config).items()
+                    if value is not None
+                }
+                if self.embedding_config
+                else None
+            )
+            configured_task_type = (
+                embedding_config.pop("task_type", None) if embedding_config else None
+            )
+            effective_task_type = (
+                task_type or configured_task_type or GEMINI_EMBEDDING_2_DEFAULT_TASK
+            )
+            if effective_task_type not in GEMINI_EMBEDDING_2_INSTRUCTIONS:
+                warnings.warn(
+                    UNKNOWN_TASK_WARNING.format(task_type=effective_task_type),
+                    UserWarning,
+                    stacklevel=WARNING_CALLER_STACKLEVEL,
+                )
+            instruction = GEMINI_EMBEDDING_2_INSTRUCTIONS.get(
+                effective_task_type,
+                GEMINI_EMBEDDING_2_INSTRUCTIONS[GEMINI_EMBEDDING_2_DEFAULT_TASK],
+            )
+            prefix = instruction.partition("{")[0]
+            texts = [
+                text
+                if text.startswith(prefix)
+                or (
+                    effective_task_type == RETRIEVAL_DOCUMENT_TASK
+                    and text.startswith(GEMINI_EMBEDDING_2_DOCUMENT_PREFIX)
+                    and GEMINI_EMBEDDING_2_DOCUMENT_SEPARATOR in text
+                )
+                else instruction.format(text=text)
+                for text in texts
+            ]
+            return texts, embedding_config
+
+        if task_type and not self.embedding_config:
+            return texts, types.EmbedContentConfig(task_type=task_type)
+        if task_type and self.embedding_config:
+            embedding_config = dict(self.embedding_config)
+            embedding_config["task_type"] = task_type
+            return texts, embedding_config
+        return texts, self.embedding_config
+
     def _embed_texts(
         self, texts: List[str], task_type: Optional[str] = None
     ) -> List[List[float]]:
         """Embed texts."""
-        # Set the task type if it is not already set
-        if task_type and not self.embedding_config:
-            embedding_config = types.EmbedContentConfig(task_type=task_type)
-        elif task_type and self.embedding_config:
-            embedding_config = dict(self.embedding_config)
-            embedding_config["task_type"] = task_type
-        else:
-            embedding_config = self.embedding_config
+        texts, embedding_config = self._prepare_request(texts, task_type)
 
         # Create the embedding function with retry logic
         def embed_with_client() -> List[List[float]]:
@@ -284,14 +365,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         self, texts: List[str], task_type: Optional[str] = None
     ) -> List[List[float]]:
         """Asynchronously embed texts."""
-        # Set the task type if it is not already set
-        if task_type and not self.embedding_config:
-            embedding_config = types.EmbedContentConfig(task_type=task_type)
-        elif task_type and self.embedding_config:
-            embedding_config = dict(self.embedding_config)
-            embedding_config["task_type"] = task_type
-        else:
-            embedding_config = self.embedding_config
+        texts, embedding_config = self._prepare_request(texts, task_type)
 
         # Create the async embedding function with retry logic
         async def aembed_with_client() -> List[List[float]]:
