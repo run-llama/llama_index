@@ -435,8 +435,9 @@ class SharePointReader(
             str: The path of the downloaded file in the temporary directory.
 
         """
-        # Get the download URL for the file.
-        file_name = item["name"]
+        # Use the item ID for the temporary path so same-named files do not overwrite
+        # each other. Keep the original name in the extracted metadata below.
+        file_name = f"{item['id']}{Path(item['name']).suffix}"
 
         content = self._get_file_content_by_url(item)
 

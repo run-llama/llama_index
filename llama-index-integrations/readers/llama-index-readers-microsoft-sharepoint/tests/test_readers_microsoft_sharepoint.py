@@ -215,6 +215,41 @@ def test_load_documents_with_metadata(sharepoint_reader):
         assert documents[1].text == "File 2 content"
 
 
+def test_download_files_with_same_name_use_unique_paths(sharepoint_reader):
+    sharepoint_reader.attach_permission_metadata = False
+
+    items = [
+        {
+            "id": "file1_id",
+            "name": "report.txt",
+            "content": b"File 1 content",
+        },
+        {
+            "id": "file2_id",
+            "name": "report.txt",
+            "content": b"File 2 content",
+        },
+    ]
+
+    def get_file_content(item):
+        return item["content"]
+
+    with patch.object(
+        SharePointReader,
+        "_get_file_content_by_url",
+        side_effect=get_file_content,
+    ):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            first_path = sharepoint_reader._download_file_by_url(items[0], tmpdirname)
+            second_path = sharepoint_reader._download_file_by_url(items[1], tmpdirname)
+
+            assert first_path != second_path
+            assert Path(first_path).suffix == ".txt"
+            assert Path(second_path).suffix == ".txt"
+            assert Path(first_path).read_bytes() == b"File 1 content"
+            assert Path(second_path).read_bytes() == b"File 2 content"
+
+
 def test_required_exts():
     sharepoint_reader = SharePointReader(
         client_id="dummy_client_id",
