@@ -206,6 +206,35 @@ def test_resolve_field_type_delegates_anyof_enums(client: BasicMCPClient):
     assert Literal["z"] in args
 
 
+def test_create_model_from_json_schema_draft07_definitions(client: BasicMCPClient):
+    """
+    Schemas from draft-07 emitters (e.g. zod-to-json-schema, used by TypeScript
+    MCP servers) store definitions under "definitions" and reference them as
+    "#/definitions/X". These previously resolved to a NoneType annotation
+    because only "$defs" was consulted, silently breaking the tool's arguments.
+    """
+    tool_spec = McpToolSpec(client)
+
+    schema = {
+        "type": "object",
+        "properties": {"person": {"$ref": "#/definitions/Draft07Person"}},
+        "required": ["person"],
+        "definitions": {
+            "Draft07Person": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+                "required": ["name"],
+            },
+        },
+    }
+
+    model = tool_spec.create_model_from_json_schema(schema, model_name="Draft07Model")
+
+    person_model = model.model_fields["person"].annotation
+    assert person_model is not type(None)
+    assert person_model.model_fields["name"].annotation is str
+
+
 def test_additional_properties_false_parsing(client: BasicMCPClient):
     """Test that schemas with additionalProperties: false are parsed correctly."""
     from typing import Dict, Any
