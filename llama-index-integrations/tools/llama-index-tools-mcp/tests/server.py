@@ -6,8 +6,8 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Dict, Optional
 
-from mcp.server.fastmcp import FastMCP, Context, Image
-from mcp.server.fastmcp.prompts import base
+from mcp.server.mcpserver import MCPServer, Context, Image
+from mcp.server.mcpserver.prompts import base
 from PIL import Image as PILImage
 import numpy as np
 import io
@@ -16,7 +16,7 @@ from tests.schemas import TestName, TestMethod, TestList
 
 
 @asynccontextmanager
-async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
+async def app_lifespan(server: MCPServer) -> AsyncIterator[None]:
     """
     Context manager for the MCP server lifetime.
     """
@@ -32,7 +32,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
 
 
 # Create the MCP server
-mcp = FastMCP(
+mcp = MCPServer(
     "TestAllFeatures",
     instructions="A test server that demonstrates all MCP features",
     dependencies=["pillow", "numpy"],
