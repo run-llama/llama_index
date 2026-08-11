@@ -133,3 +133,16 @@ def test_remove_model_fields_preserves_descriptions() -> None:
     assert props["mode"]["description"] == "Rounding mode"
     assert props["mode"]["default"] == "fast"
     assert trimmed.model_json_schema()["required"] == ["b"]
+
+
+def test_defs_name_collision_across_calls() -> None:
+    """Two schemas that reuse a $defs name with different shapes must not collide."""
+    conv = JsonSchemaToPydantic()
+    a = {"type": "object", "properties": {"item": {"$ref": "#/$defs/Item"}}, "required": ["item"],
+         "$defs": {"Item": {"type": "object", "properties": {"weight_kg": {"type": "number"}}, "required": ["weight_kg"]}}}
+    b = {"type": "object", "properties": {"item": {"$ref": "#/$defs/Item"}}, "required": ["item"],
+         "$defs": {"Item": {"type": "object", "properties": {"color": {"type": "string"}}, "required": ["color"]}}}
+    ma = conv.create_model_from_json_schema(a, "toolA_Schema")
+    mb = conv.create_model_from_json_schema(b, "toolB_Schema")
+    assert set(ma.model_fields["item"].annotation.model_fields) == {"weight_kg"}
+    assert set(mb.model_fields["item"].annotation.model_fields) == {"color"}

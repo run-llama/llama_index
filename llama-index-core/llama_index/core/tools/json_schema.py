@@ -64,6 +64,9 @@ class JsonSchemaToPydantic:
             A Pydantic model class.
 
         """
+        # Each call converts a self-contained schema; start from an empty cache so
+        # a $defs type from one schema cannot leak into a later one of the same name.
+        self.properties_cache = {}
         defs = schema.get("$defs", {})
 
         # Process all type definitions
