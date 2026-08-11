@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Union, Literal, Type, TYPE_CHECKING
 from pydantic import Field
 
 if TYPE_CHECKING:
-    from llama_index.tools.mcp.base import McpToolSpec
+    from llama_index.tools.mcp.base import JsonSchemaToPydantic
 
 # Map JSON Schema types to Python types
 json_type_mapping: Dict[str, Type] = {
@@ -17,7 +17,7 @@ json_type_mapping: Dict[str, Type] = {
 
 class TypeResolutionMixin:
     def _resolve_field_type(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         field_schema: dict,
         defs: dict,
     ) -> Any:
@@ -31,7 +31,7 @@ class TypeResolutionMixin:
         return self._resolve_basic_type(field_schema, defs)
 
     def _resolve_reference(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         field_schema: dict,
         defs: dict,
     ) -> Any:
@@ -56,7 +56,7 @@ class TypeResolutionMixin:
         )
 
     def _resolve_union_type(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         schema: dict,
         defs: dict,
     ) -> Any:
@@ -67,7 +67,7 @@ class TypeResolutionMixin:
         return Union[tuple(union_types)] if len(union_types) > 1 else union_types[0]
 
     def _resolve_union_option(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         option: dict,
         defs: dict,
     ) -> Any:
@@ -81,7 +81,7 @@ class TypeResolutionMixin:
         return self._resolve_basic_type(option, defs)
 
     def _resolve_basic_type(
-        self: "McpToolSpec",
+        self: "JsonSchemaToPydantic",
         schema: dict,
         defs: dict,
     ) -> Any:
@@ -97,12 +97,16 @@ class TypeResolutionMixin:
 
 
 class TypeCreationMixin:
-    def _create_list_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
+    def _create_list_type(
+        self: "JsonSchemaToPydantic", schema: dict, defs: dict
+    ) -> type:
         """Create a List type from schema."""
         item_type = self._resolve_field_type(schema["items"], defs)
         return List[item_type]
 
-    def _create_dict_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
+    def _create_dict_type(
+        self: "JsonSchemaToPydantic", schema: dict, defs: dict
+    ) -> type:
         """Create a Dict type from schema."""
         additional_props = schema.get("additionalProperties")
 
@@ -115,11 +119,11 @@ class TypeCreationMixin:
 
         return Dict[str, Any]
 
-    def _is_simple_array(self: "McpToolSpec", schema: dict) -> bool:
+    def _is_simple_array(self: "JsonSchemaToPydantic", schema: dict) -> bool:
         """Check if schema is a simple array type."""
         return schema.get("type") == "array" and "items" in schema
 
-    def _is_simple_object(self: "McpToolSpec", schema: dict) -> bool:
+    def _is_simple_object(self: "JsonSchemaToPydantic", schema: dict) -> bool:
         """Check if schema is a simple object type."""
         additional_props = schema.get("additionalProperties")
         return (
@@ -129,13 +133,13 @@ class TypeCreationMixin:
             and isinstance(additional_props, dict)
         )
 
-    def _extract_ref_name(self: "McpToolSpec", ref_path: str) -> str:
+    def _extract_ref_name(self: "JsonSchemaToPydantic", ref_path: str) -> str:
         """Extract reference name from $ref path."""
         return ref_path.split("#/$defs/")[-1]
 
 
 class FieldExtractionMixin:
-    def _extract_fields(self: "McpToolSpec", schema: dict, defs: dict) -> dict:
+    def _extract_fields(self: "JsonSchemaToPydantic", schema: dict, defs: dict) -> dict:
         """Extract Pydantic fields from schema."""
         properties = self._get_properties(schema)
         required_fields = set(schema.get("required", []))
@@ -161,7 +165,7 @@ class FieldExtractionMixin:
 
         return fields
 
-    def _get_properties(self: "McpToolSpec", schema: dict) -> dict:
+    def _get_properties(self: "JsonSchemaToPydantic", schema: dict) -> dict:
         """Get properties from schema, handling enum types."""
         if "enum" in schema:
             # For enum types, create a property with the schema name as the key
