@@ -397,7 +397,18 @@ def test_pipeline_with_transform_error() -> None:
     with pytest.raises(RuntimeError):
         pipeline.run(documents=[document1])
 
-    assert pipeline.docstore.get_node("1", raise_error=False) is None
+    assert pipeline.docstore is not None
+    assert pipeline.docstore.get_document_hash("1") is None
+
+    retry_pipeline = IngestionPipeline(
+        transformations=[],
+        docstore=pipeline.docstore,
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+    nodes = retry_pipeline.run(documents=[document1])
+
+    assert len(nodes) == 1
+    assert pipeline.docstore.get_document_hash("1") == document1.hash
 
 
 @pytest.mark.asyncio
@@ -637,7 +648,18 @@ async def test_async_pipeline_with_transform_error() -> None:
     with pytest.raises(RuntimeError):
         await pipeline.arun(documents=[document1])
 
-    assert pipeline.docstore.get_node("1", raise_error=False) is None
+    assert pipeline.docstore is not None
+    assert await pipeline.docstore.aget_document_hash("1") is None
+
+    retry_pipeline = IngestionPipeline(
+        transformations=[],
+        docstore=pipeline.docstore,
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+    nodes = await retry_pipeline.arun(documents=[document1])
+
+    assert len(nodes) == 1
+    assert await pipeline.docstore.aget_document_hash("1") == document1.hash
 
 
 def test_docstore_strategy_not_mutated_on_run_without_vector_store() -> None:
