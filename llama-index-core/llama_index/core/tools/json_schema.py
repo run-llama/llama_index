@@ -82,12 +82,13 @@ class JsonSchemaToPydantic:
         fields_to_remove: Set[str],
         model_name: str,
     ) -> type[BaseModel]:
-        """Return a copy of ``model`` with ``fields_to_remove`` dropped."""
+        """Return a copy of ``model`` with ``fields_to_remove`` dropped.
+
+        Surviving fields keep their full ``FieldInfo`` — rebuilding from only
+        (annotation, default) would erase descriptions and other metadata.
+        """
         fields = {
-            name: (
-                field.annotation,
-                field.default if field.is_required() else field.default,
-            )
+            name: (field.annotation, field)
             for name, field in model.model_fields.items()
             if name not in fields_to_remove
         }

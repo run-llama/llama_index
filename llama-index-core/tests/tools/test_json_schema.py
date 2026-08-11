@@ -113,3 +113,23 @@ def test_json_schema_round_trip_defaults() -> None:
     }
     model = JsonSchemaToPydantic().create_model_from_json_schema(schema, "M")
     assert model().limit == 10
+
+
+def test_remove_model_fields_preserves_descriptions() -> None:
+    """Surviving fields keep description, default, and requiredness."""
+    from llama_index.core.bridge.pydantic import Field, create_model
+
+    converter = JsonSchemaToPydantic()
+    model = create_model(
+        "Tool_Schema",
+        a=(float, Field(..., description="First addend")),
+        b=(float, Field(..., description="Second addend")),
+        mode=(str, Field("fast", description="Rounding mode")),
+    )
+    trimmed = converter.remove_model_fields(model, {"a"}, "Tool_Schema")
+    props = trimmed.model_json_schema()["properties"]
+
+    assert props["b"]["description"] == "Second addend"
+    assert props["mode"]["description"] == "Rounding mode"
+    assert props["mode"]["default"] == "fast"
+    assert trimmed.model_json_schema()["required"] == ["b"]
