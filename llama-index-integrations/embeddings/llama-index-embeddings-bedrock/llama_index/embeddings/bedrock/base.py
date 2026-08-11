@@ -525,8 +525,11 @@ class BedrockEmbedding(BaseEmbedding):
             cohere_body = {
                 "texts": payload,
                 "input_type": input_types[input_type],
-                **self.additional_kwargs,
             }
+            if "output_dimension" in self.additional_kwargs:
+                cohere_body["output_dimension"] = self.additional_kwargs[
+                    "output_dimension"
+                ]
             request_body = json.dumps(cohere_body)
         else:
             raise ValueError("Provider not supported")

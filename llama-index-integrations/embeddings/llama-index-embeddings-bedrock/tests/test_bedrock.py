@@ -172,7 +172,12 @@ class TestBedrockEmbedding(TestCase):
         bedrock_embedding = BedrockEmbedding(
             model_name=Models.COHERE_EMBED_V4,
             client=self.bedrock_client,
-            additional_kwargs={"output_dimension": 256},
+            additional_kwargs={
+                "output_dimension": 256,
+                "input_type": "unexpected-input-type",
+                "texts": ["unexpected-text"],
+                "output_dimesion": 512,
+            },
         )
 
         bedrock_stubber.activate()
