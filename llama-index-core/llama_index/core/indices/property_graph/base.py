@@ -233,13 +233,24 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             kg_nodes_to_insert.extend(kg_nodes)
             kg_rels_to_insert.extend(kg_rels)
 
-        # filter out duplicate kg nodes
+        # filter out duplicate kg nodes (against store and within this batch)
+        # Within-batch duplicates can appear when the same entity is extracted
+        # from multiple source nodes in one insert; only the first is kept so
+        # vector/graph upserts do not receive repeated ids (#22394).
         kg_node_ids = {node.id for node in kg_nodes_to_insert}
         existing_kg_nodes = self.property_graph_store.get(ids=list(kg_node_ids))
         existing_kg_node_ids = {node.id for node in existing_kg_nodes}
-        kg_nodes_to_insert = [
-            node for node in kg_nodes_to_insert if node.id not in existing_kg_node_ids
-        ]
+        seen_kg_node_ids = set()
+        deduped_kg_nodes: List[LabelledNode] = []
+        for kg_node in kg_nodes_to_insert:
+            if (
+                kg_node.id in existing_kg_node_ids
+                or kg_node.id in seen_kg_node_ids
+            ):
+                continue
+            seen_kg_node_ids.add(kg_node.id)
+            deduped_kg_nodes.append(kg_node)
+        kg_nodes_to_insert = deduped_kg_nodes
 
         # filter out duplicate llama nodes
         existing_nodes = self.property_graph_store.get_llama_nodes(
