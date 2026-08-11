@@ -175,6 +175,44 @@ class TestBedrockEmbedding(TestCase):
         for i in range(2):
             self.assertEqual(embedding[i], mock_response["embeddings"][i])
 
+    def test_get_text_embedding_cohere_v4_with_additional_kwargs(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"embeddings": {"float": [exp_embed]}}
+        mock_stream = BytesIO(json.dumps(mock_response).encode())
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+            },
+            expected_params={
+                "accept": "application/json",
+                "body": json.dumps(
+                    {
+                        "texts": [self.exp_query],
+                        "input_type": "search_document",
+                        "output_dimension": 256,
+                    }
+                ),
+                "contentType": "application/json",
+                "modelId": Models.COHERE_EMBED_V4.value,
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_V4,
+            client=self.bedrock_client,
+            additional_kwargs={"output_dimension": 256},
+        )
+
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+        self.assertEqual(embedding, exp_embed)
+
     def test_list_supported_models(self):
         exp_dict = {
             "amazon": [
