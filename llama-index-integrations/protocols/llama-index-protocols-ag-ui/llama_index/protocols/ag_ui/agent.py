@@ -395,7 +395,7 @@ class AGUIChatWorkflow(Workflow):
         ]
 
         new_tool_messages = []
-        for tool_result in backend_tool_calls:
+        for tool_result in [*backend_tool_calls, *frontend_tool_calls]:
             new_tool_messages.append(
                 ChatMessage(
                     role="tool",
