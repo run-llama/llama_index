@@ -1,5 +1,5 @@
 import os
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
@@ -73,7 +73,7 @@ async def test_read_resources(client: BasicMCPClient):
     # Test static resource
     resource = await client.read_resource("config://app")
     assert isinstance(resource, types.ReadResourceResult)
-    assert resource.contents[0].mimeType == "text/plain"
+    assert resource.contents[0].mime_type == "text/plain"
     config_text = resource.contents[0].text
     assert "app_name" in config_text
     assert "MCP Test Server" in config_text
