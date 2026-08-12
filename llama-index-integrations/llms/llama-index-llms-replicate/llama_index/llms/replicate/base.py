@@ -94,7 +94,8 @@ class Replicate(CustomLLM):
         }
         if self.image != "":
             try:
-                base_kwargs["image"] = open(self.image, "rb")
+                with open(self.image, "rb") as f:
+                    base_kwargs["image"] = f.read()
             except FileNotFoundError:
                 raise FileNotFoundError(
                     "Could not load image file. Please check whether the file exists"

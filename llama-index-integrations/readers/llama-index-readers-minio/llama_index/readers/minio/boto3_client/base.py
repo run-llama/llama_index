@@ -36,6 +36,7 @@ class BotoMinioReader(BaseReader):
         aws_access_secret: Optional[str] = None,
         aws_session_token: Optional[str] = None,
         s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com",
+        verify_ssl: Union[bool, str] = True,
         **kwargs: Any,
     ) -> None:
         """
@@ -62,6 +63,8 @@ class BotoMinioReader(BaseReader):
         aws_access_id (Optional[str]): provide AWS access key directly.
         aws_access_secret (Optional[str]): provide AWS access key directly.
         s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
+        verify_ssl (Union[bool, str]): SSL certificate verification. Set to False
+            to disable (not recommended), or a path to a CA bundle. Defaults to True.
 
         """
         super().__init__(*args, **kwargs)
@@ -80,6 +83,7 @@ class BotoMinioReader(BaseReader):
         self.aws_access_secret = aws_access_secret
         self.aws_session_token = aws_session_token
         self.s3_endpoint_url = s3_endpoint_url
+        self.verify_ssl = verify_ssl
 
     def load_data(self) -> List[Document]:
         """Load file(s) from S3."""
@@ -92,7 +96,7 @@ class BotoMinioReader(BaseReader):
             aws_secret_access_key=self.aws_access_secret,
             aws_session_token=self.aws_session_token,
             config=boto3.session.Config(signature_version="s3v4"),
-            verify=False,
+            verify=self.verify_ssl,
         )
         s3 = boto3.resource(
             "s3",
@@ -101,7 +105,7 @@ class BotoMinioReader(BaseReader):
             aws_secret_access_key=self.aws_access_secret,
             aws_session_token=self.aws_session_token,
             config=boto3.session.Config(signature_version="s3v4"),
-            verify=False,
+            verify=self.verify_ssl,
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
