@@ -5,6 +5,7 @@ A loader that fetches a file or iterates through a directory on Minio.
 
 """
 
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -101,7 +102,10 @@ class MinioReader(BaseReader):
         with tempfile.TemporaryDirectory() as temp_dir:
             if self.key:
                 suffix = Path(self.key).suffix
-                _, filepath = tempfile.mkstemp(dir=temp_dir, suffix=suffix)
+                fd, filepath = tempfile.mkstemp(dir=temp_dir, suffix=suffix)
+                # close the mkstemp handle so the download can write to the
+                # file and the temp dir can be cleaned up on Windows
+                os.close(fd)
                 minio_client.fget_object(
                     bucket_name=self.bucket, object_name=self.key, file_path=filepath
                 )
@@ -109,8 +113,8 @@ class MinioReader(BaseReader):
                 objects = minio_client.list_objects(
                     bucket_name=self.bucket, prefix=self.prefix, recursive=True
                 )
+                temp_root = Path(temp_dir).resolve()
                 for i, obj in enumerate(objects):
-                    file_name = obj.object_name.split("/")[-1]
                     if self.num_files_limit is not None and i > self.num_files_limit:
                         break
 
@@ -125,11 +129,20 @@ class MinioReader(BaseReader):
                     if is_dir or is_bad_ext:
                         continue
 
-                    filepath = f"{temp_dir}/{file_name}"
-                    minio_client.fget_object(self.bucket, obj.object_name, filepath)
+                    # one directory per object so same-named files don't overwrite
+                    file_name = Path(obj.object_name.replace("\\", "/")).name
+                    download_dir = temp_root / f"{i:08d}"
+                    filepath = (download_dir / file_name).resolve()
+                    if not file_name or not filepath.is_relative_to(download_dir):
+                        raise ValueError(f"Unsafe object name: {obj.object_name}")
+                    download_dir.mkdir()
+                    minio_client.fget_object(
+                        self.bucket, obj.object_name, str(filepath)
+                    )
 
             loader = SimpleDirectoryReader(
                 temp_dir,
+                recursive=True,
                 file_extractor=self.file_extractor,
                 required_exts=self.required_exts,
                 filename_as_id=self.filename_as_id,
