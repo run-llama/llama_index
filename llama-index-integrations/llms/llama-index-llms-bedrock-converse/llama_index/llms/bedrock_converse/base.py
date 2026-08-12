@@ -45,6 +45,7 @@ from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
     BEDROCK_NO_TEMP_MODELS,
+    HAS_AIOBOTO3,
     ThinkingDict,
     bedrock_modelname_to_context_size,
     converse_with_retry,
@@ -206,7 +207,7 @@ class BedrockConverse(FunctionCallingLLM):
 
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
-    _asession: Any = PrivateAttr()
+    _asession: Any = PrivateAttr(default=None)
     _async_client: Any = PrivateAttr(default=None)
     _boto_client_kwargs: Any = PrivateAttr()
 
@@ -323,7 +324,6 @@ class BedrockConverse(FunctionCallingLLM):
         }
 
         try:
-            import aioboto3
             import boto3
             from botocore.config import Config
 
@@ -338,11 +338,9 @@ class BedrockConverse(FunctionCallingLLM):
                 else botocore_config
             )
             session = boto3.Session(**session_kwargs)
-            self._asession = aioboto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 and/or aioboto3 package not found, install with"
-                "'pip install boto3 aioboto3"
+                "boto3 package not found, install with 'pip install boto3'"
             )
 
         # Prior to general availability, custom boto3 wheel files were
@@ -365,6 +363,11 @@ class BedrockConverse(FunctionCallingLLM):
             )
 
         self._async_client = async_client
+
+        if HAS_AIOBOTO3:
+            import aioboto3
+
+            self._asession = aioboto3.Session(**session_kwargs)
 
     @classmethod
     def class_name(cls) -> str:
@@ -762,8 +765,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
-            session=self._asession,
-            config=self._config,
+            client=self._async_client if HAS_AIOBOTO3 else self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
             system_prompt_caching=self.system_prompt_caching,
@@ -773,8 +775,9 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
+            session=self._asession,
+            config=self._config,
             boto_client_kwargs=self._boto_client_kwargs,
-            client=self._async_client,
             **all_kwargs,
         )
 
@@ -816,8 +819,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response_gen = await converse_with_retry_async(
-            session=self._asession,
-            config=self._config,
+            client=self._async_client if HAS_AIOBOTO3 else self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
             system_prompt_caching=self.system_prompt_caching,
@@ -828,8 +830,9 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=self.guardrail_version,
             guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
+            session=self._asession,
+            config=self._config,
             boto_client_kwargs=self._boto_client_kwargs,
-            client=self._async_client,
             **all_kwargs,
         )
 
