@@ -1,8 +1,8 @@
-# LlamaIndex Llms Integration: [Nebius AI Studio](https://studio.nebius.ai/)
+# LlamaIndex LLMs Integration: [Nebius Token Factory](https://tokenfactory.nebius.com/)
 
 ## Overview
 
-Integrate with Nebius AI Studio API, which provides access to open-source state-of-the-art large language models (LLMs).
+Integrate with the OpenAI-compatible Chat Completions API in Nebius Token Factory, which provides access to open-source large language models (LLMs).
 
 ## Installation
 
@@ -24,7 +24,7 @@ NEBIUS_API_KEY=your_api_key
 ```python
 from llama_index.llms.nebius import NebiusLLM
 
-llm = NebiusLLM(model="meta-llama/Meta-Llama-3.1-70B-Instruct-fast")
+llm = NebiusLLM(model="Qwen/Qwen3-30B-A3B-fast")
 ```
 
 #### Without environmental variables
@@ -32,10 +32,13 @@ llm = NebiusLLM(model="meta-llama/Meta-Llama-3.1-70B-Instruct-fast")
 ```python
 from llama_index.llms.nebius import NebiusLLM
 
-llm = NebiusLLM(
-    api_key="your_api_key", model="meta-llama/Meta-Llama-3.1-70B-Instruct-fast"
-)
+llm = NebiusLLM(api_key="your_api_key", model="Qwen/Qwen3-30B-A3B-fast")
 ```
+
+The integration defaults to `https://api.tokenfactory.nebius.com/v1`. You can
+set `api_base` explicitly to target a Dedicated Endpoint or another compatible
+deployment. See the [Token Factory model list](https://docs.tokenfactory.nebius.com/models)
+for currently available model IDs.
 
 ### Launching
 

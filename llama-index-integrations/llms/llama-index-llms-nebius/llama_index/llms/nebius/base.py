@@ -4,12 +4,12 @@ from typing import Any, Optional
 from llama_index.llms.openai_like import OpenAILike
 
 
-DEFAULT_API_BASE = "https://api.studio.nebius.ai/v1"
+DEFAULT_API_BASE = "https://api.tokenfactory.nebius.com/v1"
 
 
 class NebiusLLM(OpenAILike):
     """
-    Nebius AI Studio LLM class.
+    Nebius Token Factory LLM class.
 
     Examples:
         `pip install llama-index-llms-nebius`
@@ -22,7 +22,7 @@ class NebiusLLM(OpenAILike):
         # os.environ["NEBIUS_API_KEY"] = "your api key"
 
         llm = NebiusLLM(
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1", api_key="your_api_key"
+            model="Qwen/Qwen3-30B-A3B-fast", api_key="your_api_key"
         )
 
         resp = llm.complete("Who is Paul Graham?")

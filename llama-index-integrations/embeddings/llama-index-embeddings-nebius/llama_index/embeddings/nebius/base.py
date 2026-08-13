@@ -11,7 +11,7 @@ from llama_index.embeddings.nebius.utils import (
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-DEFAULT_API_BASE = "https://api.studio.nebius.ai/v1"
+DEFAULT_API_BASE = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "BAAI/bge-en-icl"
 
 
@@ -28,8 +28,8 @@ class NebiusEmbedding(OpenAIEmbedding):
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
 
-    api_key: str = Field(description="The Nebius AI Studio API key.")
-    api_base: str = Field(description="The base URL for Nebius AI Studio API.")
+    api_key: str = Field(description="The Nebius Token Factory API key.")
+    api_base: str = Field(description="The base URL for Nebius Token Factory API.")
     api_version: str = Field(description="The version for OpenAI API.")
 
     def __init__(
