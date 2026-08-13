@@ -21,7 +21,6 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
-    "pandas>=2.2.3",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
 ]
@@ -36,6 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "lancedb>=0.21.1",
+    "pandas>=2.2.3",
     "pylance",
     "tantivy",
     "llama-index-core>=0.13.0,<0.15",
