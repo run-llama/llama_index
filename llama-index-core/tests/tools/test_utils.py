@@ -3,7 +3,9 @@
 from typing import List, Annotated
 import datetime
 
-from llama_index.core.bridge.pydantic import Field
+import pytest
+
+from llama_index.core.bridge.pydantic import Field, ValidationError
 from llama_index.core.tools.utils import create_schema_from_function
 
 
@@ -202,3 +204,81 @@ def test_param_descriptions_do_not_mutate_the_callers_field() -> None:
 
     assert schema.model_json_schema()["properties"]["x"]["description"] == "A string"
     assert shared_field.description is None
+
+
+def test_annotated_field_constraints_survive_into_schema() -> None:
+    """Constraints declared via Annotated[T, Field(...)] must reach both the
+    JSON schema the LLM sees and the validation the model enforces."""
+
+    def search(
+        limit: Annotated[int, Field(ge=1, le=100, description="Result cap")],
+        query: Annotated[
+            str, Field(min_length=1, pattern=r"^\w+$", description="Search term")
+        ],
+    ) -> str:
+        return f"{limit}:{query}"
+
+    schema_cls = create_schema_from_function("SearchSchema", search)
+    schema = schema_cls.model_json_schema()
+
+    assert schema["properties"]["limit"]["minimum"] == 1
+    assert schema["properties"]["limit"]["maximum"] == 100
+    assert schema["properties"]["limit"]["description"] == "Result cap"
+    assert schema["properties"]["query"]["minLength"] == 1
+    assert schema["properties"]["query"]["pattern"] == r"^\w+$"
+
+    with pytest.raises(ValidationError):
+        schema_cls(limit=100000, query="ok")
+    with pytest.raises(ValidationError):
+        schema_cls(limit=5, query="not a word!")
+    assert schema_cls(limit=5, query="ok").limit == 5
+
+
+def test_annotated_constraints_with_plain_default() -> None:
+    """Constraints survive when the parameter also has an ordinary default."""
+
+    def fetch(
+        count: Annotated[int, Field(ge=1, le=10)] = 3,
+    ) -> int:
+        return count
+
+    schema_cls = create_schema_from_function("FetchSchema", fetch)
+    schema = schema_cls.model_json_schema()
+
+    assert schema["properties"]["count"]["minimum"] == 1
+    assert schema["properties"]["count"]["maximum"] == 10
+    assert schema["properties"]["count"]["default"] == 3
+    assert "count" not in schema.get("required", [])
+
+    with pytest.raises(ValidationError):
+        schema_cls(count=99)
+    assert schema_cls().count == 3
+
+
+def test_annotated_constraints_json_schema_extra_still_merged() -> None:
+    """json_schema_extra from the Annotated Field keeps working alongside
+    preserved constraints."""
+
+    def f(
+        x: Annotated[int, Field(ge=0, json_schema_extra={"example": 7})],
+    ) -> int:
+        return x
+
+    schema_cls = create_schema_from_function("XSchema", f)
+    schema = schema_cls.model_json_schema()
+
+    assert schema["properties"]["x"]["minimum"] == 0
+    assert schema["properties"]["x"]["example"] == 7
+
+
+def test_annotated_string_description_unchanged() -> None:
+    """The Annotated[T, "description"] shorthand keeps its behavior."""
+
+    def f(x: Annotated[int, "plain description"]) -> int:
+        return x
+
+    schema_cls = create_schema_from_function("PlainSchema", f)
+    schema = schema_cls.model_json_schema()
+
+    assert schema["properties"]["x"]["description"] == "plain description"
+    assert schema_cls(x=123456).x == 123456
