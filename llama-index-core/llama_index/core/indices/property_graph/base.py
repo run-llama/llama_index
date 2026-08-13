@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Sequence, Type, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, TYPE_CHECKING
 
 from llama_index.core.data_structs import IndexLPG
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -209,6 +209,44 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                 nodes, self._kg_extractors, show_progress=self._show_progress
             )
 
+        nodes, kg_nodes_to_insert, kg_rels_to_insert = self._prepare_nodes_for_insert(
+            nodes
+        )
+        if self._embed_kg_nodes:
+            self._embed_nodes(nodes, kg_nodes_to_insert)
+        self._upsert_nodes(nodes, kg_nodes_to_insert, kg_rels_to_insert)
+        return nodes
+
+    async def _ainsert_nodes(self, nodes: Sequence[BaseNode]) -> Sequence[BaseNode]:
+        """Asynchronously insert nodes to the index struct."""
+        if len(nodes) == 0:
+            return nodes
+
+        # run transformations on nodes to extract triplets
+        if self._use_async:
+            nodes = await arun_transformations(
+                nodes, self._kg_extractors, show_progress=self._show_progress
+            )
+        else:
+            nodes = run_transformations(
+                nodes, self._kg_extractors, show_progress=self._show_progress
+            )
+
+        nodes, kg_nodes_to_insert, kg_rels_to_insert = self._prepare_nodes_for_insert(
+            nodes
+        )
+        if self._embed_kg_nodes:
+            if self._use_async:
+                await self._aembed_nodes(nodes, kg_nodes_to_insert)
+            else:
+                self._embed_nodes(nodes, kg_nodes_to_insert)
+        self._upsert_nodes(nodes, kg_nodes_to_insert, kg_rels_to_insert)
+        return nodes
+
+    def _prepare_nodes_for_insert(
+        self, nodes: Sequence[BaseNode]
+    ) -> Tuple[List[BaseNode], List[LabelledNode], List[Relation]]:
+        """Prepare transformed nodes for insertion."""
         # ensure all nodes have nodes and/or relations in metadata
         assert all(
             node.metadata.get(KG_NODES_KEY) is not None
@@ -248,45 +286,82 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         existing_node_hashes = {node.hash for node in existing_nodes}
         nodes = [node for node in nodes if node.hash not in existing_node_hashes]
 
-        # embed nodes (if needed)
-        if self._embed_kg_nodes:
-            # embed llama-index nodes
-            node_texts = [
-                node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
-            ]
+        return nodes, kg_nodes_to_insert, kg_rels_to_insert
 
-            if self._use_async:
-                embeddings = asyncio.run(
-                    self._embed_model.aget_text_embedding_batch(
-                        node_texts, show_progress=self._show_progress
-                    )
-                )
-            else:
-                embeddings = self._embed_model.get_text_embedding_batch(
+    def _embed_nodes(
+        self, nodes: Sequence[BaseNode], kg_nodes_to_insert: List[LabelledNode]
+    ) -> None:
+        """Embed llama-index and KG nodes."""
+        # embed llama-index nodes
+        node_texts = [
+            node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
+        ]
+
+        if self._use_async:
+            embeddings = asyncio.run(
+                self._embed_model.aget_text_embedding_batch(
                     node_texts, show_progress=self._show_progress
                 )
+            )
+        else:
+            embeddings = self._embed_model.get_text_embedding_batch(
+                node_texts, show_progress=self._show_progress
+            )
 
-            for node, embedding in zip(nodes, embeddings):
-                node.embedding = embedding
+        for node, embedding in zip(nodes, embeddings):
+            node.embedding = embedding
 
-            # embed kg nodes
-            kg_node_texts = [str(kg_node) for kg_node in kg_nodes_to_insert]
+        # embed kg nodes
+        kg_node_texts = [str(kg_node) for kg_node in kg_nodes_to_insert]
 
-            if self._use_async:
-                kg_embeddings = asyncio.run(
-                    self._embed_model.aget_text_embedding_batch(
-                        kg_node_texts, show_progress=self._show_progress
-                    )
+        if self._use_async:
+            kg_embeddings = asyncio.run(
+                self._embed_model.aget_text_embedding_batch(
+                    kg_node_texts, show_progress=self._show_progress
                 )
-            else:
-                kg_embeddings = self._embed_model.get_text_embedding_batch(
-                    kg_node_texts,
-                    show_progress=self._show_progress,
-                )
+            )
+        else:
+            kg_embeddings = self._embed_model.get_text_embedding_batch(
+                kg_node_texts,
+                show_progress=self._show_progress,
+            )
 
-            for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):
-                kg_node.embedding = embedding
+        for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):
+            kg_node.embedding = embedding
 
+    async def _aembed_nodes(
+        self, nodes: Sequence[BaseNode], kg_nodes_to_insert: List[LabelledNode]
+    ) -> None:
+        """Asynchronously embed llama-index and KG nodes."""
+        # embed llama-index nodes
+        node_texts = [
+            node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
+        ]
+
+        embeddings = await self._embed_model.aget_text_embedding_batch(
+            node_texts, show_progress=self._show_progress
+        )
+
+        for node, embedding in zip(nodes, embeddings):
+            node.embedding = embedding
+
+        # embed kg nodes
+        kg_node_texts = [str(kg_node) for kg_node in kg_nodes_to_insert]
+
+        kg_embeddings = await self._embed_model.aget_text_embedding_batch(
+            kg_node_texts, show_progress=self._show_progress
+        )
+
+        for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):
+            kg_node.embedding = embedding
+
+    def _upsert_nodes(
+        self,
+        nodes: List[BaseNode],
+        kg_nodes_to_insert: List[LabelledNode],
+        kg_rels_to_insert: List[Relation],
+    ) -> None:
+        """Upsert prepared nodes and relations."""
         # if graph store doesn't support vectors, or the vector index was provided, use it
         if self.vector_store is not None and len(kg_nodes_to_insert) > 0:
             self._insert_nodes_to_vector_index(kg_nodes_to_insert)
@@ -304,8 +379,6 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         # refresh schema if needed
         if self.property_graph_store.supports_structured_queries:
             self.property_graph_store.get_schema(refresh=True)
-
-        return nodes
 
     def _insert_nodes_to_vector_index(self, nodes: List[LabelledNode]) -> None:
         """Insert vector nodes."""
@@ -400,6 +473,10 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Index-specific logic for inserting nodes to the index struct."""
         self._insert_nodes(nodes)
+
+    async def _ainsert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Asynchronous index-specific logic for inserting nodes to the index struct."""
+        await self._ainsert_nodes(nodes)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:

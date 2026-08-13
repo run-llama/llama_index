@@ -192,6 +192,10 @@ class BaseIndex(Generic[IS], ABC):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Index-specific logic for inserting nodes to the index struct."""
 
+    async def _ainsert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Asynchronous index-specific logic for inserting nodes to the index struct."""
+        self._insert(nodes, **insert_kwargs)
+
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
         for node in nodes:
@@ -221,7 +225,7 @@ class BaseIndex(Generic[IS], ABC):
 
         with self._callback_manager.as_trace("ainsert_nodes"):
             await self.docstore.async_add_documents(nodes, allow_update=True)
-            self._insert(nodes=nodes)
+            await self._ainsert(nodes=nodes, **insert_kwargs)
             await self._storage_context.index_store.async_add_index_struct(
                 self._index_struct
             )

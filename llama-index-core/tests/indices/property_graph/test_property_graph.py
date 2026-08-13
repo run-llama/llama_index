@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock
 from typing import Any, List
 
+import pytest
+
 from llama_index.core import PropertyGraphIndex, Document, MockEmbedding
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
@@ -66,3 +68,28 @@ def test_construction() -> None:
     index.insert_nodes(kg_extractor([]))
 
     assert index._insert_nodes_to_vector_index.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_ainsert_nodes_use_async_inside_running_event_loop() -> None:
+    graph_store = SimplePropertyGraphStore()
+    vector_store = SimpleVectorStore()
+    kg_extractor = MockKGExtractor()
+
+    index = PropertyGraphIndex.from_existing(
+        property_graph_store=graph_store,
+        vector_store=vector_store,
+        llm=MockLLM(),
+        embed_model=MockEmbedding(embed_dim=8),
+        kg_extractors=[kg_extractor],
+        use_async=True,
+    )
+
+    await index.ainsert_nodes([TextNode(text="Logan was born in Canada")])
+
+    assert len(vector_store.get("Logan")) == 8
+    assert len(vector_store.get("Canada")) == 8
+
+    kg_nodes = graph_store.get(ids=["Logan", "Canada"])
+    assert len(kg_nodes) == 2
+    assert all(kg_node.embedding is None for kg_node in kg_nodes)
