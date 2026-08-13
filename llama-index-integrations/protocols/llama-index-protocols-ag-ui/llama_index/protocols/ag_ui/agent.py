@@ -198,9 +198,22 @@ class AGUIChatWorkflow(Workflow):
             if state:
                 for msg in chat_history[::-1]:
                     if msg.role.value == "user":
-                        msg.content = DEFAULT_STATE_PROMPT.format(
-                            state=str(state), user_input=msg.content
+                        # Rebuild the blocks rather than assigning `.content`:
+                        # the content setter raises on a multi-block (e.g.
+                        # image-carrying) message, and would drop media if it
+                        # didn't. The state prompt wraps the text; every
+                        # non-text block is carried over unchanged.
+                        state_text = DEFAULT_STATE_PROMPT.format(
+                            state=str(state), user_input=msg.content or ""
                         )
+                        msg.blocks = [
+                            TextBlock(text=state_text),
+                            *[
+                                block
+                                for block in msg.blocks
+                                if not isinstance(block, TextBlock)
+                            ],
+                        ]
                         break
 
             if self.system_prompt:
