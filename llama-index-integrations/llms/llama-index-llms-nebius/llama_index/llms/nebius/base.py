@@ -22,7 +22,7 @@ class NebiusLLM(OpenAILike):
         # os.environ["NEBIUS_API_KEY"] = "your api key"
 
         llm = NebiusLLM(
-            model="Qwen/Qwen3-30B-A3B-fast", api_key="your_api_key"
+            model="openai/gpt-oss-120b", api_key="your_api_key"
         )
 
         resp = llm.complete("Who is Paul Graham?")

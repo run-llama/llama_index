@@ -19,7 +19,7 @@ def test_chat_uses_token_factory_endpoint_and_openai_request_shape() -> None:
         assert request.headers["authorization"] == "Bearer test-key"
 
         payload = json.loads(request.content)
-        assert payload["model"] == "Qwen/Qwen3-30B-A3B-fast"
+        assert payload["model"] == "openai/gpt-oss-120b"
         assert payload["messages"] == [{"role": "user", "content": "Hello"}]
         assert payload["stream"] is False
 
@@ -47,7 +47,7 @@ def test_chat_uses_token_factory_endpoint_and_openai_request_shape() -> None:
 
     http_client = httpx.Client(transport=httpx.MockTransport(handle_request))
     llm = NebiusLLM(
-        model="Qwen/Qwen3-30B-A3B-fast",
+        model="openai/gpt-oss-120b",
         api_key="test-key",
         http_client=http_client,
     )

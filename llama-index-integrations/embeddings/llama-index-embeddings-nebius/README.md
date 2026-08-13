@@ -24,7 +24,7 @@ NEBIUS_API_KEY=your_api_key
 ```python
 from llama_index.embeddings.nebius import NebiusEmbedding
 
-embed_model = NebiusEmbedding(model_name="BAAI/bge-en-icl")
+embed_model = NebiusEmbedding(model_name="Qwen/Qwen3-Embedding-8B")
 ```
 
 #### Without environmental variables
@@ -33,7 +33,7 @@ embed_model = NebiusEmbedding(model_name="BAAI/bge-en-icl")
 from llama_index.embeddings.nebius import NebiusEmbedding
 
 embed_model = NebiusEmbedding(
-    api_key="your_api_key", model_name="BAAI/bge-en-icl"
+    api_key="your_api_key", model_name="Qwen/Qwen3-Embedding-8B"
 )
 ```
 

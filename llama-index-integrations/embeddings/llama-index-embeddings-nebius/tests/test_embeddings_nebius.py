@@ -7,7 +7,9 @@ from llama_index.embeddings.nebius.base import DEFAULT_API_BASE
 
 
 def test_embedding_class() -> None:
-    embedding = NebiusEmbedding(model_name="BAAI/bge-en-icl", api_key="test-key")
+    embedding = NebiusEmbedding(
+        model_name="Qwen/Qwen3-Embedding-8B", api_key="test-key"
+    )
     assert isinstance(embedding, BaseEmbedding)
 
 
@@ -20,7 +22,7 @@ def test_embedding_uses_token_factory_endpoint_and_openai_request_shape() -> Non
         payload = json.loads(request.content)
         assert payload == {
             "input": ["Everyone loves justice"],
-            "model": "BAAI/bge-en-icl",
+            "model": "Qwen/Qwen3-Embedding-8B",
             "encoding_format": "base64",
         }
 

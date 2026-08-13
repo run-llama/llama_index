@@ -24,7 +24,7 @@ NEBIUS_API_KEY=your_api_key
 ```python
 from llama_index.llms.nebius import NebiusLLM
 
-llm = NebiusLLM(model="Qwen/Qwen3-30B-A3B-fast")
+llm = NebiusLLM(model="openai/gpt-oss-120b")
 ```
 
 #### Without environmental variables
@@ -32,7 +32,7 @@ llm = NebiusLLM(model="Qwen/Qwen3-30B-A3B-fast")
 ```python
 from llama_index.llms.nebius import NebiusLLM
 
-llm = NebiusLLM(api_key="your_api_key", model="Qwen/Qwen3-30B-A3B-fast")
+llm = NebiusLLM(api_key="your_api_key", model="openai/gpt-oss-120b")
 ```
 
 The integration defaults to `https://api.tokenfactory.nebius.com/v1`. You can
