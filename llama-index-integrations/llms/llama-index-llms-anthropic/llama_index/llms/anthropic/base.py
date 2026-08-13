@@ -108,6 +108,21 @@ def _get_default_headers(
     return default_headers
 
 
+def _usage_metadata_from_anthropic_usage(
+    usage: Any, input_tokens: Optional[int] = None
+) -> Dict[str, Any]:
+    """Convert Anthropic usage metadata into a serializable dict."""
+    usage_metadata: Dict[str, Any] = {
+        "input_tokens": getattr(usage, "input_tokens", None) or input_tokens,
+        "output_tokens": getattr(usage, "output_tokens", None),
+    }
+    for key in ("cache_creation_input_tokens", "cache_read_input_tokens"):
+        value = getattr(usage, key, None)
+        if value is not None:
+            usage_metadata[key] = value
+    return usage_metadata
+
+
 class AnthropicTokenizer:
     def __init__(self, client, model) -> None:
         self._client = client
@@ -464,6 +479,11 @@ class Anthropic(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
+                additional_kwargs={
+                    "usage": _usage_metadata_from_anthropic_usage(response.usage)
+                    if getattr(response, "usage", None)
+                    else None,
+                },
             ),
             citations=citations,
             raw=dict(response),
@@ -649,19 +669,15 @@ class Anthropic(FunctionCallingLLM):
                     if hasattr(r.message, "usage") and r.message.usage:
                         # Save input tokens for later
                         input_tokens = r.message.usage.input_tokens
-                        usage_metadata = {
-                            "input_tokens": r.message.usage.input_tokens,
-                            "output_tokens": r.message.usage.output_tokens,
-                        }
+                        usage_metadata = _usage_metadata_from_anthropic_usage(
+                            r.message.usage
+                        )
                 elif isinstance(r, RawMessageDeltaEvent):
                     # Update usage metadata and capture stop_reason from message_delta
                     if hasattr(r, "usage") and r.usage:
-                        # Modify r.usage.input_tokens if None with saved input tokens value
-                        r.usage.input_tokens = r.usage.input_tokens or input_tokens
-                        usage_metadata = {
-                            "input_tokens": r.usage.input_tokens,
-                            "output_tokens": r.usage.output_tokens,
-                        }
+                        usage_metadata = _usage_metadata_from_anthropic_usage(
+                            r.usage, input_tokens
+                        )
                     if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
                         stop_reason = r.delta.stop_reason
 
@@ -721,6 +737,11 @@ class Anthropic(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
+                additional_kwargs={
+                    "usage": _usage_metadata_from_anthropic_usage(response.usage)
+                    if getattr(response, "usage", None)
+                    else None,
+                },
             ),
             citations=citations,
             raw=dict(response),
@@ -906,19 +927,15 @@ class Anthropic(FunctionCallingLLM):
                     if hasattr(r.message, "usage") and r.message.usage:
                         # Save input tokens for later
                         input_tokens = r.message.usage.input_tokens
-                        usage_metadata = {
-                            "input_tokens": r.message.usage.input_tokens,
-                            "output_tokens": r.message.usage.output_tokens,
-                        }
+                        usage_metadata = _usage_metadata_from_anthropic_usage(
+                            r.message.usage
+                        )
                 elif isinstance(r, RawMessageDeltaEvent):
                     # Update usage metadata and capture stop_reason from message_delta
                     if hasattr(r, "usage") and r.usage:
-                        # Modify r.usage.input_tokens if None with saved input tokens value
-                        r.usage.input_tokens = r.usage.input_tokens or input_tokens
-                        usage_metadata = {
-                            "input_tokens": r.usage.input_tokens,
-                            "output_tokens": r.usage.output_tokens,
-                        }
+                        usage_metadata = _usage_metadata_from_anthropic_usage(
+                            r.usage, input_tokens
+                        )
                     if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
                         stop_reason = r.delta.stop_reason
 
