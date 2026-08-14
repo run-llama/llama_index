@@ -50,6 +50,19 @@ def test_condense_question_chat_engine_with_init_history(patch_llm_predictor) ->
     )
 
 
+def test_condense_question_chat_engine_respects_empty_history(
+    patch_llm_predictor,
+) -> None:
+    query_engine = Mock(spec=BaseQueryEngine)
+    query_engine.query.side_effect = lambda x: Response(response=x)
+    engine = CondenseQuestionChatEngine.from_defaults(query_engine=query_engine)
+
+    engine.chat("previous message")
+    response = engine.chat("standalone message", chat_history=[])
+
+    assert str(response) == "standalone message"
+
+
 def test_stream_chat_history_write_completes_on_early_exit() -> None:
     def token_gen():
         for token in ["Hello", " ", "World", "!"]:
