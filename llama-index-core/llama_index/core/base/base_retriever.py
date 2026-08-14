@@ -124,7 +124,7 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         retrieved_nodes: List[NodeWithScore] = []
         for n in nodes:
             node = n.node
-            score = n.score or 1.0
+            score = n.score if n.score is not None else 1.0
             if isinstance(node, IndexNode):
                 obj = node.obj or self.object_map.get(node.index_id, None)
                 if obj is not None:
@@ -158,7 +158,7 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         retrieved_nodes: List[NodeWithScore] = []
         for n in nodes:
             node = n.node
-            score = n.score or 1.0
+            score = n.score if n.score is not None else 1.0
             if isinstance(node, IndexNode):
                 obj = node.obj or self.object_map.get(node.index_id, None)
                 if obj is not None:
