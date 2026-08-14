@@ -856,7 +856,7 @@ class OCIDataScience(FunctionCallingLLM):
         )
 
         # Determine strict mode
-        strict = strict or self.strict
+        strict = self.strict if strict is None else strict
 
         if self.metadata.is_function_calling_model:
             for tool_spec in tool_specs:
