@@ -143,14 +143,17 @@ class LLMCompletionInProgressEvent(BaseEvent):
         return "LLMCompletionInProgressEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
-            return self.model_copy(
-                update={
-                    "response": self.response.model_copy(
-                        update={"raw": self.response.raw.model_dump()}
-                    )
-                }
-            ).model_dump(**kwargs)
+        try:
+            if isinstance(self.response.raw, BaseModel):
+                return self.model_copy(
+                    update={
+                        "response": self.response.model_copy(
+                            update={"raw": self.response.raw.model_dump()}
+                        )
+                    }
+                ).model_dump(**kwargs)
+        except Exception:
+            pass
         return super().model_dump(**kwargs)
 
 
@@ -173,14 +176,17 @@ class LLMCompletionEndEvent(BaseEvent):
         return "LLMCompletionEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
-            return self.model_copy(
-                update={
-                    "response": self.response.model_copy(
-                        update={"raw": self.response.raw.model_dump()}
-                    )
-                }
-            ).model_dump(**kwargs)
+        try:
+            if isinstance(self.response.raw, BaseModel):
+                return self.model_copy(
+                    update={
+                        "response": self.response.model_copy(
+                            update={"raw": self.response.raw.model_dump()}
+                        )
+                    }
+                ).model_dump(**kwargs)
+        except Exception:
+            pass
         return super().model_dump(**kwargs)
 
 
@@ -225,14 +231,17 @@ class LLMChatInProgressEvent(BaseEvent):
         return "LLMChatInProgressEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
-            return self.model_copy(
-                update={
-                    "response": self.response.model_copy(
-                        update={"raw": self.response.raw.model_dump()}
-                    )
-                }
-            ).model_dump(**kwargs)
+        try:
+            if isinstance(self.response.raw, BaseModel):
+                return self.model_copy(
+                    update={
+                        "response": self.response.model_copy(
+                            update={"raw": self.response.raw.model_dump()}
+                        )
+                    }
+                ).model_dump(**kwargs)
+        except Exception:
+            pass
         return super().model_dump(**kwargs)
 
 
@@ -255,12 +264,16 @@ class LLMChatEndEvent(BaseEvent):
         return "LLMChatEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if self.response is not None and isinstance(self.response.raw, BaseModel):
-            return self.model_copy(
-                update={
-                    "response": self.response.model_copy(
-                        update={"raw": self.response.raw.model_dump()}
-                    )
-                }
-            ).model_dump(**kwargs)
+        if self.response is not None:
+            try:
+                if isinstance(self.response.raw, BaseModel):
+                    return self.model_copy(
+                        update={
+                            "response": self.response.model_copy(
+                                update={"raw": self.response.raw.model_dump()}
+                            )
+                        }
+                    ).model_dump(**kwargs)
+            except Exception:
+                pass
         return super().model_dump(**kwargs)
