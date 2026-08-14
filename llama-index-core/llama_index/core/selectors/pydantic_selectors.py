@@ -155,4 +155,17 @@ class PydanticMultiSelector(BaseSelector):
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
-        return self._select(choices, query)
+        # prepare input
+        context_list = _build_choices_text(choices)
+        max_outputs = self._max_outputs or len(choices)
+
+        # predict
+        prediction = await self._selector_program.acall(
+            num_choices=len(choices),
+            max_outputs=max_outputs,
+            context_list=context_list,
+            query_str=query.query_str,
+        )
+
+        # parse output
+        return _pydantic_output_to_selector_result(prediction)
