@@ -84,9 +84,11 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
 
         for scored_node in retrieved_nodes:
             node = scored_node.node
+            # `ImageNode` subclasses `TextNode`, so the image check has to come
+            # first for the two modes to stay separate.
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if isinstance(node, TextNode):
+            elif isinstance(node, TextNode):
                 text_nodes.append(node)
 
         if mode == "text":
