@@ -184,6 +184,20 @@ async def test_websocket_subclassing(mock_websocket: MockVoiceAgentWebsocket):
     assert mock_websocket.ws._is_closed
 
 
+def test_agent_export_zero_limit(mock_agent: MockVoiceAgent):
+    mock_agent._events = [
+        BaseVoiceAgentEvent(type_t="send"),
+        BaseVoiceAgentEvent(type_t="text"),
+    ]
+    mock_agent._messages = [
+        ChatMessage(role="user", content="Hello world"),
+        ChatMessage(role="assistant", content="content"),
+    ]
+
+    assert mock_agent.export_events(limit=0) == []
+    assert mock_agent.export_messages(limit=0) == []
+
+
 @pytest.mark.asyncio
 @pytest.mark.skipif(not websockets_available, reason="websockets library not installed")
 async def test_agent_subclassing(mock_agent: MockVoiceAgent):
