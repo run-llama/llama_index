@@ -134,7 +134,7 @@ def test_workers_parameter(
 
 @mock.patch("llama_dev.test.subprocess.run")
 def test_pytest_disables_nltk_import_security(mock_run):
-    """nltk's inisec hook false-positives on venvs inside the package cwd."""
+    """The nltk inisec hook false-positives on venvs inside the package cwd."""
     mock_run.return_value = subprocess.CompletedProcess([], 0, "", "")
     _pytest(Path("/fake/package"), {"PATH": "/bin"}, cov=False)
     _, kwargs = mock_run.call_args
