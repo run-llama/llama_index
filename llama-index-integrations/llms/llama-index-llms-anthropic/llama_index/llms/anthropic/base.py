@@ -86,7 +86,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
