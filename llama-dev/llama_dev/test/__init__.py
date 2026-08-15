@@ -412,12 +412,19 @@ def _pytest(
     if cov:
         pytest_cmd += ["--cov=.", "--cov-report=xml"]
 
+    # nltk >=3.10.1 installs an import-time security hook (nltk/inisec.py)
+    # that blocks imports resolving inside the CWD subtree. The per-package
+    # virtualenv lives at <package>/.venv, so site-packages sits inside the
+    # CWD and every nltk-importing package fails at collection with
+    # "Blocked import of regex from current working directory". PYTHONSAFEPATH
+    # does not help (the hook checks path geometry, not sys.path entries);
+    # nltk's own escape hatch is this environment variable.
     return subprocess.run(
         pytest_cmd,
         cwd=package_path,
         text=True,
         capture_output=True,
-        env=env,
+        env={**env, "NLTK_DISABLE_IMPORT_SECURITY": "1"},
         timeout=300,  # 5 minute timeout per package
     )
 

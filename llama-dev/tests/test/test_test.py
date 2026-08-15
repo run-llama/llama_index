@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 from unittest import mock
 
@@ -129,6 +130,16 @@ def test_workers_parameter(
     runner = CliRunner()
     runner.invoke(cli, ["test", "--base-ref", "main", "--workers", "16"])
     mock_pool.assert_called_once_with(max_workers=16)
+
+
+@mock.patch("llama_dev.test.subprocess.run")
+def test_pytest_disables_nltk_import_security(mock_run):
+    """nltk's inisec hook false-positives on venvs inside the package cwd."""
+    mock_run.return_value = subprocess.CompletedProcess([], 0, "", "")
+    _pytest(Path("/fake/package"), {"PATH": "/bin"}, cov=False)
+    _, kwargs = mock_run.call_args
+    assert kwargs["env"]["NLTK_DISABLE_IMPORT_SECURITY"] == "1"
+    assert kwargs["env"]["PATH"] == "/bin"
 
 
 @mock.patch("llama_dev.test.find_all_packages")
