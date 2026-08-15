@@ -35,6 +35,18 @@ value_error = ValueError("value error")
 cancelled_error = CancelledError("cancelled error")
 
 
+def test_dispatcher_handler_defaults_are_not_mutable() -> None:
+    signature = inspect.signature(Dispatcher.__init__)
+
+    assert signature.parameters["event_handlers"].default is None
+    assert signature.parameters["span_handlers"].default is None
+
+    first = Dispatcher()
+    second = Dispatcher()
+    assert first.event_handlers is not second.event_handlers
+    assert first.span_handlers is not second.span_handlers
+
+
 class _TestStartEvent(BaseEvent):
     @classmethod
     def class_name(cls):
