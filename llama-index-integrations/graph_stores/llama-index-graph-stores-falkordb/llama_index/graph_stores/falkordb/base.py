@@ -1,7 +1,8 @@
 """Simple graph store index."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Type
 
 import redis
 from falkordb import FalkorDB
@@ -17,9 +18,11 @@ class FalkorDBGraphStore(GraphStore):
     In this graph store, triplets are stored within FalkorDB.
 
     Args:
-        simple_graph_store_data_dict (Optional[dict]): data dict
-            containing the triplets. See FalkorDBGraphStoreData
-            for more details.
+        url (str): The URL for the FalkorDB database.
+        database (str): The name of the graph to connect to. Defaults to "falkor".
+        node_label (str): The label used for every entity node. Defaults to "Entity".
+        **kwargs (Any): Additional keyword arguments forwarded to the FalkorDB
+            client (e.g. ``username``, ``password``, ``ssl``).
 
     """
 
@@ -33,14 +36,9 @@ class FalkorDBGraphStore(GraphStore):
         """Initialize params."""
         self._node_label = node_label
 
-        self._driver = FalkorDB.from_url(url)
+        self._driver = FalkorDB.from_url(url, **kwargs)
         self._graph = self._driver.select_graph(database)
-
-        try:
-            self._graph.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
-        except redis.ResponseError as e:
-            # TODO: to find an appropriate way to handle this issue.
-            logger.warning("Create index failed: %s", e)
+        self._create_index()
 
         self._database = database
 
@@ -49,6 +47,14 @@ class FalkorDBGraphStore(GraphStore):
             MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`)
             WHERE n1.id = $subj RETURN type(r), n2.id
         """
+
+    def _create_index(self) -> None:
+        """Create the index backing every `id` lookup, if it does not exist."""
+        try:
+            self._graph.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+        except redis.ResponseError as e:
+            if "already indexed" not in str(e).lower():
+                logger.warning("Create index failed: %s", e)
 
     @property
     def client(self) -> None:
@@ -153,7 +159,9 @@ class FalkorDBGraphStore(GraphStore):
 
             # Call FalkorDB with prepared statement
             result = self._graph.query(query, params={"entity": entity})
-            return bool(result.result_set)
+            # `RETURN count(*)` always yields a single row, so the row count
+            # itself carries no information - the counter value does.
+            return bool(result.result_set) and result.result_set[0][0] > 0
 
         delete_rel(subj, obj, rel)
         if not check_edges(subj):
@@ -197,8 +205,39 @@ class FalkorDBGraphStore(GraphStore):
 
         """
         self._graph = self._driver.select_graph(graph_name)
+        self._database = graph_name
+        self._create_index()
 
         try:
             self.refresh_schema()
         except Exception as e:
             raise ValueError(f"Could not refresh schema. Error: {e}")
+
+    def close(self) -> None:
+        """Explicitly close the FalkorDB connection."""
+        if hasattr(self, "_driver"):
+            try:
+                self._driver.connection.close()
+            finally:
+                delattr(self, "_driver")
+
+    def __enter__(self) -> "FalkorDBGraphStore":
+        """Enter the runtime context, enabling `with FalkorDBGraphStore(...)`."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        """Close the connection when leaving the runtime context."""
+        self.close()
+
+    def __del__(self) -> None:
+        """Best-effort cleanup; prefer `close()` or the context manager."""
+        try:
+            self.close()
+        except Exception:
+            # Suppress any exceptions during garbage collection
+            pass

@@ -36,6 +36,7 @@ class BotoMinioReader(BaseReader):
         aws_access_secret: Optional[str] = None,
         aws_session_token: Optional[str] = None,
         s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com",
+        verify: Union[bool, str] = True,
         **kwargs: Any,
     ) -> None:
         """
@@ -62,6 +63,11 @@ class BotoMinioReader(BaseReader):
         aws_access_id (Optional[str]): provide AWS access key directly.
         aws_access_secret (Optional[str]): provide AWS access key directly.
         s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
+        verify (Union[bool, str]): whether to verify TLS certificates on the S3
+            connection, or a path to a CA bundle to use instead of the default.
+            Defaults to True. Only disable this if you understand the risk of
+            man-in-the-middle attacks (e.g. trusted internal network with a
+            self-signed certificate).
 
         """
         super().__init__(*args, **kwargs)
@@ -80,6 +86,7 @@ class BotoMinioReader(BaseReader):
         self.aws_access_secret = aws_access_secret
         self.aws_session_token = aws_session_token
         self.s3_endpoint_url = s3_endpoint_url
+        self.verify = verify
 
     def load_data(self) -> List[Document]:
         """Load file(s) from S3."""
@@ -92,7 +99,7 @@ class BotoMinioReader(BaseReader):
             aws_secret_access_key=self.aws_access_secret,
             aws_session_token=self.aws_session_token,
             config=boto3.session.Config(signature_version="s3v4"),
-            verify=False,
+            verify=self.verify,
         )
         s3 = boto3.resource(
             "s3",
@@ -101,7 +108,7 @@ class BotoMinioReader(BaseReader):
             aws_secret_access_key=self.aws_access_secret,
             aws_session_token=self.aws_session_token,
             config=boto3.session.Config(signature_version="s3v4"),
-            verify=False,
+            verify=self.verify,
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
