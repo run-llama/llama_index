@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ThinkingBlock,
     ToolCallBlock,
 )
+from llama_index.llms.anthropic.base import DEFAULT_ANTHROPIC_MODEL
 from llama_index.llms.anthropic.utils import (
     ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS,
     STRUCTURED_OUTPUT_SUPPORT,
@@ -458,3 +459,8 @@ def test_sonnet_5_5_has_1m_context_window(model: str) -> None:
     assert anthropic_modelname_to_contextsize(model) == 1000000
     assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
     assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
+
+
+def test_default_model_is_one_the_package_knows() -> None:
+    """The default has to resolve, or Anthropic().metadata raises on construction."""
+    assert anthropic_modelname_to_contextsize(DEFAULT_ANTHROPIC_MODEL) > 0
