@@ -92,7 +92,8 @@ def _copy_initial_state(initial_state: Optional[Dict[str, Any]]) -> Dict[str, An
 
 
 def _apply_state_prompt(chat_history: List[ChatMessage], state: Any) -> None:
-    """Inject the state prompt into the latest user message, in place.
+    """
+    Inject the state prompt into the latest user message, in place.
 
     A legacy string-content message is rewritten exactly as before: its text is
     embedded in ``DEFAULT_STATE_PROMPT``. A message whose wire content was a

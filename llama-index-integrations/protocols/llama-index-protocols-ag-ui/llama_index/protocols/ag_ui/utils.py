@@ -63,7 +63,8 @@ def _audio_mime_from_format(fmt: Optional[str]) -> Optional[str]:
 
 
 def _drop_none(**kwargs: Any) -> dict:
-    """Block constructor kwargs without ``None`` values.
+    """
+    Block constructor kwargs without ``None`` values.
 
     Field strictness varies across the supported llama-index-core range (0.14.1
     rejects an explicit ``url=None`` on ``AudioBlock``), so absent values are
@@ -72,8 +73,11 @@ def _drop_none(**kwargs: Any) -> dict:
     return {key: value for key, value in kwargs.items() if value is not None}
 
 
-def _source_kwargs(source: Union[InputContentDataSource, InputContentUrlSource]) -> dict:
-    """Project an AG-UI input-content source onto block constructor kwargs.
+def _source_kwargs(
+    source: Union[InputContentDataSource, InputContentUrlSource],
+) -> dict:
+    """
+    Project an AG-UI input-content source onto block constructor kwargs.
 
     A ``data`` source's base64 payload is passed through as ASCII bytes rather
     than decoded: the llama-index block normalizer keeps bytes that already are
@@ -107,9 +111,7 @@ def _binary_part_to_block(part: BinaryInputContent) -> Optional[ContentBlock]:
         )
     if mime_lower.startswith("audio/"):
         return AudioBlock(
-            **_drop_none(
-                audio=data, url=part.url, format=_audio_format_from_mime(mime)
-            )
+            **_drop_none(audio=data, url=part.url, format=_audio_format_from_mime(mime))
         )
     if mime_lower.startswith("video/"):
         return VideoBlock(
@@ -138,7 +140,8 @@ AG_UI_STATE_BLOCK_KEY = "ag_ui_injected_state_block"
 
 
 def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]:
-    """Convert AG-UI user-message content onto llama-index content blocks.
+    """
+    Convert AG-UI user-message content onto llama-index content blocks.
 
     String content becomes a single :class:`TextBlock`. List content maps each
     typed part (text/image/audio/video/document, plus the deprecated flat
@@ -224,7 +227,8 @@ def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]
 
 
 def _block_to_agui_part(block: ContentBlock) -> Optional[Any]:
-    """Convert one llama-index content block back onto an AG-UI input part.
+    """
+    Convert one llama-index content block back onto an AG-UI input part.
 
     The inverse of :func:`agui_content_to_blocks` for the block types it emits.
     A block with neither bytes nor a URL (e.g. path-based) has no AG-UI wire
@@ -244,7 +248,9 @@ def _block_to_agui_part(block: ContentBlock) -> Optional[Any]:
             )
         return None
 
-    def _bytes(block: ContentBlock, field: Optional[bytes], resolve: Callable) -> Optional[bytes]:
+    def _bytes(
+        block: ContentBlock, field: Optional[bytes], resolve: Callable
+    ) -> Optional[bytes]:
         # The block classes normalize stored bytes through a base64 heuristic,
         # so the field value is not reliably raw; resolve_*() is. Only resolved
         # when the block has no URL — resolving a URL-backed block would fetch

@@ -1,4 +1,5 @@
-"""The state prompt must not crash on (or corrupt) multimodal user messages.
+"""
+The state prompt must not crash on (or corrupt) multimodal user messages.
 
 Regression tests for the state-prompt rewrite in ``AGUIChatWorkflow``: the
 ``ChatMessage.content`` setter raises on a multi-block message, so a user
