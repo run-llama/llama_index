@@ -64,37 +64,39 @@ class GalaxiaClient:
         query: str,
     ) -> Union[dict, None]:
         conn = http.client.HTTPSConnection(self.api_url)
+        try:
+            flag_init = False
+            for i in range(self.n_retries):
+                init_res = self.initialize(conn, query)
 
-        flag_init = False
-        for i in range(self.n_retries):
-            init_res = self.initialize(conn, query)
+                if "operationId" in init_res:
+                    flag_init = True
+                    break
 
-            if "operationId" in init_res:
-                flag_init = True
-                break
+                time.sleep(self.wait_time * i)
 
-            time.sleep(self.wait_time * i)
+            if not flag_init:
+                # failed to init
+                return None
 
-        if not flag_init:
-            # failed to init
-            return None
+            flag_proc = False
+            for i in range(1, self.n_retries + 1):
+                time.sleep(self.wait_time * i)
+                status = self.check_status(conn, init_res)
 
-        flag_proc = False
-        for i in range(1, self.n_retries + 1):
-            time.sleep(self.wait_time * i)
-            status = self.check_status(conn, init_res)
+                if status["status"] == "processed":
+                    flag_proc = True
+                    break
 
-            if status["status"] == "processed":
-                flag_proc = True
-                break
+            if flag_proc:
+                res = self.get_result(conn, init_res)
+                return res["result"]["resultItems"]
 
-        if flag_proc:
-            res = self.get_result(conn, init_res)
-            return res["result"]["resultItems"]
-
-        else:
-            # failed to process
-            return None
+            else:
+                # failed to process
+                return None
+        finally:
+            conn.close()
 
 
 class GalaxiaRetriever(BaseRetriever):
