@@ -60,7 +60,7 @@ class McpToolSpec(
         An asynchronous method to get the tools list from MCP Client. If allowed_tools is set, it will filter the tools.
 
         Returns:
-            A list of tools, each tool object needs to contain name, description, inputSchema properties.
+            A list of tools, each tool object needs to contain name, description, input_schema properties.
 
         """
         response = await self.client.list_tools()
@@ -88,8 +88,8 @@ class McpToolSpec(
             static_response.resources if hasattr(static_response, "resources") else []
         )
         dynamic_resources = (
-            dynamic_response.resourceTemplates
-            if hasattr(dynamic_response, "resourceTemplates")
+            dynamic_response.resource_templates
+            if hasattr(dynamic_response, "resource_templates")
             else []
         )
         resources = static_resources + dynamic_resources
@@ -140,9 +140,9 @@ class McpToolSpec(
         function_tool_list: List[FunctionTool] = []
         for tool in tools_list:
             fn = self._create_tool_fn(tool.name)
-            # Create a Pydantic model based on the tool inputSchema
+            # Create a Pydantic model based on the tool input_schema
             model_schema = self.create_model_from_json_schema(
-                tool.inputSchema, model_name=f"{tool.name}_Schema"
+                tool.input_schema, model_name=f"{tool.name}_Schema"
             )
             # Set up global partial params as default
             tool_partial_params = dict(self.global_partial_params or {})
