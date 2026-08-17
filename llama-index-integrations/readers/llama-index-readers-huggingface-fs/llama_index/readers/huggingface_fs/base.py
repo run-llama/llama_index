@@ -40,8 +40,8 @@ class HuggingFaceFSReader(BaseReader):
                 with open(tmp / "tmp.jsonl.gz", "wb") as fp:
                     fp.write(test_data)
 
-                f = gzip.open(tmp / "tmp.jsonl.gz", "rb")
-                raw = f.read()
+                with gzip.open(tmp / "tmp.jsonl.gz", "rb") as f:
+                    raw = f.read()
                 data = raw.decode()
         else:
             data = test_data.decode()
