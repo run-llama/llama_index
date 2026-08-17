@@ -28,7 +28,7 @@ This tutorial shows you how to build a retriever to query a vector store.
 
 ## Building Ingestion/Retrieval from Scratch (Open-Source/Local Components)
 
-This tutoral shows you how to build an ingestion/retrieval pipeline using only
+This tutorial shows you how to build an ingestion/retrieval pipeline using only
 open-source components.
 
 - [Open Source RAG](/python/examples/low_level/oss_ingestion_retrieval)
