@@ -169,3 +169,40 @@ def test_neighbor_tags_splits() -> None:
         ]
     )
     assert len(splits) == 1
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
+def test_no_empty_nodes_for_container_tags() -> None:
+    # A container tag whose only children are themselves extracted tags yields
+    # no text of its own; it previously produced a spurious empty node.
+    html_parser = HTMLNodeParser(tags=["section", "p"])
+
+    splits = html_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""
+<!DOCTYPE html>
+<html>
+<body>
+    <section>
+        <p>First paragraph.</p>
+    </section>
+    <section></section>
+    <p>Second paragraph.</p>
+</body>
+</html>
+    """
+            )
+        ]
+    )
+
+    # No blank nodes should be emitted for the text-less <section> tags.
+    assert all(split.text.strip() for split in splits)
+    assert [split.text for split in splits] == [
+        "First paragraph.",
+        "Second paragraph.",
+    ]
