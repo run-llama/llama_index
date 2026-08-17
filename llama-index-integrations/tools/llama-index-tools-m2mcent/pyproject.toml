@@ -1,0 +1,20 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-tools-m2mcent"
+version = "0.1.0"
+description = "LlamaIndex ToolSpec integration for M2MCent MCP 1000 micro-services network on Base Mainnet"
+authors = ["Evozim <contact@m2mcent.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "llama_index"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.0"
+requests = "^2.28.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
