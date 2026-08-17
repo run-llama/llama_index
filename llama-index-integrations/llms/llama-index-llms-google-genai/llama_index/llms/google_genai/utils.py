@@ -231,7 +231,12 @@ def chat_from_gemini_response(
                     )
                 content_blocks.append(
                     ToolCallBlock(
-                        tool_call_id=part.function_call.name or "",
+                        # Gemini returns a unique per-call id; Vertex AI does not
+                        # (id is None), so fall back to the tool name to preserve
+                        # the previous behavior for Vertex.
+                        tool_call_id=part.function_call.id
+                        or part.function_call.name
+                        or "",
                         tool_name=part.function_call.name or "",
                         tool_kwargs=part.function_call.args or {},
                     )
@@ -344,6 +349,7 @@ async def chat_message_to_gemini(
     message: ChatMessage,
     file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
     client: Optional[Client] = None,
+    tool_id_to_name: Optional[Dict[str, str]] = None,
 ) -> tuple[types.Content, list[str]]:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     unique_tool_calls = []
@@ -404,6 +410,11 @@ async def chat_message_to_gemini(
             part = types.Part.from_function_call(
                 name=block.tool_name, args=cast(Dict[str, Any], block.tool_kwargs)
             )
+            # Echo the per-call id back so the model can pair this call with its
+            # response. Only set it when it's a genuine id (differs from the tool
+            # name), keeping the Vertex AI request byte-for-byte unchanged.
+            if block.tool_call_id and block.tool_call_id != block.tool_name:
+                part.function_call.id = block.tool_call_id
             unique_tool_calls.append((block.tool_name, str(block.tool_kwargs)))
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
@@ -442,14 +453,23 @@ async def chat_message_to_gemini(
                 part.thought_signature = tool_call.thought_signature
         parts.append(part)
 
-    # the tool call id is the name of the tool
-    # the tool call response is the content of the message, overriding the existing content
-    # (the only content before this should be the tool call)
+    # The tool call response is the content of the message, overriding the
+    # existing content (the only content before this should be the tool call).
+    # The function_response must carry the tool *name* (that is how the model
+    # pairs it with the declared function). When the provider supplied a
+    # per-call id (Gemini), tool_call_id holds that id and we recover the name
+    # from the originating tool call; we also echo the id so parallel calls to
+    # the same tool can be correlated. For Vertex AI (no id) tool_call_id equals
+    # the tool name, so the id is omitted and the request is unchanged.
     if message.additional_kwargs.get("tool_call_id"):
+        tool_call_id = message.additional_kwargs.get("tool_call_id")
+        tool_name = (tool_id_to_name or {}).get(tool_call_id, tool_call_id)
         function_response_part = types.Part.from_function_response(
-            name=message.additional_kwargs.get("tool_call_id"),
+            name=tool_name,
             response={"result": message.content},
         )
+        if tool_call_id and tool_call_id != tool_name:
+            function_response_part.function_response.id = tool_call_id
         return (
             types.Content(
                 role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
@@ -532,9 +552,18 @@ async def prepare_chat_params(
 
     # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
+
+    # Map each tool_call_id back to its tool name so that tool-result messages
+    # (which only carry the id) can be serialized with the correct function name.
+    tool_id_to_name: Dict[str, str] = {}
+    for message in merged_messages:
+        for block in message.blocks:
+            if isinstance(block, ToolCallBlock) and block.tool_call_id:
+                tool_id_to_name[block.tool_call_id] = block.tool_name
+
     initial_history_and_names = await asyncio.gather(
         *[
-            chat_message_to_gemini(message, file_mode, client)
+            chat_message_to_gemini(message, file_mode, client, tool_id_to_name)
             for message in merged_messages
         ]
     )
