@@ -21,3 +21,26 @@ llm = OpenAILike(
     is_function_calling_model=False,
 )
 ```
+
+## Governed OpenAI-compatible endpoints
+
+You can also use `OpenAILike` with a governed OpenAI-compatible endpoint when you want LlamaIndex to keep owning retrieval, agents, tools, and workflows while a centralized control plane handles model access, policy, audit trails, quotas, routing, and cost reporting.
+
+For example, [Tuning Engines](https://www.tuningengines.com/) exposes an OpenAI-compatible inference endpoint:
+
+```python
+import os
+
+from llama_index.llms.openai_like import OpenAILike
+
+llm = OpenAILike(
+    model=os.environ.get("TUNING_ENGINES_MODEL", "your-model-alias"),
+    api_base="https://api.tuningengines.com/v1",
+    api_key=os.environ["TUNING_ENGINES_API_KEY"],
+    context_window=128000,
+    is_chat_model=True,
+    is_function_calling_model=True,
+)
+```
+
+This pattern is useful for production RAG and agent applications that need centralized compliance, control, and cost visibility without changing their LlamaIndex application logic.
