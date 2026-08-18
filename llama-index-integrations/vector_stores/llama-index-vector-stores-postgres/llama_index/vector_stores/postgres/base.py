@@ -735,16 +735,17 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"{self._to_postgres_operator(filter_.operator)}"
             )
         else:
-            # Check if value is a number. If so, cast the metadata value to a float
-            # This is necessary because the metadata is stored as a string
-            try:
+            # Check if value is a number (int/float, excluding bool). If so, cast the metadata value to a float.
+            # Otherwise, treat it as a string to avoid invalid float casts on string metadata.
+            if isinstance(filter_.value, (int, float)) and not isinstance(
+                filter_.value, bool
+            ):
                 return text(
                     f"(metadata_->>'{filter_.key}')::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"{float(filter_.value)}"
                 )
-            except ValueError:
-                # If not a number, then treat it as a string
+            else:
                 return text(
                     f"metadata_->>'{filter_.key}' "
                     f"{self._to_postgres_operator(filter_.operator)} "
