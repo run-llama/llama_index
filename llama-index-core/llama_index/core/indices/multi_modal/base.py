@@ -132,9 +132,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         return self._is_text_vector_store_empty
 
     def as_retriever(self, **kwargs: Any) -> MultiModalVectorIndexRetriever:
+        node_ids = kwargs.pop("node_ids", None)
+        if node_ids is None and self.index_struct and self.index_struct.nodes_dict:
+            node_ids = list(self.index_struct.nodes_dict.values())
+
         return MultiModalVectorIndexRetriever(
             self,
-            node_ids=list(self.index_struct.nodes_dict.values()),
+            node_ids=node_ids,
             **kwargs,
         )
 
