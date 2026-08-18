@@ -31,6 +31,8 @@ try:
     from pymilvus import Function as BaseMilvusBuiltInFunction
     from pymilvus import FunctionType
 except ImportError:
+    BaseMilvusBuiltInFunction = object  # type: ignore
+    FunctionType = None  # type: ignore
     error_info = (
         "Cannot import built-in function from PyMilvus. "
         "To use Milvus built-in function, "
@@ -130,7 +132,9 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
 
     for filter in standard_filters.filters:
         if isinstance(filter, MetadataFilters):
-            filters.append(f"({parse_standard_filters(filter)[1]})")
+            _, nested_expr = parse_standard_filters(filter)
+            if nested_expr:
+                filters.append(f"({nested_expr})")
             continue
         filter_value = parse_filter_value(filter.value)
         if filter_value is None and filter.operator != FilterOperator.IS_EMPTY:
@@ -166,7 +170,12 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
                 f'Operator {filter.operator} ("{filter.operator.value}") is not supported by Milvus.'
             )
 
-    return filters, f" {standard_filters.condition.value} ".join(filters)
+    condition_val = (
+        standard_filters.condition.value
+        if standard_filters.condition is not None
+        else FilterCondition.AND.value
+    )
+    return filters, f" {condition_val} ".join(filters)
 
 
 def parse_scalar_filters(scalar_filters: ScalarMetadataFilters = None):
