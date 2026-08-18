@@ -2,6 +2,7 @@ from typing import List
 
 import tiktoken
 from llama_index.core.node_parser.text import SentenceSplitter
+from llama_index.core.node_parser.text.utils import split_text_keep_separator
 from llama_index.core.schema import Document, MetadataMode, TextNode
 
 
@@ -13,6 +14,15 @@ def test_paragraphs() -> None:
     sentence_split = sentence_text_splitter.split_text(text)
     assert sentence_split[0] == " ".join(["foo"] * 15)
     assert sentence_split[1] == " ".join(["bar"] * 15)
+
+
+def test_split_text_keep_separator_preserves_lossless_reconstruction() -> None:
+    text = "a..b."
+
+    chunks = split_text_keep_separator(text, ".")
+
+    assert chunks == ["a", ".", ".b", "."]
+    assert "".join(chunks) == text
 
 
 def test_start_end_char_idx() -> None:

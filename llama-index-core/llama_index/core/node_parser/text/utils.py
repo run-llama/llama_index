@@ -25,14 +25,14 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
 
 def split_text_keep_separator(text: str, separator: str) -> List[str]:
     """
-    Split text with separator and keep the separator at the end of each split.
+    Split text with separator and keep the separator at the beginning of each split after the first.
 
     Args:
         text (str): The text to split.
         separator (str): The separator to split on.
 
     Returns:
-        List[str]: List of text segments with separators preserved at the end of each split.
+        List[str]: List of text segments with separators preserved at the beginning of each split after the first.
 
     """
     parts = text.split(separator)
