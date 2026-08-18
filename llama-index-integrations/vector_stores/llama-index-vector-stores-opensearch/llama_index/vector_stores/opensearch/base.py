@@ -1,6 +1,7 @@
 """Elasticsearch/Opensearch vector store."""
 
 import asyncio
+import json
 import logging
 import uuid
 import warnings
@@ -384,6 +385,32 @@ class OpensearchVectorClient:
             query["_source"] = {"exclude": excluded_source_fields}
         return query
 
+    @staticmethod
+    def _coerce_filter_value(value: Any) -> Any:
+        """
+        Safely coerce JSON-stringified filter values to native Python types.
+
+        If value is a string looking like a JSON literal (starts/ends with quotes, brackets, braces, or bool/null),
+        attempt json.loads. Otherwise, returns the original value.
+        """
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if (
+                (
+                    trimmed.startswith('"')
+                    and trimmed.endswith('"')
+                    and len(trimmed) >= 2
+                )
+                or (trimmed.startswith("[") and trimmed.endswith("]"))
+                or (trimmed.startswith("{") and trimmed.endswith("}"))
+                or trimmed in ("true", "false", "null")
+            ):
+                try:
+                    return json.loads(trimmed)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+        return value
+
     def _is_text_field(self, value: Any) -> bool:
         """
         Check if value is a string and keyword filtering needs to be performed.
@@ -405,48 +432,72 @@ class OpensearchVectorClient:
 
         As Opensearch does not differentiate between scalar/array keyword fields, IN and ANY are equivalent.
         """
-        key = f"metadata.{filter.key}"
+        val = self._coerce_filter_value(filter.value)
+        key = (
+            filter.key
+            if filter.key.startswith("metadata.")
+            else f"metadata.{filter.key}"
+        )
         op = filter.operator
 
-        equality_postfix = ".keyword" if self._is_text_field(value=filter.value) else ""
+        equality_postfix = (
+            ".keyword"
+            if (self._is_text_field(value=val) and not key.endswith(".keyword"))
+            else ""
+        )
 
         if op == FilterOperator.EQ:
-            return {"term": {f"{key}{equality_postfix}": filter.value}}
+            return {"term": {f"{key}{equality_postfix}": val}}
         elif op in [
             FilterOperator.GT,
             FilterOperator.GTE,
             FilterOperator.LT,
             FilterOperator.LTE,
         ]:
-            return {"range": {key: {filter.operator.name.lower(): filter.value}}}
+            return {"range": {key: {filter.operator.name.lower(): val}}}
         elif op == FilterOperator.NE:
-            return {
-                "bool": {
-                    "must_not": {"term": {f"{key}{equality_postfix}": filter.value}}
-                }
-            }
+            return {"bool": {"must_not": {"term": {f"{key}{equality_postfix}": val}}}}
         elif op in [FilterOperator.IN, FilterOperator.ANY]:
-            if isinstance(filter.value, list) and all(
-                self._is_text_field(val) for val in filter.value
-            ):
-                return {"terms": {f"{key}.keyword": filter.value}}
+            if isinstance(val, list) and all(self._is_text_field(item) for item in val):
+                postfix = "" if key.endswith(".keyword") else ".keyword"
+                return {"terms": {f"{key}{postfix}": val}}
             else:
-                return {"terms": {key: filter.value}}
+                return {"terms": {key: val}}
         elif op == FilterOperator.NIN:
-            return {"bool": {"must_not": {"terms": {key: filter.value}}}}
+            if isinstance(val, list) and all(self._is_text_field(item) for item in val):
+                postfix = "" if key.endswith(".keyword") else ".keyword"
+                return {"bool": {"must_not": {"terms": {f"{key}{postfix}": val}}}}
+            else:
+                return {"bool": {"must_not": {"terms": {key: val}}}}
         elif op == FilterOperator.ALL:
-            return {
-                "terms_set": {
-                    key: {
-                        "terms": filter.value,
-                        "minimum_should_match_script": {"source": "params.num_terms"},
+            if isinstance(val, list) and all(self._is_text_field(item) for item in val):
+                postfix = "" if key.endswith(".keyword") else ".keyword"
+                return {
+                    "terms_set": {
+                        f"{key}{postfix}": {
+                            "terms": val,
+                            "minimum_should_match_script": {
+                                "source": "params.num_terms"
+                            },
+                        }
                     }
                 }
-            }
+            else:
+                return {
+                    "terms_set": {
+                        key: {
+                            "terms": val,
+                            "minimum_should_match_script": {
+                                "source": "params.num_terms"
+                            },
+                        }
+                    }
+                }
         elif op in (FilterOperator.TEXT_MATCH, FilterOperator.TEXT_MATCH_INSENSITIVE):
-            return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
+            match_key = key[:-8] if key.endswith(".keyword") else key
+            return {"match": {match_key: {"query": val, "fuzziness": "AUTO"}}}
         elif op == FilterOperator.CONTAINS:
-            return {"wildcard": {key: f"*{filter.value}*"}}
+            return {"wildcard": {f"{key}{equality_postfix}": f"*{val}*"}}
         elif op == FilterOperator.IS_EMPTY:
             return {"bool": {"must_not": {"exists": {"field": key}}}}
         else:
