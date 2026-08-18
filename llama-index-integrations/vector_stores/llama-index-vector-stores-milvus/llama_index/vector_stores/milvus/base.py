@@ -940,16 +940,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields = ["*"]
         # Parse the filter
         if query.filters is not None or "milvus_scalar_filters" in kwargs:
-            expr.append(
-                _to_milvus_filter(
-                    query.filters,
-                    (
-                        kwargs["milvus_scalar_filters"]
-                        if "milvus_scalar_filters" in kwargs
-                        else None
-                    ),
-                )
+            filter_expr = _to_milvus_filter(
+                query.filters,
+                (
+                    kwargs["milvus_scalar_filters"]
+                    if "milvus_scalar_filters" in kwargs
+                    else None
+                ),
             )
+            if filter_expr:
+                expr.append(filter_expr)
         # Parse any docs we are filtering on
         if query.doc_ids is not None and len(query.doc_ids) != 0:
             expr_list = ['"' + entry + '"' for entry in query.doc_ids]
