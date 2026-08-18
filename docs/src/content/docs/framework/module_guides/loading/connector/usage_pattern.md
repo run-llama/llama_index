@@ -4,13 +4,12 @@ title: Usage Pattern
 
 ## Get Started
 
-Each data loader contains a "Usage" section showing how that loader can be used. At the core of using each loader is a `download_loader` function, which
-downloads the loader file into a module that you can use within your application.
+Each data loader contains a "Usage" section showing how that loader can be used. Install the relevant reader package and import the reader class directly in your application.
 
 Example usage:
 
 ```python
-from llama_index.core import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex
 
 from llama_index.readers.google import GoogleDocsReader
 
