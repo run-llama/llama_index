@@ -6,6 +6,7 @@ import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.oxylabs.base import OxylabsBaseReader
 from llama_index.readers.oxylabs import (
+    RESULT_CATEGORIES,
     OxylabsAmazonBestsellersReader,
     OxylabsAmazonPricingReader,
     OxylabsAmazonProductReader,
@@ -330,3 +331,112 @@ async def test_async_google_oxylabs_readers(
     assert "ORGANIC RESULTS ITEMS" in text
     assert "SEARCH INFORMATION" in text
     assert "RELATED SEARCHES ITEMS" in text
+
+
+GOOGLE_RESPONSE_RAW = {
+    "results": [
+        {
+            "content": {
+                "results": {
+                    "organic": [{"title": "an organic result"}],
+                    "search_information": {"query": "iPhone 16"},
+                    "knowledge": {"title": "a knowledge graph entry"},
+                }
+            }
+        }
+    ],
+    "job": {"job_id": 42424242},
+}
+
+
+def google_response() -> MagicMock:
+    mock = MagicMock()
+    mock.raw = GOOGLE_RESPONSE_RAW
+    return mock
+
+
+@pytest.mark.unit
+def test_result_categories_defaults_to_every_category(monkeypatch: pytest.MonkeyPatch):
+    reader = OxylabsGoogleSearchReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+    )
+    assert reader.result_categories == []
+
+    monkeypatch.setattr(
+        reader.oxylabs_api.google,
+        "scrape_search",
+        MagicMock(return_value=google_response()),
+    )
+
+    text = reader.load_data({"query": "iPhone 16", "parse": True})[0].text
+
+    assert "ORGANIC RESULTS ITEMS" in text
+    assert "SEARCH INFORMATION" in text
+    assert "KNOWLEDGE GRAPH" in text
+
+
+@pytest.mark.unit
+def test_result_categories_filters_output(monkeypatch: pytest.MonkeyPatch):
+    reader = OxylabsGoogleSearchReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+        result_categories=["search_information"],
+    )
+
+    monkeypatch.setattr(
+        reader.oxylabs_api.google,
+        "scrape_search",
+        MagicMock(return_value=google_response()),
+    )
+
+    text = reader.load_data({"query": "iPhone 16", "parse": True})[0].text
+
+    assert "SEARCH INFORMATION" in text
+    assert "ORGANIC RESULTS ITEMS" not in text
+    assert "KNOWLEDGE GRAPH" not in text
+
+
+@pytest.mark.unit
+def test_unknown_result_category_is_rejected():
+    """A typo must fail loudly, not silently return every category."""
+    with pytest.raises(ValueError, match="knowledge_grahp"):
+        OxylabsGoogleSearchReader(
+            username="OXYLABS_USERNAME",
+            password="OXYLABS_PASSWORD",
+            result_categories=["knowledge_grahp"],
+        )
+
+
+@pytest.mark.unit
+def test_every_advertised_category_is_accepted():
+    reader = OxylabsGoogleSearchReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+        result_categories=RESULT_CATEGORIES,
+    )
+    assert reader.result_categories == RESULT_CATEGORIES
+
+
+@requires_credentials
+@pytest.mark.integration
+def test_result_categories_shrinks_live_document():
+    """Filtering should measurably reduce the document sent downstream."""
+    payload = {"query": "iPhone 16", "parse": True}
+    credentials = {
+        "username": os.environ.get("OXYLABS_USERNAME"),
+        "password": os.environ.get("OXYLABS_PASSWORD"),
+    }
+
+    full = OxylabsGoogleSearchReader(**credentials).load_data(payload)[0].text
+    filtered = (
+        OxylabsGoogleSearchReader(
+            **credentials, result_categories=["search_information"]
+        )
+        .load_data(payload)[0]
+        .text
+    )
+
+    assert "SEARCH INFORMATION" in filtered
+    assert "ORGANIC RESULTS ITEMS" not in filtered
+    assert len(filtered) < len(full)

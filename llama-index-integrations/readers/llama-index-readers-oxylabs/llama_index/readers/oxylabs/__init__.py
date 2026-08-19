@@ -8,6 +8,7 @@ from llama_index.readers.oxylabs.amazon_bestsellers import (
 )
 from llama_index.readers.oxylabs.google_search import OxylabsGoogleSearchReader
 from llama_index.readers.oxylabs.google_ads import OxylabsGoogleAdsReader
+from llama_index.readers.oxylabs.google_base import RESULT_CATEGORIES
 
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "OxylabsAmazonBestsellersReader",
     "OxylabsGoogleSearchReader",
     "OxylabsGoogleAdsReader",
+    "RESULT_CATEGORIES",
 ]
