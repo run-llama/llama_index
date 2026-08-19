@@ -303,8 +303,10 @@ class OpenAI(FunctionCallingLLM):
             api_version=api_version,
         )
 
-        # TODO: Temp forced to 1.0 for o1
-        if model in O1_MODELS:
+        # O1 models only support the default temperature; only override it
+        # when the caller left it at the default, so an explicit value is
+        # never silently discarded.
+        if model in O1_MODELS and temperature == DEFAULT_TEMPERATURE:
             temperature = 1.0
 
         if not is_chatcomp_api_supported(model):
