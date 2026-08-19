@@ -1,7 +1,10 @@
+import asyncio
+from typing import List, Tuple
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
+from llama_index.core.base.embeddings.base import Embedding
 from llama_index.embeddings.huggingface_api.base import HuggingFaceInferenceAPIEmbedding
 from llama_index.embeddings.huggingface_api.pooling import Pooling
 
@@ -97,6 +100,45 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             == raw_single_embedding
         )
         mock_feature_extraction.assert_awaited_once_with("test")
+
+    def test_sync_embed_methods_inside_running_event_loop(
+        self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
+    ) -> None:
+        """
+        Sync embed methods must work when called from within a running event loop.
+
+        Regression test for https://github.com/run-llama/llama_index/issues/22744:
+        a bare ``asyncio.run()`` in the sync methods raised
+        ``RuntimeError: asyncio.run() cannot be called from a running event loop``
+        in Jupyter/ipykernel cells and async web handlers.
+        """
+        raw_single_embedding = np.random.default_rng().random(1024, dtype=np.float32)
+
+        async def call_sync_methods() -> Tuple[Embedding, Embedding, List[Embedding]]:
+            query_embedding = hf_inference_api_embedding.get_query_embedding("query")
+            text_embedding = hf_inference_api_embedding.get_text_embedding("text")
+            batch_embeddings = hf_inference_api_embedding.get_text_embedding_batch(
+                ["first", "second"]
+            )
+            return query_embedding, text_embedding, batch_embeddings
+
+        with patch.object(
+            hf_inference_api_embedding._async_client,
+            "feature_extraction",
+            AsyncMock(return_value=raw_single_embedding),
+        ):
+            query_embedding, text_embedding, batch_embeddings = asyncio.run(
+                call_sync_methods()
+            )
+
+        for embedding in (query_embedding, text_embedding, *batch_embeddings):
+            assert isinstance(embedding, list)
+            assert len(embedding) == 1024
+            assert np.all(
+                np.array(embedding, dtype=raw_single_embedding.dtype)
+                == raw_single_embedding
+            )
+        assert len(batch_embeddings) == 2
 
     def test_serialization(
         self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
