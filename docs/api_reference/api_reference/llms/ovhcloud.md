@@ -1,3 +1,4 @@
 ::: llama_index.llms.ovhcloud
-options:
-members: - OVHcloud
+    options:
+      members:
+        - OVHcloud

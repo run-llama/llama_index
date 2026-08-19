@@ -1,3 +1,4 @@
 ::: llama_index.tools.vector_db
-options:
-members: - VectorDBToolSpec
+    options:
+      members:
+        - VectorDBToolSpec

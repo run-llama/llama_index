@@ -1,3 +1,4 @@
 ::: llama_index.readers.firebase_realtimedb
-options:
-members: - FirebaseRealtimeDatabaseReader
+    options:
+      members:
+        - FirebaseRealtimeDatabaseReader

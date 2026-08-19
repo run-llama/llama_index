@@ -1,3 +1,4 @@
 ::: llama_index.readers.openalex
-options:
-members: - OpenAlexReader
+    options:
+      members:
+        - OpenAlexReader

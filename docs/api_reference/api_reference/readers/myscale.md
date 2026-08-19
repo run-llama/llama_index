@@ -1,3 +1,4 @@
 ::: llama_index.readers.myscale
-options:
-members: - MyScaleReader
+    options:
+      members:
+        - MyScaleReader

@@ -1,3 +1,4 @@
 ::: llama_index.tools.exa
-options:
-members: - ExaToolSpec
+    options:
+      members:
+        - ExaToolSpec

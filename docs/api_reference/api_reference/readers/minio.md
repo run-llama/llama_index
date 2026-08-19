@@ -1,3 +1,5 @@
 ::: llama_index.readers.minio
-options:
-members: - BotoMinioReader - MinioReader
+    options:
+      members:
+        - BotoMinioReader
+        - MinioReader

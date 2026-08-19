@@ -1,3 +1,4 @@
 ::: llama_index.llms.yi
-options:
-members: - Yi
+    options:
+      members:
+        - Yi

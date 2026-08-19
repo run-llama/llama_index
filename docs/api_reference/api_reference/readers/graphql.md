@@ -1,3 +1,4 @@
 ::: llama_index.readers.graphql
-options:
-members: - GraphQLReader
+    options:
+      members:
+        - GraphQLReader

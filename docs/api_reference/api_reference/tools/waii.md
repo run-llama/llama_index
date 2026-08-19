@@ -1,3 +1,4 @@
 ::: llama_index.tools.waii
-options:
-members: - WaiiToolSpec
+    options:
+      members:
+        - WaiiToolSpec

@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.textembed
-options:
-members: - TextEmbed
+    options:
+      members:
+        - TextEmbed

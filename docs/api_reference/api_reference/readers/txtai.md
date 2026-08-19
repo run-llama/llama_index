@@ -1,3 +1,4 @@
 ::: llama_index.readers.txtai
-options:
-members: - TxtaiReader
+    options:
+      members:
+        - TxtaiReader

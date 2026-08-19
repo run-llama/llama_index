@@ -1,3 +1,4 @@
 ::: llama_index.llms.localai
-options:
-members: - LocalAI
+    options:
+      members:
+        - LocalAI
