@@ -1,4 +1,3 @@
 ::: llama_index.program.lmformatenforcer
-    options:
-      members:
-        - LMFormatEnforcerPydanticProgram
+options:
+members: - LMFormatEnforcerPydanticProgram

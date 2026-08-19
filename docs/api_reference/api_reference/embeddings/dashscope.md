@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.dashscope
-    options:
-      members:
-        - DashScopeEmbedding
+options:
+members: - DashScopeEmbedding

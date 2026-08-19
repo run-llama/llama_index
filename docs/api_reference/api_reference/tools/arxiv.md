@@ -1,4 +1,3 @@
 ::: llama_index.tools.arxiv
-    options:
-      members:
-        - ArxivToolSpec
+options:
+members: - ArxivToolSpec

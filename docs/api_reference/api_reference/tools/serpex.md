@@ -1,4 +1,3 @@
 ::: llama_index.tools.serpex
-    options:
-      members:
-        - SerpexToolSpec
+options:
+members: - SerpexToolSpec

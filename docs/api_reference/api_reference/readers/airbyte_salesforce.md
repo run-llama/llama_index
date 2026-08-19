@@ -1,4 +1,3 @@
 ::: llama_index.readers.airbyte_salesforce
-    options:
-      members:
-        - AirbyteSalesforceReader
+options:
+members: - AirbyteSalesforceReader

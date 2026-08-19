@@ -1,4 +1,3 @@
 ::: llama_index.readers.whatsapp
-    options:
-      members:
-        - WhatsappChatLoader
+options:
+members: - WhatsappChatLoader

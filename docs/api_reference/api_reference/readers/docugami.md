@@ -1,4 +1,3 @@
 ::: llama_index.readers.docugami
-    options:
-      members:
-        - DocugamiReader
+options:
+members: - DocugamiReader

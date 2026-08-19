@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.litellm
-    options:
-      members:
-        - LiteLLMEmbedding
+options:
+members: - LiteLLMEmbedding

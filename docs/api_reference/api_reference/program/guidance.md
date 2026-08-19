@@ -1,4 +1,3 @@
 ::: llama_index.program.guidance
-    options:
-      members:
-        - GuidancePydanticProgram
+options:
+members: - GuidancePydanticProgram

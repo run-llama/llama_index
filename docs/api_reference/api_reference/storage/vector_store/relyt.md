@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.relyt
-    options:
-      members:
-        - RelytVectorStore
+options:
+members: - RelytVectorStore

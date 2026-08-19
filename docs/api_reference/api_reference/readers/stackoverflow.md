@@ -1,4 +1,3 @@
 ::: llama_index.readers.stackoverflow
-    options:
-      members:
-        - StackoverflowReader
+options:
+members: - StackoverflowReader

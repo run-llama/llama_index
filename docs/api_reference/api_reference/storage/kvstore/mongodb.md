@@ -1,4 +1,3 @@
 ::: llama_index.storage.kvstore.mongodb
-    options:
-      members:
-        - MongoDBKVStore
+options:
+members: - MongoDBKVStore
