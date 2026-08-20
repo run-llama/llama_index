@@ -3,6 +3,24 @@ from llama_index.core.schema import BaseNode
 from typing import Any, Sequence, List, Dict
 import importlib
 
+_ALLOWED_MODULE_PREFIXES = ("llama_index.",)
+
+
+def _safe_load_node_class(module_name: str, class_name: str) -> type:
+    # CWE-470: reject modules outside llama_index namespace
+    if not any(module_name.startswith(p) for p in _ALLOWED_MODULE_PREFIXES):
+        raise ValueError(
+            f"Untrusted module '{module_name}': only llama_index.* modules are permitted."
+        )
+    module = importlib.import_module(module_name)
+    cls = getattr(module, class_name)
+    # Ensure the resolved class is actually a BaseNode subclass
+    if not (isinstance(cls, type) and issubclass(cls, BaseNode)):
+        raise ValueError(
+            f"'{module_name}.{class_name}' is not a BaseNode subclass."
+        )
+    return cls
+
 
 def ray_serialize_node(node: BaseNode) -> Dict[str, Any]:
     """Serialize a node to send to a Ray actor."""
@@ -60,8 +78,7 @@ def ray_serialize_node_batch(nodes: Sequence[BaseNode]) -> pa.Table:
 
 def ray_deserialize_node(serialized_node: Dict[str, Any]) -> BaseNode:
     """Deserialize a node received from a Ray actor."""
-    module = importlib.import_module(serialized_node["module"])
-    cls = getattr(module, serialized_node["class_name"])
+    cls = _safe_load_node_class(serialized_node["module"], serialized_node["class_name"])
 
     # Reconstruct from JSON string
     node = cls.from_json(serialized_node["data"])
