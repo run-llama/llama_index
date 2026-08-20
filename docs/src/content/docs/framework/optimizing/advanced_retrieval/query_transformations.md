@@ -49,6 +49,64 @@ print(response)
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
+### Step-Back Query Transformation
+
+[Step-back prompting](https://arxiv.org/abs/2310.06117) (Zheng et al., 2023) asks the LLM to
+abstract a specific question into a higher-level, principle-oriented question before
+retrieval. Retrieving against the abstracted question surfaces documents that explain the
+underlying concept, which often improves recall for queries that contain specific
+identifiers, dates, or narrow entities.
+
+Unlike HyDE — which keeps the original `query_str` and adds a _hypothetical
+document_ to `custom_embedding_strs` — Step-Back _replaces_ `query_str` with the
+abstracted question and sets `custom_embedding_strs=[new_query_str]`. This mirrors
+the return shape of `DecomposeQueryTransform`.
+
+```python
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.indices.query.query_transform.base import (
+    StepBackQueryTransform,
+)
+from llama_index.core.query_engine import TransformQueryEngine
+
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
+index = VectorStoreIndex(documents)
+
+step_back = StepBackQueryTransform()
+query_engine = index.as_query_engine()
+query_engine = TransformQueryEngine(query_engine, query_transform=step_back)
+response = query_engine.query(
+    "What school did Alice attend between Aug and Nov 1954?"
+)
+print(response)
+```
+
+You can also build a custom prompt:
+
+```python
+from llama_index.core.indices.query.query_transform.base import (
+    StepBackQueryTransform,
+    build_step_back_prompt,
+)
+from llama_index.core.prompts.prompt_type import PromptType
+
+custom_prompt = build_step_back_prompt(
+    system_instructions=(
+        "You rewrite domain-specific questions into abstract, principle-oriented ones."
+    ),
+    few_shot_examples=[
+        (
+            "Who signed contract #4711 on 2024-03-15?",
+            "What is the contract-signing process?",
+        ),
+    ],
+    prompt_type=PromptType.STEP_BACK,
+)
+step_back = StepBackQueryTransform(step_back_prompt=custom_prompt)
+```
+
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/StepBackQueryTransformDemo.ipynb) for a full walkthrough.
+
 ### Multi-Step Query Transformations
 
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
@@ -84,4 +142,5 @@ print(str(response))
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.
 
 - [HyDE Query Transform](/python/examples/query_transformations/hydequerytransformdemo)
+- [Step-Back Query Transform](/python/examples/query_transformations/stepbackquerytransformdemo)
 - [Multistep Query](/python/examples/query_transformations/simpleindexdemo-multistep)
