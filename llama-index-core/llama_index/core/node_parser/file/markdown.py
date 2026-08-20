@@ -54,11 +54,25 @@ class MarkdownNodeParser(NodeParser):
         # Keep track of (markdown level, text) for headers
         header_stack: List[tuple[int, str]] = []
         code_block = False
+        # The fence character ("`" or "~") that opened the current code block.
+        code_block_fence = ""
 
         for line in lines:
-            # Track if we're inside a code block to avoid parsing headers in code
-            if line.lstrip().startswith("```"):
-                code_block = not code_block
+            # Track if we're inside a fenced code block to avoid parsing headers
+            # in code. Per CommonMark, a fence is 3+ backticks (```) or 3+
+            # tildes (~~~), and is closed only by a fence using the same
+            # character.
+            fence_match = re.match(r"^\s*(`{3,}|~{3,})", line)
+            if fence_match:
+                fence_char = fence_match.group(1)[0]
+                if not code_block:
+                    code_block = True
+                    code_block_fence = fence_char
+                elif fence_char == code_block_fence:
+                    code_block = False
+                    code_block_fence = ""
+                # A fence using a different character while already inside a
+                # code block is part of the code content, so it does not toggle.
                 current_section += line + "\n"
                 continue
 
