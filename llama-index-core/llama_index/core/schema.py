@@ -746,7 +746,7 @@ class Node(BaseNode):
         The hash is generated based on the available resources (audio, image, text or video) and its metadata.
         """
         doc_identities = []
-        metadata_str = self.get_metadata_str(mode=MetadataMode.ALL)
+        metadata_str = self.get_metadata_str(mode=MetadataMode.EMBED)
         if metadata_str:
             doc_identities.append(metadata_str)
         if self.audio_resource is not None:
@@ -799,7 +799,8 @@ class TextNode(BaseNode):
 
     @property
     def hash(self) -> str:
-        doc_identity = str(self.text) + str(self.metadata)
+        metadata_str = self.get_metadata_str(mode=MetadataMode.EMBED)
+        doc_identity = str(self.text) + metadata_str
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
     @classmethod

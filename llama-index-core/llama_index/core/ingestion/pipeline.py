@@ -60,7 +60,7 @@ def get_transformation_hash(
 ) -> str:
     """Get the hash of a transformation."""
     nodes_str = "".join(
-        [str(node.get_content(metadata_mode=MetadataMode.ALL)) for node in nodes]
+        [str(node.get_content(metadata_mode=MetadataMode.EMBED)) for node in nodes]
     )
 
     transformation_dict = transformation.to_dict()
