@@ -166,7 +166,12 @@ class SemanticSplitterNodeParser(NodeParser):
         all_nodes: List[BaseNode] = []
         for doc in documents:
             text = doc.text
+            if not text.strip():
+                continue
             text_splits = self.sentence_splitter(text)
+
+            if not text_splits:
+                continue
 
             sentences = self._build_sentence_groups(text_splits)
 
@@ -201,7 +206,12 @@ class SemanticSplitterNodeParser(NodeParser):
         all_nodes: List[BaseNode] = []
         for doc in documents:
             text = doc.text
+            if not text.strip():
+                continue
             text_splits = self.sentence_splitter(text)
+
+            if not text_splits:
+                continue
 
             sentences = self._build_sentence_groups(text_splits)
 

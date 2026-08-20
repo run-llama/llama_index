@@ -101,6 +101,11 @@ namespace_packages = true
 plugins = "pydantic.mypy"
 python_version = "3.9"
 
+[tool.poetry]
+name = "llama-index"
+version = "0.14.23"
+packages = [{ include = "llama_index" }]
+
 [tool.ruff]
 exclude = [
     "_static",

@@ -246,6 +246,9 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
+        if not splits:
+            return []
+
         chunks: List[str] = []
         cur_chunk: List[Tuple[str, int]] = []  # list of (text, length)
         last_chunk: List[Tuple[str, int]] = []
@@ -341,5 +344,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             splits = split_fn(text)
             if len(splits) > 1:
                 break
+
+        if not splits:
+            return [text], False
 
         return splits, False
