@@ -5,6 +5,7 @@ import os
 import re
 import warnings
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from hashlib import sha256
@@ -259,6 +260,23 @@ class DocstoreStrategy(str, Enum):
     UPSERTS_AND_DELETE = "upserts_and_delete"
 
 
+@dataclass
+class _PlannedRun:
+    """
+    Decisions for one run, computed read-only and applied only after
+    transformations succeed.
+    """
+
+    nodes_to_run: List[BaseNode] = field(default_factory=list)
+    # changed documents: old docstore entry and old vectors removed before the
+    # new chunks are added (the new chunks carry the same ref_doc_id). A set:
+    # multiple input nodes sharing a ref_doc_id must schedule ONE delete —
+    # vector_store.delete has no idempotency guarantee across backends.
+    ref_docs_to_delete: set[str] = field(default_factory=set)
+    # documents missing from the input under UPSERTS_AND_DELETE
+    docs_to_purge: List[str] = field(default_factory=list)
+
+
 class IngestionPipeline(BaseModel):
     """
     An ingestion pipeline that can be applied to data.
@@ -448,63 +466,75 @@ class IngestionPipeline(BaseModel):
 
         return input_nodes
 
-    def _handle_duplicates(
+    def _plan_duplicates(
         self,
         nodes: Sequence[BaseNode],
-    ) -> Sequence[BaseNode]:
-        """Handle docstore duplicates by checking all hashes."""
+    ) -> _PlannedRun:
+        """Plan docstore de-duplication by checking all hashes. Read-only."""
         assert self.docstore is not None
 
         existing_hashes = self.docstore.get_all_document_hashes()
         current_hashes: set[str] = set()
-        nodes_to_run = []
+        planned = _PlannedRun()
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
-                self.docstore.set_document_hash(node.id_, node.hash)
-                nodes_to_run.append(node)
+                planned.nodes_to_run.append(node)
                 current_hashes.add(node.hash)
 
-        return nodes_to_run
+        return planned
 
-    def _handle_upserts(
+    def _plan_upserts(
         self,
         nodes: Sequence[BaseNode],
-    ) -> Sequence[BaseNode]:
-        """Handle docstore upserts by checking hashes and ids."""
+        effective_strategy: DocstoreStrategy,
+    ) -> _PlannedRun:
+        """Plan docstore upserts by checking hashes and ids. Read-only."""
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
-        deduped_nodes_to_run = []
+        planned = _PlannedRun()
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
             existing_hash = self.docstore.get_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                deduped_nodes_to_run.append(node)
+                planned.nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
-
-                deduped_nodes_to_run.append(node)
+                planned.ref_docs_to_delete.add(ref_doc_id)
+                planned.nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
 
-        if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-            # Identify missing docs and delete them from docstore and vector store
+        if effective_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+            # Identify docs missing from the input; deletion is deferred until
+            # the run is known to have succeeded
             existing_doc_ids_before = set(
                 self.docstore.get_all_document_hashes().values()
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
-            for ref_doc_id in doc_ids_to_delete:
-                self.docstore.delete_document(ref_doc_id)
+            planned.docs_to_purge.extend(sorted(doc_ids_to_delete))
 
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
+        return planned
 
-        return deduped_nodes_to_run
+    def _apply_planned_deletes(self, planned: _PlannedRun) -> None:
+        """
+        Apply the deletions decided at planning time. Runs only after
+        transformations have succeeded, and before the new chunks are added to
+        the vector store: the new chunks carry the same ref_doc_id as the old
+        ones, so deleting later would drop them too.
+        """
+        assert self.docstore is not None
+
+        for ref_doc_id in sorted(planned.ref_docs_to_delete):
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+            if self.vector_store is not None:
+                self.vector_store.delete(ref_doc_id)
+
+        for ref_doc_id in planned.docs_to_purge:
+            self.docstore.delete_document(ref_doc_id)
+            if self.vector_store is not None:
+                self.vector_store.delete(ref_doc_id)
 
     @staticmethod
     def _node_batcher(
@@ -527,10 +557,11 @@ class IngestionPipeline(BaseModel):
         if effective_strategy in (
             DocstoreStrategy.UPSERTS,
             DocstoreStrategy.UPSERTS_AND_DELETE,
+            DocstoreStrategy.DUPLICATES_ONLY,
         ):
+            # hashes are recorded here, not at planning time, so a failed run
+            # never marks a document as ingested
             self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
-            self.docstore.add_documents(nodes, store_text=store_doc_text)
-        elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
@@ -571,37 +602,27 @@ class IngestionPipeline(BaseModel):
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
-        effective_strategy = self.docstore_strategy
-        if (
-            self.docstore is not None
-            and self.vector_store is None
-            and self.docstore_strategy
-            in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE)
-        ):
-            warnings.warn(
-                f"docstore_strategy='{self.docstore_strategy.value}' requires a vector store "
-                "to apply upsert/delete semantics; falling back to 'duplicates_only' for this run. "
-                "pipeline.docstore_strategy is unchanged.",
-                UserWarning,
-                stacklevel=3,
-            )
-            effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
+        effective_strategy = self._resolve_effective_strategy()
 
-        # check if we need to dedup
+        # decide what to run (read-only); store mutations are deferred until
+        # the transformations have succeeded
+        planned: Optional[_PlannedRun] = None
         if self.docstore is not None and self.vector_store is not None:
             if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = self._handle_upserts(input_nodes)
+                planned = self._plan_upserts(input_nodes, effective_strategy)
             elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
-                nodes_to_run = self._handle_duplicates(input_nodes)
+                planned = self._plan_duplicates(input_nodes)
             else:
                 raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
         elif self.docstore is not None and self.vector_store is None:
-            nodes_to_run = self._handle_duplicates(input_nodes)
-        else:
-            nodes_to_run = input_nodes
+            planned = self._plan_duplicates(input_nodes)
+
+        nodes_to_run = (
+            planned.nodes_to_run if planned is not None else list(input_nodes)
+        )
 
         if num_workers and num_workers > 1:
             num_cpus = multiprocessing.cpu_count()
@@ -647,6 +668,11 @@ class IngestionPipeline(BaseModel):
 
         nodes = nodes or []
 
+        # transformations succeeded: apply the deferred deletions first (the
+        # new chunks share ref_doc_id with the old ones), then the writes
+        if planned is not None:
+            self._apply_planned_deletes(planned)
+
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
             if nodes_with_embeddings:
@@ -661,6 +687,24 @@ class IngestionPipeline(BaseModel):
 
         return nodes
 
+    def _resolve_effective_strategy(self) -> DocstoreStrategy:
+        """Strategy actually applied by a run with the current stores."""
+        if (
+            self.docstore is not None
+            and self.vector_store is None
+            and self.docstore_strategy
+            in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE)
+        ):
+            warnings.warn(
+                f"docstore_strategy='{self.docstore_strategy.value}' requires a vector store "
+                "to apply upsert/delete semantics; falling back to 'duplicates_only' for this run. "
+                "pipeline.docstore_strategy is unchanged.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return DocstoreStrategy.DUPLICATES_ONLY
+        return self.docstore_strategy
+
     # ------ async methods ------
     async def _aupdate_docstore(
         self,
@@ -674,73 +718,84 @@ class IngestionPipeline(BaseModel):
         if effective_strategy in (
             DocstoreStrategy.UPSERTS,
             DocstoreStrategy.UPSERTS_AND_DELETE,
+            DocstoreStrategy.DUPLICATES_ONLY,
         ):
+            # hashes are recorded here, not at planning time, so a failed run
+            # never marks a document as ingested
             await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
-            await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
-        elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
 
-    async def _ahandle_duplicates(
+    async def _aplan_duplicates(
         self,
         nodes: Sequence[BaseNode],
-        store_doc_text: bool = True,
-    ) -> Sequence[BaseNode]:
-        """Handle docstore duplicates by checking all hashes."""
+    ) -> _PlannedRun:
+        """Plan docstore de-duplication by checking all hashes. Read-only."""
         assert self.docstore is not None
 
         existing_hashes = await self.docstore.aget_all_document_hashes()
         current_hashes: set[str] = set()
-        nodes_to_run = []
+        planned = _PlannedRun()
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
-                await self.docstore.aset_document_hash(node.id_, node.hash)
-                nodes_to_run.append(node)
+                planned.nodes_to_run.append(node)
                 current_hashes.add(node.hash)
 
-        return nodes_to_run
+        return planned
 
-    async def _ahandle_upserts(
+    async def _aplan_upserts(
         self,
         nodes: Sequence[BaseNode],
-        store_doc_text: bool = True,
-    ) -> Sequence[BaseNode]:
-        """Handle docstore upserts by checking hashes and ids."""
+        effective_strategy: DocstoreStrategy,
+    ) -> _PlannedRun:
+        """Plan docstore upserts by checking hashes and ids. Read-only."""
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
-        deduped_nodes_to_run = []
+        planned = _PlannedRun()
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
             existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                deduped_nodes_to_run.append(node)
+                planned.nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    await self.vector_store.adelete(ref_doc_id)
-
-                deduped_nodes_to_run.append(node)
+                planned.ref_docs_to_delete.add(ref_doc_id)
+                planned.nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
 
-        if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-            # Identify missing docs and delete them from docstore and vector store
+        if effective_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+            # Identify docs missing from the input; deletion is deferred until
+            # the run is known to have succeeded
             existing_doc_ids_before = set(
                 (await self.docstore.aget_all_document_hashes()).values()
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
-            for ref_doc_id in doc_ids_to_delete:
-                await self.docstore.adelete_document(ref_doc_id)
+            planned.docs_to_purge.extend(sorted(doc_ids_to_delete))
 
-                if self.vector_store is not None:
-                    await self.vector_store.adelete(ref_doc_id)
+        return planned
 
-        return deduped_nodes_to_run
+    async def _aapply_planned_deletes(self, planned: _PlannedRun) -> None:
+        """
+        Apply the deletions decided at planning time. Runs only after
+        transformations have succeeded, and before the new chunks are added to
+        the vector store: the new chunks carry the same ref_doc_id as the old
+        ones, so deleting later would drop them too.
+        """
+        assert self.docstore is not None
+
+        for ref_doc_id in sorted(planned.ref_docs_to_delete):
+            await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
+            if self.vector_store is not None:
+                await self.vector_store.adelete(ref_doc_id)
+
+        for ref_doc_id in planned.docs_to_purge:
+            await self.docstore.adelete_document(ref_doc_id)
+            if self.vector_store is not None:
+                await self.vector_store.adelete(ref_doc_id)
 
     @dispatcher.span
     async def arun(
@@ -778,43 +833,27 @@ class IngestionPipeline(BaseModel):
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
-        effective_strategy = self.docstore_strategy
-        if (
-            self.docstore is not None
-            and self.vector_store is None
-            and self.docstore_strategy
-            in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE)
-        ):
-            warnings.warn(
-                f"docstore_strategy='{self.docstore_strategy.value}' requires a vector store "
-                "to apply upsert/delete semantics; falling back to 'duplicates_only' for this run. "
-                "pipeline.docstore_strategy is unchanged.",
-                UserWarning,
-                stacklevel=3,
-            )
-            effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
+        effective_strategy = self._resolve_effective_strategy()
 
-        # check if we need to dedup
+        # decide what to run (read-only); store mutations are deferred until
+        # the transformations have succeeded
+        planned: Optional[_PlannedRun] = None
         if self.docstore is not None and self.vector_store is not None:
             if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = await self._ahandle_upserts(
-                    input_nodes, store_doc_text=store_doc_text
-                )
+                planned = await self._aplan_upserts(input_nodes, effective_strategy)
             elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
-                nodes_to_run = await self._ahandle_duplicates(
-                    input_nodes, store_doc_text=store_doc_text
-                )
+                planned = await self._aplan_duplicates(input_nodes)
             else:
                 raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
         elif self.docstore is not None and self.vector_store is None:
-            nodes_to_run = await self._ahandle_duplicates(
-                input_nodes, store_doc_text=store_doc_text
-            )
-        else:
-            nodes_to_run = input_nodes
+            planned = await self._aplan_duplicates(input_nodes)
+
+        nodes_to_run = (
+            planned.nodes_to_run if planned is not None else list(input_nodes)
+        )
 
         if num_workers and num_workers > 1:
             num_cpus = multiprocessing.cpu_count()
@@ -866,6 +905,11 @@ class IngestionPipeline(BaseModel):
             nodes = nodes
 
         nodes = nodes or []
+
+        # transformations succeeded: apply the deferred deletions first (the
+        # new chunks share ref_doc_id with the old ones), then the writes
+        if planned is not None:
+            await self._aapply_planned_deletes(planned)
 
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
