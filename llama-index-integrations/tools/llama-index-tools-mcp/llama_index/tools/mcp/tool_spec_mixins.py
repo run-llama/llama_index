@@ -93,6 +93,8 @@ class TypeResolutionMixin:
             return self._create_list_type(schema, defs)
         if self._is_simple_object(schema):
             return self._create_dict_type(schema, defs)
+        if self._is_inline_nested_object(schema):
+            return self._create_nested_model(schema, defs)
         return json_type_mapping.get(json_type, str)
 
 
@@ -128,6 +130,26 @@ class TypeCreationMixin:
             and additional_props is not False
             and isinstance(additional_props, dict)
         )
+
+    def _is_inline_nested_object(self: "McpToolSpec", schema: dict) -> bool:
+        """Check if schema is an inline nested object (has properties defined directly)."""
+        return schema.get("type") == "object" and "properties" in schema
+
+    def _create_nested_model(self: "McpToolSpec", schema: dict, defs: dict) -> type:
+        """Create a nested Pydantic model from an inline object schema."""
+        import hashlib
+
+        # Generate a unique model name based on schema content
+        schema_str = str(sorted(schema.get("properties", {}).keys()))
+        schema_hash = hashlib.md5(schema_str.encode()).hexdigest()[:8]
+        model_name = f"NestedModel_{schema_hash}"
+
+        # Use the title from schema if available
+        if "title" in schema:
+            model_name = schema["title"]
+
+        # Create the nested model recursively
+        return self._create_model(schema, model_name, defs)
 
     def _extract_ref_name(self: "McpToolSpec", ref_path: str) -> str:
         """Extract reference name from $ref path."""
