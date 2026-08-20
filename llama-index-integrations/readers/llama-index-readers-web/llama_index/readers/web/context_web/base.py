@@ -45,6 +45,26 @@ class ContextWebReader(BasePydanticReader):
         timeout: HTTP timeout in seconds.
         metadata_fn: Optional function that returns additional metadata for a URL.
 
+    Examples:
+        Scrape a page into a document:
+
+        .. code-block:: python
+
+            from llama_index.readers.web import ContextWebReader
+
+            reader = ContextWebReader(mode="scrape")
+            documents = reader.load_data(url="https://www.context.dev")
+
+        Search the web and include page markdown:
+
+        .. code-block:: python
+
+            reader = ContextWebReader(
+                mode="search",
+                params={"markdownOptions": {"enabled": True}},
+            )
+            documents = reader.load_data(query="latest AI infrastructure news")
+
     """
 
     is_remote: bool = True
