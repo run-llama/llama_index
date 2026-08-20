@@ -1,10 +1,21 @@
 """Tests for SQLAlchemyChatStore schema functionality."""
 
 import pytest
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.schema import CreateSchema
 from unittest.mock import AsyncMock, MagicMock
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore
+
+
+def _compile_schema_creation(schema_name: str) -> str:
+    """Compile CREATE SCHEMA with the PostgreSQL dialect for assertion stability."""
+    return str(
+        CreateSchema(schema_name, if_not_exists=True).compile(
+            dialect=postgresql.dialect()
+        )
+    )
 
 
 class TestSQLAlchemyChatStoreSchema:
@@ -72,10 +83,42 @@ class TestSQLAlchemyChatStoreSchema:
         # Verify schema creation was called
         mock_conn.execute.assert_called()
         call_args = mock_conn.execute.call_args_list[0][0][0]
-        assert 'CREATE SCHEMA IF NOT EXISTS "test_schema"' in str(call_args)
+        assert isinstance(call_args, CreateSchema)
+        assert str(call_args.compile(dialect=postgresql.dialect())) == (
+            _compile_schema_creation("test_schema")
+        )
 
         # Verify MetaData has schema
         assert store._metadata.schema == "test_schema"
+
+    @pytest.mark.asyncio
+    async def test_postgresql_schema_creation_escapes_schema_name(self):
+        """Test that schema creation safely quotes attacker-controlled schema names."""
+        store = SQLAlchemyChatStore(
+            table_name="test_messages",
+            async_database_uri="postgresql+asyncpg://user:pass@host/db",
+            db_schema='x"; DROP TABLE messages; --',
+        )
+
+        async_engine = MagicMock()
+        async_engine.begin.return_value.__aenter__ = AsyncMock()
+        async_engine.begin.return_value.__aexit__ = AsyncMock()
+
+        mock_conn = MagicMock()
+        mock_conn.execute = AsyncMock()
+        mock_conn.run_sync = AsyncMock()
+
+        async_engine.begin.return_value.__aenter__.return_value = mock_conn
+        store._async_engine = async_engine
+
+        await store._setup_tables(async_engine)
+
+        call_args = mock_conn.execute.call_args_list[0][0][0]
+        assert isinstance(call_args, CreateSchema)
+
+        assert str(call_args.compile(dialect=postgresql.dialect())) == (
+            _compile_schema_creation('x"; DROP TABLE messages; --')
+        )
 
     @pytest.mark.asyncio
     async def test_sqlite_schema_behavior(self):
@@ -179,7 +222,10 @@ class TestSQLAlchemyChatStoreSchema:
         # Verify schema creation SQL was called
         mock_conn.execute.assert_called()
         call_args = mock_conn.execute.call_args_list[0][0][0]
-        assert 'CREATE SCHEMA IF NOT EXISTS "my_schema"' in str(call_args)
+        assert isinstance(call_args, CreateSchema)
+        assert str(call_args.compile(dialect=postgresql.dialect())) == (
+            _compile_schema_creation("my_schema")
+        )
         assert store._metadata.schema == "my_schema"
 
     @pytest.mark.asyncio
