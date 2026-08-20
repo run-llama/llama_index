@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 import json
@@ -20,6 +21,12 @@ if TYPE_CHECKING:
     from oracledb import Connection
 
 """OracleEmbeddings class"""
+
+logger = logging.getLogger(__name__)
+
+
+def _clear_session_proxy(cursor: Any) -> None:
+    cursor.execute("begin utl_http.set_proxy(:proxy); end;", proxy=None)
 
 
 class OracleEmbeddings(BaseEmbedding):
@@ -94,6 +101,8 @@ class OracleEmbeddings(BaseEmbedding):
         if text is None:
             return None
 
+        cursor = None
+        proxy_was_set = False
         embedding = None
         try:
             oracledb.defaults.fetch_lobs = False
@@ -103,27 +112,53 @@ class OracleEmbeddings(BaseEmbedding):
                 cursor.execute(
                     "begin utl_http.set_proxy(:proxy); end;", proxy=self._proxy
                 )
+                proxy_was_set = True
 
-            cursor.execute(
-                "select t.* from dbms_vector_chain.utl_to_embeddings(:content, json(:params)) t",
-                content=text,
-                params=json.dumps(self._params),
-            )
+            try:
+                cursor.execute(
+                    "select t.* from dbms_vector_chain.utl_to_embeddings(:content, json(:params)) t",
+                    content=text,
+                    params=json.dumps(self._params),
+                )
 
-            row = cursor.fetchone()
-            if row is None:
-                embedding = []
+                row = cursor.fetchone()
+                if row is None:
+                    embedding = []
+                else:
+                    rdata = json.loads(row[0])
+                    # dereference string as array
+                    embedding = json.loads(rdata["embed_vector"])
+            except BaseException:
+                if proxy_was_set:
+                    try:
+                        _clear_session_proxy(cursor)
+                    except Exception:
+                        logger.exception(
+                            "Failed to clear Oracle session proxy after "
+                            "_get_embedding failed"
+                        )
+                raise
             else:
-                rdata = json.loads(row[0])
-                # dereference string as array
-                embedding = json.loads(rdata["embed_vector"])
+                if proxy_was_set:
+                    try:
+                        _clear_session_proxy(cursor)
+                    except Exception as cleanup_err:
+                        logger.exception(
+                            "Failed to clear Oracle session proxy after "
+                            "_get_embedding succeeded"
+                        )
+                        raise RuntimeError(
+                            "Failed to clear Oracle session proxy after "
+                            "_get_embedding succeeded"
+                        ) from cleanup_err
 
-            cursor.close()
             return embedding
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
-            cursor.close()
             raise
+        finally:
+            if cursor is not None:
+                cursor.close()
 
     def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
@@ -147,6 +182,8 @@ class OracleEmbeddings(BaseEmbedding):
         if texts is None:
             return None
 
+        cursor = None
+        proxy_was_set = False
         embeddings: List[List[float]] = []
         try:
             # returns strings or bytes instead of a locator
@@ -157,37 +194,63 @@ class OracleEmbeddings(BaseEmbedding):
                 cursor.execute(
                     "begin utl_http.set_proxy(:proxy); end;", proxy=self._proxy
                 )
+                proxy_was_set = True
 
-            chunks = []
-            for i, text in enumerate(texts, start=1):
-                chunk = {"chunk_id": i, "chunk_data": text}
-                chunks.append(json.dumps(chunk))
+            try:
+                chunks = []
+                for i, text in enumerate(texts, start=1):
+                    chunk = {"chunk_id": i, "chunk_data": text}
+                    chunks.append(json.dumps(chunk))
 
-            vector_array_type = self._conn.gettype("SYS.VECTOR_ARRAY_T")
-            inputs = vector_array_type.newobject(chunks)
-            cursor.execute(
-                "select t.* "
-                + "from dbms_vector_chain.utl_to_embeddings(:content, "
-                + "json(:params)) t",
-                content=inputs,
-                params=json.dumps(self._params),
-            )
+                vector_array_type = self._conn.gettype("SYS.VECTOR_ARRAY_T")
+                inputs = vector_array_type.newobject(chunks)
+                cursor.execute(
+                    "select t.* "
+                    + "from dbms_vector_chain.utl_to_embeddings(:content, "
+                    + "json(:params)) t",
+                    content=inputs,
+                    params=json.dumps(self._params),
+                )
 
-            for row in cursor:
-                if row is None:
-                    embeddings.append([])
-                else:
-                    rdata = json.loads(row[0])
-                    # dereference string as array
-                    vec = json.loads(rdata["embed_vector"])
-                    embeddings.append(vec)
+                for row in cursor:
+                    if row is None:
+                        embeddings.append([])
+                    else:
+                        rdata = json.loads(row[0])
+                        # dereference string as array
+                        vec = json.loads(rdata["embed_vector"])
+                        embeddings.append(vec)
+            except BaseException:
+                if proxy_was_set:
+                    try:
+                        _clear_session_proxy(cursor)
+                    except Exception:
+                        logger.exception(
+                            "Failed to clear Oracle session proxy after "
+                            "_get_embeddings failed"
+                        )
+                raise
+            else:
+                if proxy_was_set:
+                    try:
+                        _clear_session_proxy(cursor)
+                    except Exception as cleanup_err:
+                        logger.exception(
+                            "Failed to clear Oracle session proxy after "
+                            "_get_embeddings succeeded"
+                        )
+                        raise RuntimeError(
+                            "Failed to clear Oracle session proxy after "
+                            "_get_embeddings succeeded"
+                        ) from cleanup_err
 
-            cursor.close()
             return embeddings
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
-            cursor.close()
             raise
+        finally:
+            if cursor is not None:
+                cursor.close()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         return self._get_embedding(query)
