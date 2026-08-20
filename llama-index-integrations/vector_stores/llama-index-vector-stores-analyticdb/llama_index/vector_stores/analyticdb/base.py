@@ -40,16 +40,23 @@ OPERATOR_MAP = {
 }
 
 
+def _escape_sql_str(value: Any) -> str:
+    # The filter is sent to AnalyticDB as a raw SQL string (the request `filter` field has
+    # no bind-parameter support), so single quotes in values must be escaped.
+    return str(value).replace("'", "''")
+
+
 def _build_filter_clause(filter_: MetadataFilter) -> str:
     adb_operator = OPERATOR_MAP.get(filter_.operator)
+    key = _escape_sql_str(filter_.key)
     if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-        return f"metadata_->>'{filter_.key}' {adb_operator} {tuple(filter_.value)}"
+        values = ", ".join(f"'{_escape_sql_str(v)}'" for v in filter_.value)
+        return f"metadata_->>'{key}' {adb_operator} ({values})"
     elif filter_.operator == FilterOperator.CONTAINS:
-        return (
-            f"metadata_::jsonb->'{filter_.key}' {adb_operator} '[\"{filter_.value}\"]'"
-        )
+        json_literal = _escape_sql_str(json.dumps([filter_.value]))
+        return f"metadata_::jsonb->'{key}' {adb_operator} '{json_literal}'"
     else:
-        return f"metadata_->>'{filter_.key}' {adb_operator} '{filter_.value}'"
+        return f"metadata_->>'{key}' {adb_operator} '{_escape_sql_str(filter_.value)}'"
 
 
 def _recursively_parse_adb_filter(filters: MetadataFilters) -> Union[str, None]:
