@@ -1,5 +1,10 @@
+import asyncio
+from pathlib import Path
+from unittest.mock import patch
+
 import pytest
 from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document
 from llama_index.readers.microsoft_onedrive import OneDriveReader
 
 test_client_id = "test_client_id"
@@ -31,6 +36,71 @@ def test_serialize():
     assert new_reader.client_id == reader.client_id
     assert new_reader.tenant_id == reader.tenant_id
     assert new_reader.required_exts == reader.required_exts
+
+
+def _reader() -> OneDriveReader:
+    return OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+
+
+def test_alist_resources_offloads_to_thread():
+    reader = _reader()
+    with (
+        patch.object(
+            OneDriveReader, "list_resources", return_value=["a.txt"]
+        ) as mock_sync,
+        patch("asyncio.to_thread", wraps=asyncio.to_thread) as spy,
+    ):
+        result = asyncio.run(reader.alist_resources())
+
+    # The async resource API must run the blocking sync call off the event loop.
+    spy.assert_called_once()
+    mock_sync.assert_called_once()
+    assert result == ["a.txt"]
+
+
+def test_aget_resource_info_offloads_to_thread():
+    reader = _reader()
+    info = {"file_path": "a.txt"}
+    with (
+        patch.object(
+            OneDriveReader, "get_resource_info", return_value=info
+        ) as mock_sync,
+        patch("asyncio.to_thread", wraps=asyncio.to_thread) as spy,
+    ):
+        result = asyncio.run(reader.aget_resource_info("a.txt"))
+
+    spy.assert_called_once()
+    mock_sync.assert_called_once()
+    assert result == info
+
+
+def test_aload_resource_offloads_to_thread():
+    reader = _reader()
+    docs = [Document(text="hi")]
+    with (
+        patch.object(OneDriveReader, "load_resource", return_value=docs) as mock_sync,
+        patch("asyncio.to_thread", wraps=asyncio.to_thread) as spy,
+    ):
+        result = asyncio.run(reader.aload_resource("a.txt"))
+
+    spy.assert_called_once()
+    mock_sync.assert_called_once()
+    assert result == docs
+
+
+def test_aread_file_content_offloads_to_thread():
+    reader = _reader()
+    with (
+        patch.object(
+            OneDriveReader, "read_file_content", return_value=b"data"
+        ) as mock_sync,
+        patch("asyncio.to_thread", wraps=asyncio.to_thread) as spy,
+    ):
+        result = asyncio.run(reader.aread_file_content(Path("a.txt")))
+
+    spy.assert_called_once()
+    mock_sync.assert_called_once()
+    assert result == b"data"
 
 
 @pytest.fixture()
