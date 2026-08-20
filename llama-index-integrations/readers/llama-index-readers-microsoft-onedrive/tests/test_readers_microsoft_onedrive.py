@@ -60,3 +60,59 @@ def test_mixins(real_onedrive_reader: OneDriveReader):
     file_content = real_onedrive_reader.read_file_content(resource)
     assert file_content is not None
     assert len(file_content) == resource_info["file_size"]
+
+
+def test_http_requests_use_default_timeout(monkeypatch, tmp_path):
+    """Ensure OneDrive HTTP helpers pass a timeout to requests.get (#22140)."""
+    captured = []
+
+    class FakeResponse:
+        def __init__(self, payload=None, content=b"hello", status_code=200):
+            self._payload = payload or {}
+            self.content = content
+            self.status_code = status_code
+
+        def json(self):
+            return self._payload
+
+    def fake_get(*args, **kwargs):
+        captured.append({"args": args, "kwargs": kwargs})
+        # permissions endpoint expects {"value": [...]}
+        if kwargs.get("url") and "permissions" in kwargs["url"]:
+            return FakeResponse({"value": []})
+        return FakeResponse({"ok": True}, content=b"file-bytes")
+
+    monkeypatch.setattr(
+        "llama_index.readers.microsoft_onedrive.base.requests.get", fake_get
+    )
+
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+
+    # 1) Graph item listing/download metadata path
+    result = reader._get_items_in_drive_with_maxretries(
+        access_token="token", item_ref="root"
+    )
+    assert result == {"ok": True}
+
+    # 2) Direct file download URL path
+    local_dir = tmp_path / "dl"
+    local_dir.mkdir()
+    path = reader._download_file_by_url(
+        {
+            "@microsoft.graph.downloadUrl": "https://example.com/file.bin",
+            "name": "file.bin",
+        },
+        str(local_dir),
+    )
+    assert path.endswith("file.bin")
+    assert (local_dir / "file.bin").read_bytes() == b"file-bytes"
+
+    # 3) Permissions metadata path
+    perms = reader._get_permissions_info(
+        {"id": "item-1"}, userprincipalname="user@example.com", access_token="token"
+    )
+    assert isinstance(perms, dict)
+
+    assert len(captured) == 3
+    for call in captured:
+        assert call["kwargs"].get("timeout") == 60
