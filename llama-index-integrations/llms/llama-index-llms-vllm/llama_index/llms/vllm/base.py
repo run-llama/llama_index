@@ -1,5 +1,7 @@
+import inspect
 import json
-from typing import Any, Callable, Dict, List, Optional, Sequence
+import warnings
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -91,7 +93,11 @@ class Vllm(LLM):
 
     best_of: Optional[int] = Field(
         default=None,
-        description="Number of output sequences that are generated from the prompt.",
+        description=(
+            "Number of output sequences that are generated from the prompt. "
+            "Only passed through when set and when supported by the installed "
+            "vLLM version (removed from SamplingParams in vLLM >= 0.19.0)."
+        ),
     )
 
     presence_penalty: float = Field(
@@ -254,7 +260,9 @@ class Vllm(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
         }
-        return {**base_kwargs}
+        # Drop unset optionals (e.g. best_of=None) so SamplingParams is not
+        # handed kwargs it no longer accepts (#21371, vLLM >= 0.19.0).
+        return {k: v for k, v in base_kwargs.items() if v is not None}
 
     @atexit.register
     def close():
@@ -272,6 +280,37 @@ class Vllm(LLM):
             **kwargs,
         }
 
+    def _filter_sampling_params(
+        self,
+        params: Dict[str, Any],
+        *,
+        valid_keys: Optional[Set[str]] = None,
+    ) -> Dict[str, Any]:
+        """Keep only kwargs accepted by the installed vLLM SamplingParams.
+
+        vLLM periodically renames or removes sampling fields. ``best_of`` was
+        removed in vLLM >= 0.19.0; passing it raises TypeError and breaks every
+        ``.complete()`` call (#21371). When *valid_keys* is omitted, the keys
+        are resolved from ``vllm.SamplingParams.__init__``.
+        """
+        if valid_keys is None:
+            from vllm import SamplingParams
+
+            valid_keys = (
+                set(inspect.signature(SamplingParams.__init__).parameters) - {"self"}
+            )
+        unsupported = set(params) - valid_keys
+        if unsupported:
+            warnings.warn(
+                "The following sampling kwargs are not supported by the "
+                "installed vLLM version and will be ignored: "
+                f"{sorted(unsupported)}",
+                UserWarning,
+                stacklevel=3,
+            )
+            return {k: v for k, v in params.items() if k in valid_keys}
+        return params
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         kwargs = kwargs if kwargs else {}
@@ -288,7 +327,7 @@ class Vllm(LLM):
 
         from vllm import SamplingParams
 
-        # build sampling parameters
+        params = self._filter_sampling_params(params)
         sampling_params = SamplingParams(**params)
         outputs = self._client.generate([prompt], sampling_params)
         return CompletionResponse(text=outputs[0].outputs[0].text)
