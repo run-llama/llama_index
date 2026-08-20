@@ -1,7 +1,7 @@
 import asyncio
 import contextvars
 import pytest
-from llama_index.core.async_utils import batch_gather, asyncio_run
+from llama_index.core.async_utils import batch_gather, asyncio_run, run_async_tasks
 
 
 def test_batch_gather_indivisible_task_list() -> None:
@@ -37,3 +37,34 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+def test_run_async_tasks_propagates_exception_without_progress() -> None:
+    """Task exceptions must propagate when show_progress=False."""
+
+    async def ok() -> int:
+        return 1
+
+    async def fail() -> int:
+        raise ValueError("task failure")
+
+    with pytest.raises(ValueError, match="task failure"):
+        run_async_tasks([ok(), fail()], show_progress=False)
+
+
+def test_run_async_tasks_propagates_exception_with_progress() -> None:
+    """Task exceptions must propagate even when show_progress=True.
+
+    Regression for the bug where the broad `except Exception: pass` in the
+    tqdm path swallowed task failures, then re-awaiting consumed coroutines
+    raised an unrelated RuntimeError instead of the original ValueError.
+    """
+
+    async def ok() -> int:
+        return 1
+
+    async def fail() -> int:
+        raise ValueError("task failure")
+
+    with pytest.raises(ValueError, match="task failure"):
+        run_async_tasks([ok(), fail()], show_progress=True)
