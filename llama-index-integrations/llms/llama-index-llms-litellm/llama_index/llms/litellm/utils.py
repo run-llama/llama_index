@@ -388,9 +388,7 @@ def update_tool_calls(
 
                     # Update ID if present
                     if "id" in delta_dict:
-                        if "id" not in existing_tool:
-                            existing_tool["id"] = ""
-                        existing_tool["id"] += delta_dict.get("id", "")
+                        existing_tool["id"] = delta_dict["id"]
 
                     # Update type if present
                     if "type" in delta_dict:
