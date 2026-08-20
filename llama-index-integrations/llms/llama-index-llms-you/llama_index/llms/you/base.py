@@ -16,23 +16,27 @@ SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
 
-def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
+def _request(
+    base_url: str, api_key: str, timeout: float = 60.0, **kwargs
+) -> Dict[str, Any]:
     """
     NOTE: This function can be replaced by a OpenAPI-generated Python SDK in the future,
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
-    response = requests.post(base_url, headers=headers, json=kwargs)
+    response = requests.post(base_url, headers=headers, json=kwargs, timeout=timeout)
     response.raise_for_status()
     return response.json()
 
 
 def _request_stream(
-    base_url: str, api_key: str, **kwargs
+    base_url: str, api_key: str, timeout: float = 60.0, **kwargs
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)
-    response = requests.post(base_url, headers=headers, stream=True, json=params)
+    response = requests.post(
+        base_url, headers=headers, stream=True, json=params, timeout=timeout
+    )
     response.raise_for_status()
 
     client = sseclient.SSEClient(response)
@@ -83,6 +87,11 @@ class You(CustomLLM):
         None,
         description="You.com API key, if `YDC_API_KEY` is not set in the environment",
     )
+    timeout: float = Field(
+        default=60.0,
+        description="Timeout in seconds for API requests.",
+        ge=0,
+    )
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -97,6 +106,7 @@ class You(CustomLLM):
         response = _request(
             self.endpoint,
             api_key=self._api_key,
+            timeout=self.timeout,
             query=prompt,
         )
         return CompletionResponse(text=response["answer"], raw=response)
@@ -106,6 +116,7 @@ class You(CustomLLM):
         response = _request_stream(
             self.endpoint,
             api_key=self._api_key,
+            timeout=self.timeout,
             query=prompt,
         )
 

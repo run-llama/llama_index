@@ -18,10 +18,12 @@ class WolframAlphaToolSpec(BaseToolSpec):
         self,
         app_id: Optional[str] = None,
         api_params: Optional[dict] = None,
+        timeout: float = 30.0,
     ) -> None:
         """Initialize with parameters."""
         self.token = app_id
         self._api_params = api_params or {}
+        self.timeout = timeout
 
     def wolfram_alpha_query(self, query: str) -> str:
         r"""
@@ -78,6 +80,6 @@ class WolframAlphaToolSpec(BaseToolSpec):
         params = {"input": query, **self._api_params}
         url = f"{QUERY_URL_TMPL}?{urllib.parse.urlencode(params)}"
         headers = {"Authorization": f"Bearer {self.token}"}
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=self.timeout)
         response.raise_for_status()
         return response.text
