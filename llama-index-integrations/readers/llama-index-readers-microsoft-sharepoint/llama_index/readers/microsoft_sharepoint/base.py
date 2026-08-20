@@ -282,6 +282,9 @@ class SharePointReader(
                             "name" in site
                             and site["name"].lower() == sharepoint_site_name.lower()
                         ):
+                            logger.debug(
+                                f"Found site ID: {site['id']} for site name: {sharepoint_site_name}"
+                            )
                             return site["id"]
                     site_information_endpoint = json_response.get(
                         "@odata.nextLink", None
@@ -327,10 +330,16 @@ class SharePointReader(
             if self.drive_name is not None:
                 for drive in drives:
                     if drive["name"].lower() == self.drive_name.lower():
+                        logger.debug(
+                            f"Found drive ID: {drive['id']} for drive name: {self.drive_name}"
+                        )
                         return drive["id"]
                 raise ValueError(f"The specified drive {self.drive_name} is not found.")
 
             if len(drives) > 0 and "id" in drives[0]:
+                logger.debug(
+                    f"Found drive ID: {drives[0]['id']} (using first available drive)"
+                )
                 return drives[0]["id"]
             else:
                 raise ValueError(
@@ -393,6 +402,7 @@ class SharePointReader(
 
         metadata = {}
 
+        logger.info(f"Downloading {len(files_path)} files from SharePoint...")
         for file_path in files_path:
             item = self._get_item_from_path(file_path)
             metadata.update(self._download_file(item, download_dir))
@@ -692,6 +702,11 @@ class SharePointReader(
         if not (sharepoint_site_name or self.sharepoint_site_id):
             raise ValueError("sharepoint_site_name must be provided.")
 
+        logger.info(
+            f"Loading drive data from site {sharepoint_site_name or self.sharepoint_site_id} "
+            f"(folder: {sharepoint_folder_path or sharepoint_folder_id or 'root'})"
+        )
+
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 files_metadata = self._download_files_from_sharepoint(
@@ -703,9 +718,11 @@ class SharePointReader(
                 )
 
                 # return self.files_metadata
-                return self._load_documents_with_metadata(
+                docs = self._load_documents_with_metadata(
                     files_metadata, temp_dir, recursive
                 )
+                logger.info(f"Successfully loaded {len(docs)} documents.")
+                return docs
 
         except Exception as exp:
             logger.error("An error occurred while accessing SharePoint: %s", exp)
@@ -746,6 +763,7 @@ class SharePointReader(
                 file_path = Path(os.path.join(current_path, item["name"]))
                 file_paths.append(file_path)
 
+        logger.debug(f"Found {len(file_paths)} files in folder ID {folder_id}")
         return file_paths
 
     def _list_drive_contents(self) -> List[Path]:
@@ -776,6 +794,7 @@ class SharePointReader(
                 file_path = Path(item["name"])
                 file_paths.append(file_path)
 
+        logger.debug(f"Found {len(file_paths)} files in drive")
         return file_paths
 
     def list_resources(
