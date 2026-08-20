@@ -1,6 +1,5 @@
 """Base sparse embeddings file."""
 
-import asyncio
 import math
 from abc import abstractmethod
 from collections import defaultdict
@@ -20,7 +19,7 @@ from llama_index.core.instrumentation.events.embedding import (
 )
 import llama_index.core.instrumentation as instrument
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import gather_with_bounded_lifetime, run_jobs
 
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -209,8 +208,8 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
 
         Subclasses can implement this method if batch queries are supported.
         """
-        return await asyncio.gather(
-            *[self._aget_text_embedding(text) for text in texts]
+        return await gather_with_bounded_lifetime(
+            [self._aget_text_embedding(text) for text in texts]
         )
 
     @dispatcher.span
@@ -319,7 +318,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
                 embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
                 cur_batch = []
 
-        # flatten the results of asyncio.gather, which is a list of embeddings lists
+        # flatten the results of gather_with_bounded_lifetime, which is a list of embeddings lists
         nested_embeddings = []
 
         if num_workers and num_workers > 1:
@@ -334,15 +333,20 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
                 try:
                     from tqdm.asyncio import tqdm_asyncio
 
-                    nested_embeddings = await tqdm_asyncio.gather(
-                        *embeddings_coroutines,
+                    nested_embeddings = await gather_with_bounded_lifetime(
+                        embeddings_coroutines,
+                        gather_fn=tqdm_asyncio.gather,
                         total=len(embeddings_coroutines),
                         desc="Generating embeddings",
                     )
                 except ImportError:
-                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                    nested_embeddings = await gather_with_bounded_lifetime(
+                        embeddings_coroutines
+                    )
             else:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                nested_embeddings = await gather_with_bounded_lifetime(
+                    embeddings_coroutines
+                )
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings

@@ -4,7 +4,7 @@ import asyncio
 import contextvars
 import concurrent.futures
 from itertools import zip_longest
-from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Iterable, List, Optional, TypeVar
 
 import llama_index.core.instrumentation as instrument
 
@@ -133,6 +133,70 @@ async def batch_gather(
 DEFAULT_NUM_WORKERS = 4
 
 T = TypeVar("T")
+
+
+async def _await_or_return_exception(coro: Coroutine[Any, Any, T]) -> Any:
+    """
+    Await a coroutine, returning any raised exception instead of propagating it.
+
+    Used by ``gather_with_bounded_lifetime`` to ensure that when several
+    coroutines are run concurrently, a single failure does not leave sibling
+    coroutines running unsupervised in the background. ``asyncio.CancelledError``
+    is re-raised immediately rather than captured, to preserve cooperative
+    cancellation semantics.
+    """
+    try:
+        return await coro
+    except asyncio.CancelledError:
+        raise
+    except BaseException as e:
+        return e
+
+
+async def gather_with_bounded_lifetime(
+    coros: List[Coroutine[Any, Any, T]],
+    gather_fn: Callable[..., Coroutine[Any, Any, List[Any]]] = asyncio.gather,
+    **gather_kwargs: Any,
+) -> List[T]:
+    """
+    Run coroutines concurrently via ``gather_fn`` without orphaning siblings on failure.
+
+    A bare ``asyncio.gather(*coros)`` raises as soon as one coroutine fails,
+    while any other coroutines that were already scheduled keep running
+    detached in the background with nothing left to await or cancel them. This
+    function instead waits for every coroutine to actually finish before
+    raising, so the lifetime of the whole batch stays bounded to the call that
+    spawned it: by the time this function returns (or raises), nothing it
+    started is still running.
+
+    Args:
+        coros: List of coroutines to run concurrently.
+        gather_fn: The gather implementation to use, e.g. ``asyncio.gather``
+            (the default) or ``tqdm.asyncio.tqdm_asyncio.gather``. Must accept
+            the wrapped coroutines as positional arguments plus arbitrary
+            keyword arguments, and return results in call order.
+        **gather_kwargs: Additional keyword arguments forwarded to
+            ``gather_fn`` (e.g. ``desc``/``total`` for a tqdm-based gather).
+
+    Returns:
+        List of results, in the same order as ``coros``.
+
+    Raises:
+        The first exception raised by any coroutine in ``coros``, once all
+        coroutines have completed.
+
+    """
+    if not coros:
+        return []
+
+    wrapped = [_await_or_return_exception(c) for c in coros]
+    results = await gather_fn(*wrapped, **gather_kwargs)
+
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
+
+    return results
 
 
 @dispatcher.span
