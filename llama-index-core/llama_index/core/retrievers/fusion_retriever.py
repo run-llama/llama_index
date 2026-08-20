@@ -53,6 +53,8 @@ class QueryFusionRetriever(BaseRetriever):
         self.use_async = use_async
 
         self._retrievers = retrievers
+        if not retrievers:
+            raise ValueError("QueryFusionRetriever requires at least one retriever")
         if retriever_weights is None:
             self._retriever_weights = [1.0 / len(retrievers)] * len(retrievers)
         else:
