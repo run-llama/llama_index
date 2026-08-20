@@ -129,9 +129,9 @@ query_engine = RetrieverQueryEngine.from_args(
 
 Right now, we support the following options:
 
-- `default`: "create and refine" an answer by sequentially going through each retrieved `Node`;
+- `refine`: "create and refine" an answer by sequentially going through each retrieved `Node`;
   This makes a separate LLM call per Node. Good for more detailed answers.
-- `compact`: "compact" the prompt during each LLM call by stuffing as
+- `compact` (default): "compact" the prompt during each LLM call by stuffing as
   many `Node` text chunks that can fit within the maximum prompt size. If there are
   too many chunks to stuff in one prompt, "create and refine" an answer by going through
   multiple prompts.
