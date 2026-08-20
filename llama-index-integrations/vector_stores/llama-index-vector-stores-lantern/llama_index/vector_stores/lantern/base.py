@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import TYPE_CHECKING, Any, List, NamedTuple, Optional, Type
 
 import asyncpg  # noqa
@@ -31,6 +32,18 @@ class DBEmbeddingRow(NamedTuple):
 
 
 _logger = logging.getLogger(__name__)
+
+# Identifiers (schema/table names) are interpolated directly into SQL DDL/DML
+# strings and cannot be passed as bind parameters, so they are restricted to a
+# safe identifier charset to prevent SQL injection (CWE-89). Same hardening as
+# the postgres store fix for CVE-2025-1793.
+_VALID_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _validate_identifier(value: str, kind: str) -> str:
+    if not _VALID_IDENTIFIER.match(value):
+        raise ValueError(f"Invalid {kind}: {value}")
+    return value
 
 
 def get_data_model(
@@ -199,6 +212,9 @@ class LanternVectorStore(BasePydanticVectorStore):
     ) -> None:
         table_name = table_name.lower()
         schema_name = schema_name.lower()
+        # Validate identifiers before they are interpolated into SQL DDL/DML.
+        _validate_identifier(table_name, "table_name")
+        _validate_identifier(schema_name, "schema_name")
 
         if hybrid_search and text_search_config is None:
             raise ValueError(

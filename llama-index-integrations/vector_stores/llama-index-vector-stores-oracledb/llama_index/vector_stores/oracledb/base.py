@@ -122,6 +122,19 @@ def _escape_str(value: str) -> str:
     )
 
 
+# The table name is interpolated directly into SQL DDL/DML strings (it cannot
+# be passed as a bind parameter), so it is restricted to a safe identifier
+# charset to prevent SQL injection (CWE-89). Same hardening as the postgres
+# store fix for CVE-2025-1793.
+_VALID_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _validate_identifier(value: str, kind: str) -> str:
+    if not _VALID_IDENTIFIER.match(value):
+        raise ValueError(f"Invalid {kind}: {value}")
+    return value
+
+
 column_config: Dict = {
     "id": {"type": "VARCHAR2(64) PRIMARY KEY", "extract_func": lambda x: x.node_id},
     "doc_id": {"type": "VARCHAR2(64)", "extract_func": lambda x: x.ref_doc_id},
@@ -441,6 +454,8 @@ class OraLlamaVS(BasePydanticVectorStore):
         batch_size: Optional[int] = 32,
         params: Optional[dict[str, Any]] = None,
     ):
+        # Validate the table name before it is interpolated into SQL DDL/DML.
+        _validate_identifier(table_name, "table_name")
         try:
             import oracledb
         except ImportError as e:
