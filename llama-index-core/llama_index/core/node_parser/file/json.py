@@ -66,17 +66,23 @@ class JSONNodeParser(NodeParser):
         json_nodes = []
         if isinstance(data, dict):
             lines = [*self._depth_first_yield(data, 0, [])]
-            json_nodes.extend(
-                build_nodes_from_splits(["\n".join(lines)], node, id_func=self.id_func)
-            )
+            text_split = "\n".join(lines)
+            # Skip empty objects so they don't produce spurious blank nodes.
+            if text_split.strip():
+                json_nodes.extend(
+                    build_nodes_from_splits([text_split], node, id_func=self.id_func)
+                )
         elif isinstance(data, list):
             for json_object in data:
                 lines = [*self._depth_first_yield(json_object, 0, [])]
-                json_nodes.extend(
-                    build_nodes_from_splits(
-                        ["\n".join(lines)], node, id_func=self.id_func
+                text_split = "\n".join(lines)
+                # Skip empty objects so they don't produce spurious blank nodes.
+                if text_split.strip():
+                    json_nodes.extend(
+                        build_nodes_from_splits(
+                            [text_split], node, id_func=self.id_func
+                        )
                     )
-                )
         else:
             raise ValueError("JSON is invalid")
 
