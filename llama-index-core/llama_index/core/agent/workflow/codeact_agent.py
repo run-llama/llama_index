@@ -1,7 +1,19 @@
 import inspect
 import re
 import uuid
-from typing import Awaitable, Callable, List, Sequence, Union, Optional, Tuple
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Sequence,
+    Type,
+    Union,
+    Optional,
+    Tuple,
+)
 
 from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
@@ -93,6 +105,11 @@ class CodeActAgent(BaseWorkflowAgent):
         code_act_system_prompt: Union[
             str, BasePromptTemplate
         ] = DEFAULT_CODE_ACT_PROMPT,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[
+            Callable[[List[ChatMessage]], Dict[str, Any]]
+        ] = None,
+        early_stopping_method: Literal["force", "generate"] = "force",
         streaming: bool = True,
     ):
         tools = tools or []
@@ -119,6 +136,9 @@ class CodeActAgent(BaseWorkflowAgent):
             llm=llm,
             code_act_system_prompt=code_act_system_prompt,
             code_execute_fn=code_execute_fn,
+            output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
+            early_stopping_method=early_stopping_method,
             streaming=streaming,
         )
 
