@@ -687,6 +687,28 @@ class OpenAIResponses(FunctionCallingLLM):
             delta,
         )
 
+    @staticmethod
+    def _accumulate_streamed_text(
+        content: str, blocks: List[ContentBlock], is_final: bool
+    ) -> Tuple[str, List[ContentBlock]]:
+        """
+        Fold a text-delta block into the running text so every yielded
+        ChatResponse.message holds the full response accumulated so far, not just
+        the current event's own delta (process_response_event returns only the
+        latter). The terminal ResponseCompletedEvent already carries the true
+        final blocks parsed from the complete response, so it passes through
+        unchanged.
+        """
+        if is_final:
+            return content, blocks
+        merged = [block for block in blocks if not isinstance(block, TextBlock)]
+        for block in blocks:
+            if isinstance(block, TextBlock):
+                content += block.text
+        if content:
+            merged.insert(0, TextBlock(text=content))
+        return content, merged
+
     @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -702,6 +724,7 @@ class OpenAIResponses(FunctionCallingLLM):
             additional_kwargs = {"built_in_tool_calls": []}
             current_tool_call: Optional[ResponseFunctionToolCall] = None
             local_previous_response_id = self._previous_response_id
+            content = ""
 
             for event in self._client.responses.create(
                 input=message_dicts,
@@ -723,6 +746,9 @@ class OpenAIResponses(FunctionCallingLLM):
                     current_tool_call=current_tool_call,
                     track_previous_responses=self.track_previous_responses,
                     previous_response_id=local_previous_response_id,
+                )
+                content, blocks = OpenAIResponses._accumulate_streamed_text(
+                    content, blocks, isinstance(event, ResponseCompletedEvent)
                 )
 
                 if (
@@ -820,6 +846,7 @@ class OpenAIResponses(FunctionCallingLLM):
             additional_kwargs = {"built_in_tool_calls": []}
             current_tool_call: Optional[ResponseFunctionToolCall] = None
             local_previous_response_id = self._previous_response_id
+            content = ""
 
             response_stream = await self._aclient.responses.create(
                 input=message_dicts,
@@ -843,6 +870,9 @@ class OpenAIResponses(FunctionCallingLLM):
                     current_tool_call=current_tool_call,
                     track_previous_responses=self.track_previous_responses,
                     previous_response_id=local_previous_response_id,
+                )
+                content, blocks = OpenAIResponses._accumulate_streamed_text(
+                    content, blocks, isinstance(event, ResponseCompletedEvent)
                 )
 
                 if (

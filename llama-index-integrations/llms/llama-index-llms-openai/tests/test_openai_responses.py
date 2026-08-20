@@ -1,7 +1,7 @@
 import os
 import httpx
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from pathlib import Path
 from typing import List
@@ -19,8 +19,11 @@ from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionT
 from llama_index.llms.openai.utils import to_openai_message_dicts, O1_MODELS
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
+from openai.types.responses.response import Response
 from openai.types.responses.response_reasoning_item import Content, Summary
 from openai.types.responses import (
+    ResponseCompletedEvent,
+    ResponseCreatedEvent,
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
@@ -310,6 +313,87 @@ def test_process_response_event_with_text_annotation():
     assert updated_additional_kwargs["annotations"] == [
         {"type": "test_annotation", "value": 42}
     ]
+
+
+def _text_delta_events(deltas: List[str]) -> List[ResponseTextDeltaEvent]:
+    created_response = MagicMock(spec=Response)
+    created_response.id = "resp_123"
+    created = ResponseCreatedEvent(
+        response=created_response,
+        sequence_number=0,
+        type="response.created",
+    )
+    text_events = [
+        ResponseTextDeltaEvent(
+            content_index=0,
+            item_id="123",
+            output_index=0,
+            delta=delta,
+            type="response.output_text.delta",
+            sequence_number=i + 1,
+            logprobs=[],
+        )
+        for i, delta in enumerate(deltas)
+    ]
+    completed_response = MagicMock(spec=Response)
+    completed_response.output = [
+        ResponseOutputMessage(
+            type="message",
+            content=[
+                {
+                    "type": "output_text",
+                    "text": "".join(deltas),
+                    "annotations": [],
+                }
+            ],
+            role="assistant",
+            id="123",
+            status="completed",
+        )
+    ]
+    completed_response.usage = None
+    completed = ResponseCompletedEvent(
+        response=completed_response,
+        sequence_number=len(deltas) + 1,
+        type="response.completed",
+    )
+    return [created, *text_events, completed]
+
+
+def test_stream_chat_accumulates_text_across_chunks(default_responses_llm):
+    """Each yielded ChatResponse.message must hold the full text streamed so
+    far, not just the current event's own delta (regression for the
+    process_response_event blocks reset every call)."""
+    events = _text_delta_events(["Hello", " world"])
+    default_responses_llm._client.responses.create = MagicMock(
+        return_value=iter(events)
+    )
+
+    chunks = list(default_responses_llm.stream_chat([]))
+
+    texts = [c.message.content for c in chunks]
+    # created, "Hello", "Hello world", "Hello world" (final)
+    assert texts == [None, "Hello", "Hello world", "Hello world"]
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_accumulates_text_across_chunks(default_responses_llm):
+    """Async counterpart of test_stream_chat_accumulates_text_across_chunks."""
+    events = _text_delta_events(["Hello", " world"])
+
+    async def _event_gen():
+        for event in events:
+            yield event
+
+    default_responses_llm._aclient.responses.create = AsyncMock(
+        return_value=_event_gen()
+    )
+
+    response_gen = await default_responses_llm.astream_chat([])
+    chunks = [chunk async for chunk in response_gen]
+
+    texts = [c.message.content for c in chunks]
+    assert texts == [None, "Hello", "Hello world", "Hello world"]
 
 
 def test_get_tool_calls_from_response():
