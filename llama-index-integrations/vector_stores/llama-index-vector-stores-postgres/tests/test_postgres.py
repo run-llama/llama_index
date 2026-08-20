@@ -3220,3 +3220,97 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
     assert "e1" not in result.ids
     assert "v1" in result.ids
     assert "v2" in result.ids
+
+
+# ---------------------------------------------------------------------------
+# Metadata filter key parameterization (no database required)
+#
+# Regression tests for SQL injection via MetadataFilter.key: the key must be
+# bound as a SQL parameter, never interpolated into the query string.
+# ---------------------------------------------------------------------------
+
+
+def _bare_store() -> PGVectorStore:
+    """
+    Instantiate PGVectorStore without running __init__ (no DB needed).
+
+    _build_filter_clause / _to_postgres_operator are stateless with respect to
+    instance attributes, so a bare instance is enough to exercise them.
+    """
+    return object.__new__(PGVectorStore)
+
+
+def _compiled(clause) -> str:
+    """Render a SQLAlchemy text clause to its literal SQL string."""
+    return str(clause.compile(compile_kwargs={"literal_binds": False}))
+
+
+@pytest.mark.parametrize(
+    "operator",
+    [
+        FilterOperator.EQ,
+        FilterOperator.NE,
+        FilterOperator.GT,
+        FilterOperator.LT,
+        FilterOperator.GTE,
+        FilterOperator.LTE,
+        FilterOperator.TEXT_MATCH,
+        FilterOperator.TEXT_MATCH_INSENSITIVE,
+        FilterOperator.IS_EMPTY,
+        FilterOperator.CONTAINS,
+        FilterOperator.IN,
+        FilterOperator.NIN,
+        FilterOperator.ANY,
+        FilterOperator.ALL,
+    ],
+)
+def test_filter_key_is_bound_not_interpolated(operator):
+    store = _bare_store()
+    malicious_key = "author' = 'alice' OR '1'='1' --"
+
+    if operator in (
+        FilterOperator.IN,
+        FilterOperator.NIN,
+        FilterOperator.ANY,
+        FilterOperator.ALL,
+    ):
+        value = ["a", "b"]
+    elif operator == FilterOperator.IS_EMPTY:
+        value = None
+    else:
+        value = "zzz"
+
+    clause = store._build_filter_clause(
+        MetadataFilter(key=malicious_key, value=value, operator=operator)
+    )
+
+    sql = _compiled(clause)
+
+    # The raw malicious key must never appear verbatim in the SQL text.
+    assert "OR '1'='1'" not in sql
+    assert malicious_key not in sql
+    # The key is referenced through a bind parameter instead.
+    assert ":filter_key_" in sql
+    # And the bound value is exactly the (malicious) key, safely parameterized.
+    bound = next(iter(clause._bindparams.values()))
+    assert bound.value == malicious_key
+
+
+def test_filter_key_param_names_are_unique_across_filters():
+    """
+    Combined filters must not collide on the key bind-parameter name.
+
+    Filters combined via AND/OR each receive a UUID-based key parameter, so
+    their names are distinct without depending on object lifetimes.
+    """
+    store = _bare_store()
+    f1 = MetadataFilter(key="k1", value="v1", operator=FilterOperator.EQ)
+    f2 = MetadataFilter(key="k2", value="v2", operator=FilterOperator.EQ)
+    filters = [f1, f2]  # keep both alive, as MetadataFilters would
+
+    c1 = store._build_filter_clause(filters[0])
+    c2 = store._build_filter_clause(filters[1])
+    p1 = set(c1._bindparams)
+    p2 = set(c2._bindparams)
+    assert p1.isdisjoint(p2)
+
