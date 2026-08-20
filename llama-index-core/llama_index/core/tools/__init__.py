@@ -1,6 +1,7 @@
 """Tools."""
 
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.json_schema import JsonSchemaToPydantic
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.tools.query_plan import QueryPlanTool
 from llama_index.core.tools.retriever_tool import RetrieverTool
@@ -26,6 +27,7 @@ __all__ = [
     "ToolMetadata",
     "ToolOutput",
     "FunctionTool",
+    "JsonSchemaToPydantic",
     "QueryPlanTool",
     "ToolSelection",
     "call_tool_with_selection",
