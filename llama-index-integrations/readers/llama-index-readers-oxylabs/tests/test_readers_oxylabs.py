@@ -9,12 +9,10 @@ from llama_index.readers.oxylabs import (
     OxylabsAmazonBestsellersReader,
     OxylabsAmazonPricingReader,
     OxylabsAmazonProductReader,
-    OxylabsAmazonReviewsReader,
     OxylabsAmazonSellersReader,
     OxylabsAmazonSearchReader,
     OxylabsGoogleAdsReader,
     OxylabsGoogleSearchReader,
-    OxylabsYoutubeTranscriptReader,
 )
 
 TEST_ROOT = Path(__file__).parent.resolve()
@@ -34,9 +32,15 @@ def get_response() -> MagicMock:
     return mock
 
 
+# `source_attr` and `method_name` are the Oxylabs SDK client coordinates each
+# reader depends on. Mocking here rather than on the reader's own
+# `get_response` keeps the SDK call path under test, so an SDK rename or a
+# retired source fails these tests instead of only failing in production.
 READER_TESTS_PARAMS = [
     pytest.param(
         OxylabsAmazonBestsellersReader,
+        "amazon",
+        "scrape_bestsellers",
         {
             "source": "amazon_bestsellers",
             "domain": "com",
@@ -49,6 +53,8 @@ READER_TESTS_PARAMS = [
     ),
     pytest.param(
         OxylabsAmazonPricingReader,
+        "amazon",
+        "scrape_pricing",
         {
             "query": "B087TXHLVQ",
             "parse": True,
@@ -57,6 +63,8 @@ READER_TESTS_PARAMS = [
     ),
     pytest.param(
         OxylabsAmazonProductReader,
+        "amazon",
+        "scrape_product",
         {
             "query": "B087TXHLVQ",
             "parse": True,
@@ -64,15 +72,9 @@ READER_TESTS_PARAMS = [
         id="amazon_product_successful_response",
     ),
     pytest.param(
-        OxylabsAmazonReviewsReader,
-        {
-            "query": "B087TXHLVQ",
-            "parse": True,
-        },
-        id="amazon_reviews_successful_response",
-    ),
-    pytest.param(
         OxylabsAmazonSellersReader,
+        "amazon",
+        "scrape_sellers",
         {
             "query": "A2U55XLSPNCN01",
             "parse": True,
@@ -81,43 +83,40 @@ READER_TESTS_PARAMS = [
     ),
     pytest.param(
         OxylabsAmazonSearchReader,
+        "amazon",
+        "scrape_search",
         {
             "query": "headsets",
             "parse": True,
         },
         id="amazon_search_successful_response",
     ),
-    pytest.param(
-        OxylabsYoutubeTranscriptReader,
-        {
-            "query": "SLoqvcnwwN4",
-            "context": [
-                {"key": "language_code", "value": "en"},
-                {"key": "transcript_origin", "value": "uploader_provided"},
-            ],
-        },
-        id="youtube_transcript_response",
-    ),
 ]
 
 
 @pytest.mark.parametrize(
-    ("reader_class", "payload"),
+    ("reader_class", "source_attr", "method_name", "payload"),
     READER_TESTS_PARAMS,
 )
 @pytest.mark.unit
 def test_sync_oxylabs_readers(
     reader_class: type[OxylabsBaseReader],
+    source_attr: str,
+    method_name: str,
     payload: dict,
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    get_response_mock = MagicMock()
-    get_response_mock.return_value = get_response()
-    reader_class.get_response = get_response_mock
-
     reader = reader_class(
         username="OXYLABS_USERNAME",
         password="OXYLABS_PASSWORD",
     )
+
+    # Resolving these off the real client asserts the SDK still exposes them.
+    source = getattr(reader.oxylabs_api, source_attr)
+    assert hasattr(source, method_name)
+
+    scrape_mock = MagicMock(return_value=get_response())
+    monkeypatch.setattr(source, method_name, scrape_mock)
 
     docs = reader.load_data(payload)
 
@@ -126,27 +125,32 @@ def test_sync_oxylabs_readers(
         f"- Item 1:\n  ## key1\n    value1\n\n  ## key2\n    value2\n"
     )
 
-    assert get_response_mock.call_args[0][0] == payload
+    scrape_mock.assert_called_once_with(**payload)
 
 
 @pytest.mark.parametrize(
-    ("reader_class", "payload"),
+    ("reader_class", "source_attr", "method_name", "payload"),
     READER_TESTS_PARAMS,
 )
 @pytest.mark.asyncio
 @pytest.mark.unit
 async def test_async_oxylabs_readers(
     reader_class: type[OxylabsBaseReader],
+    source_attr: str,
+    method_name: str,
     payload: dict,
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    get_response_mock = AsyncMock()
-    get_response_mock.return_value = get_response()
-    reader_class.aget_response = get_response_mock
-
     reader = reader_class(
         username="OXYLABS_USERNAME",
         password="OXYLABS_PASSWORD",
     )
+
+    source = getattr(reader.async_oxylabs_api, source_attr)
+    assert hasattr(source, method_name)
+
+    scrape_mock = AsyncMock(return_value=get_response())
+    monkeypatch.setattr(source, method_name, scrape_mock)
 
     docs = await reader.aload_data(payload)
 
@@ -155,7 +159,34 @@ async def test_async_oxylabs_readers(
         f"- Item 1:\n  ## key1\n    value1\n\n  ## key2\n    value2\n"
     )
 
-    assert get_response_mock.call_args[0][0] == payload
+    scrape_mock.assert_called_once_with(**payload)
+
+
+@pytest.mark.unit
+def test_readers_are_marked_remote():
+    reader = OxylabsAmazonSearchReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+    )
+    assert reader.is_remote is True
+
+
+@pytest.mark.unit
+def test_api_error_message_is_surfaced(monkeypatch: pytest.MonkeyPatch):
+    """A rejected job should report the API's reason, not a KeyError."""
+    reader = OxylabsAmazonSearchReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+    )
+
+    rejected = MagicMock()
+    rejected.raw = {"message": "Unsupported source."}
+    monkeypatch.setattr(
+        reader.oxylabs_api.amazon, "scrape_search", MagicMock(return_value=rejected)
+    )
+
+    with pytest.raises(RuntimeError, match="Unsupported source."):
+        reader.load_data({"query": "headsets", "parse": True})
 
 
 GOOGLE_READER_TESTS_PARAMS = [
@@ -179,11 +210,72 @@ GOOGLE_READER_TESTS_PARAMS = [
     ),
 ]
 
+INTEGRATION_READER_PARAMS = [
+    *GOOGLE_READER_TESTS_PARAMS,
+    *[
+        pytest.param(param.values[0], param.values[2], param.values[3], id=param.id)
+        for param in READER_TESTS_PARAMS
+    ],
+]
 
-@pytest.mark.skipif(
+requires_credentials = pytest.mark.skipif(
     not (os.environ.get("OXYLABS_USERNAME") and os.environ.get("OXYLABS_PASSWORD")),
     reason="No Oxylabs creds",
 )
+
+
+@requires_credentials
+@pytest.mark.parametrize(
+    ("reader_class", "name", "payload"),
+    INTEGRATION_READER_PARAMS,
+)
+@pytest.mark.integration
+def test_sync_oxylabs_readers_live(
+    reader_class: type[OxylabsBaseReader],
+    name: str,
+    payload: dict,
+):
+    """
+    Call the live API for every reader.
+
+    Guards against a source being retired or an SDK namespace being renamed
+    underneath the integration, neither of which the unit tests can observe.
+    """
+    reader = reader_class(
+        username=os.environ.get("OXYLABS_USERNAME"),
+        password=os.environ.get("OXYLABS_PASSWORD"),
+    )
+
+    docs = reader.load_data(payload)
+
+    assert len(docs) == 1
+    assert docs[0].text.strip()
+
+
+@requires_credentials
+@pytest.mark.parametrize(
+    ("reader_class", "name", "payload"),
+    INTEGRATION_READER_PARAMS,
+)
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_async_oxylabs_readers_live(
+    reader_class: type[OxylabsBaseReader],
+    name: str,
+    payload: dict,
+):
+    reader = reader_class(
+        username=os.environ.get("OXYLABS_USERNAME"),
+        password=os.environ.get("OXYLABS_PASSWORD"),
+    )
+
+    docs = await reader.aload_data(payload)
+
+    assert len(docs) == 1
+    assert docs[0].text.strip()
+
+
+@requires_credentials
 @pytest.mark.parametrize(
     ("reader_class", "name", "payload"),
     GOOGLE_READER_TESTS_PARAMS,
@@ -211,10 +303,7 @@ def test_sync_google_oxylabs_readers(
     assert "RELATED SEARCHES ITEMS" in text
 
 
-@pytest.mark.skipif(
-    not (os.environ.get("OXYLABS_USERNAME") and os.environ.get("OXYLABS_PASSWORD")),
-    reason="No Oxylabs creds",
-)
+@requires_credentials
 @pytest.mark.parametrize(
     ("reader_class", "name", "payload"),
     GOOGLE_READER_TESTS_PARAMS,
