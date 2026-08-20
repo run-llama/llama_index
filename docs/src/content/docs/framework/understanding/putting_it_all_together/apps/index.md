@@ -12,3 +12,4 @@ We provide tutorials and resources to help you get started in this area:
 - **CopilotKit + LlamaIndex:** CopilotKit is the Agentic Application Framework, an open source framework and hosted service for AI-assisted applications.
   - [CopilotKit LlamaIndex Quickstart](https://docs.copilotkit.ai/llamaindex/quickstart): A guide for how to turn your LlamaIndex Agents into an agent-native application in 10 minutes.
   - [CopilotKit <> LlamaIndex Starter](https://github.com/CopilotKit/with-llamaindex): This is a starter template for building AI agents using LlamaIndex and CopilotKit. It provides a modern Next.js application with an integrated investment analyst agent that can research stocks, analyze market data, and provide investment insights.
+  - [CopilotKit LlamaIndex Channels SDK](https://docs.copilotkit.ai/slack/llamaindex): A guide for running the same LlamaIndex agent as a bot in Slack and other messaging platforms with the CopilotKit Channels SDK.
