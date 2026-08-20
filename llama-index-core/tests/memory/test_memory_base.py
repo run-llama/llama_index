@@ -1,3 +1,5 @@
+import base64
+
 import pytest
 
 from llama_index.core.base.llms.types import (
@@ -9,6 +11,25 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.memory.memory import Memory
 from llama_index.core.storage.chat_store.sql import MessageStatus
+
+
+@pytest.fixture()
+def png_1px() -> bytes:
+    return base64.b64decode(
+        b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    )
+
+
+@pytest.fixture()
+def mp3_bytes() -> bytes:
+    """Minimal mp3 file bytes (0.2 seconds of audio)."""
+    return b"ID3\x04\x00\x00\x00\x00\x01\tTXXX\x00\x00\x00\x12\x00\x00\x03major_brand\x00isom\x00TXXX\x00\x00\x00\x13\x00\x00\x03minor_version\x00512\x00TXXX\x00\x00\x00$\x00\x00\x03compatible_brands\x00isomiso2avc1mp41\x00TSSE\x00\x00\x00\x0e\x00\x00\x03Lavf62.3.100\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xf3X\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00Info\x00\x00\x00\x0f\x00\x00\x00\x06\x00\x00\x03<\x00YYYYYYYYYYYYYYYYzzzzzzzzzzzzzzzzz\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00Lavf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00\x00\x00\x00\x00\x00\x03<\xa6\xbc`\x8e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xf38\xc4\x00\x00\x00\x03H\x00\x00\x00\x00LAME3.100UUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4_\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU"
+
+
+@pytest.fixture()
+def mp4_bytes() -> bytes:
+    """Minimal fake MP4 header bytes (ftyp box)."""
+    return b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
 
 
 @pytest.fixture()
@@ -34,46 +55,91 @@ async def test_initialization(memory):
 async def test_estimate_token_count_text(memory):
     """Test token counting for text."""
     message = ChatMessage(role="user", content="Test message")
-    count = memory._estimate_token_count(message)
+    count = await memory._estimate_token_count(message)
     assert count == len(memory.tokenizer_fn("Test message"))
 
 
 @pytest.mark.asyncio
-async def test_estimate_token_count_image(memory):
-    """Test token counting for images."""
-    block = ImageBlock(url="http://example.com/image.jpg")
+async def test_estimate_token_count_image(memory, png_1px):
+    """Image token count comes from the block's own estimator."""
+    block = ImageBlock(image=png_1px)
     message = ChatMessage(role="user", blocks=[block])
-    count = memory._estimate_token_count(message)
-    assert count == memory.image_token_size_estimate
+    count = await memory._estimate_token_count(message)
+    assert count == 2125
+    assert count != memory.image_token_size_estimate
 
 
 @pytest.mark.asyncio
-async def test_estimate_token_count_video(memory):
-    """Test token counting for images."""
-    block = VideoBlock(url="http://example.com/video.mp4")
+async def test_estimate_token_count_video(memory, mp4_bytes):
+    """Video token count comes from the block's own estimator."""
+    block = VideoBlock(video=mp4_bytes)
     message = ChatMessage(role="user", blocks=[block])
-    count = memory._estimate_token_count(message)
-    assert count == memory.video_token_size_estimate
+    count = await memory._estimate_token_count(message)
+    assert count != memory.video_token_size_estimate
+    assert count > 0
 
 
 @pytest.mark.asyncio
-async def test_estimate_token_count_audio(memory):
-    """Test token counting for audio."""
-    block = AudioBlock(url="http://example.com/audio.mp3")
+async def test_estimate_token_count_audio(memory, mp3_bytes):
+    """Audio token count comes from the block's own estimator."""
+    block = AudioBlock(audio=mp3_bytes)
     message = ChatMessage(role="user", blocks=[block])
-    count = memory._estimate_token_count(message)
-    assert count == memory.audio_token_size_estimate
+    count = await memory._estimate_token_count(message)
+    assert count != memory.audio_token_size_estimate
+    assert count > 0
 
 
 @pytest.mark.asyncio
 async def test_estimate_token_count_document(memory):
-    """Test token counting for a document uses the fixed estimate."""
+    """Document token count comes from the block's own estimator."""
     block = DocumentBlock(
-        url="http://example.com/doc.pdf", document_mimetype="application/pdf"
+        data=b"%PDF-1.4 dummy pdf content",
+        document_mimetype="application/pdf",
     )
     message = ChatMessage(role="user", blocks=[block])
-    count = memory._estimate_token_count(message)
+    count = await memory._estimate_token_count(message)
+    assert count == 512
+    assert count != memory.document_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_image_url_only(memory):
+    """URL-only ImageBlock falls back to image_token_size_estimate (no network I/O)."""
+    block = ImageBlock(url="https://example.com/photo.jpg")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.image_token_size_estimate
+    assert count == 256
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_video_url_only(memory):
+    """URL-only VideoBlock falls back to video_token_size_estimate (no network I/O)."""
+    block = VideoBlock(url="https://example.com/video.mp4")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.video_token_size_estimate
+    assert count == 256
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_audio_url_only(memory):
+    """URL-only AudioBlock falls back to audio_token_size_estimate (no network I/O)."""
+    block = AudioBlock(url="https://example.com/audio.mp3")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
+    assert count == memory.audio_token_size_estimate
+    assert count == 256
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_document_url_only(memory):
+    """URL-only DocumentBlock falls back to document_token_size_estimate (no network I/O)."""
+    block = DocumentBlock(url="https://example.com/doc.pdf")
+    message = ChatMessage(role="user", blocks=[block])
+    count = await memory._estimate_token_count(message)
     assert count == memory.document_token_size_estimate
+    assert count == 2048
 
 
 @pytest.mark.asyncio
