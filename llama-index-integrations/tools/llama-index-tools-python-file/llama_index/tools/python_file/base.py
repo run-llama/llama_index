@@ -8,8 +8,8 @@ class PythonFileToolSpec(BaseToolSpec):
     spec_functions = ["function_definitions", "get_function", "get_functions"]
 
     def __init__(self, file_name: str) -> None:
-        f = open(file_name).read()
-        self.tree = ast.parse(f)
+        with open(file_name, "r") as f:
+            self.tree = ast.parse(f.read())
 
     def function_definitions(self, external: Optional[bool] = True) -> str:
         """
@@ -27,7 +27,7 @@ class PythonFileToolSpec(BaseToolSpec):
                 functions += f"""
 name: {node.name}
 arguments: {ast.dump(node.args)}
-                    """
+                """
         return functions
 
     def get_function(self, name: str) -> str:
@@ -45,8 +45,8 @@ arguments: {ast.dump(node.args)}
 name: {node.name}
 arguments: {ast.dump(node.args)}
 docstring: {ast.get_docstring(node)}
-                        """
-        return None
+                    """
+        return ""
 
     def get_functions(self, names: List[str]) -> str:
         """
