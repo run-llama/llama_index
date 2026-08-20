@@ -158,27 +158,34 @@ class DashScopeParse(BasePydanticReader):
 
         headers = self._get_dashscope_header()
 
-        # load data
-        with open(file_path, "rb") as f:
-            upload_file_lease_result = self.__upload_lease(file_path, headers)
+        # The file open, upload-lease request, and file upload are blocking IO;
+        # run them off the event loop instead of on it.
+        upload_file_lease_result = await asyncio.to_thread(
+            self._upload_file_with_lease, file_path, headers
+        )
 
-            upload_file_lease_result.upload(file_path, f)
-
-            url = f"{self.base_url}/api/v1/datacenter/category/{self.category_id}/add_file"
-            async with httpx.AsyncClient(timeout=self.max_timeout) as client:
-                response = await client.post(
-                    url,
-                    headers=headers,
-                    json={
-                        "lease_id": upload_file_lease_result.lease_id,
-                        "parser": ResultType.DASHSCOPE_DOCMIND.value,
-                    },
-                )
-            add_file_result = dashscope_response_handler(
-                response, "add_file", AddFileResult, url=url
+        url = f"{self.base_url}/api/v1/datacenter/category/{self.category_id}/add_file"
+        async with httpx.AsyncClient(timeout=self.max_timeout) as client:
+            response = await client.post(
+                url,
+                headers=headers,
+                json={
+                    "lease_id": upload_file_lease_result.lease_id,
+                    "parser": ResultType.DASHSCOPE_DOCMIND.value,
+                },
             )
+        add_file_result = dashscope_response_handler(
+            response, "add_file", AddFileResult, url=url
+        )
 
         return add_file_result.file_id
+
+    def _upload_file_with_lease(self, file_path, headers):
+        """Open the file, acquire an upload lease, and upload it (all blocking IO)."""
+        with open(file_path, "rb") as f:
+            upload_file_lease_result = self.__upload_lease(file_path, headers)
+            upload_file_lease_result.upload(file_path, f)
+        return upload_file_lease_result
 
     @retry(
         stop=stop_after_delay(60),
