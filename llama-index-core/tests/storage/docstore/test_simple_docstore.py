@@ -125,6 +125,24 @@ def test_docstore_delete_ref_doc_not_in_docstore() -> None:
     assert docstore._kvstore.get("d3", docstore._ref_doc_collection) is None
 
 
+@pytest.mark.asyncio
+async def test_docstore_adelete_document_updates_ref_doc_info() -> None:
+    ref_doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    doc = Document(text="hello world", id_="d2", metadata={"foo": "bar"})
+    doc.relationships[NodeRelationship.SOURCE] = ref_doc.as_related_node_info()
+    node = TextNode(text="my node", id_="d3", metadata={"node": "info"})
+    node.relationships[NodeRelationship.SOURCE] = ref_doc.as_related_node_info()
+
+    docstore = SimpleDocumentStore()
+    docstore.add_documents([ref_doc, doc, node])
+
+    await docstore.adelete_document("d2")
+
+    ref_doc_info = docstore.get_ref_doc_info("d1")
+    assert ref_doc_info is not None
+    assert ref_doc_info.node_ids == ["d3"]
+
+
 def test_docstore_delete_all_ref_doc_nodes() -> None:
     ref_doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
     doc = Document(text="hello world", id_="d2", metadata={"foo": "bar"})
