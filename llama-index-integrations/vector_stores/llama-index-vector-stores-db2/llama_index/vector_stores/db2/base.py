@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import os
+import re
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -266,16 +267,26 @@ class DB2LlamaVS(BasePydanticVectorStore):
 
     def _append_meta_filter_condition(
         self, where_str: Optional[str], exact_match_filter: list
-    ) -> str:
-        filter_str = " AND ".join(
-            f"JSON_VALUE({self.metadata_column}, '$.{filter_item.key}') = '{filter_item.value}'"
-            for filter_item in exact_match_filter
-        )
+    ) -> tuple[str, list]:
+        bind_values: list = []
+        filter_conditions = []
+        for filter_item in exact_match_filter:
+            # The JSON path key is interpolated into a SQL string literal
+            # ('$.key') and cannot be a bind parameter, so allowlist it to a
+            # safe identifier charset to prevent SQL injection via the key.
+            if not re.match(r"^[a-zA-Z0-9_]+$", filter_item.key):
+                raise ValueError(f"Invalid metadata key format: {filter_item.key}")
+            filter_conditions.append(
+                f"JSON_VALUE({self.metadata_column}, '$.{filter_item.key}') = ?"
+            )
+            bind_values.append(filter_item.value)
+
+        filter_str = " AND ".join(filter_conditions)
         if where_str is None:
             where_str = filter_str
         else:
             where_str += " AND " + filter_str
-        return where_str
+        return where_str, bind_values
 
     def _build_insert(self, values: List[BaseNode]) -> List[tuple]:
         _data = []
@@ -345,12 +356,17 @@ class DB2LlamaVS(BasePydanticVectorStore):
     @_handle_exceptions
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         distance_function = _get_distance_function(self.distance_strategy)
-        where_str = (
-            f"doc_id in {_stringify_list(query.doc_ids)}" if query.doc_ids else None
-        )
 
+        where_str: Optional[str] = None
+        doc_id_values: list = []
+        if query.doc_ids:
+            placeholders = ", ".join("?" for _ in query.doc_ids)
+            where_str = f"doc_id in ({placeholders})"
+            doc_id_values = list(query.doc_ids)
+
+        filter_values: list = []
         if query.filters is not None:
-            where_str = self._append_meta_filter_condition(
+            where_str, filter_values = self._append_meta_filter_condition(
                 where_str, query.filters.filters
             )
 
@@ -360,9 +376,13 @@ class DB2LlamaVS(BasePydanticVectorStore):
         )
 
         embedding = f"{query.query_embedding}"
+        # The embedding marker in the SELECT clause is positionally first,
+        # followed by the doc_id markers and then the filter markers in the
+        # WHERE clause, matching left-to-right order of the `?` markers.
+        bind_params = [embedding, *doc_id_values, *filter_values]
         cursor = self._client.cursor()
         try:
-            cursor.execute(query_sql, [embedding])
+            cursor.execute(query_sql, bind_params)
             results = cursor.fetchall()
         finally:
             cursor.close()
