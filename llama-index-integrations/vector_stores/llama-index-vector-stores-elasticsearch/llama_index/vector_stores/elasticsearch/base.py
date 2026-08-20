@@ -511,6 +511,11 @@ class ElasticsearchStore(BasePydanticVectorStore):
         """
         Asynchronous query index for top k most similar nodes.
 
+        Note: the underlying AsyncVectorStore (self._store) maintains a persistent
+        client connection. Do NOT wrap client calls in ``async with self.client:`` —
+        doing so creates a new connection per call and causes ServerDisconnectedError
+        under concurrent load (see issue #11641). Call self._store methods directly.
+
         Args:
             query_embedding (VectorStoreQuery): query embedding
             custom_query: Optional. custom query function that takes in the es query
