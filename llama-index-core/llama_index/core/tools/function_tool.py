@@ -15,6 +15,7 @@ from typing import (
     get_origin,
 )
 import re
+import textwrap
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -443,15 +444,18 @@ class FunctionTool(AsyncBaseTool):
         docstring: str, fn_params: Optional[set] = None
     ) -> Tuple[dict, set]:
         """
-        Parses param descriptions from a docstring.
+        Parses param descriptions from a docstring supporting Google, NumPy, Sphinx, and Javadoc styles.
 
         Returns:
             - param_docs: Only for params in fn_params with non-conflicting descriptions.
             - unknown_params: Params found in docstring but not in fn_params (ignored in final output).
 
         """
-        raw_param_docs: dict[str, str] = {}
-        unknown_params = set()
+        raw_param_docs: Dict[str, str] = {}
+        unknown_params: set = set()
+
+        if not docstring:
+            return raw_param_docs, unknown_params
 
         def try_add_param(name: str, desc: str) -> None:
             desc = desc.strip()
@@ -462,18 +466,191 @@ class FunctionTool(AsyncBaseTool):
                 return
             raw_param_docs[name] = desc
 
-        # Sphinx style
-        for match in re.finditer(r":param (\w+): (.+)", docstring):
-            try_add_param(match.group(1), match.group(2))
+        lines = docstring.splitlines()
 
-        # Google style
-        for match in re.finditer(
-            r"^\s*(\w+)\s*\(.*?\):\s*(.+)$", docstring, re.MULTILINE
-        ):
-            try_add_param(match.group(1), match.group(2))
+        current_section = "NONE"
+        current_param: Optional[str] = None
+        current_first_line: Optional[str] = None
+        continuation_lines: List[str] = []
+        param_indent: int = 0
 
-        # Javadoc style
-        for match in re.finditer(r"@param (\w+)\s+(.+)", docstring):
-            try_add_param(match.group(1), match.group(2))
+        def flush_current_param() -> None:
+            nonlocal current_param, current_first_line, continuation_lines
+            if current_param:
+                parts = []
+                if current_first_line:
+                    parts.append(current_first_line.strip())
+                if continuation_lines:
+                    dedented_cont = textwrap.dedent("\n".join(continuation_lines))
+                    parts.append(dedented_cont.strip())
+                full_desc = "\n".join(p for p in parts if p).strip()
+                try_add_param(current_param, full_desc)
+                current_param = None
+                current_first_line = None
+                continuation_lines = []
 
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+            lower_stripped = stripped.lower()
+
+            # Check section headers
+            if lower_stripped in (
+                "args:",
+                "arguments:",
+                "parameters:",
+                "params:",
+            ) or lower_stripped.startswith(
+                ("args:", "arguments:", "parameters:", "params:")
+            ):
+                flush_current_param()
+                current_section = "GOOGLE"
+                i += 1
+                continue
+
+            if lower_stripped == "parameters" or lower_stripped.startswith(
+                "parameters"
+            ):
+                # Check for numpy underlines on next line
+                if (
+                    i + 1 < len(lines)
+                    and lines[i + 1].strip()
+                    and set(lines[i + 1].strip()) == {"-"}
+                ):
+                    flush_current_param()
+                    current_section = "NUMPY"
+                    i += 2
+                    continue
+
+            if lower_stripped in (
+                "returns:",
+                "return:",
+                "yields:",
+                "yield:",
+                "raises:",
+                "raise:",
+                "examples:",
+                "example:",
+                "notes:",
+                "note:",
+                "see also:",
+                "attributes:",
+            ) or any(
+                lower_stripped.startswith(h)
+                for h in (
+                    "returns:",
+                    "return:",
+                    "yields:",
+                    "yield:",
+                    "raises:",
+                    "raise:",
+                    "examples:",
+                    "notes:",
+                    "attributes:",
+                )
+            ):
+                flush_current_param()
+                current_section = "OTHER"
+                i += 1
+                continue
+
+            if current_section == "NUMPY" and set(stripped) == {"-"}:
+                flush_current_param()
+                current_section = "OTHER"
+                i += 1
+                continue
+
+            # Try Sphinx style: :param name: desc
+            sphinx_match = re.match(r"^\s*:param\s+(\w+):\s*(.*)$", line)
+            if sphinx_match:
+                flush_current_param()
+                current_param = sphinx_match.group(1)
+                current_first_line = sphinx_match.group(2)
+                continuation_lines = []
+                param_indent = len(line) - len(line.lstrip())
+                i += 1
+                continue
+
+            # Try Javadoc style: @param name desc
+            javadoc_match = re.match(r"^\s*@param\s+(\w+)\s+(.*)$", line)
+            if javadoc_match:
+                flush_current_param()
+                current_param = javadoc_match.group(1)
+                current_first_line = javadoc_match.group(2)
+                continuation_lines = []
+                param_indent = len(line) - len(line.lstrip())
+                i += 1
+                continue
+
+            # Try Google style parameter header:
+            # Matches `  name (type): desc` OR `  name: desc`
+            google_match = None
+            if current_section == "GOOGLE":
+                google_match = re.match(
+                    r"^\s*(\w+)(?:\s*\([^)]*\))?\s*:\s*(.*)$", line
+                )
+            else:
+                # Outside GOOGLE section, match if type parens present OR name is in fn_params
+                g_typed = re.match(r"^\s*(\w+)\s*\([^)]*\):\s*(.*)$", line)
+                if g_typed:
+                    google_match = g_typed
+                else:
+                    g_untyped = re.match(r"^\s*(\w+):\s*(.*)$", line)
+                    if (
+                        g_untyped
+                        and fn_params
+                        and g_untyped.group(1) in fn_params
+                    ):
+                        google_match = g_untyped
+
+            if google_match:
+                flush_current_param()
+                current_param = google_match.group(1)
+                current_first_line = google_match.group(2)
+                continuation_lines = []
+                param_indent = len(line) - len(line.lstrip())
+                i += 1
+                continue
+
+            # Try NumPy style parameter header:
+            if current_section == "NUMPY":
+                numpy_match = re.match(r"^\s*(\w+)(?:\s*:\s*(.*))?$", line)
+                if numpy_match and stripped:
+                    name_candidate = numpy_match.group(1)
+                    line_indent = len(line) - len(line.lstrip())
+                    if not current_param or line_indent <= param_indent:
+                        flush_current_param()
+                        current_param = name_candidate
+                        current_first_line = None
+                        continuation_lines = []
+                        param_indent = line_indent
+                        i += 1
+                        continue
+
+            # Continuation line for current parameter
+            if current_param:
+                line_indent = len(line) - len(line.lstrip())
+                if not stripped:
+                    # Blank line within parameter block - keep empty line if followed by indented block
+                    if i + 1 < len(lines):
+                        next_indent = len(lines[i + 1]) - len(lines[i + 1].lstrip())
+                        if (
+                            lines[i + 1].strip()
+                            and next_indent > param_indent
+                        ):
+                            continuation_lines.append("")
+                            i += 1
+                            continue
+                    flush_current_param()
+                elif line_indent > param_indent:
+                    continuation_lines.append(line)
+                    i += 1
+                    continue
+                else:
+                    flush_current_param()
+
+            i += 1
+
+        flush_current_param()
         return raw_param_docs, unknown_params
