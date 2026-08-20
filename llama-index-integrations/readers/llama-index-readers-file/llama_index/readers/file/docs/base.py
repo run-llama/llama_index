@@ -39,15 +39,21 @@ class PDFReader(BaseReader):
     )
     def load_data(
         self,
-        file: Union[Path, PurePosixPath],
+        file: Union[Path, PurePosixPath, str],
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         fs = fs or get_default_fs()
-        _Path = Path if is_default_fs(fs) else PurePosixPath
+        default_fs = is_default_fs(fs)
+        _Path = Path if default_fs else PurePosixPath
         if not isinstance(file, (Path, PurePosixPath)):
-            file = _Path(file)
+            file = _Path(file) if default_fs else file
+        file_name = (
+            file.name
+            if isinstance(file, (Path, PurePosixPath))
+            else PurePosixPath(file).name
+        )
 
         try:
             import pypdf
@@ -59,7 +65,7 @@ class PDFReader(BaseReader):
         with fs.open(str(file), "rb") as fp:
             # Load the file in memory if the filesystem is not the default one to avoid
             # issues with pypdf
-            stream = fp if is_default_fs(fs) else io.BytesIO(fp.read())
+            stream = fp if default_fs else io.BytesIO(fp.read())
 
             # Create a PDF object
             pdf = pypdf.PdfReader(stream)
@@ -71,7 +77,7 @@ class PDFReader(BaseReader):
 
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
-                metadata = {"file_name": file.name}
+                metadata = {"file_name": file_name}
                 if extra_info is not None:
                     metadata.update(extra_info)
 
@@ -91,7 +97,7 @@ class PDFReader(BaseReader):
                     page_text = pdf.pages[page].extract_text()
                     page_label = pdf.page_labels[page]
 
-                    metadata = {"page_label": page_label, "file_name": file.name}
+                    metadata = {"page_label": page_label, "file_name": file_name}
                     if extra_info is not None:
                         metadata.update(extra_info)
 
