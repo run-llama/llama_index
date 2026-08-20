@@ -237,6 +237,7 @@ class Anthropic(FunctionCallingLLM):
         aws_region: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
+        aws_bearer_token_bedrock: Optional[str] = None,
         cache_idx: Optional[int] = None,
         thinking_dict: Optional[Dict[str, Any]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
@@ -289,21 +290,24 @@ class Anthropic(FunctionCallingLLM):
             )
         elif aws_region:
             self._client = anthropic.AnthropicBedrock(
-                aws_region=aws_region,
-                aws_access_key=aws_access_key_id,
-                aws_secret_key=aws_secret_access_key,
-                max_retries=max_retries,
-                default_headers=merged_headers,
-                timeout=timeout,
-            )
+    aws_region=aws_region,
+    aws_access_key=aws_access_key_id,
+    aws_secret_key=aws_secret_access_key,
+    aws_bearer_token_bedrock=aws_bearer_token_bedrock,
+    max_retries=max_retries,
+    default_headers=merged_headers,
+    timeout=timeout,
+)
+            
             self._aclient = anthropic.AsyncAnthropicBedrock(
-                aws_region=aws_region,
-                aws_access_key=aws_access_key_id,
-                aws_secret_key=aws_secret_access_key,
-                max_retries=max_retries,
-                default_headers=merged_headers,
-                timeout=timeout,
-            )
+    aws_region=aws_region,
+    aws_access_key=aws_access_key_id,
+    aws_secret_key=aws_secret_access_key,
+    aws_bearer_token_bedrock=aws_bearer_token_bedrock,
+    max_retries=max_retries,
+    default_headers=merged_headers,
+    timeout=timeout,
+)
         else:
             self._client = anthropic.Anthropic(
                 api_key=api_key,
