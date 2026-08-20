@@ -772,7 +772,7 @@ class TextNode(BaseNode):
             if isinstance(tr, MediaResource):
                 kwargs["text"] = tr.text
             else:
-                kwargs["text"] = tr["text"]
+                kwargs["text"] = tr.get("text") or ""
         super().__init__(*args, **kwargs)
 
     text: str = Field(default="", description="Text content of the node.")

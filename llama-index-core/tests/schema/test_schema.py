@@ -86,6 +86,16 @@ def test_text_node_with_text_resource():
     assert text_node.text == "This is a test"
 
 
+def test_text_node_with_dict_text_resource_missing_text_key():
+    """
+    A partial dict-form `text_resource` (e.g. embeddings-only, no 'text' key)
+    should not raise a raw KeyError -- it should fall back to an empty string,
+    matching the default `text` field's own empty-string default.
+    """
+    text_node = TextNode(text_resource={"embeddings": {"dense": [1.0, 2.0]}})
+    assert text_node.text == ""
+
+
 def test_text_node_metadata_separator_consistency() -> None:
     """
     Test that metadata_separator works consistently on TextNode.
