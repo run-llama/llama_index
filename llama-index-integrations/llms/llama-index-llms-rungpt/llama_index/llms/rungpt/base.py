@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from llama_index.core.base.llms.types import (
@@ -244,7 +245,9 @@ class RunGptLLM(LLM):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        return self.chat(messages, **kwargs)
+        # chat() issues a blocking requests.post; offload it so awaiting achat()
+        # does not stall the event loop.
+        return await asyncio.to_thread(self.chat, messages, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
@@ -263,7 +266,9 @@ class RunGptLLM(LLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return self.complete(prompt, **kwargs)
+        # complete() issues a blocking requests.post; offload it so awaiting
+        # acomplete() does not stall the event loop.
+        return await asyncio.to_thread(self.complete, prompt, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
