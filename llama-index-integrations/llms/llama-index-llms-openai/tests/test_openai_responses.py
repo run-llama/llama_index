@@ -1009,3 +1009,15 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_o1_model_responses_temperature_handling() -> None:
+    """Regression test for issue #22751: User-specified temperature should not be silently overwritten in OpenAIResponses."""
+    # When temperature is not provided, defaults to 1.0 for O1
+    llm_default = OpenAIResponses(model="o1-mini", api_key="sk-test")
+    assert llm_default.temperature == 1.0
+
+    # When caller explicitly sets temperature, it must be preserved
+    llm_custom = OpenAIResponses(model="o1-mini", temperature=0.7, api_key="sk-test")
+    assert llm_custom.temperature == 0.7
+

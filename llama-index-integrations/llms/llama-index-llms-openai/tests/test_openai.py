@@ -921,3 +921,16 @@ def test_from_openai_message_without_reasoning_content() -> None:
     assert len(thinking_blocks) == 0
     assert len(result.blocks) == 1
     assert result.blocks[0].text == "Hello!"
+
+
+def test_o1_model_temperature_handling() -> None:
+    """Regression test for issue #22751: User-specified temperature should not be silently overwritten."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        # When temperature is not provided, defaults to 1.0 for O1
+        llm_default = OpenAI(model="o1-mini")
+        assert llm_default.temperature == 1.0
+
+        # When caller explicitly sets temperature, it must be preserved
+        llm_custom = OpenAI(model="o1-mini", temperature=0.7)
+        assert llm_custom.temperature == 0.7
+
