@@ -1,4 +1,7 @@
 import os
+from contextlib import asynccontextmanager
+from unittest.mock import patch
+
 from httpx2 import AsyncClient
 import pytest
 
@@ -259,3 +262,42 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+@pytest.mark.asyncio
+async def test_streamable_http_unpacks_two_tuple():
+    received = {}
+
+    @asynccontextmanager
+    async def fake_streamable_http_client(*args, **kwargs):
+        # mcp 2.x yields (read_stream, write_stream) — exactly two values.
+        yield ("read-stream", "write-stream")
+
+    class FakeSession:
+        def __init__(self, read, write, **kwargs):
+            received["read"] = read
+            received["write"] = write
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        async def initialize(self):
+            return None
+
+    client = BasicMCPClient("https://example.com/mcp/", timeout=5)
+
+    with (
+        patch(
+            "llama_index.tools.mcp.client.streamable_http_client",
+            fake_streamable_http_client,
+        ),
+        patch("llama_index.tools.mcp.client.ClientSession", FakeSession),
+    ):
+        async with client._run_session() as session:
+            assert isinstance(session, FakeSession)
+
+    # The two streams from the transport are forwarded to the session in order.
+    assert received == {"read": "read-stream", "write": "write-stream"}
