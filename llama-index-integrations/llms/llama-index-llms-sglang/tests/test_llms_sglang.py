@@ -8,7 +8,7 @@ def test_llm_class():
     assert BaseLLM.__name__ in names_of_base_classes
 
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 
 def test_initialization():
@@ -82,3 +82,44 @@ def test_stream_complete(mock_post_http_request):
     results = list(gen)
     assert len(results) == 2
     assert results[0].delta == "Hello"
+
+
+def test_post_http_request_does_not_mutate_sampling_params():
+    """
+    `sampling_params` used to get `stream` written into it in place.
+
+    That mutated the caller's dict and, when the argument was omitted, wrote into the shared
+    `{}` default, so the value leaked between calls.
+    """
+    from llama_index.llms.sglang.utils import post_http_request
+
+    params = {"temperature": 0.7}
+    sent = {}
+
+    def fake_post(url, headers=None, json=None, stream=None):
+        sent.update(json or {})
+        return MagicMock()
+
+    with patch("llama_index.llms.sglang.utils.requests.post", side_effect=fake_post):
+        post_http_request("http://localhost:30000/generate", params, stream=True)
+
+    assert params == {"temperature": 0.7}
+    assert sent == {"temperature": 0.7, "stream": True}
+
+
+def test_post_http_request_default_is_not_shared():
+    from llama_index.llms.sglang.utils import post_http_request
+
+    assert post_http_request.__defaults__[0] is None
+
+    sent = []
+
+    def fake_post(url, headers=None, json=None, stream=None):
+        sent.append(dict(json or {}))
+        return MagicMock()
+
+    with patch("llama_index.llms.sglang.utils.requests.post", side_effect=fake_post):
+        post_http_request("http://localhost:30000/generate", stream=True)
+        post_http_request("http://localhost:30000/generate", stream=False)
+
+    assert sent == [{"stream": True}, {"stream": False}]
