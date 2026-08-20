@@ -31,7 +31,7 @@ from llama_index.llms.anthropic import Anthropic
 # To customize your API key, do this
 # otherwise it will lookup ANTHROPIC_API_KEY from your env variable
 # llm = Anthropic(api_key="<api_key>")
-llm = Anthropic(model="claude-3-opus-20240229")
+llm = Anthropic(model="claude-opus-5")
 
 Settings.tokenizer = llm.tokenizer
 
@@ -56,7 +56,7 @@ os.environ["ANTHROPIC_REGION"] = "YOUR PROJECT REGION HERE"
 # Set region and project_id to make Anthropic use the Vertex AI client
 
 llm = Anthropic(
-    model="claude-3-5-sonnet@20240620",
+    model="claude-sonnet-4-5@20250929",
     region=os.getenv("ANTHROPIC_REGION"),
     project_id=os.getenv("ANTHROPIC_PROJECT_ID"),
 )
@@ -77,7 +77,7 @@ messages = [
     ),
     ChatMessage(role="user", content="Tell me a story"),
 ]
-resp = Anthropic(model="claude-3-opus-20240229").chat(messages)
+resp = Anthropic(model="claude-opus-5").chat(messages)
 print(resp)
 ```
 
@@ -86,7 +86,7 @@ print(resp)
 ```py
 from llama_index.llms.anthropic import Anthropic
 
-llm = Anthropic(model="claude-3-opus-20240229", max_tokens=100)
+llm = Anthropic(model="claude-opus-5", max_tokens=100)
 resp = llm.stream_complete("Paul Graham is ")
 for r in resp:
     print(r.delta, end="")
@@ -95,7 +95,7 @@ for r in resp:
 ### Chat streaming with pirate story
 
 ```py
-llm = Anthropic(model="claude-3-opus-20240229")
+llm = Anthropic(model="claude-opus-5")
 messages = [
     ChatMessage(
         role="system", content="You are a pirate with a colorful personality"
@@ -112,7 +112,7 @@ for r in resp:
 ```py
 from llama_index.llms.anthropic import Anthropic
 
-llm = Anthropic(model="claude-3-sonnet-20240229")
+llm = Anthropic(model="claude-opus-5")
 resp = llm.stream_complete("Paul Graham is ")
 for r in resp:
     print(r.delta, end="")
@@ -123,7 +123,7 @@ for r in resp:
 ```py
 from llama_index.llms.anthropic import Anthropic
 
-llm = Anthropic("claude-3-sonnet-20240229")
+llm = Anthropic("claude-opus-5")
 resp = await llm.acomplete("Paul Graham is ")
 print(resp)
 ```
@@ -135,7 +135,7 @@ from llama_index.llms.anthropic import Anthropic
 
 # Initialize with web search tool
 llm = Anthropic(
-    model="claude-3-7-sonnet-latest",  # Must be a tool-supported model
+    model="claude-opus-5",  # Must be a tool-supported model
     max_tokens=1024,
     tools=[
         {
@@ -182,7 +182,7 @@ class Restaurant(BaseModel):
     menu_items: List[MenuItem]
 
 
-llm = Anthropic("claude-3-5-sonnet-20240620")
+llm = Anthropic("claude-opus-5")
 prompt_tmpl = PromptTemplate(
     "Generate a restaurant in a given city {city_name}"
 )
