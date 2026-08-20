@@ -8,7 +8,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, ThinkingBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
@@ -128,6 +128,31 @@ class FunctionAgent(BaseWorkflowAgent):
         tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
             last_chat_response, error_on_no_tool_call=False
         )
+
+        # Fallback: some OpenAI-compatible models (e.g. Kimi-K2.5) may put the final
+        # answer in `reasoning_content` instead of `content`. When there are no tool
+        # calls and the response content is empty, promote the ThinkingBlock content
+        # to be the text response so the agent doesn't silently return an empty answer.
+        if not tool_calls and not last_chat_response.message.content:
+            thinking_content = next(
+                (
+                    block.content
+                    for block in last_chat_response.message.blocks
+                    if isinstance(block, ThinkingBlock) and block.content
+                ),
+                None,
+            )
+            if thinking_content:
+                last_chat_response = ChatResponse(
+                    message=ChatMessage(
+                        role=last_chat_response.message.role,
+                        content=thinking_content,
+                        additional_kwargs=last_chat_response.message.additional_kwargs,
+                    ),
+                    delta=thinking_content,
+                    raw=last_chat_response.raw,
+                    additional_kwargs=last_chat_response.additional_kwargs,
+                )
 
         # only add to scratchpad if we didn't select the handoff tool
         scratchpad.append(last_chat_response.message)
