@@ -102,6 +102,35 @@ def test_SimpleDirectoryReader_file_limit(data_path):
     assert len(r.input_files) == 2
 
 
+def test_SimpleDirectoryReader_file_limit_counts_kept_files(tmp_path):
+    for i in range(3):
+        (tmp_path / f"skipped_{i}.log").write_text("skip me")
+    for i in range(2):
+        (tmp_path / f"kept_{i}.txt").write_text("keep me")
+
+    # the order files come back in is up to the filesystem, so pin it here to
+    # put the files that get filtered out first
+    walked = [
+        (
+            str(tmp_path),
+            [],
+            [
+                "skipped_0.log",
+                "skipped_1.log",
+                "skipped_2.log",
+                "kept_0.txt",
+                "kept_1.txt",
+            ],
+        )
+    ]
+    with mock.patch.object(LocalFileSystem, "walk", return_value=walked):
+        r = SimpleDirectoryReader(
+            input_dir=tmp_path, required_exts=[".txt"], num_files_limit=2
+        )
+
+    assert [f.name for f in r.input_files] == ["kept_0.txt", "kept_1.txt"]
+
+
 def test_SimpleDirectoryReader_list_resources(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, exclude=["excluded*"])
     res = r.list_resources()
