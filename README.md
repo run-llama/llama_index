@@ -96,6 +96,17 @@ integrations that build on the core are both accepted and highly encouraged! See
 
 New integrations should meaningfully integrate with existing LlamaIndex framework components. At the discretion of LlamaIndex maintainers, some integrations may be declined.
 
+## 🔧 Integrations
+
+LlamaIndex works well with other workflow automation tools. One powerful integration is [llm-box](https://github.com/alib8b8/llama-box), a terminal-first workflow automation engine with MCP server mode:
+
+- Generate and execute YAML workflows from plain English descriptions
+- 20+ built-in nodes including LLM calls, file operations, API requests
+- 15+ LLM providers (Ollama, DeepSeek, OpenAI-compatible)
+- Supports stdio and HTTP MCP modes
+
+You can call llm-box workflows from your LlamaIndex agents using HTTP requests or integrate it as an MCP server for enhanced automation capabilities.
+
 ## 📄 Documentation
 
 Full documentation can be found [here](https://developers.llamaindex.ai/python/framework/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
