@@ -23,7 +23,11 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
-from llama_index.llms.anthropic.base import AnthropicChatResponse, _get_default_headers
+from llama_index.llms.anthropic.base import (
+    AnthropicChatResponse,
+    _get_default_headers,
+    _usage_metadata_from_anthropic_usage,
+)
 from llama_index.llms.anthropic.utils import messages_to_anthropic_messages
 
 
@@ -54,6 +58,21 @@ def test_get_default_headers_preserves_default_when_no_conflict():
     headers = _get_default_headers(user_headers)
     assert headers["X-Custom"] == "value"
     assert headers["User-Agent"].startswith("llama-index/")
+
+
+def test_usage_metadata_preserves_anthropic_cache_tokens():
+    usage = MagicMock()
+    usage.input_tokens = None
+    usage.output_tokens = 8
+    usage.cache_creation_input_tokens = 12
+    usage.cache_read_input_tokens = 34
+
+    assert _usage_metadata_from_anthropic_usage(usage, input_tokens=15) == {
+        "input_tokens": 15,
+        "output_tokens": 8,
+        "cache_creation_input_tokens": 12,
+        "cache_read_input_tokens": 34,
+    }
 
 
 @pytest.mark.skipif(
@@ -704,6 +723,8 @@ def test_stream_chat_usage_and_stop_reason_mock():
     mock_first_usage = MagicMock(spec=Usage)
     mock_first_usage.input_tokens = 15
     mock_first_usage.output_tokens = 1
+    mock_first_usage.cache_creation_input_tokens = 2
+    mock_first_usage.cache_read_input_tokens = 3
 
     # Last event with final usage
     # Note that input_tokens can be None
@@ -711,6 +732,8 @@ def test_stream_chat_usage_and_stop_reason_mock():
     mock_last_usage = MagicMock(spec=Usage)
     mock_last_usage.input_tokens = None
     mock_last_usage.output_tokens = 8
+    mock_last_usage.cache_creation_input_tokens = 5
+    mock_last_usage.cache_read_input_tokens = 7
 
     mock_delta = MagicMock()
     mock_delta.stop_reason = "end_turn"
@@ -767,6 +790,8 @@ def test_stream_chat_usage_and_stop_reason_mock():
     )
     assert usage["input_tokens"] == 15
     assert usage["output_tokens"] == 8
+    assert usage["cache_creation_input_tokens"] == 5
+    assert usage["cache_read_input_tokens"] == 7
 
     # Verify stop_reason was captured
     stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
@@ -795,10 +820,14 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     mock_first_usage = MagicMock(spec=Usage)
     mock_first_usage.input_tokens = 20
     mock_first_usage.output_tokens = 1
+    mock_first_usage.cache_creation_input_tokens = 4
+    mock_first_usage.cache_read_input_tokens = 6
 
     mock_last_usage = MagicMock(spec=Usage)
     mock_last_usage.input_tokens = None
     mock_last_usage.output_tokens = 12
+    mock_last_usage.cache_creation_input_tokens = 8
+    mock_last_usage.cache_read_input_tokens = 10
 
     mock_delta = MagicMock()
     mock_delta.stop_reason = "max_tokens"
@@ -853,6 +882,8 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     assert usage is not None, "Usage metadata should be captured in async streaming"
     assert usage["input_tokens"] == 20
     assert usage["output_tokens"] == 12
+    assert usage["cache_creation_input_tokens"] == 8
+    assert usage["cache_read_input_tokens"] == 10
 
     # Verify stop_reason was captured
     stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
