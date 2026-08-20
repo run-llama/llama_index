@@ -34,6 +34,15 @@ def asyncio_module(show_progress: bool = False) -> Any:
     return get_asyncio_module(show_progress=show_progress)
 
 
+def _is_loop_running_in_this_thread() -> bool:
+    """Return True if an event loop is currently running in this thread."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
+
+
 def asyncio_run(coro: Coroutine) -> Any:
     """
     Gets an existing event loop to run the coroutine.
@@ -42,39 +51,48 @@ def asyncio_run(coro: Coroutine) -> Any:
     If an event loop is already running, uses threading to run in a separate thread.
     """
     try:
-        # Check if there's an existing event loop
+        # Check if there's an existing event loop. A RuntimeError here means
+        # there is no current event loop in this thread, so fall back to
+        # asyncio.run(). Only loop discovery belongs in this try block: running
+        # the coroutine inside it would swallow RuntimeErrors raised by the
+        # coroutine itself and misreport them as nested-async failures.
         loop = asyncio.get_event_loop()
-
-        # Check if the loop is already running
-        if loop.is_running():
-            # If loop is already running, run in a separate thread
-            # Snapshot the current context so we can propagate contextvars
-            ctx = contextvars.copy_context()
-
-            def run_coro_in_thread() -> Any:
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    return ctx.run(new_loop.run_until_complete, coro)
-                finally:
-                    new_loop.close()
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(run_coro_in_thread)
-                return future.result()
-        else:
-            # If we're here, there's an existing loop but it's not running
-            return loop.run_until_complete(coro)
-
-    except RuntimeError as e:
-        # If we can't get the event loop, we're likely in a different thread
+    except RuntimeError:
+        # No current event loop in this thread; create one via asyncio.run().
         try:
             return asyncio.run(coro)
-        except RuntimeError as e:
-            raise RuntimeError(
-                "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
-                "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
-            )
+        except RuntimeError:
+            # asyncio.run() raises RuntimeError for two reasons: the coroutine
+            # itself failed, or a loop is already running in this thread
+            # (genuine nested async). Only the latter deserves the helpful
+            # nested-async message; the coroutine's own error must propagate.
+            if _is_loop_running_in_this_thread():
+                raise RuntimeError(
+                    "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
+                    "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
+                ) from None
+            raise
+
+    # Check if the loop is already running
+    if loop.is_running():
+        # If loop is already running, run in a separate thread
+        # Snapshot the current context so we can propagate contextvars
+        ctx = contextvars.copy_context()
+
+        def run_coro_in_thread() -> Any:
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            try:
+                return ctx.run(new_loop.run_until_complete, coro)
+            finally:
+                new_loop.close()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(run_coro_in_thread)
+            return future.result()
+
+    # If we're here, there's an existing loop but it's not running
+    return loop.run_until_complete(coro)
 
 
 def run_async_tasks(
