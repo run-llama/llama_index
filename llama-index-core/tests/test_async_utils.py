@@ -37,3 +37,40 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+# ---------------------------------------------------------------------------
+# Tests for get_asyncio_module
+# ---------------------------------------------------------------------------
+
+def test_get_asyncio_module_default_returns_asyncio() -> None:
+    """get_asyncio_module() with no arguments should return the asyncio module."""
+    from llama_index.core.async_utils import get_asyncio_module
+
+    module = get_asyncio_module()
+    assert module is asyncio
+
+
+def test_get_asyncio_module_show_progress_false_returns_asyncio() -> None:
+    """get_asyncio_module(show_progress=False) should return the asyncio module."""
+    from llama_index.core.async_utils import get_asyncio_module
+
+    module = get_asyncio_module(show_progress=False)
+    assert module is asyncio
+
+
+def test_get_asyncio_module_show_progress_true_returns_tqdm() -> None:
+    """get_asyncio_module(show_progress=True) should return tqdm_asyncio."""
+    pytest.importorskip("tqdm")
+    from tqdm.asyncio import tqdm_asyncio
+    from llama_index.core.async_utils import get_asyncio_module
+
+    module = get_asyncio_module(show_progress=True)
+    assert module is tqdm_asyncio
+
+
+def test_get_asyncio_module_has_gather() -> None:
+    """The returned module must expose a 'gather' attribute in both modes."""
+    from llama_index.core.async_utils import get_asyncio_module
+
+    assert hasattr(get_asyncio_module(show_progress=False), "gather")
