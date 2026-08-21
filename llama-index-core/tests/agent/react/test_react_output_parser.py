@@ -191,6 +191,16 @@ This is the second line."""
     )
 
 
+def test_extract_final_response_no_thought() -> None:
+    mock_input_text = """\
+I have enough information to answer the question without using any more tools.
+Answer: 2
+"""
+    thought, answer = extract_final_response(mock_input_text)
+    assert thought == "I have enough information to answer the question without using any more tools."
+    assert answer == "2"
+
+
 def test_react_output_parser_handles_action_in_answer() -> None:
     mock_input_text = """\
 Thought: I have enough information to answer the question without using any more tools.
