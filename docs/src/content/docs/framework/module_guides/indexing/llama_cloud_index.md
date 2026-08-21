@@ -59,6 +59,14 @@ index = LlamaCloudIndex.from_documents(
 index = LlamaCloudIndex("my_first_index", project_name="default")
 ```
 
+By default, new indexes use LlamaCloud managed embeddings. If retrieval fails
+with an error like `Error querying data sink: 400: OpenAI Authentication error.
+The OpenAI API key used for the embedding transformation on your index is
+invalid.`, this usually indicates the query reached LlamaCloud successfully, but
+the embedding model configured for that index needs fresh provider credentials.
+Update the embedding model credentials in the LlamaCloud UI, or recreate the
+index with the desired managed embedding configuration, then retry retrieval.
+
 You can also configure a retriever for managed retrieval:
 
 ```python
