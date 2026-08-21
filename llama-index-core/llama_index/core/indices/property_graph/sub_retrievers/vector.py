@@ -186,7 +186,7 @@ class VectorContextRetriever(BasePGRetriever):
         assert len(triplets) == len(new_scores)
 
         # filter by similarity score
-        if self._similarity_score:
+        if self._similarity_score is not None:
             filtered_data = [
                 (triplet, score)
                 for triplet, score in zip(triplets, new_scores)
@@ -258,7 +258,7 @@ class VectorContextRetriever(BasePGRetriever):
         assert len(triplets) == len(new_scores)
 
         # filter by similarity score
-        if self._similarity_score:
+        if self._similarity_score is not None:
             filtered_data = [
                 (triplet, score)
                 for triplet, score in zip(triplets, new_scores)
