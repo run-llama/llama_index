@@ -146,6 +146,40 @@ def test_embed_model_single_sentence_document() -> None:
     assert nodes[0].get_content() == "Only one sentence here."
 
 
+def test_empty_document_does_not_raise() -> None:
+    """An empty document must not crash with IndexError (see #17032)."""
+    empty_doc = Document(text="")
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+    )
+    nodes = splitter.get_nodes_from_documents([empty_doc])
+    assert nodes == []
+
+
+def test_whitespace_only_document_does_not_raise() -> None:
+    """A whitespace/newline-only document must not crash with IndexError (see #17032)."""
+    whitespace_doc = Document(text="   \n\n  \t  ")
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+    )
+    nodes = splitter.get_nodes_from_documents([whitespace_doc])
+    assert nodes == []
+
+
+def test_mixed_empty_and_nonempty_documents() -> None:
+    """An empty document mixed with real documents should be skipped, not crash the batch."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+    )
+    real_doc = Document(text="Only one sentence here.")
+    nodes = splitter.get_nodes_from_documents([Document(text=""), real_doc])
+    assert len(nodes) == 1
+    assert nodes[0].get_content() == "Only one sentence here."
+
+
 def test_clean_text_advanced() -> None:
     """Test that _clean_text_advanced properly filters out stopwords from a string."""
     from llama_index.core.utils import globals_helper

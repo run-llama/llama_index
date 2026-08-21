@@ -230,7 +230,10 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         for node in nodes:
             text = node.get_content()
             sentences = self.sentence_splitter(text)
-            sentences = [s.strip() for s in sentences]
+            sentences = [s.strip() for s in sentences if s.strip()]
+            if not sentences:
+                # Nothing to split (e.g. empty or whitespace-only text).
+                continue
             initial_chunks = self._create_initial_chunks(sentences)
             chunks = self._merge_initial_chunks(initial_chunks)
 
