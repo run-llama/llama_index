@@ -17,7 +17,13 @@ async def frontend_show(message: str) -> str:
     return ""
 
 
-def test_frontend_tool_calls_are_persisted_as_tool_messages() -> None:
+def test_frontend_tool_results_are_not_persisted_server_side() -> None:
+    """
+    Backend tool calls get a server-side tool reply; frontend tool calls
+    must not — their results arrive from the client on the callback run.
+    A server-side reply marks the call resolved and the client never runs
+    its handler (regression: dojo change_background stopped firing).
+    """
     backend_tool_call_id = "call_backend_calc"
     frontend_tool_call_id = "call_frontend_show"
 
@@ -106,4 +112,5 @@ def test_frontend_tool_calls_are_persisted_as_tool_messages() -> None:
         backend_tool_call_id,
         frontend_tool_call_id,
     }
-    assert claimed_tool_call_ids <= replied_tool_call_ids
+    assert backend_tool_call_id in replied_tool_call_ids
+    assert frontend_tool_call_id not in replied_tool_call_ids
