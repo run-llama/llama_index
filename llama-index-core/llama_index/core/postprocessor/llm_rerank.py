@@ -102,8 +102,16 @@ class LLMRerank(BaseNodePostprocessor):
             raw_response, len(nodes_batch)
         )
         choice_idxs = [int(choice) - 1 for choice in raw_choices]
-        choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
-        relevances = relevances or [1.0 for _ in choice_nodes]
+        valid_mask = [0 <= idx < len(nodes_batch) for idx in choice_idxs]
+        choice_nodes = [
+            nodes_batch[idx] for idx, valid in zip(choice_idxs, valid_mask) if valid
+        ]
+        if relevances:
+            relevances = [
+                relevance for relevance, valid in zip(relevances, valid_mask) if valid
+            ]
+        else:
+            relevances = [1.0 for _ in choice_nodes]
         return [
             NodeWithScore(node=node, score=relevance)
             for node, relevance in zip(choice_nodes, relevances)

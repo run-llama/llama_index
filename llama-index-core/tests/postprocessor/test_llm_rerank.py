@@ -166,6 +166,26 @@ async def test_llm_rerank__async() -> None:
     assert result_nodes[2].node.get_content() == "Test3"
 
 
+def test_llm_rerank_ignores_out_of_range_choices() -> None:
+    """A choice number outside 1..len(nodes_batch) must not wrap around via negative indexing."""
+    nodes = [
+        TextNode(text="DOC_A"),
+        TextNode(text="DOC_B"),
+        TextNode(text="DOC_C"),
+    ]
+
+    def bad_parse_fn(answer: str, num_choices: int):
+        # Simulates a custom parser (or a buggy LLM) that lets 0 and negatives through.
+        return [0, -2, 2], [9.0, 9.0, 8.0]
+
+    llm_rerank = LLMRerank(parse_choice_select_answer_fn=bad_parse_fn)
+    result_nodes = llm_rerank._parse_raw_response("unused", nodes)
+
+    assert len(result_nodes) == 1
+    assert result_nodes[0].node.get_content() == "DOC_B"
+    assert result_nodes[0].score == 8.0
+
+
 @patch.object(
     MockLLM,
     "chat",
