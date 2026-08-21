@@ -89,6 +89,13 @@ def run_async_tasks(
             import nest_asyncio
             from tqdm.asyncio import tqdm
 
+            tqdm_available = True
+        # fall back to the plain path on hitting a fatal, which may occur in
+        # some environments where tqdm.asyncio is not supported
+        except Exception:
+            tqdm_available = False
+
+        if tqdm_available:
             # jupyter notebooks already have an event loop running
             # we need to reuse it instead of creating a new one
             nest_asyncio.apply()
@@ -99,11 +106,6 @@ def run_async_tasks(
 
             tqdm_outputs: List[Any] = loop.run_until_complete(_tqdm_gather())
             return tqdm_outputs
-        # run the operation w/o tqdm on hitting a fatal
-        # may occur in some environments where tqdm.asyncio
-        # is not supported
-        except Exception:
-            pass
 
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
