@@ -630,6 +630,20 @@ def test_reasoning_effort_not_passed_for_non_o1_models():
     assert "reasoning_effort" not in kwargs
 
 
+def test_o1_model_keeps_explicit_temperature():
+    """An explicit temperature passed for an O1 model must not be overwritten."""
+    model_name = next(iter(O1_MODELS))
+    llm = OpenAI(model=model_name, temperature=0.5, api_key="test-key")
+    assert llm.temperature == 0.5
+
+
+def test_o1_model_defaults_temperature_to_one():
+    """Without an explicit temperature, O1 models still default to 1.0."""
+    model_name = next(iter(O1_MODELS))
+    llm = OpenAI(model=model_name, api_key="test-key")
+    assert llm.temperature == 1.0
+
+
 def test_reasoning_effort_none_default():
     """Test that reasoning_effort defaults to None and is not passed."""
     model_name = "o1-mini"
