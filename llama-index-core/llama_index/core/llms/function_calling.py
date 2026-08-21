@@ -237,7 +237,13 @@ class FunctionCallingLLM(LLM):
             response, error_on_no_tool_call=error_on_no_tool_call
         )
         tool_outputs = [
-            call_tool_with_selection(tool_call, tools, verbose=verbose)
+            call_tool_with_selection(
+                tool_call=tool_call,
+                tools=tools,
+                verbose=verbose,
+                callback_manager=self.callback_manager,
+                tool_id=tool_call.tool_id,
+            )
             for tool_call in tool_calls
         ]
         tool_outputs_with_error = [
@@ -304,7 +310,13 @@ class FunctionCallingLLM(LLM):
             response, error_on_no_tool_call=error_on_no_tool_call
         )
         tool_tasks = [
-            acall_tool_with_selection(tool_call, tools, verbose=verbose)
+            acall_tool_with_selection(
+                tool_call=tool_call,
+                tools=tools,
+                verbose=verbose,
+                callback_manager=self.callback_manager,
+                tool_id=tool_call.tool_id,
+            )
             for tool_call in tool_calls
         ]
         tool_outputs = await asyncio.gather(*tool_tasks)

@@ -1,7 +1,9 @@
-from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
-from typing import TYPE_CHECKING, Sequence
-from llama_index.core.llms.llm import ToolSelection
 import json
+from typing import TYPE_CHECKING, Dict, Optional, Sequence
+
+from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -60,10 +62,42 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
         )
 
 
+def _tool_audit_payload(
+    *,
+    tool_name: str,
+    tool_kwargs: Dict,
+    tool_id: Optional[str],
+    output: Optional[ToolOutput] = None,
+) -> Dict:
+    payload = {
+        "tool_name": tool_name,
+        "tool_kwargs": tool_kwargs,
+        "tool_id": tool_id,
+        "is_error": False,
+        "output": None,
+        "error": None,
+    }
+
+    if output is not None:
+        payload["is_error"] = output.is_error
+        payload["output"] = output.content
+        if output.is_error:
+            payload["error"] = (
+                str(output.exception)
+                if output.exception is not None
+                else str(output.raw_output)
+            )
+
+    return {EventPayload.TOOL: payload}
+
+
 def call_tool_with_selection(
     tool_call: ToolSelection,
     tools: Sequence["BaseTool"],
     verbose: bool = False,
+    *,
+    callback_manager: Optional[CallbackManager] = None,
+    tool_id: Optional[str] = None,
 ) -> ToolOutput:
     from llama_index.core.tools.calling import call_tool
 
@@ -74,7 +108,26 @@ def call_tool_with_selection(
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = tools_by_name[name]
-    output = call_tool(tool, tool_call.tool_kwargs)
+    if callback_manager is not None:
+        with callback_manager.event(
+            CBEventType.TOOL,
+            payload=_tool_audit_payload(
+                tool_name=name,
+                tool_kwargs=tool_call.tool_kwargs,
+                tool_id=tool_id or tool_call.tool_id,
+            ),
+        ) as event:
+            output = call_tool(tool, tool_call.tool_kwargs)
+            event.on_end(
+                payload=_tool_audit_payload(
+                    tool_name=name,
+                    tool_kwargs=tool_call.tool_kwargs,
+                    tool_id=tool_id or tool_call.tool_id,
+                    output=output,
+                )
+            )
+    else:
+        output = call_tool(tool, tool_call.tool_kwargs)
 
     if verbose:
         print("=== Function Output ===")
@@ -87,6 +140,9 @@ async def acall_tool_with_selection(
     tool_call: ToolSelection,
     tools: Sequence["BaseTool"],
     verbose: bool = False,
+    *,
+    callback_manager: Optional[CallbackManager] = None,
+    tool_id: Optional[str] = None,
 ) -> ToolOutput:
     from llama_index.core.tools.calling import acall_tool
 
@@ -97,7 +153,26 @@ async def acall_tool_with_selection(
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = tools_by_name[name]
-    output = await acall_tool(tool, tool_call.tool_kwargs)
+    if callback_manager is not None:
+        with callback_manager.event(
+            CBEventType.TOOL,
+            payload=_tool_audit_payload(
+                tool_name=name,
+                tool_kwargs=tool_call.tool_kwargs,
+                tool_id=tool_id or tool_call.tool_id,
+            ),
+        ) as event:
+            output = await acall_tool(tool, tool_call.tool_kwargs)
+            event.on_end(
+                payload=_tool_audit_payload(
+                    tool_name=name,
+                    tool_kwargs=tool_call.tool_kwargs,
+                    tool_id=tool_id or tool_call.tool_id,
+                    output=output,
+                )
+            )
+    else:
+        output = await acall_tool(tool, tool_call.tool_kwargs)
 
     if verbose:
         print("=== Function Output ===")

@@ -848,6 +848,8 @@ class LLM(BaseLLM):
                     tool_call=tool_call,
                     tools=tools or [],
                     verbose=verbose,
+                    callback_manager=self.callback_manager,
+                    tool_id=tool_call.tool_id,
                 )
                 tool_outputs.append(tool_output)
             output_text = "\n\n".join(
@@ -917,6 +919,8 @@ class LLM(BaseLLM):
                     tool_call=tool_call,
                     tools=tools or [],
                     verbose=verbose,
+                    callback_manager=self.callback_manager,
+                    tool_id=tool_call.tool_id,
                 )
                 tool_outputs.append(tool_output)
 
