@@ -124,6 +124,15 @@ class BaseComponent(BaseModel):
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
 
+        # `BaseModel.__getstate__` hands back the live `__dict__` and
+        # `__pydantic_private__` mappings, so they are shallow-copied before
+        # anything is dropped from them. Without the copies, dropping an
+        # unpickleable attribute here would also delete it from the object
+        # being pickled, leaving the original broken after serialization.
+        state["__dict__"] = dict(state["__dict__"])
+        if state.get("__pydantic_private__") is not None:
+            state["__pydantic_private__"] = dict(state["__pydantic_private__"])
+
         # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []
         for key, val in state["__dict__"].items():
