@@ -1,6 +1,8 @@
 import asyncio
 import contextvars
+
 import pytest
+
 from llama_index.core.async_utils import batch_gather, asyncio_run
 
 
@@ -37,3 +39,32 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+def test_asyncio_run_propagates_runtime_error_when_loop_is_not_running() -> None:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    original_error = RuntimeError("original failure")
+
+    async def fail() -> None:
+        raise original_error
+
+    try:
+        with pytest.raises(RuntimeError) as exc_info:
+            asyncio_run(fail())
+        assert exc_info.value is original_error
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
+
+
+@pytest.mark.asyncio
+async def test_asyncio_run_propagates_runtime_error_with_running_loop() -> None:
+    original_error = RuntimeError("original failure")
+
+    async def fail() -> None:
+        raise original_error
+
+    with pytest.raises(RuntimeError) as exc_info:
+        asyncio_run(fail())
+    assert exc_info.value is original_error
