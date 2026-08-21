@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union,
 
 import llama_index_instrumentation as instrument
 from llama_index.observability.otel.utils import _is_otel_supported_type, flatten_dict
+from llama_index.observability.otel.genai import GenAIEventHandler
 from llama_index_instrumentation.base.event import BaseEvent
 from llama_index_instrumentation.event_handlers import BaseEventHandler
 from llama_index_instrumentation.span import SimpleSpan, active_span_id
@@ -368,6 +369,13 @@ class LlamaIndexOpenTelemetry(BaseModel):
         default=False,
         description="Debug the start and end of span and the recording of events",
     )
+    genai_enabled: bool = Field(
+        default=False,
+        description=(
+            "Emit OpenTelemetry GenAI semantic-convention telemetry for supported "
+            "LlamaIndex operations."
+        ),
+    )
     _tracer: Optional[trace.Tracer] = PrivateAttr(default=None)
     _tracer_provider_instance: Optional[TracerProvider] = PrivateAttr(default=None)
 
@@ -400,7 +408,13 @@ class LlamaIndexOpenTelemetry(BaseModel):
     def start_registering(
         self,
     ) -> None:
-        """Starts LlamaIndex instrumentation."""
+        """
+        Start LlamaIndex OpenTelemetry instrumentation.
+
+        When ``genai_enabled`` is ``True``, this also registers a handler that
+        translates LlamaIndex LLM and embedding events into OpenTelemetry GenAI
+        semantic-convention spans and metrics.
+        """
         self._start_otel()
         dispatcher = instrument.get_dispatcher()
         assert self._tracer is not None, (
@@ -415,3 +429,8 @@ class LlamaIndexOpenTelemetry(BaseModel):
         dispatcher.add_event_handler(
             OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug)
         )
+        if self.genai_enabled:
+            assert self._tracer_provider_instance is not None
+            dispatcher.add_event_handler(
+                GenAIEventHandler(tracer_provider=self._tracer_provider_instance)
+            )

@@ -36,6 +36,7 @@ dependencies = [
     "opentelemetry-sdk>=1.33.0,<2",
     "opentelemetry-api>=1.33.0,<2",
     "opentelemetry-semantic-conventions>=0.54b0,<1",
+    "opentelemetry-util-genai>=1.0b0,<2",
     "termcolor>=3.1.0,<4",
     "llama-index-instrumentation>=0.5.0,<0.6",
 ]

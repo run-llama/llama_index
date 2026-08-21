@@ -34,6 +34,11 @@ from llama_index.core.agent.workflow.workflow_events import (
     ToolCall,
     ToolCallResult,
 )
+import llama_index.core.instrumentation as instrument
+from llama_index.core.instrumentation.events.agent import (
+    AgentToolCallEndEvent,
+    AgentToolCallStartEvent,
+)
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
@@ -74,6 +79,8 @@ WORKFLOW_KWARGS = (
     "resource_manager",
     "num_concurrent_runs",
 )
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 def get_default_llm() -> LLM:
@@ -645,7 +652,24 @@ class BaseWorkflowAgent(
             )
         else:
             tool = tools_by_name[ev.tool_name]
+        dispatcher.event(
+            AgentToolCallStartEvent(
+                tool_id=ev.tool_id,
+                tool_name=ev.tool_name,
+                tool_kwargs=ev.tool_kwargs,
+                tool_description=tool.metadata.description if tool else None,
+            )
+        )
+        if tool is not None:
             result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+
+        dispatcher.event(
+            AgentToolCallEndEvent(
+                tool_id=ev.tool_id,
+                tool_name=ev.tool_name,
+                tool_output=result,
+            )
+        )
 
         result_ev = ToolCallResult(
             tool_name=ev.tool_name,

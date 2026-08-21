@@ -81,3 +81,28 @@ if __name__ == "__main__":
     query_result = query_engine.query("Who is Paul?")
     query_result_one = query_engine.query("What did Paul do?")
 ```
+
+## GenAI semantic conventions
+
+Enable GenAI telemetry to emit standard OpenTelemetry GenAI spans and metrics
+for LlamaIndex LLM, embedding, retrieval, tool, and agent operations:
+
+```python
+from llama_index.observability.otel import LlamaIndexOpenTelemetry
+
+instrumentor = LlamaIndexOpenTelemetry(genai_enabled=True)
+instrumentor.start_registering()
+```
+
+Prompt and response content is disabled by default. Configure
+`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_ONLY` to opt in to
+content capture on spans. The accepted values are `NO_CONTENT`, `SPAN_ONLY`,
+`EVENT_ONLY`, and `SPAN_AND_EVENT`.
+
+### Provider instrumentation
+
+If an application also enables OpenTelemetry instrumentation for its underlying
+model provider, both integrations can emit generation spans for the same
+request. To avoid duplicate generation telemetry, enable one source of LLM
+generation spans, or use both intentionally when the provider-specific detail
+is desired.

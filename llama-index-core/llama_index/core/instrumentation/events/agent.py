@@ -7,7 +7,7 @@ from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
-from llama_index.core.tools.types import ToolMetadata
+from llama_index.core.tools.types import ToolMetadata, ToolOutput
 
 
 class AgentRunStepStartEvent(BaseEvent):
@@ -129,3 +129,51 @@ class AgentToolCallEvent(BaseEvent):
     def class_name(cls) -> str:
         """Class name."""
         return "AgentToolCallEvent"
+
+
+class AgentToolCallStartEvent(BaseEvent):
+    """
+    AgentToolCallStartEvent.
+
+    Emitted immediately before an agent executes a tool.
+
+    Args:
+        tool_id (str): Identifier supplied by the model for this tool call.
+        tool_name (str): Name of the selected tool.
+        tool_kwargs (dict): Arguments supplied to the tool.
+        tool_description (Optional[str]): Tool description, when available.
+
+    """
+
+    tool_id: str
+    tool_name: str
+    tool_kwargs: dict
+    tool_description: Optional[str] = None
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "AgentToolCallStartEvent"
+
+
+class AgentToolCallEndEvent(BaseEvent):
+    """
+    AgentToolCallEndEvent.
+
+    Emitted after an agent tool execution completes.
+
+    Args:
+        tool_id (str): Identifier supplied by the model for this tool call.
+        tool_name (str): Name of the selected tool.
+        tool_output (ToolOutput): Result returned by the tool invocation.
+
+    """
+
+    tool_id: str
+    tool_name: str
+    tool_output: ToolOutput
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "AgentToolCallEndEvent"

@@ -2,10 +2,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.agent.workflow import BaseWorkflowAgent
+from llama_index.core.agent.workflow import base_agent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
+    ToolCall,
     ToolCallResult,
+)
+from llama_index.core.instrumentation.events.agent import (
+    AgentToolCallEndEvent,
+    AgentToolCallStartEvent,
 )
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
@@ -62,6 +68,36 @@ def test_agent():
         tools=[],
         llm=None,  # Will use default
     )
+
+
+@pytest.mark.asyncio
+async def test_call_tool_emits_instrumentation_lifecycle_events(
+    mock_context, monkeypatch
+):
+    def weather(city: str) -> str:
+        return f"Sunny in {city}"
+
+    events = []
+    monkeypatch.setattr(
+        type(base_agent.dispatcher), "event", lambda _, event: events.append(event)
+    )
+    agent = TestWorkflowAgent(
+        name="weather_agent",
+        description="test",
+        tools=[FunctionTool.from_defaults(fn=weather)],
+        llm=None,
+    )
+
+    result = await agent.call_tool(
+        mock_context,
+        ToolCall(tool_name="weather", tool_kwargs={"city": "Boston"}, tool_id="1"),
+    )
+
+    assert result.tool_output.content == "Sunny in Boston"
+    assert isinstance(events[0], AgentToolCallStartEvent)
+    assert events[0].tool_id == "1"
+    assert isinstance(events[1], AgentToolCallEndEvent)
+    assert events[1].tool_output.content == "Sunny in Boston"
 
 
 @pytest.mark.asyncio
