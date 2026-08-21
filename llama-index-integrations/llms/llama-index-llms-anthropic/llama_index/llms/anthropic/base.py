@@ -460,10 +460,26 @@ class Anthropic(FunctionCallingLLM):
 
         blocks, citations = self._get_blocks_and_tool_calls_and_thinking(response)
 
+        usage_metadata: dict = {}
+        if hasattr(response, "usage") and response.usage:
+            usage_metadata = {
+                "input_tokens": response.usage.input_tokens,
+                "output_tokens": response.usage.output_tokens,
+                "cache_creation_input_tokens": getattr(
+                    response.usage, "cache_creation_input_tokens", None
+                ),
+                "cache_read_input_tokens": getattr(
+                    response.usage, "cache_read_input_tokens", None
+                ),
+            }
+
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
+                additional_kwargs={
+                    "usage": usage_metadata if usage_metadata else None,
+                },
             ),
             citations=citations,
             raw=dict(response),
@@ -717,10 +733,26 @@ class Anthropic(FunctionCallingLLM):
 
         blocks, citations = self._get_blocks_and_tool_calls_and_thinking(response)
 
+        usage_metadata: dict = {}
+        if hasattr(response, "usage") and response.usage:
+            usage_metadata = {
+                "input_tokens": response.usage.input_tokens,
+                "output_tokens": response.usage.output_tokens,
+                "cache_creation_input_tokens": getattr(
+                    response.usage, "cache_creation_input_tokens", None
+                ),
+                "cache_read_input_tokens": getattr(
+                    response.usage, "cache_read_input_tokens", None
+                ),
+            }
+
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
+                additional_kwargs={
+                    "usage": usage_metadata if usage_metadata else None,
+                },
             ),
             citations=citations,
             raw=dict(response),
