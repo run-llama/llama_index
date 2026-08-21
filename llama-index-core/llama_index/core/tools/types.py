@@ -43,6 +43,11 @@ class ToolMetadata:
                 for k, v in parameters.items()
                 if k in ["type", "properties", "required", "definitions", "$defs"]
             }
+            # pydantic leaves "required" out when nothing is required, but the
+            # OpenAI function-calling spec expects the key to be there -- some
+            # servers (vLLM) reject a tool that omits it -- so spell out the
+            # empty case
+            parameters.setdefault("required", [])
         return parameters
 
     @property
