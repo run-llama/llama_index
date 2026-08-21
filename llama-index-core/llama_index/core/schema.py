@@ -124,6 +124,12 @@ class BaseComponent(BaseModel):
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
 
+        # Pydantic v2 returns a reference to the live __dict__, not a copy.
+        # Mutating it directly strips the attribute from the running instance,
+        # so callers that use the object after pickling see AttributeError.
+        # We copy before removing so the live object is unaffected.
+        state["__dict__"] = state["__dict__"].copy()
+
         # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []
         for key, val in state["__dict__"].items():
@@ -140,6 +146,8 @@ class BaseComponent(BaseModel):
         keys_to_remove = []
         private_attrs = state.get("__pydantic_private__", None)
         if private_attrs:
+            state["__pydantic_private__"] = state["__pydantic_private__"].copy()
+
             for key, val in state["__pydantic_private__"].items():
                 try:
                     pickle.dumps(val)
