@@ -472,15 +472,17 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             for r in response:
-                if r["message"]["content"] is None:
+                message = r["message"]
+                if message["content"] is None and not message.get("thinking"):
                     continue
 
                 r = dict(r)
+                message = r["message"]
 
-                response_txt += r["message"].get("content", "") or ""
-                thinking_txt += r["message"].get("thinking", "") or ""
+                response_txt += message.get("content", "") or ""
+                thinking_txt += message.get("thinking", "") or ""
 
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
+                new_tool_calls = [dict(t) for t in message.get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
@@ -517,12 +519,12 @@ class Ollama(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         blocks=output_blocks,
-                        role=r["message"].get("role", MessageRole.ASSISTANT),
+                        role=message.get("role", MessageRole.ASSISTANT),
                     ),
-                    delta=r["message"].get("content", ""),
+                    delta=message.get("content") or "",
                     raw=r,
                     additional_kwargs={
-                        "thinking_delta": r["message"].get("thinking", None),
+                        "thinking_delta": message.get("thinking", None),
                     },
                 )
 
@@ -556,15 +558,17 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             async for r in response:
-                if r["message"]["content"] is None:
+                message = r["message"]
+                if message["content"] is None and not message.get("thinking"):
                     continue
 
                 r = dict(r)
+                message = r["message"]
 
-                response_txt += r["message"].get("content", "") or ""
-                thinking_txt += r["message"].get("thinking", "") or ""
+                response_txt += message.get("content", "") or ""
+                thinking_txt += message.get("thinking", "") or ""
 
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
+                new_tool_calls = [dict(t) for t in message.get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
@@ -601,12 +605,12 @@ class Ollama(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         blocks=output_blocks,
-                        role=r["message"].get("role", MessageRole.ASSISTANT),
+                        role=message.get("role", MessageRole.ASSISTANT),
                     ),
-                    delta=r["message"].get("content", ""),
+                    delta=message.get("content") or "",
                     raw=r,
                     additional_kwargs={
-                        "thinking_delta": r["message"].get("thinking", None),
+                        "thinking_delta": message.get("thinking", None),
                     },
                 )
 
