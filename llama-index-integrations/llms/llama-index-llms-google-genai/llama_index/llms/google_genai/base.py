@@ -1,34 +1,36 @@
 """Google's hosted Gemini API."""
 
 import asyncio
-import inspect
 import functools
+import inspect
 import os
-from importlib.metadata import PackageNotFoundError, version
 import typing
+from importlib.metadata import PackageNotFoundError, version
 from typing import (
     TYPE_CHECKING,
-    cast,
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
     Union,
-    Callable,
-    Literal,
+    cast,
 )
 
-
+import google.auth
+import google.genai
+import google.genai.types as types
 import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
     achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
     astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -44,27 +46,23 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_NUM_OUTPUTS
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection, Model
-from llama_index.core.prompts import PromptTemplate
+from llama_index.core.llms.llm import Model, ToolSelection
 from llama_index.core.program.utils import FlexibleModel, create_flexible_model
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
+    adelete_uploaded_files,
     chat_from_gemini_response,
     chat_message_to_gemini,
     convert_schema_to_function_declaration,
-    prepare_chat_params,
-    handle_streaming_flexible_model,
     create_retry_decorator,
-    adelete_uploaded_files,
     delete_uploaded_files,
+    handle_streaming_flexible_model,
+    prepare_chat_params,
 )
-
-import google.genai
-import google.auth
-import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -434,6 +432,13 @@ class GoogleGenAI(FunctionCallingLLM):
                                     for part in parts
                                     if part.text and not part.thought
                                 )
+                                # Reasoning ("thought") parts go on a separate
+                                # channel so they never mix with the answer delta.
+                                thinking_delta = "".join(
+                                    part.text
+                                    for part in parts
+                                    if part.text and part.thought
+                                )
 
                                 llama_resp = chat_from_gemini_response(
                                     r,
@@ -442,6 +447,9 @@ class GoogleGenAI(FunctionCallingLLM):
                                 )
                                 llama_resp.delta = (
                                     llama_resp.delta or content_delta or ""
+                                )
+                                llama_resp.additional_kwargs["thinking_delta"] = (
+                                    thinking_delta
                                 )
 
                                 yield llama_resp
@@ -490,6 +498,13 @@ class GoogleGenAI(FunctionCallingLLM):
                                     for part in parts
                                     if part.text and not part.thought
                                 )
+                                # Reasoning ("thought") parts go on a separate
+                                # channel so they never mix with the answer delta.
+                                thinking_delta = "".join(
+                                    part.text
+                                    for part in parts
+                                    if part.text and part.thought
+                                )
 
                                 llama_resp = chat_from_gemini_response(
                                     r,
@@ -498,6 +513,9 @@ class GoogleGenAI(FunctionCallingLLM):
                                 )
                                 llama_resp.delta = (
                                     llama_resp.delta or content_delta or ""
+                                )
+                                llama_resp.additional_kwargs["thinking_delta"] = (
+                                    thinking_delta
                                 )
 
                                 yield llama_resp
@@ -602,17 +620,14 @@ class GoogleGenAI(FunctionCallingLLM):
             else:
                 return []
 
-        tool_selections = []
-        for tool_call in tool_calls:
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call.tool_name,
-                    tool_name=tool_call.tool_name,
-                    tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
-                )
+        return [
+            ToolSelection(
+                tool_id=tool_call.tool_name,
+                tool_name=tool_call.tool_name,
+                tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
             )
-
-        return tool_selections
+            for tool_call in tool_calls
+        ]
 
     @dispatcher.span
     def structured_predict_without_function_calling(
