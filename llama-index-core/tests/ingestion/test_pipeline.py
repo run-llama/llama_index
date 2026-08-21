@@ -400,6 +400,87 @@ def test_pipeline_with_transform_error() -> None:
     assert pipeline.docstore.get_node("1", raise_error=False) is None
 
 
+def test_pipeline_failed_transform_does_not_poison_hash() -> None:
+    """
+    Failed run must not persist the document hash (fixes #22638).
+
+    If the hash is written eagerly before transformation, a retry will skip
+    the document forever because _handle_duplicates sees it as already seen.
+    """
+
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError("transient failure")
+
+    doc = Document(text="hello world", doc_id="doc1")
+    docstore = SimpleDocumentStore()
+
+    failing = IngestionPipeline(
+        transformations=[RaisingTransform()],
+        docstore=docstore,
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+
+    with pytest.raises(RuntimeError):
+        failing.run(documents=[doc])
+
+    # Hash must NOT be in the docstore after a failed run
+    assert docstore.get_document_hash("doc1") is None
+
+    # A retry with a healthy pipeline must process the document, not skip it
+    retry = IngestionPipeline(
+        transformations=[],
+        docstore=docstore,
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+    nodes = retry.run(documents=[doc])
+    assert len(nodes) == 1
+
+
+def test_pipeline_failed_upsert_does_not_delete_existing_doc() -> None:
+    """
+    Failed UPSERTS run must not delete the already-indexed document (fixes #22639).
+
+    If delete_ref_doc is called eagerly before transformation runs, a failure
+    leaves the index empty with no way to recover the original document.
+    """
+
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError("transient failure")
+
+    docstore = SimpleDocumentStore()
+    vector_store = SimpleVectorStore()
+
+    v1_doc = Document(text="v1 content", doc_id="doc1")
+    ok_pipeline = IngestionPipeline(
+        transformations=[MockEmbedding(embed_dim=8)],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    ok_pipeline.run(documents=[v1_doc])
+    assert len(vector_store.data.embedding_dict) > 0
+
+    v2_doc = Document(text="v2 content changed", doc_id="doc1")
+    failing = IngestionPipeline(
+        transformations=[RaisingTransform()],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+
+    with pytest.raises(RuntimeError):
+        failing.run(documents=[v2_doc])
+
+    # Original v1 embeddings must still be in the vector store
+    assert len(vector_store.data.embedding_dict) > 0
+
+
 @pytest.mark.asyncio
 async def test_arun_pipeline() -> None:
     pipeline = IngestionPipeline(
@@ -638,6 +719,76 @@ async def test_async_pipeline_with_transform_error() -> None:
         await pipeline.arun(documents=[document1])
 
     assert pipeline.docstore.get_node("1", raise_error=False) is None
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_failed_transform_does_not_poison_hash() -> None:
+    """Async: failed run must not persist the document hash (fixes #22638)."""
+
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError("transient failure")
+
+    doc = Document(text="hello world", doc_id="doc1")
+    docstore = SimpleDocumentStore()
+
+    failing = IngestionPipeline(
+        transformations=[RaisingTransform()],
+        docstore=docstore,
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+
+    with pytest.raises(RuntimeError):
+        await failing.arun(documents=[doc])
+
+    assert docstore.get_document_hash("doc1") is None
+
+    retry = IngestionPipeline(
+        transformations=[],
+        docstore=docstore,
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+    nodes = await retry.arun(documents=[doc])
+    assert len(nodes) == 1
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_failed_upsert_does_not_delete_existing_doc() -> None:
+    """Async: failed UPSERTS run must not delete the already-indexed document (fixes #22639)."""
+
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError("transient failure")
+
+    docstore = SimpleDocumentStore()
+    vector_store = SimpleVectorStore()
+
+    v1_doc = Document(text="v1 content", doc_id="doc1")
+    ok_pipeline = IngestionPipeline(
+        transformations=[MockEmbedding(embed_dim=8)],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    await ok_pipeline.arun(documents=[v1_doc])
+    assert len(vector_store.data.embedding_dict) > 0
+
+    v2_doc = Document(text="v2 content changed", doc_id="doc1")
+    failing = IngestionPipeline(
+        transformations=[RaisingTransform()],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+
+    with pytest.raises(RuntimeError):
+        await failing.arun(documents=[v2_doc])
+
+    assert len(vector_store.data.embedding_dict) > 0
 
 
 def test_docstore_strategy_not_mutated_on_run_without_vector_store() -> None:
