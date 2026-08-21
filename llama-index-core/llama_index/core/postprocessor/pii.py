@@ -67,9 +67,22 @@ class PIINodePostprocessor(BaseNodePostprocessor):
 
         response = self.llm.predict(pii_prompt, context_str=text, query_str=task_str)
         splits = response.split("Output Mapping:")
+        if len(splits) < 2:
+            raise ValueError(
+                "Could not parse the LLM's response: expected the response to "
+                "contain an 'Output Mapping:' section, but it did not. "
+                f"Raw response: {response!r}"
+            )
         text_output = splits[0].strip()
         json_str_output = splits[1].strip()
-        json_dict = json.loads(json_str_output)
+        try:
+            json_dict = json.loads(json_str_output)
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                "Could not parse the LLM's response: the 'Output Mapping:' "
+                f"section was not valid JSON ({e}). "
+                f"Raw response: {response!r}"
+            ) from e
         return text_output, json_dict
 
     def _postprocess_nodes(
