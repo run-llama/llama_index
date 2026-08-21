@@ -63,7 +63,9 @@ class IOHandler(BaseIOHandler):
 
     def deserialize_streaming_output(self, response: bytes) -> str:
         response_str = (
-            response.decode("utf-8").lstrip('[{"generated_text":"').rstrip('"}]')
+            response.decode("utf-8")
+            .removeprefix('[{"generated_text":"')
+            .removesuffix('"}]')
         )
         clean_response = '{"response":"' + response_str + '"}'
 
