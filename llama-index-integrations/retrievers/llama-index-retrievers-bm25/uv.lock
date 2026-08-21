@@ -1871,7 +1871,7 @@ dev = [
 requires-dist = [
     { name = "bm25s", specifier = ">=0.2.7.post1" },
     { name = "llama-index-core", specifier = ">=0.13.1,<0.15" },
-    { name = "pystemmer", specifier = ">=2.2.0.1,<3" },
+    { name = "pystemmer", specifier = ">=2.2.0.1,<4" },
 ]
 
 [package.metadata.requires-dev]
