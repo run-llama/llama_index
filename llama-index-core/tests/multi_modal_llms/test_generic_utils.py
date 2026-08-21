@@ -67,7 +67,7 @@ def test_image_documents_to_base64_multiple_sources(tmp_path: Path):
         ImageDocument(metadata={"file_path": "test.jpg"}),
         ImageDocument(image_url=EXP_IMAGE_URLS[0]),
     ]
-    with patch("requests.get") as mock_get:
+    with patch("llama_index.core.multi_modal_llms.generic_utils._ssrf_safe_get") as mock_get:
         mock_get.return_value.content = content
         with patch("os.path.isfile", return_value=True):
             with patch("builtins.open", mock_open(read_data=content)):
@@ -80,7 +80,7 @@ def test_image_documents_to_base64_multiple_sources(tmp_path: Path):
 def test_image_documents_to_base64_failed_url():
     """Test handling of failed URL requests."""
     document = ImageDocument(image_url=EXP_IMAGE_URLS[0])
-    with patch("requests.get"):
+    with patch("llama_index.core.multi_modal_llms.generic_utils._ssrf_safe_get"):
         result = image_documents_to_base64([document])
 
     assert result == []
@@ -102,7 +102,7 @@ def test_image_documents_to_base64_invalid_metadata():
 def test_complete_workflow():
     """Test the complete workflow from URL to base64 encoding."""
     documents = load_image_urls(EXP_IMAGE_URLS)
-    with patch("requests.get") as mock_get:
+    with patch("llama_index.core.multi_modal_llms.generic_utils._ssrf_safe_get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
         result = image_documents_to_base64(documents)
 
@@ -155,7 +155,7 @@ def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
         ImageDocument(image_path=fl_path.__str__()),
     ]
 
-    with patch("requests.get") as mock_get:
+    with patch("llama_index.core.multi_modal_llms.generic_utils._ssrf_safe_get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
         # patch os.path.isfile
         with patch("os.path.isfile", return_value=True):

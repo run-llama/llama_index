@@ -27,6 +27,10 @@ from typing import (
     Union,
 )
 
+import ipaddress
+import socket
+from urllib.parse import urlparse, urljoin
+
 import filetype
 import requests
 from dataclasses_json import DataClassJsonMixin
@@ -903,9 +907,7 @@ class ImageNode(TextNode):
             return self.image_path
         elif self.image_url is not None:
             # load image from URL
-            import requests
-
-            response = requests.get(self.image_url, timeout=(60, 60))
+            response = _ssrf_safe_get(self.image_url, timeout=(60, 60))
             return BytesIO(response.content)
         else:
             raise ValueError("No image found in node.")
@@ -1315,15 +1317,121 @@ def is_image_pil(file_path: str) -> bool:
         return False
 
 
+# IPs that must be blocked but are not caught by any ipaddress.IPvXAddress
+# is_* classification (they are IANA-registered as ordinary public/global
+# addresses). 168.63.129.16 is the Azure platform's special virtual IP used
+# for host<->guest communication (WireServer/DNS/health signals) — it is
+# NOT a traditional IMDS metadata endpoint, but reachability from a guest VM
+# still allows platform-level information/control access, so it must be
+# denylisted explicitly.
+_EXTRA_BLOCKED = frozenset(
+    {
+        ipaddress.ip_address("168.63.129.16"),
+    }
+)
+
+
+def _validate_ssrf_url(url: str) -> None:
+    """
+    Validate that *url* is safe to fetch (SSRF guard).
+
+    Blocks RFC-1918 private ranges, loopback, link-local (169.254/16 – cloud
+    metadata endpoints), non-globally-routable address space (e.g. RFC 6598
+    CGNAT 100.64.0.0/10, used by some cloud metadata services), and a small
+    explicit denylist of known platform addresses that IANA classifies as
+    ordinary public space (e.g. Azure's 168.63.129.16 WireServer IP).
+
+    TOCTOU / DNS-rebinding caveat: this function resolves *hostname* via
+    socket.getaddrinfo exactly once, at validation time. The actual HTTP
+    request is performed afterwards by requests/urllib3, which independently
+    re-resolves the hostname when it opens the connection. If the DNS record
+    changes between these two resolutions (a "DNS rebinding" attack — first
+    query returns a public IP so validation passes, second query returns a
+    private/internal IP that the connection actually uses), this check can be
+    bypassed. This function alone is therefore not a complete defense against
+    that class of attack; a full fix requires pinning the *validated* IP to
+    the connection that is actually made (e.g. via a custom HTTPAdapter /
+    connection-pool override that forces the socket to connect to the
+    already-validated address rather than re-resolving the hostname).
+
+    Raises:
+        requests.exceptions.InvalidURL:
+            If the URL uses an unsupported scheme, has no hostname, cannot be
+            resolved, or resolves to an address blocked by the SSRF policy.
+            ``InvalidURL`` subclasses both ``requests.RequestException`` and
+            ``ValueError``, so callers catching either one still handle it.
+
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise requests.exceptions.InvalidURL(
+            f"Unsupported URL scheme '{parsed.scheme}'. Only http/https are allowed."
+        )
+    hostname = parsed.hostname
+    if not hostname:
+        raise requests.exceptions.InvalidURL(f"Invalid URL (no hostname): {url!r}")
+    try:
+        resolved = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
+    except socket.gaierror as exc:
+        raise requests.exceptions.InvalidURL(
+            f"Cannot resolve hostname '{hostname}': {exc}"
+        ) from exc
+    for *_, sockaddr in resolved:
+        ip_str = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            continue
+        # Normalize IPv4-mapped IPv6 addresses (::ffff:a.b.c.d) to their
+        # IPv4 form *before* any classification/denylist checks below, so
+        # that e.g. ::ffff:168.63.129.16 is recognized as 168.63.129.16.
+        if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+            ip = ip.ipv4_mapped
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or not ip.is_global
+            or ip in _EXTRA_BLOCKED
+        ):
+            raise requests.exceptions.InvalidURL(
+                f"SSRF protection: URL '{url}' resolves to a disallowed address "
+                f"({ip_str}). Requests to private/reserved IP ranges are blocked."
+            )
+
+
+def _ssrf_redirect_hook(response: requests.Response, **kwargs: Any) -> None:
+    """Hook that validates every redirect Location before it is followed."""
+    if response.is_redirect:
+        location = response.headers.get("Location", "")
+        # Resolve relative redirects (e.g. /cdn/image.jpg) against the
+        # response URL so _validate_ssrf_url always receives an absolute URL.
+        absolute_location = urljoin(response.url, location)
+        _validate_ssrf_url(absolute_location)
+
+
+def _ssrf_safe_get(url: str, **kwargs: Any) -> requests.Response:
+    """
+    Perform an HTTP GET that is protected against SSRF via the initial URL
+    and every redirect hop in the chain.
+    """
+    _validate_ssrf_url(url)
+    with requests.Session() as session:
+        session.hooks["response"].append(_ssrf_redirect_hook)
+        return session.get(url, **kwargs)
+
+
 def is_image_url_pil(url: str) -> bool:
     try:
-        response = requests.get(url, stream=True, timeout=(60, 60))
+        response = _ssrf_safe_get(url, stream=True, timeout=(60, 60))
         response.raise_for_status()  # Raise an exception for bad status codes
         # Open image from the response content
         img = Image.open(BytesIO(response.content))
         img.verify()
         return True
-    except (requests.RequestException, IOError, SyntaxError):
+    except (ValueError, requests.RequestException, IOError, SyntaxError):
         return False
 
 
@@ -1436,7 +1544,7 @@ class ImageDocument(Document):
             return BytesIO(img_bytes)
         elif self.image_resource.url is not None:
             # load image from URL
-            response = requests.get(str(self.image_resource.url), timeout=(60, 60))
+            response = _ssrf_safe_get(str(self.image_resource.url), timeout=(60, 60))
             img_bytes = response.content
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))

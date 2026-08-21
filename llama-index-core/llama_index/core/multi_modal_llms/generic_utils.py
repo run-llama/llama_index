@@ -5,9 +5,7 @@ import filetype
 import logging
 from typing import List, Optional, Sequence
 
-import requests
-
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageDocument, _ssrf_safe_get
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +74,8 @@ def image_documents_to_base64(
         ):  # Alternative path to the image, which is then encoded.
             image_encodings.append(encode_image(image_document.metadata["file_path"]))
         elif image_document.image_url:  # Image can also be pulled from the URL.
-            response = requests.get(image_document.image_url, timeout=(60, 60))
             try:
+                response = _ssrf_safe_get(image_document.image_url, timeout=(60, 60))
                 image_encodings.append(
                     base64.b64encode(response.content).decode("utf-8")
                 )
