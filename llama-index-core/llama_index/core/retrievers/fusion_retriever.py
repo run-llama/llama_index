@@ -183,9 +183,9 @@ class QueryFusionRetriever(BaseRetriever):
                 if max_score == min_score:
                     node_with_score.score = 1.0 if max_score > 0 else 0.0
                 else:
-                    node_with_score.score = (node_with_score.score - min_score) / (
-                        max_score - min_score
-                    )
+                    node_with_score.score = (
+                        (node_with_score.score or 0.0) - min_score
+                    ) / (max_score - min_score)
                 # Scale by the weight of the retriever
                 retriever_idx = query_tuple[1]
                 existing_score = node_with_score.score or 0.0
