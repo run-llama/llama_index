@@ -69,6 +69,14 @@ def call_tool_with_selection(
 
     tools_by_name = {tool.metadata.name: tool for tool in tools}
     name = tool_call.tool_name
+    if name not in tools_by_name:
+        return ToolOutput(
+            content=f"Tool '{name}' not found. Available tools: {list(tools_by_name.keys())}",
+            tool_name=name,
+            raw_input=tool_call.tool_kwargs,
+            raw_output=f"Tool '{name}' not found",
+            is_error=True,
+        )
     if verbose:
         arguments_str = json.dumps(tool_call.tool_kwargs)
         print("=== Calling Function ===")
@@ -92,6 +100,14 @@ async def acall_tool_with_selection(
 
     tools_by_name = {tool.metadata.name: tool for tool in tools}
     name = tool_call.tool_name
+    if name not in tools_by_name:
+        return ToolOutput(
+            content=f"Tool '{name}' not found. Available tools: {list(tools_by_name.keys())}",
+            tool_name=name,
+            raw_input=tool_call.tool_kwargs,
+            raw_output=f"Tool '{name}' not found",
+            is_error=True,
+        )
     if verbose:
         arguments_str = json.dumps(tool_call.tool_kwargs)
         print("=== Calling Function ===")
