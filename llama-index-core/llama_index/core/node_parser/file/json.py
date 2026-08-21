@@ -78,7 +78,10 @@ class JSONNodeParser(NodeParser):
                     )
                 )
         else:
-            raise ValueError("JSON is invalid")
+            lines = [*self._depth_first_yield(data, 0, [])]
+            json_nodes.extend(
+                build_nodes_from_splits(["\n".join(lines)], node, id_func=self.id_func)
+            )
 
         return json_nodes
 
