@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
@@ -621,6 +622,117 @@ def test_messages_to_converse_messages_tool_calls():
     )  # Bedrock requires tool results as user role
     assert "toolResult" in converse_messages[1]["content"][0]
     assert converse_messages[1]["content"][0]["toolResult"]["toolUseId"] == "tool_123"
+
+
+@pytest.mark.parametrize(
+    "tool_call_id",
+    [None, "", 123, "invalid/id", "x" * 65],
+)
+def test_messages_to_converse_messages_skips_invalid_legacy_tool_call_ids(
+    tool_call_id, caplog
+):
+    """Invalid legacy tool call IDs should not be sent to Bedrock."""
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "toolUseId": tool_call_id,
+                        "name": "search",
+                        "input": {"query": "test query"},
+                    }
+                ]
+            },
+        )
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    assert converse_messages == []
+    assert "invalid Bedrock toolUseId" in caplog.text
+
+
+@pytest.mark.parametrize("tool_call_id", [None, "", "invalid/id", "x" * 65])
+def test_messages_to_converse_messages_skips_invalid_tool_call_blocks(
+    tool_call_id, caplog
+):
+    """Invalid IDs in canonical tool call blocks should be skipped."""
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id=tool_call_id,
+                    tool_name="search",
+                    tool_kwargs={"query": "test query"},
+                )
+            ],
+        )
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    assert converse_messages == []
+    assert "invalid Bedrock toolUseId" in caplog.text
+
+
+@pytest.mark.parametrize("tool_call_id", ["call.1:tool-2_", "x" * 64])
+def test_messages_to_converse_messages_preserves_valid_tool_call_block_ids(
+    tool_call_id,
+):
+    """Valid canonical call IDs should be preserved on calls and results."""
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id=tool_call_id,
+                    tool_name="search",
+                    tool_kwargs={"query": "test query"},
+                )
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="Search results here",
+            additional_kwargs={"tool_call_id": tool_call_id},
+        ),
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    assert converse_messages[0]["content"][0]["toolUse"]["toolUseId"] == tool_call_id
+    assert converse_messages[1]["content"][0]["toolResult"]["toolUseId"] == tool_call_id
+
+
+@pytest.mark.parametrize(
+    "additional_kwargs",
+    [
+        {},
+        {"tool_call_id": None},
+        {"tool_call_id": ""},
+        {"tool_call_id": 123},
+        {"tool_call_id": "invalid/id"},
+        {"tool_call_id": "x" * 65},
+    ],
+)
+def test_messages_to_converse_messages_skips_tool_results_without_valid_ids(
+    additional_kwargs, caplog
+):
+    """Missing tool result IDs should not raise or reach Bedrock."""
+    messages = [
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="Search results here",
+            additional_kwargs=additional_kwargs,
+        )
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    assert converse_messages == []
+    assert "invalid Bedrock toolUseId" in caplog.text
 
 
 def test_messages_to_converse_messages_tool_result_with_document_block():
