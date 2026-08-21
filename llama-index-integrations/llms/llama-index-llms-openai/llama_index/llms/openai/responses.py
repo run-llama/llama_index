@@ -82,7 +82,7 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.llms.llm import Model, StructuredPredictionResult, ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.program.utils import FlexibleModel
@@ -974,6 +974,21 @@ class OpenAIResponses(FunctionCallingLLM):
         Uses `text_format` with `tool_choice="none"` to guarantee JSON schema
         adherence at the API level, rather than best-effort function calling.
         """
+        return self._structured_predict_with_response(
+            output_cls=output_cls,
+            prompt=prompt,
+            llm_kwargs=llm_kwargs,
+            **prompt_args,
+        ).output
+
+    def _structured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        """Internal structured predict that preserves the raw parse response."""
         messages = prompt.format_messages(**prompt_args)
         message_dicts = to_openai_message_dicts(
             messages, model=self.model, is_responses_api=True
@@ -987,8 +1002,30 @@ class OpenAIResponses(FunctionCallingLLM):
             **(llm_kwargs or {}),
         )
         if response.output_parsed is not None:
-            return response.output_parsed
+            return StructuredPredictionResult(
+                output=response.output_parsed,
+                source_response=self._chat_response_from_parse_response(
+                    response, response.output_parsed
+                ),
+            )
         raise ValueError("Failed to produce a structured response from the model.")
+
+    @staticmethod
+    def _chat_response_from_parse_response(
+        response: Any, output: Model
+    ) -> ChatResponse:
+        additional_kwargs = {}
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            additional_kwargs["usage"] = usage
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
+            raw=response,
+            additional_kwargs=additional_kwargs,
+        )
 
     @dispatcher.span
     async def astructured_predict(
@@ -1003,6 +1040,23 @@ class OpenAIResponses(FunctionCallingLLM):
         Uses `text_format` with `tool_choice="none"` to guarantee JSON schema
         adherence at the API level, rather than best-effort function calling.
         """
+        return (
+            await self._astructured_predict_with_response(
+                output_cls=output_cls,
+                prompt=prompt,
+                llm_kwargs=llm_kwargs,
+                **prompt_args,
+            )
+        ).output
+
+    async def _astructured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        """Internal async structured predict that preserves the raw parse response."""
         messages = prompt.format_messages(**prompt_args)
         message_dicts = to_openai_message_dicts(
             messages, model=self.model, is_responses_api=True
@@ -1016,7 +1070,12 @@ class OpenAIResponses(FunctionCallingLLM):
             **(llm_kwargs or {}),
         )
         if response.output_parsed is not None:
-            return response.output_parsed
+            return StructuredPredictionResult(
+                output=response.output_parsed,
+                source_response=self._chat_response_from_parse_response(
+                    response, response.output_parsed
+                ),
+            )
         raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span

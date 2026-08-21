@@ -530,6 +530,9 @@ def test_structured_chat_simple(MockSyncOpenAI: MagicMock):
 
     mock_response = MagicMock()
     mock_response.choices = [mock_choice]
+    mock_response.usage = CompletionUsage(
+        prompt_tokens=13, completion_tokens=7, total_tokens=20
+    )
 
     # Mock OpenAI client
     mock_client = MagicMock()
@@ -543,8 +546,12 @@ def test_structured_chat_simple(MockSyncOpenAI: MagicMock):
     ]
 
     result = structured_llm.chat(messages)
-    # Verify the result has the expected structure
-    assert isinstance(result.raw, Person)
+    # Verify provider raw/usage are preserved and parsed output remains available.
+    assert result.raw is mock_response
+    assert result.additional_kwargs["prompt_tokens"] == 13
+    assert result.additional_kwargs["completion_tokens"] == 7
+    assert isinstance(result.additional_kwargs["structured_output"], Person)
+    assert result.additional_kwargs["structured_output"].name == "Alice"
 
 
 def test_prepare_schema_sanitizes_json_schema_name() -> None:
@@ -588,6 +595,9 @@ async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
 
     mock_response = MagicMock()
     mock_response.choices = [mock_choice]
+    mock_response.usage = CompletionUsage(
+        prompt_tokens=17, completion_tokens=9, total_tokens=26
+    )
 
     # Mock async OpenAI client
     mock_client = MagicMock()
@@ -602,8 +612,12 @@ async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
     messages = [ChatMessage(role="user", content="Create a person named Bob who is 30")]
     result = await structured_llm.achat(messages)
 
-    # Verify the result has the expected structure
-    assert isinstance(result.raw, Person)
+    # Verify provider raw/usage are preserved and parsed output remains available.
+    assert result.raw is mock_response
+    assert result.additional_kwargs["prompt_tokens"] == 17
+    assert result.additional_kwargs["completion_tokens"] == 9
+    assert isinstance(result.additional_kwargs["structured_output"], Person)
+    assert result.additional_kwargs["structured_output"].name == "Bob"
 
 
 @pytest.mark.parametrize(
