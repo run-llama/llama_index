@@ -6,7 +6,7 @@ import logging
 import warnings
 from datetime import timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -146,57 +146,65 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
 
 
 def _convert_llamaindex_filters_to_sql(
-    filters: MetadataFilters, metadata_key: str
-) -> str:
+    filters: MetadataFilters,
+    metadata_key: str,
+    named_parameters: Optional[Dict[str, Any]] = None,
+) -> Tuple[str, Dict[str, Any]]:
     """
-    Convert LlamaIndex MetadataFilters to SQL++ WHERE clause.
+    Convert LlamaIndex MetadataFilters to a parameterized SQL++ WHERE clause.
+
+    Filter values are never interpolated into the query string. Each value is
+    bound to a named parameter (e.g. $metadata_filter_0) and returned
+    alongside the SQL++ fragment so the caller can pass it to the Couchbase
+    SDK via `named_parameters`, mirroring the pattern already used by
+    `delete()` on this class. This avoids SQL++ injection via filter values.
 
     Args:
         filters: LlamaIndex MetadataFilters object
         metadata_key: The metadata field prefix for the document
+        named_parameters: Optional dict of already-collected named
+            parameters. Used internally to keep parameter names unique
+            across recursive calls for nested MetadataFilters. Callers
+            should normally omit this and use the dict in the return value.
 
     Returns:
-        SQL++ WHERE clause string
+        A tuple of (SQL++ WHERE clause fragment, named_parameters dict).
 
     """
+    if named_parameters is None:
+        named_parameters = {}
+
     if not filters or not filters.filters:
-        return ""
+        return "", named_parameters
+
+    def _next_param_name() -> str:
+        return f"metadata_filter_{len(named_parameters)}"
+
+    _COMPARISON_OPERATORS = {
+        FilterOperator.EQ: "=",
+        FilterOperator.NE: "!=",
+        FilterOperator.GT: ">",
+        FilterOperator.GTE: ">=",
+        FilterOperator.LT: "<",
+        FilterOperator.LTE: "<=",
+    }
 
     def _build_condition(filter_item: Any) -> str:
-        """Build a single SQL++ condition from a MetadataFilter."""
+        """Build a single parameterized SQL++ condition from a MetadataFilter."""
         field_name = f"d.{metadata_key}.{filter_item.key}"
 
-        if filter_item.operator == FilterOperator.EQ:
-            if isinstance(filter_item.value, str):
-                return f"{field_name} = '{filter_item.value}'"
-            else:
-                return f"{field_name} = {filter_item.value}"
-        elif filter_item.operator == FilterOperator.NE:
-            if isinstance(filter_item.value, str):
-                return f"{field_name} != '{filter_item.value}'"
-            else:
-                return f"{field_name} != {filter_item.value}"
-        elif filter_item.operator == FilterOperator.GT:
-            return f"{field_name} > {filter_item.value}"
-        elif filter_item.operator == FilterOperator.GTE:
-            return f"{field_name} >= {filter_item.value}"
-        elif filter_item.operator == FilterOperator.LT:
-            return f"{field_name} < {filter_item.value}"
-        elif filter_item.operator == FilterOperator.LTE:
-            return f"{field_name} <= {filter_item.value}"
+        if filter_item.operator in _COMPARISON_OPERATORS:
+            param_name = _next_param_name()
+            named_parameters[param_name] = filter_item.value
+            return f"{field_name} {_COMPARISON_OPERATORS[filter_item.operator]} ${param_name}"
         elif filter_item.operator == FilterOperator.IN:
-            if isinstance(filter_item.value, list):
-                values = ", ".join(
-                    [
-                        f"'{v}'" if isinstance(v, str) else str(v)
-                        for v in filter_item.value
-                    ]
-                )
-                return f"{field_name} IN [{values}]"
-            else:
+            if not isinstance(filter_item.value, list):
                 raise ValueError(
                     f"'in' operator expects a list value, got {type(filter_item.value)}"
                 )
+            param_name = _next_param_name()
+            named_parameters[param_name] = filter_item.value
+            return f"{field_name} IN ${param_name}"
         else:
             raise ValueError(f"Unsupported filter operator: {filter_item.operator}")
 
@@ -207,22 +215,20 @@ def _convert_llamaindex_filters_to_sql(
             condition = _build_condition(filter_item)
             filter_conditions.append(condition)
         elif isinstance(filter_item, MetadataFilters):
-            condition = (
-                "("
-                + _convert_llamaindex_filters_to_sql(filter_item, metadata_key)
-                + ")"
+            nested_sql, _ = _convert_llamaindex_filters_to_sql(
+                filter_item, metadata_key, named_parameters
             )
-            filter_conditions.append(condition)
+            filter_conditions.append(f"({nested_sql})")
         else:
             logger.warning(f"Unsupported filter type: {type(filter_item)}")
             continue
 
     if not filter_conditions:
-        return ""
+        return "", named_parameters
 
     # Join conditions based on the filter condition (AND/OR)
     condition_connector = " AND " if filters.condition == "and" else " OR "
-    return condition_connector.join(filter_conditions)
+    return condition_connector.join(filter_conditions), named_parameters
 
 
 class CouchbaseVectorStoreBase(BasePydanticVectorStore):
@@ -856,16 +862,23 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
 
         # Handle filters if provided
         where_clause = ""
+        filter_named_parameters: Dict[str, Any] = {}
         if query.filters:
             try:
-                # Convert LlamaIndex filters to SQL++ conditions
-                filter_sql = _convert_llamaindex_filters_to_sql(
-                    query.filters, self._metadata_key
+                # Convert LlamaIndex filters to a parameterized SQL++ WHERE
+                # clause. Filter values are bound via named parameters rather
+                # than interpolated into the query string, to avoid SQL++
+                # injection through filter values (see #22314).
+                filter_sql, filter_named_parameters = (
+                    _convert_llamaindex_filters_to_sql(
+                        query.filters, self._metadata_key
+                    )
                 )
                 if filter_sql:
                     where_clause = f"WHERE {filter_sql}"
             except Exception as e:
                 logger.warning(f"Failed to process filters: {e}")
+                filter_named_parameters = {}
 
         if query.output_fields:
             fields = query.output_fields.join(",")
@@ -893,8 +906,18 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
         """
 
         try:
-            # Execute the query
-            result = self._cluster.query(query_str, self._query_options)
+            # Execute the query, binding any filter values as named
+            # parameters rather than interpolating them into query_str.
+            query_options = (
+                self._query_options.copy() if self._query_options else QueryOptions()
+            )
+            if filter_named_parameters:
+                merged_named_parameters = dict(
+                    query_options.get("named_parameters") or {}
+                )
+                merged_named_parameters.update(filter_named_parameters)
+                query_options["named_parameters"] = merged_named_parameters
+            result = self._cluster.query(query_str, query_options)
 
             top_k_nodes = []
             top_k_scores = []
