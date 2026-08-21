@@ -10,12 +10,12 @@ Users can input the path of the academic PDF document `file` which they want to 
 
 ## Usage
 
-Here's an example usage of the PDFPaddleOCR.
+Here's an example usage of the PDFPaddleOCRReader.
 
 ```python
-from llama_index.readers.paddle_ocr import PDFPaddleOCR
+from llama_index.readers.paddle_ocr import PDFPaddleOCRReader
 
-reader = PDFPaddleOCR()
+reader = PDFPaddleOCRReader()
 
 pdf_path = Path("/path/to/pdf")
 
