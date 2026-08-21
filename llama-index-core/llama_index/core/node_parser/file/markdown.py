@@ -22,11 +22,16 @@ class MarkdownNodeParser(NodeParser):
         include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
         header_path_separator (str): separator char used for section header path metadata
+        include_line_metadata (bool): whether to include source line range metadata
 
     """
 
     header_path_separator: str = Field(
         default="/", description="Separator char used for section header path metadata."
+    )
+    include_line_metadata: bool = Field(
+        default=False,
+        description="Whether to include source start/end line metadata.",
     )
 
     @classmethod
@@ -35,6 +40,7 @@ class MarkdownNodeParser(NodeParser):
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         header_path_separator: str = "/",
+        include_line_metadata: bool = False,
         callback_manager: Optional[CallbackManager] = None,
     ) -> "MarkdownNodeParser":
         callback_manager = callback_manager or CallbackManager([])
@@ -42,6 +48,7 @@ class MarkdownNodeParser(NodeParser):
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             header_path_separator=header_path_separator,
+            include_line_metadata=include_line_metadata,
             callback_manager=callback_manager,
         )
 
@@ -51,15 +58,28 @@ class MarkdownNodeParser(NodeParser):
         markdown_nodes = []
         lines = text.split("\n")
         current_section = ""
+        current_section_start_line: Optional[int] = None
+        current_section_end_line: Optional[int] = None
         # Keep track of (markdown level, text) for headers
         header_stack: List[tuple[int, str]] = []
         code_block = False
 
-        for line in lines:
+        def append_line(line: str, line_number: int) -> None:
+            nonlocal current_section
+            nonlocal current_section_start_line
+            nonlocal current_section_end_line
+
+            current_section += line + "\n"
+            if line.strip():
+                if current_section_start_line is None:
+                    current_section_start_line = line_number
+                current_section_end_line = line_number
+
+        for line_number, line in enumerate(lines, start=1):
             # Track if we're inside a code block to avoid parsing headers in code
             if line.lstrip().startswith("```"):
                 code_block = not code_block
-                current_section += line + "\n"
+                append_line(line, line_number)
                 continue
 
             # Only parse headers if we're not in a code block
@@ -75,6 +95,8 @@ class MarkdownNodeParser(NodeParser):
                                 self.header_path_separator.join(
                                     h[1] for h in header_stack[:-1]
                                 ),
+                                start_line=current_section_start_line,
+                                end_line=current_section_end_line,
                             )
                         )
 
@@ -89,10 +111,13 @@ class MarkdownNodeParser(NodeParser):
 
                     # Add the new header
                     header_stack.append((header_level, header_text))
-                    current_section = "#" * header_level + f" {header_text}\n"
+                    current_section = ""
+                    current_section_start_line = None
+                    current_section_end_line = None
+                    append_line("#" * header_level + f" {header_text}", line_number)
                     continue
 
-            current_section += line + "\n"
+            append_line(line, line_number)
 
         # Add the final section
         if current_section.strip():
@@ -101,6 +126,8 @@ class MarkdownNodeParser(NodeParser):
                     current_section.strip(),
                     node,
                     self.header_path_separator.join(h[1] for h in header_stack[:-1]),
+                    start_line=current_section_start_line,
+                    end_line=current_section_end_line,
                 )
             )
 
@@ -111,6 +138,8 @@ class MarkdownNodeParser(NodeParser):
         text_split: str,
         node: BaseNode,
         header_path: str,
+        start_line: Optional[int] = None,
+        end_line: Optional[int] = None,
     ) -> TextNode:
         """Build node from single text split."""
         node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
@@ -121,6 +150,11 @@ class MarkdownNodeParser(NodeParser):
                 # ex: "/header1/header2/" || "/"
                 separator + header_path + separator if header_path else separator
             )
+            if self.include_line_metadata:
+                if start_line is not None:
+                    node.metadata["start_line"] = start_line
+                if end_line is not None:
+                    node.metadata["end_line"] = end_line
 
         return node
 
