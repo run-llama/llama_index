@@ -3,8 +3,10 @@
 import asyncio
 import base64
 import inspect
+import ipaddress
 import os
 import random
+import socket
 import sys
 import time
 import traceback
@@ -35,7 +37,7 @@ from typing import (
 
 import platformdirs
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
@@ -623,6 +625,60 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
     yield x
 
 
+_ALLOWED_REMOTE_URL_SCHEMES = {"http", "https"}
+
+
+def _is_disallowed_host(hostname: str) -> bool:
+    """Return True if `hostname` resolves to a loopback/private/link-local/reserved address."""
+    try:
+        addrinfo = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        # Can't resolve the host; let requests surface the error.
+        return False
+
+    for _family, _type, _proto, _canonname, sockaddr in addrinfo:
+        ip = ipaddress.ip_address(sockaddr[0])
+        if (
+            ip.is_loopback
+            or ip.is_private
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        ):
+            return True
+    return False
+
+
+def _assert_safe_remote_url(url: str) -> None:
+    """Raise ValueError if `url` is not safe to fetch server-side (SSRF guard)."""
+    parsed_url = urlparse(url)
+    if parsed_url.scheme not in _ALLOWED_REMOTE_URL_SCHEMES:
+        raise ValueError(f"Unsupported URL scheme for remote fetch: {parsed_url.scheme!r}")
+    if not parsed_url.hostname:
+        raise ValueError("URL is missing a hostname")
+    if _is_disallowed_host(parsed_url.hostname):
+        raise ValueError(f"Refusing to fetch from disallowed host: {parsed_url.hostname!r}")
+
+
+def _fetch_remote_url(url: str, headers: Dict[str, str], max_redirects: int = 5) -> requests.Response:
+    """Fetch `url`, re-validating the SSRF guard on every redirect hop."""
+    for _ in range(max_redirects + 1):
+        _assert_safe_remote_url(url)
+        response = requests.get(url, headers=headers, timeout=(60, 60), allow_redirects=False)
+        if response.is_redirect or response.is_permanent_redirect:
+            location = response.headers.get("location")
+            if not location:
+                response.raise_for_status()
+                return response
+            url = urljoin(url, location)
+            continue
+        response.raise_for_status()
+        return response
+
+    raise ValueError("Too many redirects while resolving binary URL")
+
+
 def resolve_binary(
     raw_bytes: Optional[bytes] = None,
     path: Optional[Union[str, Path]] = None,
@@ -701,8 +757,7 @@ def resolve_binary(
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
         }
-        response = requests.get(url, headers=headers, timeout=(60, 60))
-        response.raise_for_status()
+        response = _fetch_remote_url(url, headers)
         if as_base64:
             return BytesIO(base64.b64encode(response.content))
         return BytesIO(response.content)
