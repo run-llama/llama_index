@@ -620,7 +620,7 @@ instrument_llama_index(instrument.get_dispatcher())
 
 #### Guides
 
-- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
+- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/llamaindex)
 - [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
 
 ### Maxim AI
