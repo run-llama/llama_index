@@ -46,7 +46,8 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
     for _ in response.response_gen:
         num_iters += 1
 
-    assert num_iters == 1
+    # Streaming must deliver incremental deltas, not a single buffered chunk.
+    assert num_iters > 1
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert len(chat_engine.chat_history) == 2
@@ -57,7 +58,8 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
     for _ in response.response_gen:
         num_iters += 1
 
-    assert num_iters == 1
+    # Streaming must deliver incremental deltas, not a single buffered chunk.
+    assert num_iters > 1
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
@@ -122,7 +124,8 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     async for _ in response.async_response_gen():
         num_iters += 1
 
-    assert num_iters == 1
+    # Streaming must deliver incremental deltas, not a single buffered chunk.
+    assert num_iters > 1
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert len(chat_engine.chat_history) == 2
@@ -133,7 +136,8 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     async for _ in response.async_response_gen():
         num_iters += 1
 
-    assert num_iters == 1
+    # Streaming must deliver incremental deltas, not a single buffered chunk.
+    assert num_iters > 1
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
