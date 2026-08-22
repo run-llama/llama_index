@@ -977,8 +977,10 @@ class TestRefine:
 async def test_asynthesize__streaming_default_program_yields_incremental_deltas(
     nodes: list[NodeWithScore],
 ) -> None:
-    """Non-structured streaming refine must deliver deltas as the LLM emits
-    them instead of buffering the whole answer into a single chunk."""
+    """
+    Non-structured streaming refine must deliver deltas as the LLM emits
+    them instead of buffering the whole answer into a single chunk.
+    """
     llm = MockLLM(max_tokens=5)
     synthesizer = Refine(llm=llm, streaming=True)
     response = await synthesizer.asynthesize(query="test", nodes=nodes)
