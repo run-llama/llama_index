@@ -356,7 +356,7 @@ class Refine(BaseSynthesizer):
                     # deltas. Pass the generator through untouched so tokens
                     # reach the caller incrementally instead of being buffered
                     # into a single result.
-                    return structured_response_gen
+                    return cast(Generator[str, None, None], structured_response_gen)
                 structured_response = None
                 for sr in structured_response_gen:
                     assert not isinstance(sr, list)
@@ -415,7 +415,9 @@ class Refine(BaseSynthesizer):
                     # deltas. Pass the generator through untouched so tokens
                     # reach the caller incrementally instead of being buffered
                     # into a single result.
-                    return structured_response_gen
+                    return cast(
+                        "AsyncGenerator[str, None]", structured_response_gen
+                    )
                 structured_response = None
                 async for sr in structured_response_gen:
                     assert not isinstance(sr, list)
