@@ -197,3 +197,12 @@ def test_no_overflow_with_chinese_text_and_metadata() -> None:
             f"Node {i} has {content_length} tokens, exceeds chunk_size of 512. "
             f"This indicates the overflow bug is not fixed."
         )
+
+
+def test_empty_sub_sentence_split_fns_safety() -> None:
+    splitter = SentenceSplitter(chunk_size=50, chunk_overlap=0)
+    splitter._sub_sentence_split_fns = []
+    splits, is_sentence = splitter._get_splits_by_fns("SingleUnsplitSentenceWithoutSubSplits")
+    assert splits == ["SingleUnsplitSentenceWithoutSubSplits"]
+    assert is_sentence is False
+
