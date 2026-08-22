@@ -1,0 +1,14 @@
+# Build
+dist/
+*.egg-info/
+
+# Local development
+venv/
+.venv/
+__pycache__/
+.ipynb_checkpoints
+
+# Test cruft
+.pytest_cache/
+.coverage
+.coverage.xml
