@@ -971,3 +971,30 @@ class TestRefine:
         )
         assert str(synthesizer.synthesize("question", nodes)) == "Empty Response"
         assert str(await synthesizer.asynthesize("question", nodes)) == "Empty Response"
+
+
+@pytest.mark.asyncio
+async def test_asynthesize__streaming_default_program_yields_incremental_deltas(
+    nodes: list[NodeWithScore],
+) -> None:
+    """Non-structured streaming refine must deliver deltas as the LLM emits
+    them instead of buffering the whole answer into a single chunk."""
+    llm = MockLLM(max_tokens=5)
+    synthesizer = Refine(llm=llm, streaming=True)
+    response = await synthesizer.asynthesize(query="test", nodes=nodes)
+    assert isinstance(response, AsyncStreamingResponse)
+    deltas = [delta async for delta in response.async_response_gen()]
+    assert len(deltas) > 1
+    assert "".join(deltas) == " ".join(["text"] * 5)
+
+
+def test_synthesize__streaming_default_program_yields_incremental_deltas(
+    nodes: list[NodeWithScore],
+) -> None:
+    llm = MockLLM(max_tokens=5)
+    synthesizer = Refine(llm=llm, streaming=True)
+    response = synthesizer.synthesize(query="test", nodes=nodes)
+    assert isinstance(response, StreamingResponse)
+    deltas = list(response.response_gen)
+    assert len(deltas) > 1
+    assert "".join(deltas) == " ".join(["text"] * 5)

@@ -130,12 +130,13 @@ class DefaultRefineProgram(BasePydanticProgram):
 
     def stream_call(
         self, *args: Any, **kwds: Any
-    ) -> Generator[StructuredRefineResponse, None, None]:
+    ) -> Generator[Union[str, StructuredRefineResponse], None, None]:
         """
-        Stream object.
+        Stream the program output.
 
-        Returns a generator returning partials of the same object
-        or a list of objects until it returns.
+        With ``output_cls`` set, returns a generator of partially-built
+        structured objects. Without it, streams plain text deltas as they
+        arrive from the LLM.
         """
         if self._output_cls is not None:
             for structured_answer in self._llm.stream_structured_predict(
@@ -147,28 +148,28 @@ class DefaultRefineProgram(BasePydanticProgram):
                 if answer is not None:
                     yield StructuredRefineResponse(answer=answer, query_satisfied=True)
         else:
-            answer = ""
-            # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-            # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-            # cases
-            for token in self._llm.stream(
+            # Plain-text refinement: stream each token as it arrives so
+            # downstream consumers get incremental deltas instead of a single
+            # buffered result. Structured output cannot do this because partial
+            # JSON fields are not guaranteed complete, but plain text has no
+            # such constraint.
+            yield from self._llm.stream(
                 self._prompt,
                 **kwds,
-            ):
-                answer += token
-            yield StructuredRefineResponse(answer=answer.strip(), query_satisfied=True)
+            )
 
     async def astream_call(
         self, *args: Any, **kwds: Any
-    ) -> AsyncGenerator[StructuredRefineResponse, None]:
+    ) -> AsyncGenerator[Union[str, StructuredRefineResponse], None]:
         """
-        Stream objects.
+        Stream the program output.
 
-        Returns a generator returning partials of the same object
-        or a list of objects until it returns.
+        With ``output_cls`` set, returns a generator of partially-built
+        structured objects. Without it, streams plain text deltas as they
+        arrive from the LLM.
         """
 
-        async def gen() -> AsyncGenerator[StructuredRefineResponse, None]:
+        async def gen() -> AsyncGenerator[Union[str, StructuredRefineResponse], None]:
             if self._output_cls is not None:
                 async for (
                     structured_answer
@@ -183,19 +184,17 @@ class DefaultRefineProgram(BasePydanticProgram):
                             answer=answer, query_satisfied=True
                         )
             else:
-                answer = ""
-                # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-                # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-                # cases
+                # Plain-text refinement: stream each token as it arrives so
+                # downstream consumers get incremental deltas instead of a single
+                # buffered result. Structured output cannot do this because partial
+                # JSON fields are not guaranteed complete, but plain text has no
+                # such constraint.
                 async for token in await self._llm.astream(
                     self._prompt,
                     **kwds,
                 ):
-                    answer += token
-                if answer:
-                    yield StructuredRefineResponse(
-                        answer=answer.strip(), query_satisfied=True
-                    )
+                    if token:
+                        yield token
 
         return gen()
 
@@ -349,6 +348,15 @@ class Refine(BaseSynthesizer):
                     **program_kwargs,
                     **response_kwargs,
                 )
+                if (
+                    isinstance(program, DefaultRefineProgram)
+                    and program._output_cls is None
+                ):
+                    # Non-structured refine: the program streams plain text
+                    # deltas. Pass the generator through untouched so tokens
+                    # reach the caller incrementally instead of being buffered
+                    # into a single result.
+                    return structured_response_gen
                 structured_response = None
                 for sr in structured_response_gen:
                     assert not isinstance(sr, list)
@@ -399,6 +407,15 @@ class Refine(BaseSynthesizer):
                     **program_kwargs,
                     **response_kwargs,
                 )
+                if (
+                    isinstance(program, DefaultRefineProgram)
+                    and program._output_cls is None
+                ):
+                    # Non-structured refine: the program streams plain text
+                    # deltas. Pass the generator through untouched so tokens
+                    # reach the caller incrementally instead of being buffered
+                    # into a single result.
+                    return structured_response_gen
                 structured_response = None
                 async for sr in structured_response_gen:
                     assert not isinstance(sr, list)
