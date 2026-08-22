@@ -33,7 +33,7 @@ class DashScopeRerank(BaseNodePostprocessor):
     ):
         try:
             api_key = api_key or os.environ["DASHSCOPE_API_KEY"]
-        except IndexError:
+        except KeyError:
             raise ValueError(
                 "Must pass in dashscope api key or "
                 "specify via DASHSCOPE_API_KEY environment variable "
