@@ -52,7 +52,7 @@ LlamaIndex provides a framework for building agents including the ability to use
 
 LLMs offer a natural language interface between humans and data. LLMs come pre-trained on huge amounts of publicly available data, but they are not trained on **your** data. Your data may be private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
 
-Context augmentation makes your data available to the LLM to solve the problem at hand. LlamaIndex provides the tools to build any of context-augmentation use case, from prototype to production. Our tools allow you to ingest, parse, index and process your data and quickly implement complex query workflows combining data access with LLM prompting.
+Context augmentation makes your data available to the LLM to solve the problem at hand. LlamaIndex provides the tools to build any context-augmentation use case, from prototype to production. Our tools allow you to ingest, parse, index and process your data and quickly implement complex query workflows combining data access with LLM prompting.
 
 The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](/python/framework/getting_started/concepts), which combines context with LLMs at inference time.
 
