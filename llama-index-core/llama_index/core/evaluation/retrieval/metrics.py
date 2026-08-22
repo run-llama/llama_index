@@ -272,6 +272,80 @@ class Recall(BaseRetrievalMetric):
         return RetrievalMetricResult(score=recall)
 
 
+class FBeta(BaseRetrievalMetric):
+    """
+    F-beta score metric.
+
+    Combines precision and recall into a single score via their weighted
+    harmonic mean. ``beta`` controls the trade-off: ``beta == 1`` yields the
+    F1 score, ``beta > 1`` weights recall more heavily, and ``beta < 1``
+    weights precision more heavily.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+        beta (float): Weight of recall relative to precision. Defaults to 1.0 (F1).
+
+    """
+
+    metric_name: ClassVar[str] = "fbeta"
+    beta: float = Field(
+        default=1.0,
+        description="Weight of recall relative to precision. beta=1 yields the F1 score.",
+    )
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> RetrievalMetricResult:
+        """
+        Compute the F-beta score based on the provided inputs.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed F-beta score.
+
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        num_relevant = len(retrieved_set & expected_set)
+        precision = num_relevant / len(retrieved_set)
+        recall = num_relevant / len(expected_set)
+
+        beta_squared = self.beta**2
+        denominator = beta_squared * precision + recall
+        if denominator == 0.0:
+            return RetrievalMetricResult(score=0.0)
+
+        fbeta = (1 + beta_squared) * precision * recall / denominator
+        return RetrievalMetricResult(score=fbeta)
+
+
 class AveragePrecision(BaseRetrievalMetric):
     """
     Average Precision (AP) metric.
@@ -498,6 +572,7 @@ METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
     "mrr": MRR,
     "precision": Precision,
     "recall": Recall,
+    "fbeta": FBeta,
     "ap": AveragePrecision,
     "ndcg": NDCG,
     "cohere_rerank_relevancy": CohereRerankRelevancyMetric,

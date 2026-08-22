@@ -3,6 +3,7 @@ from math import log2
 import pytest
 from llama_index.core.evaluation.retrieval.metrics import (
     AveragePrecision,
+    FBeta,
     HitRate,
     MRR,
     NDCG,
@@ -108,6 +109,65 @@ def test_recall(expected_ids, retrieved_ids, expected_result):
     recall = Recall()
     result = recall.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
     assert result.score == pytest.approx(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("expected_ids", "retrieved_ids", "beta", "expected_result"),
+    [
+        # F1 (beta=1): precision 3/4, recall 3/3
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            1.0,
+            2 * (3 / 4) * (3 / 3) / ((3 / 4) + (3 / 3)),
+        ),
+        # F1: precision 1/2, recall 1/4
+        (
+            ["id1", "id2", "id3", "id4"],
+            ["id5", "id1"],
+            1.0,
+            2 * (1 / 2) * (1 / 4) / ((1 / 2) + (1 / 4)),
+        ),
+        # no overlap -> precision and recall are both 0 -> F-beta 0
+        (["id1", "id2"], ["id3", "id4"], 1.0, 0.0),
+        # F1: precision 2/3, recall 2/2
+        (
+            ["id1", "id2"],
+            ["id2", "id1", "id7"],
+            1.0,
+            2 * (2 / 3) * (2 / 2) / ((2 / 3) + (2 / 2)),
+        ),
+        # F2 weights recall more heavily: precision 3/4, recall 3/3
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            2.0,
+            (1 + 2**2) * (3 / 4) * (3 / 3) / ((2**2) * (3 / 4) + (3 / 3)),
+        ),
+        # F0.5 weights precision more heavily: precision 3/4, recall 3/3
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            0.5,
+            (1 + 0.5**2) * (3 / 4) * (3 / 3) / ((0.5**2) * (3 / 4) + (3 / 3)),
+        ),
+    ],
+)
+def test_fbeta(expected_ids, retrieved_ids, beta, expected_result):
+    fbeta = FBeta(beta=beta)
+    result = fbeta.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    assert result.score == pytest.approx(expected_result)
+
+
+def test_fbeta_default_is_f1():
+    """The default beta=1 must equal an explicit F1 score."""
+    expected_ids = ["id1", "id2", "id3"]
+    retrieved_ids = ["id3", "id1", "id2", "id4"]
+    default = FBeta().compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    explicit_f1 = FBeta(beta=1.0).compute(
+        expected_ids=expected_ids, retrieved_ids=retrieved_ids
+    )
+    assert default.score == pytest.approx(explicit_f1.score)
 
 
 @pytest.mark.parametrize(
@@ -237,6 +297,10 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         recall = Recall()
         recall.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+    with pytest.raises(ValueError):
+        fbeta = FBeta()
+        fbeta.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
 
     with pytest.raises(ValueError):
         ap = AveragePrecision()
