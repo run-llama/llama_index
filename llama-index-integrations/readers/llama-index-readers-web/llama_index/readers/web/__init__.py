@@ -58,6 +58,7 @@ from llama_index.readers.web.zyte_web.base import (
     ZyteWebReader,
 )
 from llama_index.readers.web.zenrows_web.base import ZenRowsWebReader
+from llama_index.readers.web.barewire_web.base import BareWireWebReader
 
 
 __all__ = [
@@ -85,4 +86,5 @@ __all__ = [
     "WholeSiteReader",
     "ZenRowsWebReader",
     "ZyteWebReader",
+    "BareWireWebReader",
 ]
