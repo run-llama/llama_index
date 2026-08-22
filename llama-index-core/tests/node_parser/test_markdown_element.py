@@ -1,4 +1,7 @@
+import pytest
+
 from llama_index.core.llms.mock import MockLLM
+from llama_index.core.node_parser.relational.base_element import TableOutput
 from llama_index.core.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
 )
@@ -2755,6 +2758,65 @@ def test_extract_html_table():
     assert test_document.text[nodes[3].start_char_idx : nodes[3].end_char_idx] == table2
     assert type(nodes[4]) is TextNode
     assert test_document.text[nodes[4].start_char_idx : nodes[4].end_char_idx] == table2
+
+
+@pytest.mark.asyncio
+async def test_extract_html_table_async_matches_sync(monkeypatch):
+    """
+    aget_nodes_from_node (async) must extract embedded HTML <table> elements
+    the same way get_nodes_from_node (sync) does. Previously,
+    `aget_nodes_from_node` never called `extract_html_tables`, so HTML tables
+    were silently left as plain text instead of becoming an IndexNode/TextNode
+    pair, while the sync path handled them correctly.
+
+    Table summarization itself (which calls out to an LLM) is stubbed out
+    here so the test isolates the extraction bug rather than depending on
+    LLM behavior.
+    """
+
+    def fake_extract_table_summaries(self, elements):
+        for element in elements:
+            if element.type in ("table", "table_text"):
+                element.table_output = TableOutput(summary="stub summary", columns=[])
+
+    async def fake_aextract_table_summaries(self, elements):
+        fake_extract_table_summaries(self, elements)
+
+    monkeypatch.setattr(
+        MarkdownElementNodeParser,
+        "extract_table_summaries",
+        fake_extract_table_summaries,
+    )
+    monkeypatch.setattr(
+        MarkdownElementNodeParser,
+        "aextract_table_summaries",
+        fake_aextract_table_summaries,
+    )
+
+    test_document = Document(
+        text="""
+<table>
+  <tr>
+    <th>Month</th>
+    <th>Savings</th>
+  </tr>
+  <tr>
+    <td>January</td>
+    <td>$100</td>
+  </tr>
+</table>
+"""
+    )
+    node_parser = MarkdownElementNodeParser()
+
+    sync_nodes = node_parser.get_nodes_from_documents([test_document])
+    async_nodes = await node_parser.aget_nodes_from_documents([test_document])
+
+    sync_types = [type(n) for n in sync_nodes]
+    async_types = [type(n) for n in async_nodes]
+
+    assert async_types == sync_types
+    assert IndexNode in async_types
 
 
 def test_code_block_extraction() -> None:
