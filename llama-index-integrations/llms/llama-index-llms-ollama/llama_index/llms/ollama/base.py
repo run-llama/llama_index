@@ -54,10 +54,14 @@ DEFAULT_REQUEST_TIMEOUT = 30.0
 dispatcher = get_dispatcher(__name__)
 
 
-def get_additional_kwargs(
-    response: Dict[str, Any], exclude: Tuple[str, ...]
-) -> Dict[str, Any]:
-    return {k: v for k, v in response.items() if k not in exclude}
+def get_additional_kwargs(response: Any, exclude: Tuple[str, ...]) -> Dict[str, Any]:
+    """
+    Get additional kwargs from an ollama response, excluding the given keys.
+
+    Works with both plain dicts and object-shaped responses, since
+    ollama >= 0.4 returns pydantic models (e.g. ``GenerateResponse``).
+    """
+    return {k: v for k, v in dict(response).items() if k not in exclude}
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
