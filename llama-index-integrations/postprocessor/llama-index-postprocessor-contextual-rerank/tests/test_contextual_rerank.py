@@ -4,6 +4,15 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from contextual.types import RerankCreateResponse
 from unittest import mock, TestCase
 
+import pytest
+
+
+def test_missing_api_key_raises_value_error():
+    """A missing CONTEXTUAL_API_KEY must raise a clear ValueError, not a raw KeyError."""
+    with mock.patch.dict("os.environ", {}, clear=True):
+        with pytest.raises(ValueError, match="Must pass in contextual api key"):
+            ContextualRerank()
+
 
 class TestContextualRerank(TestCase):
     def test_contextual_rerank(self):
