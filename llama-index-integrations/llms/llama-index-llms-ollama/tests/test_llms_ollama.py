@@ -1,13 +1,19 @@
 import os
+from typing import Annotated, Any
 
 import pytest
-from ollama import Client
-from typing import Annotated
+from ollama import ChatResponse, Client, Message
 
-from llama_index.core.base.llms.types import ThinkingBlock, TextBlock, ToolCallBlock
+from llama_index.core.base.llms.types import (
+    ImageBlock,
+    ThinkingBlock,
+    TextBlock,
+    ToolCallBlock,
+)
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
+from llama_index.core.program import MultiModalLLMCompletionProgram
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
 
@@ -493,3 +499,99 @@ async def test_chat_methods_with_tool_input() -> None:
         ablocks.extend(r.message.blocks)
     assert len([block for block in ablocks if isinstance(block, TextBlock)]) > 0
     assert len([block for block in ablocks if isinstance(block, ToolCallBlock)]) == 0
+
+
+class StubOllamaClient:
+    """Stands in for ollama.Client, returning object-shaped (pydantic) responses."""
+
+    def __init__(self, response: Any) -> None:
+        self._response = response
+        self.chat_kwargs: dict = {}
+
+    def chat(self, **kwargs: Any) -> Any:
+        self.chat_kwargs = kwargs
+        return self._response
+
+
+class StubOllamaAsyncClient(StubOllamaClient):
+    async def achat(self, **kwargs: Any) -> Any:  # pragma: no cover - unused
+        return self._response
+
+    async def chat(self, **kwargs: Any) -> Any:
+        self.chat_kwargs = kwargs
+        return self._response
+
+
+def _get_stub_chat_response(content: str) -> ChatResponse:
+    return ChatResponse(
+        model=test_model,
+        created_at="2024-11-29T00:00:00Z",
+        done=True,
+        message=Message(role="assistant", content=content),
+    )
+
+
+def test_multi_modal_llm_completion_program_with_object_shaped_response() -> None:
+    """Regression test for https://github.com/run-llama/llama_index/issues/17105."""
+    stub_client = StubOllamaClient(
+        _get_stub_chat_response(
+            '{"artist_name": "The Beatles", "song_name": "Let It Be"}'
+        )
+    )
+    llm = Ollama(
+        model=test_model,
+        context_window=8000,
+        client=stub_client,
+    )
+    image_documents = [ImageBlock(image=b"\x89PNG fake image bytes")]
+
+    program = MultiModalLLMCompletionProgram.from_defaults(
+        output_cls=Song,
+        prompt_template_str="{query_str}",
+        multi_modal_llm=llm,
+        image_documents=image_documents,
+    )
+
+    result = program(query_str="What is in the image?")
+
+    assert isinstance(result, Song)
+    assert result.artist_name == "The Beatles"
+    assert result.song_name == "Let It Be"
+
+    sent_messages = stub_client.chat_kwargs["messages"]
+    assert sent_messages[0]["images"] != []
+    assert "What is in the image?" in sent_messages[0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_async_multi_modal_llm_completion_program_with_object_shaped_response() -> (
+    None
+):
+    """Regression test for https://github.com/run-llama/llama_index/issues/17105."""
+    stub_client = StubOllamaAsyncClient(
+        _get_stub_chat_response(
+            '{"artist_name": "The Beatles", "song_name": "Let It Be"}'
+        )
+    )
+    llm = Ollama(
+        model=test_model,
+        context_window=8000,
+        async_client=stub_client,
+    )
+    image_documents = [ImageBlock(image=b"\x89PNG fake image bytes")]
+
+    program = MultiModalLLMCompletionProgram.from_defaults(
+        output_cls=Song,
+        prompt_template_str="{query_str}",
+        multi_modal_llm=llm,
+        image_documents=image_documents,
+    )
+
+    result = await program.acall(query_str="What is in the image?")
+
+    assert isinstance(result, Song)
+    assert result.artist_name == "The Beatles"
+    assert result.song_name == "Let It Be"
+
+    sent_messages = stub_client.chat_kwargs["messages"]
+    assert sent_messages[0]["images"] != []
