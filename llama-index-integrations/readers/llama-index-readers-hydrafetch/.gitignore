@@ -1,0 +1,7 @@
+llama_index/_static
+.DS_Store
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+dist/
+.venv/

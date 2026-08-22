@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-readers-hydrafetch"
+version = "0.1.0"
+description = "llama-index readers hydrafetch integration"
+authors = [{name = "Hydrafetch", email = "team@hydrafetch.com"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [
+    {name = "AkashRajpurohit"},
+]
+keywords = ["hydrafetch", "web", "scraping", "markdown", "crawl", "rag"]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "hydrafetch>=0.1.1",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.hydrafetch"
+
+[tool.llamahub.class_authors]
+HydrafetchReader = "AkashRajpurohit"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+]
