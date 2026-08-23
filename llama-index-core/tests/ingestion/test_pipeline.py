@@ -400,6 +400,40 @@ def test_pipeline_with_transform_error() -> None:
     assert pipeline.docstore.get_node("1", raise_error=False) is None
 
 
+def test_pipeline_upserts_keep_previous_data_when_transform_fails() -> None:
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError
+
+    class TrackingVectorStore(SimpleVectorStore):
+        def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
+            self.data.embedding_dict.pop(ref_doc_id, None)
+
+        async def adelete(self, ref_doc_id: str, **kwargs: Any) -> None:
+            self.data.embedding_dict.pop(ref_doc_id, None)
+
+    docstore = SimpleDocumentStore()
+    vector_store = TrackingVectorStore()
+    pipeline = IngestionPipeline(
+        transformations=[MockEmbedding(embed_dim=8)],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    original = Document(text="original", doc_id="1")
+    pipeline.run(documents=[original])
+
+    pipeline.transformations = [RaisingTransform()]
+    with pytest.raises(RuntimeError):
+        pipeline.run(documents=[Document(text="updated", doc_id="1")])
+
+    assert docstore.get_node("1", raise_error=False).text == "original"  # type: ignore
+    assert len(vector_store.data.embedding_dict) == 1
+
+
+
 @pytest.mark.asyncio
 async def test_arun_pipeline() -> None:
     pipeline = IngestionPipeline(
@@ -638,6 +672,40 @@ async def test_async_pipeline_with_transform_error() -> None:
         await pipeline.arun(documents=[document1])
 
     assert pipeline.docstore.get_node("1", raise_error=False) is None
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_keep_previous_data_when_transform_fails() -> None:
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError
+
+    class TrackingVectorStore(SimpleVectorStore):
+        def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
+            self.data.embedding_dict.pop(ref_doc_id, None)
+
+        async def adelete(self, ref_doc_id: str, **kwargs: Any) -> None:
+            self.data.embedding_dict.pop(ref_doc_id, None)
+
+    docstore = SimpleDocumentStore()
+    vector_store = TrackingVectorStore()
+    pipeline = IngestionPipeline(
+        transformations=[MockEmbedding(embed_dim=8)],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    original = Document(text="original", doc_id="1")
+    await pipeline.arun(documents=[original])
+
+    pipeline.transformations = [RaisingTransform()]
+    with pytest.raises(RuntimeError):
+        await pipeline.arun(documents=[Document(text="updated", doc_id="1")])
+
+    assert docstore.get_node("1", raise_error=False).text == "original"  # type: ignore
+    assert len(vector_store.data.embedding_dict) == 1
 
 
 def test_docstore_strategy_not_mutated_on_run_without_vector_store() -> None:
