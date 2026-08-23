@@ -92,6 +92,13 @@ def test_get_model_kwargs(default_responses_llm):
     assert custom_kwargs["max_output_tokens"] == 100
 
 
+def test_o1_preserves_custom_temperature():
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model=next(iter(O1_MODELS)), temperature=0.5)
+
+    assert llm.temperature == 0.5
+
 def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
     """Test that certain parameters are excluded when reasoning_options is set."""
     llm = default_responses_llm

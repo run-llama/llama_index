@@ -314,8 +314,9 @@ class OpenAIResponses(FunctionCallingLLM):
             api_version=api_version,
         )
 
-        # TODO: Temp forced to 1.0 for o1
-        if model in O1_MODELS:
+        # OpenAI requires temperature=1 for o1 models, but preserve an explicit
+        # custom value so callers are not silently surprised by this adjustment.
+        if model in O1_MODELS and temperature == DEFAULT_TEMPERATURE:
             temperature = 1.0
 
         super().__init__(
