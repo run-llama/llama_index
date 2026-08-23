@@ -69,7 +69,7 @@ source .venv/bin/activate
 **That’s it!** The package you're working on is already installed in editable mode, so you can go on, change the code
 and run the tests!
 
-Once you get familiar with the project, scroll down to the [Development Guidelines](#-Development-Guidelines) for more
+Once you get familiar with the project, scroll down to the [Development Guidelines](#‍-development-guidelines) for more
 details.
 
 ---
