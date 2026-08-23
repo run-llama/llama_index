@@ -4,7 +4,7 @@
 
 The Qdrant Reader allows you to retrieve documents from existing Qdrant collections. Qdrant is a similarity search engine that helps you efficiently search and retrieve similar items from large datasets based on vector embeddings.
 
-For more detailed information about Qdrant, visit [Qdrant](qdrant.io)
+For more detailed information about Qdrant, visit [Qdrant](https://qdrant.io)
 
 ### Installation
 
