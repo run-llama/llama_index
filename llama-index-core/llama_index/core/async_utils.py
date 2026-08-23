@@ -168,8 +168,12 @@ async def run_jobs(
     if show_progress:
         from tqdm.asyncio import tqdm_asyncio
 
-        results = await tqdm_asyncio.gather(*pool_jobs, desc=desc)
+        results = await tqdm_asyncio.gather(*pool_jobs, desc=desc, return_exceptions=True)
     else:
-        results = await asyncio.gather(*pool_jobs)
+        results = await asyncio.gather(*pool_jobs, return_exceptions=True)
+
+    for res in results:
+        if isinstance(res, Exception):
+            raise res
 
     return results

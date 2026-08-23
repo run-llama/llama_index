@@ -209,9 +209,14 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
 
         Subclasses can implement this method if batch queries are supported.
         """
-        return await asyncio.gather(
-            *[self._aget_text_embedding(text) for text in texts]
+        results = await asyncio.gather(
+            *[self._aget_text_embedding(text) for text in texts],
+            return_exceptions=True,
         )
+        for res in results:
+            if isinstance(res, Exception):
+                raise res
+        return results
 
     @dispatcher.span
     def get_text_embedding(self, text: str) -> SparseEmbedding:
@@ -338,11 +343,20 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
                         *embeddings_coroutines,
                         total=len(embeddings_coroutines),
                         desc="Generating embeddings",
+                        return_exceptions=True,
                     )
                 except ImportError:
-                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                    nested_embeddings = await asyncio.gather(
+                        *embeddings_coroutines, return_exceptions=True
+                    )
             else:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                nested_embeddings = await asyncio.gather(
+                    *embeddings_coroutines, return_exceptions=True
+                )
+                
+            for res in nested_embeddings:
+                if isinstance(res, Exception):
+                    raise res
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings

@@ -303,9 +303,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
         Subclasses can implement this method if batch queries are supported.
         """
-        return await asyncio.gather(
-            *[self._aget_text_embedding(text) for text in texts]
+        results = await asyncio.gather(
+            *[self._aget_text_embedding(text) for text in texts],
+            return_exceptions=True,
         )
+        for res in results:
+            if isinstance(res, Exception):
+                raise res
+        return results
 
     async def _aget_text_embeddings_rate_limited(
         self, texts: List[str]
@@ -594,11 +599,20 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                         *embeddings_coroutines,
                         total=len(embeddings_coroutines),
                         desc="Generating embeddings",
+                        return_exceptions=True,
                     )
                 except ImportError:
-                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                    nested_embeddings = await asyncio.gather(
+                        *embeddings_coroutines, return_exceptions=True
+                    )
             else:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                nested_embeddings = await asyncio.gather(
+                    *embeddings_coroutines, return_exceptions=True
+                )
+                
+            for res in nested_embeddings:
+                if isinstance(res, Exception):
+                    raise res
         else:
             nested_embeddings = []
 
