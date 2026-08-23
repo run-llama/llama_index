@@ -7,7 +7,7 @@ This integration uses Ray’s distributed compute framework to parallelize docum
 ## Installation
 
 ```bash
-pip install llama-index-integrations-ray
+pip install llama-index-ingestion-ray
 ```
 
 ## Usage

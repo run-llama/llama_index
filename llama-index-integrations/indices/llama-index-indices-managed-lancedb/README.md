@@ -157,7 +157,7 @@ print(response.response)
 ```python
 images_index = LanceDBMultiModalIndex(
     uri="lancedb/images",
-    multi_modal_embedding_model="open-clip",
+    multimodal_embedding_model="open-clip",
     table_name="images",
 )
 
@@ -180,7 +180,7 @@ images_index = await LanceDBMultiModalIndex.from_documents(
         ),
     ],
     uri="lancedb/images",
-    multi_modal_embedding_model="open-clip",
+    multimodal_embedding_model="open-clip",
     table_name="images",
 )
 
@@ -218,7 +218,7 @@ data = pd.DataFrame(
 images_index = await LanceDBMultiModalIndex.from_data(
     data=data,
     uri="lancedb/images",
-    multi_modal_embedding_model="open-clip",
+    multimodal_embedding_model="open-clip",
     table_name="images",
 )
 ```
