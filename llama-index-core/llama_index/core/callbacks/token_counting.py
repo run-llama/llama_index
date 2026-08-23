@@ -63,13 +63,13 @@ def get_tokens_from_response(
 
     prompt_tokens = 0
     for input_key in possible_input_keys:
-        if input_key in usage:
+        if usage.get(input_key) is not None:
             prompt_tokens = usage[input_key]
             break
 
     completion_tokens = 0
     for output_key in possible_output_keys:
-        if output_key in usage:
+        if usage.get(output_key) is not None:
             completion_tokens = usage[output_key]
             break
 
