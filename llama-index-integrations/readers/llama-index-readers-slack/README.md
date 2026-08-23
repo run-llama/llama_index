@@ -4,7 +4,7 @@
 
 The Slack Reader allows you to read conversations from Slack channels. It retrieves messages from specified channels within a given time range, if provided.
 
-For more detailed information about the Slack Reader, visit [Slack API Home](api.slack.com).
+For more detailed information about the Slack Reader, visit [Slack API Home](https://api.slack.com).
 
 ### Installation
 
