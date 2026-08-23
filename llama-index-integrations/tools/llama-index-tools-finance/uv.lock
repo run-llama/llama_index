@@ -1421,7 +1421,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-finance"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1429,6 +1429,7 @@ dependencies = [
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pytrends" },
+    { name = "requests" },
     { name = "yfinance" },
 ]
 
@@ -1460,6 +1461,7 @@ requires-dist = [
     { name = "newsapi-python", specifier = ">=0.2.7,<0.3" },
     { name = "pandas" },
     { name = "pytrends", specifier = ">=4.9.2,<5" },
+    { name = "requests", specifier = ">=2.32.0,<3.0.0" },
     { name = "yfinance", specifier = ">=0.2.36,<0.3" },
 ]
 

@@ -26,13 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-tools-finance"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index finance-tools integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<3.12"
 readme = "README.md"
 license = "MIT"
 dependencies = [
+    "requests>=2.32.0,<3.0.0",
     "yfinance>=0.2.36,<0.3",
     "newsapi-python>=0.2.7,<0.3",
     "pytrends>=4.9.2,<5",
@@ -57,6 +58,7 @@ import_path = "llama_index.tools.finance"
 
 [tool.llamahub.class_authors]
 FinanceAgentToolSpec = "345ishaan"
+AdanosMarketSentimentToolSpec = "alexander-schneider"
 
 [tool.mypy]
 disallow_untyped_defs = true

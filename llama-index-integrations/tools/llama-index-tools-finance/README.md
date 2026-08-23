@@ -63,3 +63,44 @@ response = await agent.run(
     "What happened to AAPL stock on February 19th, 2024?"
 )
 ```
+
+## Adanos Market Sentiment
+
+The package also provides an independent tool spec for the
+[Adanos Market Sentiment API](https://adanos.org/). It gives agents structured
+stock sentiment from Reddit, X / FinTwit, financial news, and Polymarket, plus
+Reddit crypto sentiment.
+
+Create an API key at [adanos.org/register](https://adanos.org/register), then add
+the tools to an agent:
+
+```python
+import os
+
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
+from llama_index.tools.finance import AdanosMarketSentimentToolSpec
+
+adanos = AdanosMarketSentimentToolSpec(api_key=os.environ["ADANOS_API_KEY"])
+agent = FunctionAgent(
+    tools=adanos.to_tool_list(),
+    llm=OpenAI(model="gpt-4o"),
+)
+
+response = await agent.run(
+    "Compare AAPL and NVDA Reddit sentiment from 2026-08-01 to 2026-08-07."
+)
+```
+
+Available functions:
+
+- `get_adanos_stock_sentiment`: sentiment for one stock from a selected source.
+- `get_adanos_crypto_sentiment`: Reddit sentiment for one crypto asset.
+- `get_adanos_trending_assets`: ranked stock or crypto attention.
+- `compare_adanos_asset_sentiment`: side-by-side sentiment for multiple assets.
+- `get_adanos_market_sentiment`: an aggregate market snapshot.
+
+Date windows use inclusive UTC `start_date` and `end_date` values. The Free,
+Hobby, and Professional plans support up to 30, 90, and 365 days of historical
+lookback respectively. See the [API documentation](https://api.adanos.org/docs)
+for response fields and current plan limits.
