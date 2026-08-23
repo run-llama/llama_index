@@ -10,7 +10,7 @@ Welcome to Semantic Scholar Loader. This module serves as a crucial utility for 
 
 For any research topic you are interested in, this loader reads relevant papers from a search result in Semantic Scholar into `Documents`.
 
-Please go through [demo_s2.ipynb](demo_s2.ipynb)
+Please go through [demo_s2.ipynb](examples/demo_s2.ipynb)
 
 ## Some preliminaries -
 
