@@ -36,7 +36,7 @@ class RemoteDepthReader(BaseReader):
         links = self.get_links(url)
         urls = {-1: [url]}  # -1 is the starting point
         links_visited = []
-        for i in range(self.depth + 1):
+        for i in range(self.depth):
             urls[i] = []
             new_links = []
             print(f"Reading links at depth {i}...")
