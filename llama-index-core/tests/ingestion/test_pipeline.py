@@ -400,7 +400,12 @@ def test_pipeline_with_transform_error() -> None:
     assert pipeline.docstore.get_node("1", raise_error=False) is None
 
 
-def test_pipeline_upserts_keep_previous_data_when_transform_fails() -> None:
+@pytest.mark.parametrize(
+    "strategy", [DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE]
+)
+def test_pipeline_upserts_keep_previous_data_when_transform_fails(
+    strategy: DocstoreStrategy,
+) -> None:
     class RaisingTransform(TransformComponent):
         def __call__(
             self, nodes: Sequence[BaseNode], **kwargs: Any
@@ -420,7 +425,7 @@ def test_pipeline_upserts_keep_previous_data_when_transform_fails() -> None:
         transformations=[MockEmbedding(embed_dim=8)],
         docstore=docstore,
         vector_store=vector_store,
-        docstore_strategy=DocstoreStrategy.UPSERTS,
+        docstore_strategy=strategy,
     )
     original = Document(text="original", doc_id="1")
     pipeline.run(documents=[original])
@@ -675,7 +680,12 @@ async def test_async_pipeline_with_transform_error() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_pipeline_upserts_keep_previous_data_when_transform_fails() -> None:
+@pytest.mark.parametrize(
+    "strategy", [DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE]
+)
+async def test_async_pipeline_upserts_keep_previous_data_when_transform_fails(
+    strategy: DocstoreStrategy,
+) -> None:
     class RaisingTransform(TransformComponent):
         def __call__(
             self, nodes: Sequence[BaseNode], **kwargs: Any
@@ -695,7 +705,7 @@ async def test_async_pipeline_upserts_keep_previous_data_when_transform_fails() 
         transformations=[MockEmbedding(embed_dim=8)],
         docstore=docstore,
         vector_store=vector_store,
-        docstore_strategy=DocstoreStrategy.UPSERTS,
+        docstore_strategy=strategy,
     )
     original = Document(text="original", doc_id="1")
     await pipeline.arun(documents=[original])
