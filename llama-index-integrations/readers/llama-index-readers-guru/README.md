@@ -15,7 +15,7 @@ Here's an example usage of the GuruReader.
 ```python
 from llama_index.readers.guru import GuruReader
 
-reader = GuruReader(username="<GURU_USERNAME>", api_key="<GURU_API_KEY>")
+reader = GuruReader(guru_username="<GURU_USERNAME>", api_token="<GURU_API_KEY>")
 
 # Load all documents in a collection
 documents = reader.load_data(
