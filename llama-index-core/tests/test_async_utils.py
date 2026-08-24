@@ -19,6 +19,27 @@ def test_batch_gather_indivisible_task_list() -> None:
 
 
 @pytest.mark.asyncio
+async def test_asyncio_run_is_safe_inside_running_loop() -> None:
+    """
+    A naive sync wrapper using `asyncio.run()` fails when called from
+    inside a running event loop (e.g. a notebook or ASGI service). `asyncio_run`
+    must not raise in that same situation.
+    """
+
+    async def coro() -> str:
+        return "ok"
+
+    unawaited = coro()
+    try:
+        with pytest.raises(RuntimeError):
+            asyncio.run(unawaited)
+    finally:
+        unawaited.close()
+
+    assert asyncio_run(coro()) == "ok"
+
+
+@pytest.mark.asyncio
 async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
     """
     Validate that context vars are copied when loop.is_running() is True.

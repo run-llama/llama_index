@@ -215,6 +215,49 @@ If you’re integrating with a remote system, **mock** it to prevent test failur
 
 By default, CICD will fail if test coverage is less than 50% -- so please do add tests for your code!
 
+### Event-Loop Safety for Sync/Async Method Pairs
+
+Many integrations expose both a sync method (e.g. `query`) and its async counterpart (e.g. `aquery`). When
+implementing the sync version, **never call `asyncio.run()` directly**. Users may invoke your sync method from
+inside a notebook, an ASGI service (FastAPI, etc.), or any other context where an event loop is already running,
+and `asyncio.run()` raises `RuntimeError: asyncio.run() cannot be called from a running event loop` in that case.
+
+Instead, use `asyncio_run` from `llama_index.core.async_utils`, which falls back to running the coroutine in a
+separate thread when a loop is already active:
+
+```python
+from llama_index.core.async_utils import asyncio_run
+
+
+class MyIntegration:
+    async def aquery(self, prompt: str) -> str:
+        ...
+
+    def query(self, prompt: str) -> str:
+        # Safe whether or not an event loop is already running.
+        return asyncio_run(self.aquery(prompt))
+```
+
+If your method is inherently async-only (no meaningful sync equivalent), it's fine to only expose the `a`-prefixed
+version rather than forcing a blocking wrapper.
+
+To verify your sync wrapper is event-loop safe, add a test that calls it from inside a running loop, e.g.:
+
+```python
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_sync_method_is_event_loop_safe() -> None:
+    integration = MyIntegration()
+    # This runs inside pytest-asyncio's event loop; a naive `asyncio.run()`
+    # implementation would raise RuntimeError here.
+    result = integration.query("hello")
+    assert result
+```
+
+See `llama-index-core/tests/test_async_utils.py` for an example of this pattern applied to `asyncio_run` itself.
+
 ---
 
 ## 👥 Join the Community
