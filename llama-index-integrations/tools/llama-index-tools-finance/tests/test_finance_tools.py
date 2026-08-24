@@ -132,3 +132,22 @@ def test_adanos_http_errors_are_not_swallowed(adanos_tool, mocker):
 
     with pytest.raises(requests.HTTPError, match="rate limited"):
         adanos_tool.get_adanos_market_sentiment()
+
+
+def test_adanos_rate_limit_error_includes_retry_guidance(adanos_tool, mocker):
+    response = mock_response(
+        mocker,
+        {"detail": {"message": "Too many requests for this account."}},
+    )
+    response.status_code = 429
+    response.headers = {"Retry-After": "42"}
+    mocker.patch.object(adanos_tool._session, "get", return_value=response)
+
+    with pytest.raises(
+        requests.HTTPError,
+        match=r"Too many requests for this account\. Retry after 42 seconds\.",
+    ) as exc_info:
+        adanos_tool.get_adanos_market_sentiment()
+
+    assert exc_info.value.response is response
+    response.raise_for_status.assert_not_called()

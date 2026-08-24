@@ -104,3 +104,7 @@ Date windows use inclusive UTC `start_date` and `end_date` values. The Free,
 Hobby, and Professional plans support up to 30, 90, and 365 days of historical
 lookback respectively. See the [API documentation](https://api.adanos.org/docs)
 for response fields and current plan limits.
+
+Rate-limit responses raise `requests.HTTPError` with the API message and any
+`Retry-After` guidance. The tool does not retry automatically, so callers retain
+control over retry timing and quota usage.

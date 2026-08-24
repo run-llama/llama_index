@@ -103,6 +103,19 @@ class AdanosMarketSentimentToolSpec(BaseToolSpec):
         response = self._session.get(
             f"{self._base_url}{path}", params=params, timeout=self._timeout
         )
+        if response.status_code == 429:
+            message = "Adanos rate limit exceeded."
+            try:
+                payload = response.json()
+            except ValueError:
+                payload = {}
+            detail = payload.get("detail", {}) if isinstance(payload, dict) else {}
+            if isinstance(detail, dict) and detail.get("message"):
+                message = str(detail["message"])
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                message = f"{message} Retry after {retry_after} seconds."
+            raise requests.HTTPError(message, response=response)
         response.raise_for_status()
         return response.json()
 
