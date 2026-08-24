@@ -66,7 +66,7 @@ def default_parse_structured_choice_select_answer(
     documents = [
         doc
         for doc in document_relevance_list.documents
-        if doc.document_number <= num_choices
+        if 1 <= doc.document_number <= num_choices
     ]
     doc_numbers = [doc.document_number for doc in documents]
     doc_relevance_scores = [doc.relevance for doc in documents]

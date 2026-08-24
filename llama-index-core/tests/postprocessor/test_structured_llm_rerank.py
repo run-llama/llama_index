@@ -10,6 +10,7 @@ from llama_index.core.postprocessor.structured_llm_rerank import (
     StructuredLLMRerank,
     DocumentWithRelevance,
     DocumentRelevanceList,
+    default_parse_structured_choice_select_answer,
 )
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle, TextNode
@@ -136,3 +137,27 @@ def test_llm_rerank_errored_structured_predict(raise_on_failure: bool) -> None:
         )
         assert len(result_nodes) == top_n
         assert all(n.score == 0 for n in result_nodes)
+
+
+def test_parse_filters_out_of_range_document_numbers() -> None:
+    """document_number must be within 1..num_choices; 0 and > num_choices are dropped.
+
+    Regression: document_number=0 previously passed the upper-bound-only filter and
+    later mapped to nodes_batch[int(0) - 1] == nodes_batch[-1], silently reranking
+    the last node in the batch.
+    """
+    relevance_list = DocumentRelevanceList(
+        documents=[
+            DocumentWithRelevance(document_number=0, relevance=9),
+            DocumentWithRelevance(document_number=1, relevance=8),
+            DocumentWithRelevance(document_number=2, relevance=7),
+            DocumentWithRelevance(document_number=3, relevance=6),
+        ]
+    )
+
+    doc_numbers, doc_scores = default_parse_structured_choice_select_answer(
+        relevance_list, num_choices=2
+    )
+
+    assert doc_numbers == [1, 2]
+    assert doc_scores == [8, 7]
