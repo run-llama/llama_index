@@ -317,6 +317,44 @@ def test_pipeline_upserts_keep_all_nodes_per_doc() -> None:
     )
 
 
+def test_pipeline_upserts_failed_run_preserves_previous_version() -> None:
+    """Regression test: a failed UPSERTS re-ingest must not delete the previously indexed version."""
+
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError
+
+    docstore, vector_store = SimpleDocumentStore(), SimpleVectorStore()
+    ok = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+            MockEmbedding(embed_dim=8),
+        ],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    ok.run(documents=[Document(text="version one.", doc_id="doc1")])
+    indexed_before = set(vector_store.data.embedding_dict.keys())
+    assert len(indexed_before) > 0
+
+    failing = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+            RaisingTransform(),
+        ],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    with pytest.raises(RuntimeError):
+        failing.run(documents=[Document(text="version two.", doc_id="doc1")])
+
+    assert set(vector_store.data.embedding_dict.keys()) == indexed_before, "failed re-ingest deleted the previous version"
+
+
 @pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
 def test_pipeline_parallel_cache_populated() -> None:
     num_workers = 2
@@ -549,6 +587,45 @@ async def test_async_pipeline_upserts_keep_all_nodes_per_doc() -> None:
     assert {n.id_ for n in result} == {n.id_ for n in nodes}, (
         "all nodes sharing a ref_doc_id must be kept, not collapsed to one"
     )
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_failed_run_preserves_previous_version() -> None:
+    """Async counterpart of ``test_pipeline_upserts_failed_run_preserves_previous_version``."""
+
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError
+
+    docstore, vector_store = SimpleDocumentStore(), SimpleVectorStore()
+    ok = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+            MockEmbedding(embed_dim=8),
+        ],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    await ok.arun(documents=[Document(text="version one.", doc_id="doc1")])
+    indexed_before = set(vector_store.data.embedding_dict.keys())
+    assert len(indexed_before) > 0
+
+    failing = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+            RaisingTransform(),
+        ],
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+    with pytest.raises(RuntimeError):
+        await failing.arun(documents=[Document(text="version two.", doc_id="doc1")])
+
+    assert set(vector_store.data.embedding_dict.keys()) == indexed_before, "failed re-ingest deleted the previous version"
 
 
 @pytest.mark.asyncio
