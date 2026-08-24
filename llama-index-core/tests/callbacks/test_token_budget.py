@@ -72,3 +72,44 @@ def test_token_budget_via_callback_manager():
             CBEventType.LLM,
             payload={EventPayload.PROMPT: "p", EventPayload.COMPLETION: resp},
         )
+
+
+def test_null_usage_subfield_is_treated_as_missing():
+    """A provider reporting an explicit null usage sub-field must not crash. (#22806)"""
+    mock_tokenizer = Mock()
+    mock_tokenizer.return_value = [1, 2, 3, 4, 5]  # always 5 tokens
+
+    handler = TokenCountingHandler(tokenizer=mock_tokenizer)
+    response_object = CompletionResponse(
+        text="hello",
+        raw={"usage": {"prompt_tokens": None, "completion_tokens": 5, "total_tokens": 5}},
+    )
+    handler.on_event_end(
+        event_type=CBEventType.LLM,
+        payload={EventPayload.PROMPT: "hi", EventPayload.COMPLETION: response_object},
+    )
+
+    event = handler.llm_token_counts[-1]
+    assert event.prompt_token_count == 5  # null prompt_tokens fell back to the tokenizer
+    assert event.completion_token_count == 5  # non-null sub-field used as reported
+    assert event.total_token_count == 10
+
+
+def test_null_completion_subfield_is_treated_as_missing():
+    mock_tokenizer = Mock()
+    mock_tokenizer.return_value = [1, 2, 3, 4, 5]
+
+    handler = TokenCountingHandler(tokenizer=mock_tokenizer)
+    response_object = CompletionResponse(
+        text="hello",
+        raw={"usage": {"prompt_tokens": 7, "completion_tokens": None, "total_tokens": None}},
+    )
+    handler.on_event_end(
+        event_type=CBEventType.LLM,
+        payload={EventPayload.PROMPT: "hi", EventPayload.COMPLETION: response_object},
+    )
+
+    event = handler.llm_token_counts[-1]
+    assert event.prompt_token_count == 7  # non-null sub-field used as reported
+    assert event.completion_token_count == 5  # null completion_tokens fell back to the tokenizer
+    assert event.total_token_count == 12
