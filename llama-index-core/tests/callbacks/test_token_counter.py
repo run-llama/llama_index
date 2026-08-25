@@ -48,3 +48,21 @@ def test_on_event_end() -> None:
     # Embedding should be one (single token chunk)
     assert handler.total_llm_token_count == 2
     assert handler.total_embedding_token_count == 1
+
+
+def test_token_counting_with_explicit_none_usage():
+    from llama_index.core.callbacks.schema import EventPayload
+    from llama_index.core.callbacks.token_counting import get_llm_token_counts
+    from llama_index.core.utilities.token_counting import TokenCounter
+
+    class FakeCompletion:
+        text = "hello"
+        raw = {"usage": {"prompt_tokens": None, "completion_tokens": 5, "total_tokens": 5}}
+        additional_kwargs = {}
+
+    payload = {EventPayload.PROMPT: "hi", EventPayload.COMPLETION: FakeCompletion()}
+    event = get_llm_token_counts(TokenCounter(), payload, event_id="x")
+    assert event.completion_token_count == 5
+    assert event.prompt_token_count > 0
+    assert event.total_token_count == event.prompt_token_count + event.completion_token_count
+
