@@ -99,8 +99,8 @@ class Dispatcher(BaseModel):
     ):
         super().__init__(
             name=name,
-            event_handlers=event_handlers or [],
-            span_handlers=span_handlers or [NullSpanHandler()],
+            event_handlers=event_handlers if event_handlers is not None else [],
+            span_handlers=span_handlers if span_handlers is not None else [NullSpanHandler()],
             parent_name=parent_name,
             manager=manager,
             root_name=root_name,
