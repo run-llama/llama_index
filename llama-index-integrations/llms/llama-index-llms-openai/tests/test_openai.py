@@ -294,6 +294,22 @@ def mock_chat_completion_stream_v1(
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_o1_default_temperature_is_forced_to_one(MockSyncOpenAI: MagicMock) -> None:
+    """o1-class models reject temperature != 1.0; the default is forced."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(model="o1-mini")
+    assert llm.temperature == 1.0
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_o1_explicit_temperature_is_not_overwritten(MockSyncOpenAI: MagicMock) -> None:
+    """#22751: an explicitly-passed temperature must never be silently discarded."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(model="o1-mini", temperature=0.5)
+    assert llm.temperature == 0.5
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value

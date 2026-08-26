@@ -64,6 +64,24 @@ def test_init_and_properties(default_responses_llm):
     assert metadata.is_chat_model is True
 
 
+def test_o1_default_temperature_is_forced_to_one():
+    """o1-class models reject temperature != 1.0; the default is forced."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model="o1-mini", api_key="fake-api-key")
+    assert llm.temperature == 1.0
+
+
+def test_o1_explicit_temperature_is_not_overwritten():
+    """#22751: an explicitly-passed temperature must never be silently discarded."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(
+                model="o1-mini", temperature=0.5, api_key="fake-api-key"
+            )
+    assert llm.temperature == 0.5
+
+
 def test_get_model_name():
     """Test different model name formats are properly handled."""
     with patch("llama_index.llms.openai.responses.SyncOpenAI"):
