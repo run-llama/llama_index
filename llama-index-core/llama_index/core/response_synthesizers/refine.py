@@ -96,6 +96,18 @@ class DefaultRefineProgram(BasePydanticProgram):
     def output_cls(self) -> Type[BaseModel]:
         return StructuredRefineResponse
 
+    @property
+    def streams_partial_text(self) -> bool:
+        """
+        Whether `stream_call`/`astream_call` yield incremental text deltas.
+
+        When no `output_cls` is set there is no json structure to wait on, so each
+        yielded `StructuredRefineResponse.answer` is a single token delta rather than
+        a progressively-complete object. Callers must concatenate rather than take the
+        last value.
+        """
+        return self._output_cls is None
+
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
         if self._output_cls is not None:
             answer = self._llm.structured_predict(
@@ -147,16 +159,14 @@ class DefaultRefineProgram(BasePydanticProgram):
                 if answer is not None:
                     yield StructuredRefineResponse(answer=answer, query_satisfied=True)
         else:
-            answer = ""
-            # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-            # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-            # cases
+            # No output_cls means there is no json structure to wait on, so tokens can be
+            # forwarded as they arrive. Each yielded answer is a delta, not a cumulative
+            # answer -- see the `streams_partial_text` property.
             for token in self._llm.stream(
                 self._prompt,
                 **kwds,
             ):
-                answer += token
-            yield StructuredRefineResponse(answer=answer.strip(), query_satisfied=True)
+                yield StructuredRefineResponse(answer=token, query_satisfied=True)
 
     async def astream_call(
         self, *args: Any, **kwds: Any
@@ -183,19 +193,14 @@ class DefaultRefineProgram(BasePydanticProgram):
                             answer=answer, query_satisfied=True
                         )
             else:
-                answer = ""
-                # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-                # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-                # cases
+                # No output_cls means there is no json structure to wait on, so tokens can
+                # be forwarded as they arrive. Each yielded answer is a delta, not a
+                # cumulative answer -- see the `streams_partial_text` property.
                 async for token in await self._llm.astream(
                     self._prompt,
                     **kwds,
                 ):
-                    answer += token
-                if answer:
-                    yield StructuredRefineResponse(
-                        answer=answer.strip(), query_satisfied=True
-                    )
+                    yield StructuredRefineResponse(answer=token, query_satisfied=True)
 
         return gen()
 
@@ -284,6 +289,38 @@ class Refine(BaseSynthesizer):
         yield getattr(structured_response, attribute)
 
     @staticmethod
+    def _stream_attribute_from_object_generator(
+        generator: Generator, attribute: str
+    ) -> Generator:
+        """
+        For programs whose stream_call yields deltas rather than progressively-complete
+        objects (see `DefaultRefineProgram.streams_partial_text`), forward each chunk as
+        it arrives so the caller gets token-level streaming.
+        """
+        for obj in generator:
+            if obj is None:
+                continue
+            value = getattr(obj, attribute, None)
+            if value:
+                yield value
+
+    @staticmethod
+    async def _astream_attribute_from_object_generator(
+        generator: AsyncGenerator, attribute: str
+    ) -> AsyncGenerator:
+        """
+        For programs whose astream_call yields deltas rather than progressively-complete
+        objects (see `DefaultRefineProgram.streams_partial_text`), forward each chunk as
+        it arrives so the caller gets token-level streaming.
+        """
+        async for obj in generator:
+            if obj is None:
+                continue
+            value = getattr(obj, attribute, None)
+            if value:
+                yield value
+
+    @staticmethod
     async def _get_attribute_from_object_async_generator(
         generator: AsyncGenerator, structured_response: BaseModel | None, attribute: str
     ) -> AsyncGenerator:
@@ -349,6 +386,12 @@ class Refine(BaseSynthesizer):
                     **program_kwargs,
                     **response_kwargs,
                 )
+                if getattr(program, "streams_partial_text", False):
+                    # Deltas, not progressively-complete objects: forward them as they
+                    # arrive instead of draining to a single value.
+                    return self._stream_attribute_from_object_generator(
+                        structured_response_gen, "answer"
+                    )
                 structured_response = None
                 for sr in structured_response_gen:
                     assert not isinstance(sr, list)
@@ -399,6 +442,12 @@ class Refine(BaseSynthesizer):
                     **program_kwargs,
                     **response_kwargs,
                 )
+                if getattr(program, "streams_partial_text", False):
+                    # Deltas, not progressively-complete objects: forward them as they
+                    # arrive instead of draining to a single value.
+                    return self._astream_attribute_from_object_generator(
+                        structured_response_gen, "answer"
+                    )
                 structured_response = None
                 async for sr in structured_response_gen:
                     assert not isinstance(sr, list)
