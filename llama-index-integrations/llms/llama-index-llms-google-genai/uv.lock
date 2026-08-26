@@ -1872,7 +1872,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-google-genai"
-version = "0.9.6"
+version = "0.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "google-genai" },
