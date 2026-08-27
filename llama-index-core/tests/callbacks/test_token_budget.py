@@ -82,7 +82,9 @@ def test_null_usage_subfield_is_treated_as_missing():
     handler = TokenCountingHandler(tokenizer=mock_tokenizer)
     response_object = CompletionResponse(
         text="hello",
-        raw={"usage": {"prompt_tokens": None, "completion_tokens": 5, "total_tokens": 5}},
+        raw={
+            "usage": {"prompt_tokens": None, "completion_tokens": 5, "total_tokens": 5}
+        },
     )
     handler.on_event_end(
         event_type=CBEventType.LLM,
@@ -90,7 +92,9 @@ def test_null_usage_subfield_is_treated_as_missing():
     )
 
     event = handler.llm_token_counts[-1]
-    assert event.prompt_token_count == 5  # null prompt_tokens fell back to the tokenizer
+    assert (
+        event.prompt_token_count == 5
+    )  # null prompt_tokens fell back to the tokenizer
     assert event.completion_token_count == 5  # non-null sub-field used as reported
     assert event.total_token_count == 10
 
@@ -102,7 +106,13 @@ def test_null_completion_subfield_is_treated_as_missing():
     handler = TokenCountingHandler(tokenizer=mock_tokenizer)
     response_object = CompletionResponse(
         text="hello",
-        raw={"usage": {"prompt_tokens": 7, "completion_tokens": None, "total_tokens": None}},
+        raw={
+            "usage": {
+                "prompt_tokens": 7,
+                "completion_tokens": None,
+                "total_tokens": None,
+            }
+        },
     )
     handler.on_event_end(
         event_type=CBEventType.LLM,
@@ -111,5 +121,7 @@ def test_null_completion_subfield_is_treated_as_missing():
 
     event = handler.llm_token_counts[-1]
     assert event.prompt_token_count == 7  # non-null sub-field used as reported
-    assert event.completion_token_count == 5  # null completion_tokens fell back to the tokenizer
+    assert (
+        event.completion_token_count == 5
+    )  # null completion_tokens fell back to the tokenizer
     assert event.total_token_count == 12
