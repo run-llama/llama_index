@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from mcp.client.session import ClientSession
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.mcpserver import MCPServer, Context
 from pydantic import BaseModel
 
 from llama_index.core.tools import FunctionTool
@@ -79,8 +79,8 @@ def workflow_as_mcp(
     workflow_name: Optional[str] = None,
     workflow_description: Optional[str] = None,
     start_event_model: Optional[BaseModel] = None,
-    **fastmcp_init_kwargs: Any,
-) -> FastMCP:
+    **mcp_server_init_kwargs: Any,
+) -> MCPServer:
     """
     Convert a workflow to an MCP app.
 
@@ -97,14 +97,14 @@ def workflow_as_mcp(
         start_event_model (optional):
             The start event model of the workflow. Can be a `BaseModel` or a `StartEvent` class.
             Defaults to the workflow's custom `StartEvent` class.
-        **fastmcp_init_kwargs:
-            Additional keyword arguments to pass to the FastMCP constructor.
+        **mcp_server_init_kwargs:
+            Additional keyword arguments to pass to the MCPServer constructor.
 
     Returns:
         The MCP app object.
 
     """
-    app = FastMCP(**fastmcp_init_kwargs)
+    app = MCPServer(**mcp_server_init_kwargs)
 
     # Dynamically get the start event class -- this is a bit of a hack
     StartEventCLS = start_event_model or workflow._start_event_class
@@ -134,7 +134,7 @@ def workflow_as_mcp(
 
         async for event in handler.stream_events():
             if not isinstance(event, StopEvent):
-                await context.log("info", message=event.model_dump_json())
+                await context.log("info", data=event.model_dump_json())
 
         return await handler
 
