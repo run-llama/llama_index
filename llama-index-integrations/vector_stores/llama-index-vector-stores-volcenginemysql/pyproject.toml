@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-volcengine-mysql"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index vector_stores Volcengine MySQL integration"
 authors = [
     {name = "Siyu Chen", email = "fishmage33@gmail.com"},
