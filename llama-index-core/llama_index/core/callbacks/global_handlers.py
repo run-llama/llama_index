@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Optional
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.simple_llm_handler import SimpleLLMHandler
@@ -100,6 +101,21 @@ def create_global_handler(
             )
         handler = argilla_callback_handler(**eval_params)
     elif eval_mode == "langfuse":
+        warnings.warn(
+            "The `set_global_handler('langfuse')` path is deprecated. "
+            "Migrate to langfuse>=4.7 with the instrumentation module:\n"
+            "  pip install langfuse>=4.7 openinference-instrumentation-llama-index\n"
+            "  from openinference.instrumentation.llama_index import LlamaIndexInstrumentor\n"
+            "  LlamaIndexInstrumentor().instrument()\n"
+            "\n"
+            "NOTE: The instrumentor emits OpenTelemetry spans (OpenInference attributes), "
+            "structurally different from legacy callback events. "
+            "Do NOT run both simultaneously — this produces duplicate traces.\n"
+            "\n"
+            "See https://docs.llamaindex.ai/en/stable/examples/observability/Langfuse-Instrumentation/",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         try:
             from llama_index.callbacks.langfuse import (
                 langfuse_callback_handler,
