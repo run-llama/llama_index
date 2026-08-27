@@ -149,7 +149,8 @@ def test_llm_rerank_errored_structured_predict(raise_on_failure: bool) -> None:
 
 
 def test_parse_filters_out_of_range_document_numbers() -> None:
-    """document_number must be within 1..num_choices; 0 and > num_choices are dropped.
+    """
+    document_number must be within 1..num_choices; 0 and > num_choices are dropped.
 
     Regression: document_number=0 previously passed the upper-bound-only filter and
     later mapped to nodes_batch[int(0) - 1] == nodes_batch[-1], silently reranking
