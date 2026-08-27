@@ -15,3 +15,19 @@ def test_metadata_replacement() -> None:
 
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "This is a another test."
+
+
+def test_metadata_replacement_none_fallback() -> None:
+    """Test that explicit None in target metadata key falls back to original content (#22772)."""
+    node = TextNode(
+        text="Original text", metadata={"key": None}
+    )
+
+    nodes = [NodeWithScore(node=node, score=1.0)]
+
+    postprocessor = MetadataReplacementPostProcessor(target_metadata_key="key")
+
+    nodes = postprocessor.postprocess_nodes(nodes)
+
+    assert len(nodes) == 1
+    assert nodes[0].node.get_content() == "Original text"
