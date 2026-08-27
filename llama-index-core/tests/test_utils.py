@@ -353,3 +353,34 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_globals_helper_stopwords_fallback_on_permission_error(tmp_path: Path) -> None:
+    """
+    GlobalsHelper.stopwords reads bundled plain-text file when nltk raises
+    PermissionError (st_nlink > 1 hardlink check introduced in nltk 3.10.3).
+    """
+    from llama_index.core.utils import GlobalsHelper
+
+    # Minimal English stopwords bundled file
+    sw_dir = tmp_path / "corpora" / "stopwords"
+    sw_dir.mkdir(parents=True)
+    (sw_dir / "english").write_text("the\na\nan\n", encoding="utf-8")
+
+    helper = GlobalsHelper()
+    # Reset class-level cache so the property body actually runs
+    helper._stopwords = None
+    helper._punkt_tokenizer = None
+    helper._nltk_data_dir = str(tmp_path)
+
+    with mock.patch.object(helper, "wait_for_nltk_check"):
+        with mock.patch(
+            "nltk.corpus.stopwords.words",
+            side_effect=PermissionError(
+                "Security Violation [pathsec]: multiply-linked file"
+            ),
+        ):
+            with mock.patch("nltk.tokenize.PunktSentenceTokenizer"):
+                result = helper.stopwords
+
+    assert result == ["the", "a", "an"]
