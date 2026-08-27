@@ -302,6 +302,28 @@ class TestWeaviateSync:
 
         assert results.similarities[0] > results.similarities[1]
 
+    def test_query_with_node_ids(self, vector_store_with_sample_nodes):
+        all_nodes = vector_store_with_sample_nodes.query(
+            VectorStoreQuery(
+                query_embedding=[0.3, 0.0, 0.0],
+                similarity_top_k=10,
+                mode=VectorStoreQueryMode.DEFAULT,
+            )
+        )
+        target_node_id = all_nodes.ids[0]
+
+        query = VectorStoreQuery(
+            query_embedding=[0.3, 0.0, 0.0],
+            similarity_top_k=10,
+            node_ids=[target_node_id],
+            mode=VectorStoreQueryMode.DEFAULT,
+        )
+
+        results = vector_store_with_sample_nodes.query(query)
+
+        assert len(results.nodes) == 1
+        assert results.ids[0] == target_node_id
+
     def test_hybrid_search(self, vector_store_with_sample_nodes):
         query = VectorStoreQuery(
             query_embedding=[0.0, 0.3, 0.0],
