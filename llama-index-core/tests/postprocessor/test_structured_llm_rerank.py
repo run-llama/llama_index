@@ -1,9 +1,11 @@
 """Test LLM reranker."""
 
+import asyncio
 from typing import Any, List
 from unittest.mock import patch
 import pytest
 
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.postprocessor.structured_llm_rerank import (
@@ -43,6 +45,13 @@ def mock_llmpredictor_structured_predict(
         for c, s in choices_and_scores
     ]
     return DocumentRelevanceList(documents=doc_with_relvance)
+
+
+async def amock_llmpredictor_structured_predict(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> DocumentRelevanceList:
+    """Patch llm predictor astructured_predict."""
+    return mock_llmpredictor_structured_predict(self, prompt, **prompt_args)
 
 
 def mock_format_node_batch_fn(nodes: List[BaseNode]) -> str:
@@ -161,3 +170,144 @@ def test_parse_filters_out_of_range_document_numbers() -> None:
 
     assert doc_numbers == [1, 2]
     assert doc_scores == [8, 7]
+
+
+async def amock_errored_structured_predict(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
+    return "fake error"
+
+
+@patch.object(
+    MockFunctionCallingLLM,
+    "astructured_predict",
+    amock_llmpredictor_structured_predict,
+)
+@pytest.mark.asyncio
+async def test_allm_rerank() -> None:
+    """Test async LLM rerank matches the sync ranking."""
+    nodes = [
+        TextNode(text="Test"),
+        TextNode(text="Test2"),
+        TextNode(text="Test3"),
+        TextNode(text="Test4"),
+        TextNode(text="Test5"),
+        TextNode(text="Test6"),
+        TextNode(text="Test7"),
+        TextNode(text="Test8"),
+    ]
+    nodes_with_score = [NodeWithScore(node=n) for n in nodes]
+
+    # choice batch size 4 (so two batches)
+    # take top-3 across all data
+    llm = MockFunctionCallingLLM()
+    llm.metadata.is_function_calling_model = True
+    llm_rerank = StructuredLLMRerank(
+        llm=llm,
+        format_node_batch_fn=mock_format_node_batch_fn,
+        choice_batch_size=4,
+        top_n=3,
+    )
+    query_str = "What is?"
+    result_nodes = await llm_rerank.apostprocess_nodes(
+        nodes_with_score, QueryBundle(query_str)
+    )
+    assert len(result_nodes) == 3
+    assert result_nodes[0].node.get_content() == "Test7"
+    assert result_nodes[1].node.get_content() == "Test5"
+    assert result_nodes[2].node.get_content() == "Test3"
+
+
+@patch.object(
+    MockFunctionCallingLLM,
+    "astructured_predict",
+    amock_errored_structured_predict,
+)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("raise_on_failure", [True, False])
+async def test_allm_rerank_errored_structured_predict(raise_on_failure: bool) -> None:
+    """Test async LLM rerank with errored structured predict."""
+    nodes = [
+        TextNode(text="Test"),
+        TextNode(text="Test2"),
+        TextNode(text="Test3"),
+        TextNode(text="Test4"),
+    ]
+    nodes_with_score = [NodeWithScore(node=n) for n in nodes]
+
+    llm = MockFunctionCallingLLM()
+    llm.metadata.is_function_calling_model = True
+    top_n = 3
+    llm_rerank = StructuredLLMRerank(
+        llm=llm,
+        format_node_batch_fn=mock_format_node_batch_fn,
+        choice_batch_size=4,
+        top_n=top_n,
+        raise_on_structured_prediction_failure=raise_on_failure,
+    )
+    query_str = "What is?"
+    if raise_on_failure:
+        with pytest.raises(ValueError, match="Structured prediction failed for nodes"):
+            await llm_rerank.apostprocess_nodes(
+                nodes_with_score, QueryBundle(query_str)
+            )
+    else:
+        result_nodes = await llm_rerank.apostprocess_nodes(
+            nodes_with_score, QueryBundle(query_str)
+        )
+        assert len(result_nodes) == top_n
+        assert all(n.score == 0 for n in result_nodes)
+
+
+@patch.object(
+    MockFunctionCallingLLM,
+    "astructured_predict",
+    amock_llmpredictor_structured_predict,
+)
+@pytest.mark.asyncio
+async def test_allm_rerank_runs_batches_concurrently() -> None:
+    """Async rerank should have all batches in flight at once, not one at a time."""
+    # 6 nodes / batch size 2 -> 3 batches. Deliberately kept BELOW
+    # async_utils.DEFAULT_NUM_WORKERS (4) so that the assertion measures this
+    # method's dispatch, not run_jobs' semaphore ceiling.
+    n_batches = 3
+    nodes_with_score = [
+        NodeWithScore(node=TextNode(text=f"Test{i}" if i > 1 else "Test"))
+        for i in range(1, 7)
+    ]
+    assert n_batches < DEFAULT_NUM_WORKERS
+
+    llm = MockFunctionCallingLLM()
+    llm.metadata.is_function_calling_model = True
+    llm_rerank = StructuredLLMRerank(
+        llm=llm,
+        format_node_batch_fn=mock_format_node_batch_fn,
+        choice_batch_size=2,
+        top_n=3,
+    )
+
+    in_flight = 0
+    max_in_flight = 0
+
+    original = amock_llmpredictor_structured_predict
+
+    async def tracking_predict(
+        self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> DocumentRelevanceList:
+        nonlocal in_flight, max_in_flight
+        in_flight += 1
+        max_in_flight = max(max_in_flight, in_flight)
+        try:
+            # yield control so a sequential implementation cannot overlap
+            await asyncio.sleep(0)
+            return await original(self, prompt, **prompt_args)
+        finally:
+            in_flight -= 1
+
+    with patch.object(MockFunctionCallingLLM, "astructured_predict", tracking_predict):
+        await llm_rerank.apostprocess_nodes(nodes_with_score, QueryBundle("What is?"))
+
+    assert max_in_flight == n_batches, (
+        f"expected all {n_batches} batches in flight concurrently, "
+        f"saw at most {max_in_flight}"
+    )
