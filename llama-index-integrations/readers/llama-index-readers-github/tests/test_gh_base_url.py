@@ -18,6 +18,10 @@ def github_reader():
     [
         ("https://github.com/owner/repo/blob/main/file.py", "https://github.com/"),
         (
+            "https://api.github.com/repos/owner/repo/git/blobs/abc123",
+            "https://github.com/",
+        ),
+        (
             "https://github-enterprise.com/owner/repo/blob/main/file.py",
             "https://github-enterprise.com/",
         ),

@@ -860,6 +860,9 @@ class GithubRepositoryReader(BaseReader):
         return blobs_and_full_paths
 
     def _get_base_url(self, blob_url):
+        if blob_url.startswith("https://api.github.com/"):
+            return "https://github.com/"
+
         match = re.match(r"(https://[^/]+\.com/)", blob_url)
         if match:
             return match.group(1)

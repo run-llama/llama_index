@@ -114,8 +114,18 @@ def test_timeout_and_retries_passed_to_request():
 
         # Load data via both branch and sha to exercise those functions in the
         # GithubClient
-        reader.load_data(branch="main")
-        reader.load_data(commit_sha="a11a953e738cbda93335ede83f012914d53dc4f7")
+        branch_documents = reader.load_data(branch="main")
+        commit_documents = reader.load_data(
+            commit_sha="a11a953e738cbda93335ede83f012914d53dc4f7"
+        )
+
+        assert branch_documents[0].metadata["url"] == (
+            "https://github.com/run-llama/llama_index/blob/main/README.md"
+        )
+        assert commit_documents[0].metadata["url"] == (
+            "https://github.com/run-llama/llama_index/blob/"
+            "a11a953e738cbda93335ede83f012914d53dc4f7/README.md"
+        )
 
         mock_request.assert_called()
         for call in mock_request.call_args_list:
