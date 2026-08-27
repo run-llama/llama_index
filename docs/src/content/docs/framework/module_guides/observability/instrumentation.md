@@ -281,7 +281,7 @@ event handlers as well as “local” ones.
 Consider the project structure defined below. There are 3 `dispatcher`'s: one at
 the top-level of the `project` and then two others at the individual sub-modules
 `llama1` and `llama2`. With this setup, any `EventHandler`’s attached to the
-project root’s `dispatcher` will be be subscribed to all `Event`'s that occur in
+project root’s `dispatcher` will be subscribed to all `Event`'s that occur in
 the execution of code in `llama1` and `llama2`. On the other hand, `EventHandler`'s
 defined in the respective `llama<x>` sub modules will only be subscribed to the
 `Event`'s that occur within their respective sub-module execution.

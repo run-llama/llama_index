@@ -16,6 +16,7 @@ from llama_index.core.base.llms.types import (
     ToolCallBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
@@ -934,6 +935,53 @@ def test_cached_content_initialization() -> None:
 
     # Verify cached_content is stored in generation config
     assert llm._generation_config["cached_content"] == cached_content_value
+
+
+def test_temperature_defaults() -> None:
+    """Test that GoogleGenAI initialization sets temperature defaults correctly based on model."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+
+        # 1. Non-Gemini 3 models should get DEFAULT_TEMPERATURE (0.1)
+        llm_legacy = GoogleGenAI(
+            model="gemini-2.5-flash",
+            api_key="test-key",
+        )
+        assert llm_legacy.temperature == DEFAULT_TEMPERATURE
+        assert llm_legacy._generation_config["temperature"] == DEFAULT_TEMPERATURE
+
+        # 2. Gemini 3 models should leave temperature as None
+        llm_gemini3 = GoogleGenAI(
+            model="gemini-3-flash-preview",
+            api_key="test-key",
+        )
+        assert llm_gemini3.temperature is None
+        assert llm_gemini3._generation_config["temperature"] is None
+
+
+def test_temperature_explicitly_set() -> None:
+    """Test that GoogleGenAI initialization preserves custom temperature."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+
+        llm = GoogleGenAI(
+            model="gemini-3-flash-preview",
+            api_key="test-key",
+            temperature=0.7,
+        )
+
+        # Verify temperature field is 0.7
+        assert llm.temperature == 0.7
+        # Verify temperature is correctly passed in the generation config dict
+        assert llm._generation_config["temperature"] == 0.7
 
 
 def test_cached_content_in_response() -> None:
@@ -1998,6 +2046,34 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_chat_message_to_gemini_thought_signatures() -> None:
+    """Test that chat_message_to_gemini does not aggressively overwrite thought_signatures."""
+    from llama_index.llms.google_genai.utils import chat_message_to_gemini
+
+    # existing thought_signature block
+    msg = ChatMessage(
+        role=MessageRole.MODEL,
+        blocks=[
+            ThinkingBlock(
+                content="thinking process",
+                additional_information={"thought_signature": "signature_123"},
+            ),
+            TextBlock(text="final answer"),
+        ],
+        # no thought_signatures stored separately here - these would normally
+        # overwrite existing blocks.
+        additional_kwargs={},
+    )
+
+    content, _ = await chat_message_to_gemini(msg, client=None, file_mode="hybrid")
+
+    assert len(content.parts) == 2
+    assert content.parts[0].thought is True
+    assert content.parts[0].thought_signature == "signature_123"
+    assert content.parts[1].text == "final answer"
 
 
 @pytest.mark.asyncio
