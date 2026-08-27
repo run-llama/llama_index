@@ -96,6 +96,8 @@ integrations that build on the core are both accepted and highly encouraged! See
 
 New integrations should meaningfully integrate with existing LlamaIndex framework components. At the discretion of LlamaIndex maintainers, some integrations may be declined.
 
+- **Community Showcase**: [Hybrid RAG GitHub Action](https://github.com/Cagrik34/hybrid-rag-action) — Zero-dependency GitHub Action & Custom Retriever combining Okapi BM25 and dense embeddings with RRF for automated repo triage.
+
 ## 📄 Documentation
 
 Full documentation can be found [here](https://developers.llamaindex.ai/python/framework/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
