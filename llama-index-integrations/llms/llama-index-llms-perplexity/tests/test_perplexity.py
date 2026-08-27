@@ -43,6 +43,14 @@ def test_get_all_kwargs():
     assert all_kwargs["temperature"] == 0.7
 
 
+def test_integration_header_can_be_overridden():
+    llm = Perplexity(api_key="dummy")
+    custom = Perplexity(api_key="dummy", headers={"X-Pplx-Integration": "custom"})
+
+    assert llm.headers["X-Pplx-Integration"] == "llamaindex"
+    assert custom.headers["X-Pplx-Integration"] == "custom"
+
+
 def test_chat(perplexity_llm):
     messages = [
         ChatMessage(role="system", content="Be precise and concise."),

@@ -113,6 +113,7 @@ class Perplexity(LLM):
         output_parser: Optional[BaseOutputParser] = None,
         enable_search_classifier: bool = False,
         timeout: float = 30.0,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> None:
         api_key = api_key or getenv("PPLX_API_KEY")
@@ -121,6 +122,8 @@ class Perplexity(LLM):
             "accept": "application/json",
             "content-type": "application/json",
             "authorization": f"Bearer {api_key}",
+            "X-Pplx-Integration": "llamaindex",
+            **(headers or {}),
         }
         super().__init__(
             model=model,
