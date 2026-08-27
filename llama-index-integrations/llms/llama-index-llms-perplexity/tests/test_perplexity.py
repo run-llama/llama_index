@@ -3,7 +3,9 @@ import os
 from collections.abc import AsyncGenerator, AsyncIterator
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
+import requests
 from tenacity import RetryError
 
 from llama_index.core.base.llms.types import (
@@ -43,12 +45,17 @@ def test_get_all_kwargs():
     assert all_kwargs["temperature"] == 0.7
 
 
-def test_integration_header_can_be_overridden():
-    llm = Perplexity(api_key="dummy")
-    custom = Perplexity(api_key="dummy", headers={"X-Pplx-Integration": "custom"})
+@pytest.mark.parametrize(
+    ("headers", "expected"),
+    [(None, "llamaindex"), ({"x-pplx-integration": "custom"}, "custom")],
+)
+def test_integration_header_can_be_overridden(headers, expected):
+    llm = Perplexity(api_key="dummy", headers=headers)
+    sync_request = requests.Request("POST", "https://api.perplexity.ai", headers=llm.headers).prepare()
+    async_request = httpx.Request("POST", "https://api.perplexity.ai", headers=llm.headers)
 
-    assert llm.headers["X-Pplx-Integration"] == "llamaindex"
-    assert custom.headers["X-Pplx-Integration"] == "custom"
+    assert sync_request.headers["x-pplx-integration"] == expected
+    assert async_request.headers.get_list("x-pplx-integration") == [expected]
 
 
 def test_chat(perplexity_llm):
