@@ -147,16 +147,14 @@ class DefaultRefineProgram(BasePydanticProgram):
                 if answer is not None:
                     yield StructuredRefineResponse(answer=answer, query_satisfied=True)
         else:
-            answer = ""
-            # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-            # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-            # cases
+            # No output_cls means there is no json structure to wait on, so tokens can be
+            # forwarded as they arrive. Each yielded answer is a delta, not a cumulative
+            # answer.
             for token in self._llm.stream(
                 self._prompt,
                 **kwds,
             ):
-                answer += token
-            yield StructuredRefineResponse(answer=answer.strip(), query_satisfied=True)
+                yield StructuredRefineResponse(answer=token, query_satisfied=True)
 
     async def astream_call(
         self, *args: Any, **kwds: Any
@@ -183,19 +181,14 @@ class DefaultRefineProgram(BasePydanticProgram):
                             answer=answer, query_satisfied=True
                         )
             else:
-                answer = ""
-                # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-                # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-                # cases
+                # No output_cls means there is no json structure to wait on, so tokens can
+                # be forwarded as they arrive. Each yielded answer is a delta, not a
+                # cumulative answer.
                 async for token in await self._llm.astream(
                     self._prompt,
                     **kwds,
                 ):
-                    answer += token
-                if answer:
-                    yield StructuredRefineResponse(
-                        answer=answer.strip(), query_satisfied=True
-                    )
+                    yield StructuredRefineResponse(answer=token, query_satisfied=True)
 
         return gen()
 
@@ -349,6 +342,14 @@ class Refine(BaseSynthesizer):
                     **program_kwargs,
                     **response_kwargs,
                 )
+                if (
+                    isinstance(program, DefaultRefineProgram)
+                    and self._output_cls is None
+                ):
+                    # Each yielded answer is a token delta, not a progressively-complete
+                    # object: forward chunks as they arrive instead of draining to a
+                    # single value.
+                    return (sr.answer for sr in structured_response_gen)
                 structured_response = None
                 for sr in structured_response_gen:
                     assert not isinstance(sr, list)
@@ -399,6 +400,14 @@ class Refine(BaseSynthesizer):
                     **program_kwargs,
                     **response_kwargs,
                 )
+                if (
+                    isinstance(program, DefaultRefineProgram)
+                    and self._output_cls is None
+                ):
+                    # Each yielded answer is a token delta, not a progressively-complete
+                    # object: forward chunks as they arrive instead of draining to a
+                    # single value.
+                    return (sr.answer async for sr in structured_response_gen)
                 structured_response = None
                 async for sr in structured_response_gen:
                     assert not isinstance(sr, list)
