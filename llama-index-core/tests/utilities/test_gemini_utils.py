@@ -7,7 +7,8 @@ from llama_index.core.utilities.gemini_utils import (
 
 
 def test_merge_neighboring_same_role_messages_does_not_mutate_input() -> None:
-    """Merging must not mutate the caller's input messages.
+    """
+    Merging must not mutate the caller's input messages.
 
     Regression: merged_content aliased current_message.blocks, so extend() mutated
     the caller's first message in place. Re-running the merge on the same list then
