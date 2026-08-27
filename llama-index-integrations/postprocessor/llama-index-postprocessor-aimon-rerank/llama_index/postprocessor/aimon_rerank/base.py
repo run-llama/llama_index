@@ -39,7 +39,7 @@ class AIMonRerank(BaseNodePostprocessor):
         )
         try:
             api_key = api_key or os.environ["AIMON_API_KEY"]
-        except IndexError:
+        except KeyError:
             raise ValueError(
                 "Must pass in AIMon API key or specify via AIMON_API_KEY environment variable"
             )
