@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 def _function_tool_accepts_kwargs(tool: FunctionTool, arguments: dict) -> bool:
     """Check whether a function tool can receive its generated arguments as kwargs."""
     try:
-        signature = inspect.signature(tool._real_fn)
+        signature = inspect.signature(tool.real_fn)
     except (TypeError, ValueError):
         return True
 
