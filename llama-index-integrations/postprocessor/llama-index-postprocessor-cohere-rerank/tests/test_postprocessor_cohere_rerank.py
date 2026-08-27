@@ -103,3 +103,12 @@ def test_max_retries_parameter():
 
         reranker_default = CohereRerank(api_key="test_key")
         assert reranker_default.max_retries == 10
+
+
+def test_missing_api_key_raises_value_error():
+    """Test that missing api_key raises ValueError when environment variable is not set (#22774)."""
+    import pytest
+
+    with patch.dict("os.environ", {}, clear=True):
+        with pytest.raises(ValueError, match="Must pass in cohere api key"):
+            CohereRerank(api_key=None)
