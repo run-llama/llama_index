@@ -263,7 +263,8 @@ def test_enable_sse():
 
 @pytest.mark.asyncio
 async def test_streamable_http_tuple_unpack():
-    """Regression test for #22655: streamable_http_client yields 2-tuple in mcp 2.0.
+    """
+    Regression test for #22655: streamable_http_client yields 2-tuple in mcp 2.0.
 
     Previously _run_session unpacked ``(read, write, _)``, which fails when
     streamable_http_client yields exactly two items under mcp >= 2.0.0.
@@ -278,6 +279,7 @@ async def test_streamable_http_tuple_unpack():
     class FakeACM:
         async def __aenter__(self):
             return (fake_read, fake_write)
+
         async def __aexit__(self, *args):
             pass
 
@@ -289,16 +291,19 @@ async def test_streamable_http_tuple_unpack():
         def __init__(self, read, write, read_timeout_seconds, sampling_callback):
             self.read = read
             self.write = write
+
         async def __aenter__(self):
             return mock_session_instance
+
         async def __aexit__(self, *args):
             pass
 
-    with patch(
-        "llama_index.tools.mcp.client.streamable_http_client",
-        return_value=FakeACM(),
-    ) as mock_shc, patch(
-        "llama_index.tools.mcp.client.ClientSession", MockClientSession
+    with (
+        patch(
+            "llama_index.tools.mcp.client.streamable_http_client",
+            return_value=FakeACM(),
+        ) as mock_shc,
+        patch("llama_index.tools.mcp.client.ClientSession", MockClientSession),
     ):
         async with client._run_session() as session:
             pass
