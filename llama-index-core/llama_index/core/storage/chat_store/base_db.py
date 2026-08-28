@@ -73,6 +73,25 @@ class AsyncDBChatStore(BaseModel):
     ) -> None:
         """Set all messages for a key (replacing existing ones) with the specified status (async)."""
 
+    async def get_message_by_id(
+        self,
+        key: str,
+        id_: str,
+        status: Optional[MessageStatus] = MessageStatus.ACTIVE,
+    ) -> Optional[ChatMessage]:
+        """
+        Get a single message for a key by its `ChatMessage.id_` (async).
+
+        Returns None when no message under that key carries the id. Concrete
+        implementations are free to push the match down into the database; this
+        default reads the key's messages back and compares in Python, which is
+        correct whatever the backend stores them in.
+        """
+        for message in await self.get_messages(key, status=status):
+            if message.id_ == id_:
+                return message
+        return None
+
     @abstractmethod
     async def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete a specific message by ID and return it (async)."""
