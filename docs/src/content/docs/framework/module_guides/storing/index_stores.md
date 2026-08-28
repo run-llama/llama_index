@@ -13,11 +13,23 @@ They can be persisted to (and loaded from) disk by calling `index_store.persist(
 
 ### MongoDB Index Store
 
-Similarly to document stores, we can also use `MongoDB` as the storage backend of the index store.
+You can also use MongoDB as the storage backend for the index store.
+Before you begin, install the integration package by running the following command:
+
+```bash
+pip install llama-index-storage-index-store-mongodb
+```
+
+Then, use the following code to create a `MongoIndexStore`, connect to
+your MongoDB deployment, and build or load a `VectorStoreIndex`:
 
 ```python
 from llama_index.storage.index_store.mongodb import MongoIndexStore
-from llama_index.core import VectorStoreIndex
+from llama_index.core import (
+    VectorStoreIndex,
+    StorageContext,
+    load_index_from_storage,
+)
 
 # create (or load) index store
 index_store = MongoIndexStore.from_uri(uri="<mongodb+srv://...>")
@@ -25,25 +37,29 @@ index_store = MongoIndexStore.from_uri(uri="<mongodb+srv://...>")
 # create storage context
 storage_context = StorageContext.from_defaults(index_store=index_store)
 
-# build index
+# build index from your parsed nodes
 index = VectorStoreIndex(nodes, storage_context=storage_context)
 
-# or alternatively, load index
-from llama_index.core import load_index_from_storage
-
+# or alternatively, load an existing index
 index = load_index_from_storage(storage_context)
 ```
 
-Under the hood, `MongoIndexStore` connects to a fixed MongoDB database and initializes new collections (or loads existing collections) for your index metadata.
+`MongoIndexStore` connects to a MongoDB database and initializes new collections
+(or loads existing collections) for your index metadata.
 
-> Note: You can configure the `db_name` and `namespace` when instantiating `MongoIndexStore`, otherwise they default to `db_name="db_docstore"` and `namespace="docstore"`.
+You can use either a self-managed MongoDB deployment or a MongoDB Atlas cluster.
+To learn how to retrieve a connection string, see
+[Connection Strings](https://www.mongodb.com/docs/manual/reference/connection-string/)
+in the MongoDB documentation.
 
-Note that it's not necessary to call `storage_context.persist()` (or `index_store.persist()`) when using an `MongoIndexStore`
+> Note: You can configure the `db_name`, `namespace`, and `collection_suffix` when instantiating `MongoIndexStore`. Otherwise, they default to `db_name="db_docstore"`, `namespace="index_store"`, and `collection_suffix="/data"`, and `MongoIndexStore` writes to the collection `index_store/data` in the `db_docstore` database
+
+You don't need to call `storage_context.persist()` (or `index_store.persist()`) when using an `MongoIndexStore`
 since data is persisted by default.
 
-You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoIndexStore` with an existing `db_name` and `collection_name`.
+To reconnect to your collections and reload the index, re-initialize a `MongoIndexStore` with the same `db_name`, `namespace`, and `collection_suffix` values.
 
-A more complete example can be found [here](/python/examples/docstore/mongodocstoredemo)
+For a more complete example, see the [MongoDB docstore demo](/python/examples/docstore/mongodocstoredemo).
 
 ### Redis Index Store
 
