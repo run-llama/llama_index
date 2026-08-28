@@ -89,3 +89,15 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_split_token_does_not_overflow_when_stripped() -> None:
+    """Test that stripped chunks do not exceed chunk_size when leading space removal changes token count."""
+    text = "The quick brown fox jumps over the lazy dog. " * 4
+    tokenizer = tiktoken.get_encoding("gpt2")
+    splitter = TokenTextSplitter(
+        chunk_size=12, chunk_overlap=4, tokenizer=tokenizer.encode
+    )
+    chunks = splitter.split_text(text)
+    for chunk in chunks:
+        assert len(tokenizer.encode(chunk)) <= 12

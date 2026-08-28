@@ -225,6 +225,12 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                     else "".join(cur_chunk).strip()
                 )
                 if chunk:
+                    # Stripping leading whitespace can increase token count with some BPE tokenizers
+                    if not self.keep_whitespaces:
+                        while len(cur_chunk) > 1 and len(self._tokenizer(chunk)) > chunk_size:
+                            first_chunk = cur_chunk.pop(0)
+                            cur_len -= len(self._tokenizer(first_chunk))
+                            chunk = "".join(cur_chunk).strip()
                     chunks.append(chunk)
 
                 # start a new chunk with overlap
@@ -246,6 +252,11 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
         )
         if chunk:
+            if not self.keep_whitespaces:
+                while len(cur_chunk) > 1 and len(self._tokenizer(chunk)) > chunk_size:
+                    first_chunk = cur_chunk.pop(0)
+                    cur_len -= len(self._tokenizer(first_chunk))
+                    chunk = "".join(cur_chunk).strip()
             chunks.append(chunk)
 
         return chunks
