@@ -12,6 +12,7 @@ from llama_index.core.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
+    GlobalsHelper,
     aretry_on_exceptions_with_backoff,
     _get_colored_text,
     get_cache_dir,
@@ -353,3 +354,71 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_reject_hardlinks_dehardlinks_when_needed(tmp_path, monkeypatch) -> None:
+    bundled = tmp_path / "bundled" / "corpora" / "stopwords"
+    bundled.mkdir(parents=True)
+    source = bundled / "source"
+    source.write_text("the\na\nan\n", encoding="utf-8")
+    target = bundled / "english"
+    os.link(source, target)  # st_nlink=2, same shape as the reported pip install
+
+    monkeypatch.setattr(
+        "platformdirs.user_cache_dir", lambda name: str(tmp_path / "private_cache")
+    )
+
+    result = GlobalsHelper._reject_hardlinks(tmp_path / "bundled")
+
+    assert result != tmp_path / "bundled"
+    copied = result / "corpora" / "stopwords" / "english"
+    assert copied.read_text(encoding="utf-8") == "the\na\nan\n"
+    assert os.stat(copied).st_nlink == 1
+
+
+def test_reject_hardlinks_noop_when_no_hardlinks(tmp_path, monkeypatch) -> None:
+    bundled = tmp_path / "bundled" / "corpora" / "stopwords"
+    bundled.mkdir(parents=True)
+    (bundled / "english").write_text("the\na\nan\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        "platformdirs.user_cache_dir", lambda name: str(tmp_path / "private_cache")
+    )
+
+    result = GlobalsHelper._reject_hardlinks(tmp_path / "bundled")
+
+    assert result == tmp_path / "bundled"
+    assert not (tmp_path / "private_cache").exists()
+
+
+def test_wait_for_nltk_check_dehardlinks_bundled_cache(tmp_path, monkeypatch) -> None:
+    """
+    Regression test for nltk >= 3.10.3's pathsec hardlink guard: a bundled
+    _static/nltk_cache directory where files were installed as hardlinks
+    (st_nlink > 1, as some pip/build toolchains do) must be transparently
+    swapped for a private, single-linked copy so nltk can read from it.
+    """
+    fake_core_dir = tmp_path / "core"
+    bundled = fake_core_dir / "_static" / "nltk_cache" / "corpora" / "stopwords"
+    bundled.mkdir(parents=True)
+    source = bundled / "source"
+    source.write_text("the\na\n", encoding="utf-8")
+    os.link(source, bundled / "english")
+
+    monkeypatch.delenv("NLTK_DATA", raising=False)
+    monkeypatch.setattr(
+        "llama_index.core.utils.__file__", str(fake_core_dir / "utils.py")
+    )
+    monkeypatch.setattr(
+        "platformdirs.user_cache_dir", lambda name: str(tmp_path / "private_cache")
+    )
+
+    helper = GlobalsHelper()
+    with mock.patch.object(helper, "_download_nltk_data"):
+        helper.wait_for_nltk_check()
+
+    resolved = Path(helper._nltk_data_dir)
+    assert resolved != fake_core_dir / "_static" / "nltk_cache"
+    resolved_file = resolved / "corpora" / "stopwords" / "english"
+    assert resolved_file.read_text(encoding="utf-8") == "the\na\n"
+    assert os.stat(resolved_file).st_nlink == 1
