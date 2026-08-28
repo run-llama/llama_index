@@ -52,7 +52,7 @@ To learn how to retrieve a connection string, see
 [Connection Strings](https://www.mongodb.com/docs/manual/reference/connection-string/)
 in the MongoDB documentation.
 
-> Note: You can configure the `db_name`, `namespace`, and `collection_suffix` when instantiating `MongoIndexStore`. Otherwise, they default to `db_name="db_docstore"`, `namespace="index_store"`, and `collection_suffix="/data"`, and `MongoIndexStore` writes to the collection `index_store/data` in the `db_docstore` database
+> Note: You can configure the `db_name`, `namespace`, and `collection_suffix` when instantiating `MongoIndexStore`. Otherwise, they default to `db_name="db_docstore"`, `namespace="index_store"`, and `collection_suffix="/data"`, and `MongoIndexStore` writes to the collection `index_store/data` in the `db_docstore` database.
 
 You don't need to call `storage_context.persist()` (or `index_store.persist()`) when using an `MongoIndexStore`
 since data is persisted by default.
