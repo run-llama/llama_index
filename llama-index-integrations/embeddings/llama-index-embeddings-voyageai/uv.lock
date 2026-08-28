@@ -1988,7 +1988,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-voyageai"
-version = "0.6.0"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

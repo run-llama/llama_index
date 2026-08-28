@@ -134,6 +134,61 @@ def test_context_model_detection():
     assert regular_emb.model_name not in CONTEXT_MODELS
 
 
+# Unit tests for max_retries / timeout retry mechanism
+
+
+@patch("llama_index.embeddings.voyageai.base.voyageai.AsyncClient")
+@patch("llama_index.embeddings.voyageai.base.voyageai.Client")
+def test_retry_and_timeout_passed_to_clients(mock_client, mock_aclient):
+    """max_retries and timeout are forwarded to both sync and async clients."""
+    VoyageEmbedding(
+        model_name="voyage-2",
+        voyage_api_key="NOT_A_VALID_KEY",
+        max_retries=7,
+        timeout=12.5,
+    )
+
+    for mock in (mock_client, mock_aclient):
+        _, kwargs = mock.call_args
+        assert kwargs["max_retries"] == 7
+        assert kwargs["timeout"] == 12.5
+
+
+@patch("llama_index.embeddings.voyageai.base.voyageai.AsyncClient")
+@patch("llama_index.embeddings.voyageai.base.voyageai.Client")
+def test_retry_and_timeout_defaults(mock_client, mock_aclient):
+    """None values fall back to defaults (3 retries, 60.0s timeout)."""
+    VoyageEmbedding(
+        model_name="voyage-2",
+        voyage_api_key="NOT_A_VALID_KEY",
+        max_retries=None,
+        timeout=None,
+    )
+
+    for mock in (mock_client, mock_aclient):
+        _, kwargs = mock.call_args
+        assert kwargs["max_retries"] == 3
+        assert kwargs["timeout"] == 60.0
+
+
+def test_missing_api_key_raises(monkeypatch):
+    """No api key argument and no env var raises a clear error."""
+    monkeypatch.delenv("VOYAGE_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="Voyage API key must be provided"):
+        VoyageEmbedding(model_name="voyage-2", voyage_api_key=None)
+
+
+@patch("llama_index.embeddings.voyageai.base.voyageai.AsyncClient")
+@patch("llama_index.embeddings.voyageai.base.voyageai.Client")
+def test_api_key_from_env(mock_client, mock_aclient, monkeypatch):
+    """API key is read from VOYAGE_API_KEY env var when not passed."""
+    monkeypatch.setenv("VOYAGE_API_KEY", "ENV_KEY")
+    VoyageEmbedding(model_name="voyage-2")
+
+    _, kwargs = mock_client.call_args
+    assert kwargs["api_key"] == "ENV_KEY"
+
+
 # Unit tests for _build_batches method
 
 
