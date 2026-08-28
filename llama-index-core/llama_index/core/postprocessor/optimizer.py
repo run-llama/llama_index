@@ -3,6 +3,7 @@
 import logging
 from typing import Callable, List, Optional
 
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
@@ -95,6 +96,63 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "SentenceEmbeddingOptimizer"
 
+    def _split_node_text(self, node_with_score: NodeWithScore) -> List[str]:
+        """Tokenize a node's text into sentences."""
+        text = node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
+        return self._tokenizer_fn(text)
+
+    def _apply_optimization(
+        self,
+        node_with_score: NodeWithScore,
+        split_text: List[str],
+        text_embeddings: List[List[float]],
+        query_bundle: QueryBundle,
+    ) -> None:
+        """Shorten a single node in place, keeping only its top sentences."""
+        num_top_k = None
+        threshold = None
+        if self.percentile_cutoff is not None:
+            num_top_k = int(len(split_text) * self.percentile_cutoff)
+        if self.threshold_cutoff is not None:
+            threshold = self.threshold_cutoff
+
+        top_similarities, top_idxs = get_top_k_embeddings(
+            query_embedding=query_bundle.embedding,
+            embeddings=text_embeddings,
+            similarity_fn=self._embed_model.similarity,
+            similarity_top_k=num_top_k,
+            embedding_ids=list(range(len(text_embeddings))),
+            similarity_cutoff=threshold,
+        )
+
+        if len(top_idxs) == 0:
+            raise ValueError("Optimizer returned zero sentences.")
+
+        rangeMin, rangeMax = 0, len(split_text)
+
+        if self.context_before is None:
+            self.context_before = 1
+        if self.context_after is None:
+            self.context_after = 1
+
+        top_sentences = [
+            " ".join(
+                split_text[
+                    max(idx - self.context_before, rangeMin) : min(
+                        idx + self.context_after + 1, rangeMax
+                    )
+                ]
+            )
+            for idx in top_idxs
+        ]
+
+        logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
+        if logger.isEnabledFor(logging.DEBUG):
+            for idx in range(len(top_idxs)):
+                logger.debug(f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})")
+
+        node_with_score.node.set_content(" ".join(top_sentences))
+
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -105,9 +163,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             return nodes
 
         for node_idx in range(len(nodes)):
-            text = nodes[node_idx].node.get_content(metadata_mode=MetadataMode.LLM)
-
-            split_text = self._tokenizer_fn(text)
+            split_text = self._split_node_text(nodes[node_idx])
 
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
@@ -116,52 +172,46 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                     )
                 )
 
+            # embed each node's sentences independently
             text_embeddings = self._embed_model._get_text_embeddings(split_text)
 
-            num_top_k = None
-            threshold = None
-            if self.percentile_cutoff is not None:
-                num_top_k = int(len(split_text) * self.percentile_cutoff)
-            if self.threshold_cutoff is not None:
-                threshold = self.threshold_cutoff
-
-            top_similarities, top_idxs = get_top_k_embeddings(
-                query_embedding=query_bundle.embedding,
-                embeddings=text_embeddings,
-                similarity_fn=self._embed_model.similarity,
-                similarity_top_k=num_top_k,
-                embedding_ids=list(range(len(text_embeddings))),
-                similarity_cutoff=threshold,
+            self._apply_optimization(
+                nodes[node_idx], split_text, text_embeddings, query_bundle
             )
 
-            if len(top_idxs) == 0:
-                raise ValueError("Optimizer returned zero sentences.")
+        return nodes
 
-            rangeMin, rangeMax = 0, len(split_text)
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """Optimize a node text given the query by shortening the node text."""
+        if query_bundle is None:
+            return nodes
 
-            if self.context_before is None:
-                self.context_before = 1
-            if self.context_after is None:
-                self.context_after = 1
+        split_texts = [self._split_node_text(node) for node in nodes]
 
-            top_sentences = [
-                " ".join(
-                    split_text[
-                        max(idx - self.context_before, rangeMin) : min(
-                            idx + self.context_after + 1, rangeMax
-                        )
-                    ]
+        if query_bundle.embedding is None:
+            query_bundle.embedding = (
+                await self._embed_model.aget_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
                 )
-                for idx in top_idxs
+            )
+
+        # embed each node's sentences independently, in parallel
+        embeddings_per_node = await run_jobs(
+            [
+                self._embed_model._aget_text_embeddings(split_text)
+                for split_text in split_texts
             ]
+        )
 
-            logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
-            if logger.isEnabledFor(logging.DEBUG):
-                for idx in range(len(top_idxs)):
-                    logger.debug(
-                        f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
-                    )
-
-            nodes[node_idx].node.set_content(" ".join(top_sentences))
+        for node_with_score, split_text, text_embeddings in zip(
+            nodes, split_texts, embeddings_per_node
+        ):
+            self._apply_optimization(
+                node_with_score, split_text, text_embeddings, query_bundle
+            )
 
         return nodes
