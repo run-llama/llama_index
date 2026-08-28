@@ -30,7 +30,7 @@ name = "llama-index-graph-rag-cognee"
 version = "0.4.0"
 description = "llama-index graph rag cognee integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -228,6 +228,16 @@ class TestWasonxLLMInference:
         pytest.param({}, TEST_DEPLOYMENT_ID, id="deployment_id"),
     ]
 
+    def _stub_metadata_mocks(self, mock_instance: MagicMock) -> None:
+        """
+        llama-index-core accesses `metadata` (via `to_payload`) on every
+        chat/complete call, so the mocked ModelInference must return real
+        values instead of MagicMocks for the metadata lookups.
+        """
+        mock_instance.deployment_id = self.TEST_DEPLOYMENT_ID
+        mock_instance.get_details.return_value = {}
+        mock_instance._client.foundation_models.get_model_specs.return_value = {}
+
     def test_initialization(self) -> None:
         with pytest.raises(ValueError, match=r"^Did not find"):
             _ = WatsonxLLM(model=self.TEST_MODEL, project_id=self.TEST_PROJECT_ID)
@@ -262,6 +272,7 @@ class TestWasonxLLMInference:
     def test_completion_model_basic(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value
 
+        self._stub_metadata_mocks(mock_instance)
         mock_instance._return_guardrails_stats.side_effect = (
             mock_return_guardrails_stats
         )
@@ -294,6 +305,7 @@ class TestWasonxLLMInference:
         self, MockModelInference: MagicMock
     ) -> None:
         mock_instance = MockModelInference.return_value
+        self._stub_metadata_mocks(mock_instance)
         mock_instance.generate_text_stream.return_value = mock_completion_stream_text()
 
         llm = WatsonxLLM(
@@ -321,6 +333,7 @@ class TestWasonxLLMInference:
     @patch("llama_index.llms.ibm.base.ModelInference")
     def test_completion_model_streaming(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value
+        self._stub_metadata_mocks(mock_instance)
         mock_instance.generate_text_stream.return_value = mock_completion_stream()
         mock_instance._return_guardrails_stats.side_effect = (
             mock_return_guardrails_stats
@@ -352,6 +365,7 @@ class TestWasonxLLMInference:
     @patch("llama_index.llms.ibm.base.ModelInference")
     async def test_complete_async(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value
+        self._stub_metadata_mocks(mock_instance)
         mock_instance._return_guardrails_stats.side_effect = (
             mock_return_guardrails_stats
         )
@@ -375,6 +389,7 @@ class TestWasonxLLMInference:
     @patch("llama_index.llms.ibm.base.ModelInference")
     async def test_stream_async(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value
+        self._stub_metadata_mocks(mock_instance)
         mock_instance.generate_text_stream.return_value = mock_completion_stream()
         mock_instance._return_guardrails_stats.side_effect = (
             mock_return_guardrails_stats

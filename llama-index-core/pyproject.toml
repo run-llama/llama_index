@@ -145,6 +145,8 @@ trailing_comma_inline_array = true
 table_keys = false
 
 [tool.uv]
+# numpy 2.4+ type stubs use PEP 695 syntax that mypy at python_version 3.10 cannot parse
+constraint-dependencies = ["numpy<2.4"]
 
 [[tool.uv.index]]
 name = "nvidia-pypi"
