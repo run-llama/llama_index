@@ -1,8 +1,9 @@
 import os
+from typing import Annotated
+from unittest.mock import AsyncMock, Mock
 
 import pytest
-from ollama import Client
-from typing import Annotated
+from ollama import AsyncClient, Client
 
 from llama_index.core.base.llms.types import ThinkingBlock, TextBlock, ToolCallBlock
 from llama_index.core.base.llms.base import BaseLLM
@@ -85,6 +86,40 @@ def test_ollama_stream_chat() -> None:
         assert str(r).strip() != ""
 
 
+def test_ollama_stream_chat_preserves_identical_tool_calls() -> None:
+    chunks = [
+        {
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [{"function": {"name": "roll_die", "arguments": {}}}],
+            }
+        },
+        {
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [{"function": {"name": "roll_die", "arguments": {}}}],
+            }
+        },
+    ]
+    mock_client = Mock(spec=Client)
+    mock_client.chat.return_value = iter(chunks)
+    llm = Ollama(model="test", context_window=4096, client=mock_client)
+
+    responses = list(llm.stream_chat([ChatMessage(role="user", content="Roll twice")]))
+    tool_calls = [
+        block
+        for block in responses[-1].message.blocks
+        if isinstance(block, ToolCallBlock)
+    ]
+
+    assert [(call.tool_name, call.tool_kwargs) for call in tool_calls] == [
+        ("roll_die", {}),
+        ("roll_die", {}),
+    ]
+
+
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
@@ -130,6 +165,49 @@ async def test_ollama_async_stream_chat() -> None:
         assert r is not None
         assert r.delta is not None
         assert str(r).strip() != ""
+
+
+@pytest.mark.asyncio
+async def test_ollama_async_stream_chat_preserves_identical_tool_calls() -> None:
+    chunks = [
+        {
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [{"function": {"name": "roll_die", "arguments": {}}}],
+            }
+        },
+        {
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [{"function": {"name": "roll_die", "arguments": {}}}],
+            }
+        },
+    ]
+
+    async def stream_chunks():
+        for chunk in chunks:
+            yield chunk
+
+    mock_async_client = AsyncMock(spec=AsyncClient)
+    mock_async_client.chat.return_value = stream_chunks()
+    llm = Ollama(model="test", context_window=4096, async_client=mock_async_client)
+
+    response_gen = await llm.astream_chat(
+        [ChatMessage(role="user", content="Roll twice")]
+    )
+    responses = [response async for response in response_gen]
+    tool_calls = [
+        block
+        for block in responses[-1].message.blocks
+        if isinstance(block, ToolCallBlock)
+    ]
+
+    assert [(call.tool_name, call.tool_kwargs) for call in tool_calls] == [
+        ("roll_die", {}),
+        ("roll_die", {}),
+    ]
 
 
 @pytest.mark.skipif(
