@@ -32,7 +32,7 @@ class TypecastToolSpec(BaseToolSpec):
         use_case: Optional[str] = None,
     ) -> List[dict]:
         """
-        Get list of available voices from Typecast (V2 API).
+        Get list of available voices from Typecast (V3 API).
 
         Args:
             model (Optional[str]): Filter by model name (e.g., "ssfm-v21", "ssfm-v30")
@@ -43,7 +43,7 @@ class TypecastToolSpec(BaseToolSpec):
         Returns:
             List[dict]: List of available voices with their details including:
                 - voice_id: Unique voice identifier
-                - voice_name: Human-readable name
+                - voice_name: Localized names keyed by ISO 639-3 code
                 - models: List of supported models with emotions
                 - gender: Voice gender (optional)
                 - age: Voice age group (optional)
@@ -66,15 +66,14 @@ class TypecastToolSpec(BaseToolSpec):
                 use_cases=use_case,
             )
 
-        # Get the voices using V2 API
-        response = client.voices_v2(filter=filter_obj)
+        response = client.voices_v3(filter=filter_obj)
 
         # Return the dumped voice models as dict
         return [voice.model_dump() for voice in response]
 
     def get_voice(self, voice_id: str) -> dict:
         """
-        Get details of a specific voice from Typecast (V2 API).
+        Get details of a specific voice from Typecast (V3 API).
 
         Args:
             voice_id (str): The voice ID to get details for (e.g., "tc_62a8975e695ad26f7fb514d1")
@@ -82,7 +81,7 @@ class TypecastToolSpec(BaseToolSpec):
         Returns:
             dict: Voice details including:
                 - voice_id: Unique voice identifier
-                - voice_name: Human-readable name
+                - voice_name: Localized names keyed by ISO 639-3 code
                 - models: List of supported models with emotions
                 - gender: Voice gender (optional)
                 - age: Voice age group (optional)
@@ -96,8 +95,7 @@ class TypecastToolSpec(BaseToolSpec):
         # Create the client
         client = Typecast(host=self.host, api_key=self.api_key)
 
-        # Get the voice using V2 API
-        response = client.voice_v2(voice_id)
+        response = client.voice_v3(voice_id)
 
         # Return the dumped voice model as dict
         return response.model_dump()
