@@ -85,21 +85,27 @@ class GlobalsHelper:
         from nltk import download
         from nltk.data import find as nltk_find
 
+        # Download stopwords
         try:
-            # Download stopwords
+            nltk_find("corpora/stopwords", paths=[self._nltk_data_dir])
+        except LookupError:
             try:
-                nltk_find("corpora/stopwords", paths=[self._nltk_data_dir])
-            except LookupError:
                 download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
-
-            # Download punkt tokenizer
-            try:
-                nltk_find("tokenizers/punkt_tab", paths=[self._nltk_data_dir])
-            except LookupError:
-                download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
-
+            except Exception as e:
+                print(f"NLTK stopwords download error: {e}")
         except Exception as e:
-            print(f"NLTK download error: {e}")
+            print(f"NLTK stopwords find error: {e}")
+
+        # Download punkt tokenizer
+        try:
+            nltk_find("tokenizers/punkt_tab", paths=[self._nltk_data_dir])
+        except LookupError:
+            try:
+                download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
+            except Exception as e:
+                print(f"NLTK punkt_tab download error: {e}")
+        except Exception as e:
+            print(f"NLTK punkt_tab find error: {e}")
 
     @property
     def stopwords(self) -> List[str]:
@@ -111,8 +117,20 @@ class GlobalsHelper:
             from nltk.corpus import stopwords
             from nltk.tokenize import PunktSentenceTokenizer
 
-            self._stopwords = stopwords.words("english")
-            self._punkt_tokenizer = PunktSentenceTokenizer()
+            try:
+                self._stopwords = stopwords.words("english")
+            except LookupError:
+                print(
+                    "Warning: NLTK stopwords not available. "
+                    "Run `python -m nltk.downloader stopwords` to install. "
+                    "Using empty stopwords list as fallback."
+                )
+                self._stopwords = []
+
+            try:
+                self._punkt_tokenizer = PunktSentenceTokenizer()
+            except LookupError:
+                self._punkt_tokenizer = None
 
         return self._stopwords
 
@@ -126,8 +144,18 @@ class GlobalsHelper:
             from nltk.corpus import stopwords
             from nltk.tokenize import PunktSentenceTokenizer
 
-            self._punkt_tokenizer = PunktSentenceTokenizer()
-            self._stopwords = stopwords.words("english")
+            try:
+                self._punkt_tokenizer = PunktSentenceTokenizer()
+            except LookupError:
+                raise LookupError(
+                    "NLTK punkt tokenizer not available. "
+                    "Run `python -m nltk.downloader punkt_tab` to install."
+                )
+
+            try:
+                self._stopwords = stopwords.words("english")
+            except LookupError:
+                self._stopwords = []
 
         return self._punkt_tokenizer
 
