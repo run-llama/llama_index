@@ -1824,7 +1824,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-microsoft-onedrive"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
