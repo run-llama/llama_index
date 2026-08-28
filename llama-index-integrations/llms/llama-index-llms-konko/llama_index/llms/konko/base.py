@@ -566,15 +566,17 @@ class Konko(LLM):
                         delta = response.choices[0].delta
                     else:
                         delta = {}
-                    role = delta.role
-                    content_delta = delta.content
+                    role_value = delta.role
+                    content_delta = delta.content or ""
                 else:
                     if len(response["choices"]) > 0:
                         delta = response["choices"][0].delta
                     else:
                         delta = {}
-                    role = delta["role"]
-                    content_delta = delta["content"]
+                    role_value = delta.get("role")
+                    content_delta = delta.get("content") or ""
+
+                role = role_value if role_value is not None else "assistant"
                 content += content_delta
 
                 yield ChatResponse(

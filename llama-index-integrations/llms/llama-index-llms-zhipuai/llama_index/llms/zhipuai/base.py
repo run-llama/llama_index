@@ -323,7 +323,7 @@ class ZhipuAI(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
-                        role=chunk.choices[0].delta.role,
+                        role=chunk.choices[0].delta.role or MessageRole.ASSISTANT,
                         additional_kwargs={"tool_calls": tool_calls},
                     ),
                     delta=chunk.choices[0].delta.content,
@@ -363,7 +363,7 @@ class ZhipuAI(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
-                        role=chunk.choices[0].delta.role,
+                        role=chunk.choices[0].delta.role or MessageRole.ASSISTANT,
                         additional_kwargs={"tool_calls": tool_calls},
                     ),
                     delta=chunk.choices[0].delta.content,
