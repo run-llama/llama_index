@@ -5,7 +5,7 @@ from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -43,6 +43,8 @@ class VearchVectorStore(BasePydanticVectorStore):
     using_db_name: str
     using_table_name: str
     url: str
+    flag: int = 0
+    field_list: List[dict] = Field(default_factory=list)
     _vearch: vearch_cluster.VearchCluster = PrivateAttr()
 
     def __init__(
@@ -53,6 +55,7 @@ class VearchVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize vearch vector store."""
+        flag = kwargs.pop("flag", 0)
         if path_or_url is None:
             raise ValueError("Please input url of cluster")
 
@@ -70,6 +73,7 @@ class VearchVectorStore(BasePydanticVectorStore):
             using_db_name=db_name,
             using_table_name=table_name,
             url=path_or_url,
+            flag=flag,
         )
         self._vearch = vearch_cluster.VearchCluster(path_or_url)
 
@@ -245,6 +249,10 @@ class VearchVectorStore(BasePydanticVectorStore):
         if query.filters is not None:
             for filter_ in query.filters.legacy_filters():
                 meta_filters[filter_.key] = filter_.value
+        meta_field_list = ["ref_doc_id", "text"]
+        meta_field_list.extend(
+            field["field"] for field in getattr(self, "field_list", [])
+        )
         if self.flag:
             meta_field_list = self._vearch.get_space(
                 self.using_db_name, self.using_table_name
@@ -335,7 +343,7 @@ class VearchVectorStore(BasePydanticVectorStore):
                 "size": 10000,
             }
             self._vearch.delete_by_query(
-                self, self.using_db_name, self.using_table_name, queries
+                self.using_db_name, self.using_table_name, queries
             )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
