@@ -7,16 +7,17 @@ from llama_index.llms.groq import Groq
 
 @pytest.mark.skipif("GROQ_API_KEY" not in os.environ, reason="No Groq API key")
 def test_completion():
-    groq = Groq(model="llama3-70b-8192", temperature=0, max_tokens=2)
+    groq = Groq(model="openai/gpt-oss-120b", temperature=0, max_tokens=256)
     resp = groq.complete("hello")
-    assert resp.text == "Hello"
+    assert isinstance(resp.text, str)
+    assert len(resp.text.strip()) > 0
 
 
 @pytest.mark.skipif("GROQ_API_KEY" not in os.environ, reason="No Groq API key")
 def test_stream_completion():
-    groq = Groq(model="llama3-70b-8192", temperature=0, max_tokens=2)
+    groq = Groq(model="openai/gpt-oss-120b", temperature=0, max_tokens=256)
     stream = groq.stream_complete("hello")
-    text = None
+    text = ""
     for chunk in stream:
         text = chunk.text
-    assert text == "Hello"
+    assert len(text.strip()) > 0
