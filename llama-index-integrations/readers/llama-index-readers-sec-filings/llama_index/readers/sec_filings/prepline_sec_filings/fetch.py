@@ -3,15 +3,9 @@
 import json
 import os
 import re
-import sys
-from typing import List, Optional, Tuple, Union
+from typing import Final, List, Optional, Tuple, Union
 
 import requests
-
-if sys.version_info < (3, 8):  # noqa: UP036
-    from typing import Final
-else:
-    from typing import Final
 
 import webbrowser
 
