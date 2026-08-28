@@ -51,8 +51,12 @@ def test_get_all_kwargs():
 )
 def test_integration_header_can_be_overridden(headers, expected):
     llm = Perplexity(api_key="dummy", headers=headers)
-    sync_request = requests.Request("POST", "https://api.perplexity.ai", headers=llm.headers).prepare()
-    async_request = httpx.Request("POST", "https://api.perplexity.ai", headers=llm.headers)
+    sync_request = requests.Request(
+        "POST", "https://api.perplexity.ai", headers=llm.headers
+    ).prepare()
+    async_request = httpx.Request(
+        "POST", "https://api.perplexity.ai", headers=llm.headers
+    )
 
     assert sync_request.headers["x-pplx-integration"] == expected
     assert async_request.headers.get_list("x-pplx-integration") == [expected]
