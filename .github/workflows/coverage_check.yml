@@ -8,6 +8,10 @@ env:
   NUM_WORKERS: 8
   # Tests will fail if coverage percentage is below this number
   COV_FAIL_UNDER: 50
+  # Copy instead of hardlinking from the uv cache: nltk >= 3.9.5 refuses to
+  # open multiply-linked data files (st_nlink > 1), which breaks reading
+  # llama-index-core's bundled nltk_cache from a hardlinked .venv
+  UV_LINK_MODE: copy
 
 jobs:
   test:

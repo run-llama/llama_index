@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest",
+    "pytest-cov>=6.1.1",
     "pytest-asyncio",
     "llama-index-llms-openai",
     "pre-commit",

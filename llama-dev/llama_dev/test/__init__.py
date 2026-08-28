@@ -436,13 +436,20 @@ def _diff_cover(
     if base_ref:
         diff_cover_cmd.append(f"--compare-branch={base_ref}")
 
-    return subprocess.run(
-        diff_cover_cmd,
-        cwd=package_path,
-        text=True,
-        capture_output=True,
-        env=env,
-    )
+    # diff-cover shells out to `git diff`, which refreshes the shared
+    # .git/index; concurrent workers can collide on index.lock, so retry.
+    for attempt in range(3):
+        result = subprocess.run(
+            diff_cover_cmd,
+            cwd=package_path,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        if result.returncode == 0 or "CommandError" not in (result.stderr or ""):
+            break
+        time.sleep(1 + attempt)
+    return result
 
 
 def _run_tests(
