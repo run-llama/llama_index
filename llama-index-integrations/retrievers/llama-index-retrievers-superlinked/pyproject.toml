@@ -4,6 +4,8 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "torch",
+    "torchvision",
     "pytest",
     "pytest-cov>=6.1.1",
 ]
@@ -50,3 +52,13 @@ SuperlinkedRetriever = "Superlinked"
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+# CPU-only test env: keep the multi-GB CUDA stack out of the lock
+torch = {index = "pytorch-cpu"}
+torchvision = {index = "pytorch-cpu"}
