@@ -207,23 +207,34 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         cur_chunk: List[str] = []
         cur_len = 0
+
+        def join_splits(splits: List[str]) -> str:
+            chunk = "".join(splits)
+            return chunk if self.keep_whitespaces else chunk.strip()
+
+        def split_len(split: str, index: int) -> int:
+            if self.keep_whitespaces or index > 0:
+                return len(self._tokenizer(split))
+
+            stripped_split = split.strip()
+            return len(self._tokenizer(stripped_split)) if stripped_split else 0
+
+        def chunk_len(splits: List[str]) -> int:
+            return sum(split_len(split, index) for index, split in enumerate(splits))
+
         for split in splits:
-            split_len = len(self._tokenizer(split))
-            if split_len > chunk_size:
+            split_size = chunk_len([split])
+            if split_size > chunk_size:
                 _logger.warning(
-                    f"Got a split of size {split_len}, ",
+                    f"Got a split of size {split_size}, ",
                     f"larger than chunk size {chunk_size}.",
                 )
 
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if cur_len + split_len > chunk_size:
+            if cur_chunk and cur_len + split_len(split, len(cur_chunk)) > chunk_size:
                 # end the previous chunk
-                chunk = (
-                    "".join(cur_chunk)
-                    if self.keep_whitespaces
-                    else "".join(cur_chunk).strip()
-                )
+                chunk = join_splits(cur_chunk)
                 if chunk:
                     chunks.append(chunk)
 
@@ -232,19 +243,18 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 #   1. the current chunk length is less than chunk overlap
                 #   2. the total length is less than chunk size
                 while cur_chunk and (
-                    cur_len > self.chunk_overlap or cur_len + split_len > chunk_size
+                    cur_len > self.chunk_overlap
+                    or cur_len + split_len(split, len(cur_chunk)) > chunk_size
                 ):
                     # pop off the first element
-                    first_chunk = cur_chunk.pop(0)
-                    cur_len -= len(self._tokenizer(first_chunk))
+                    cur_chunk.pop(0)
+                    cur_len = chunk_len(cur_chunk)
 
             cur_chunk.append(split)
-            cur_len += split_len
+            cur_len += split_len(split, len(cur_chunk) - 1)
 
         # handle the last chunk
-        chunk = (
-            "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
-        )
+        chunk = join_splits(cur_chunk)
         if chunk:
             chunks.append(chunk)
 
