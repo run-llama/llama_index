@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-box"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index readers box integration"
 authors = [{name = "Box Developer Relations", email = "dx@box.com"}]
 requires-python = ">=3.10,<4.0"
