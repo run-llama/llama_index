@@ -91,14 +91,13 @@ class ContextWebReader(BasePydanticReader):
     ) -> None:
         """Initialize the reader."""
         resolved_api_key = (
-            api_key
-            or os.getenv("CONTEXT_DEV_API_KEY")
-            or os.getenv("CONTEXT_API_KEY", "")
-        ).strip()
-        if not resolved_api_key:
+            api_key or os.getenv("CONTEXT_DEV_API_KEY") or os.getenv("CONTEXT_API_KEY")
+        )
+        if not resolved_api_key or not resolved_api_key.strip():
             raise ValueError(
                 "Context.dev API key missing. Pass api_key or set CONTEXT_DEV_API_KEY."
             )
+        resolved_api_key = resolved_api_key.strip()
 
         resolved_api_url = (
             api_url
@@ -339,12 +338,10 @@ class ContextWebReader(BasePydanticReader):
             ):
                 continue
             page_metadata = result.get("metadata")
-            page_url = (
-                page_metadata.get("url")
-                if isinstance(page_metadata, dict)
-                and isinstance(page_metadata.get("url"), str)
-                else ""
+            page_url_value = (
+                page_metadata.get("url") if isinstance(page_metadata, dict) else None
             )
+            page_url = page_url_value if isinstance(page_url_value, str) else ""
             metadata = self._metadata(page_url, page_metadata, mode="crawl")
             documents.append(Document(text=result["markdown"], metadata=metadata))
         return documents
@@ -383,7 +380,10 @@ class ContextWebReader(BasePydanticReader):
 
         documents: List[Document] = []
         for result in results:
-            if not isinstance(result, dict) or not isinstance(result.get("url"), str):
+            if not isinstance(result, dict):
+                continue
+            result_url = result.get("url")
+            if not isinstance(result_url, str):
                 continue
             markdown_field = result.get("markdown")
             markdown = (
@@ -401,10 +401,10 @@ class ContextWebReader(BasePydanticReader):
             text = (
                 markdown
                 or "\n\n".join(value for value in (title, description) if value)
-                or result["url"]
+                or result_url
             )
             metadata = self._metadata(
-                result["url"],
+                result_url,
                 {
                     "title": title,
                     "description": description,

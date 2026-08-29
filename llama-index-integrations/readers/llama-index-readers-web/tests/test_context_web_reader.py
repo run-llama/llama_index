@@ -45,6 +45,7 @@ def test_reader_supports_legacy_environment_configuration(monkeypatch) -> None:
     ("kwargs", "message"),
     [
         ({}, "API key missing"),
+        ({"api_key": "   "}, "API key missing"),
         ({"api_key": "key", "api_url": "example.com"}, "must use HTTP"),
         ({"api_key": "key", "timeout": 0}, "greater than zero"),
     ],
