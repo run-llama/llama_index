@@ -1143,7 +1143,7 @@ wheels = [
 
 [[package]]
 name = "docarray"
-version = "0.40.0"
+version = "0.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1155,9 +1155,9 @@ dependencies = [
     { name = "types-requests" },
     { name = "typing-inspect" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/20/4ce3b1324dcadd62e10a1122f16ddc87b837ae9402791f40859e1ff98b87/docarray-0.40.0.tar.gz", hash = "sha256:c3f3b88b7b6128c10308dddbd21650c9845e270da850cf6718cb1d3d867d5986", size = 195524, upload-time = "2023-12-22T12:12:25.053Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/62/1ec46699f621338fc0fe15249ff6ca8aba7d48fd3e34bd8ad761fdd0270c/docarray-0.41.0.tar.gz", hash = "sha256:7fb34eed16f25ba90b1425b263553f3735da987bf8433ff844d754b8b2c3ef81", size = 207945, upload-time = "2025-03-21T08:34:44.552Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/bf/90439e206a5d2df089e3467a703dfa0349f17d73f003ec51367db23bf8de/docarray-0.40.0-py3-none-any.whl", hash = "sha256:86ceadb84cdec2dc9579e2f79823748a3af094c57df4e0441c5f0bac7e63ef97", size = 270232, upload-time = "2023-12-22T12:12:16.923Z" },
+    { url = "https://files.pythonhosted.org/packages/95/fe/4a1fc93d8119087544579b5c8a09a50d5573fcb64fe92fc8143cf8b851ad/docarray-0.41.0-py3-none-any.whl", hash = "sha256:a544ac75f77165b1861d2c19c2993835a635fc2267871c469e1006497a99421d", size = 302815, upload-time = "2025-03-21T08:34:42.207Z" },
 ]
 
 [[package]]
@@ -1165,7 +1165,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -2035,7 +2035,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-docarray"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "docarray" },
@@ -2066,7 +2066,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "docarray", specifier = ">=0.40.0,<0.41" },
+    { name = "docarray", specifier = ">=0.40.0,<0.42" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 

@@ -33,7 +33,7 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "docarray>=0.40.0,<0.41",
+    "docarray>=0.40.0,<0.42",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
