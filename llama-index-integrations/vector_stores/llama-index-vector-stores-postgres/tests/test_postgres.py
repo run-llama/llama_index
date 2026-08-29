@@ -3314,3 +3314,206 @@ def test_filter_key_param_names_are_unique_across_filters():
     p2 = set(c2._bindparams)
     assert p1.isdisjoint(p2)
 
+
+def test_combined_metadata_filters_tree_bind_params():
+    """
+    Combined and nested MetadataFilters trees must compile safely.
+
+    Verifies that nested AND/OR filter trees containing multiple filters and
+    potential SQL injection keys produce unique bind parameters for each key,
+    never leak raw keys into the compiled SQL, and retain correct bound values.
+    """
+    from sqlalchemy import select, column
+
+    store = _bare_store()
+    malicious_key_1 = "author' = 'alice' OR '1'='1' --"
+    malicious_key_2 = "category') UNION SELECT * FROM users --"
+
+    # Construct nested tree: (author == alice AND malicious_1 == test1) OR (category == sec AND malicious_2 IN [x, y])
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="author", value="alice", operator=FilterOperator.EQ
+                    ),
+                    MetadataFilter(
+                        key=malicious_key_1,
+                        value="test1",
+                        operator=FilterOperator.EQ,
+                    ),
+                ],
+                condition="and",
+            ),
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="category", value="sec", operator=FilterOperator.EQ
+                    ),
+                    MetadataFilter(
+                        key=malicious_key_2,
+                        value=["x", "y"],
+                        operator=FilterOperator.IN,
+                    ),
+                ],
+                condition="and",
+            ),
+        ],
+        condition="or",
+    )
+
+    clause = store._recursively_apply_filters(filters)
+    stmt = select(column("id")).where(clause)
+    compiled = stmt.compile(compile_kwargs={"literal_binds": False})
+    sql = str(compiled)
+
+    # Malicious injection payloads must not appear in the generated SQL text
+    assert malicious_key_1 not in sql
+    assert malicious_key_2 not in sql
+    assert "OR '1'='1'" not in sql
+    assert "UNION SELECT" not in sql
+
+    # All 4 filter keys must be present in compiled parameters
+    param_values = list(compiled.params.values())
+    assert "author" in param_values
+    assert malicious_key_1 in param_values
+    assert "category" in param_values
+    assert malicious_key_2 in param_values
+
+    # Key parameters must all have unique names
+    key_params = [k for k in compiled.params if k.startswith("filter_key_")]
+    assert len(key_params) == 4
+    assert len(set(key_params)) == 4
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_query_with_malicious_metadata_filter_key_db_backed(
+    pg_fixture: PGVectorStore, use_async: bool
+) -> None:
+    """
+    Database-backed regression test for #22475.
+
+    Inserts rows with normal metadata keys and queries using malicious filter keys,
+    verifying that the parameter binding survives actual DB execution and AND/OR
+    filter composition:
+    1. A normal query matches the expected row.
+    2. A malicious key payload returns 0 rows (does not bypass filters).
+    3. Combined AND/OR filters with malicious keys behave correctly.
+    """
+    nodes = [
+        TextNode(
+            text="Alice document content",
+            id_="doc_alice",
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc_alice")
+            },
+            extra_info={"author": "alice", "category": "engineering"},
+            embedding=_get_sample_vector(1.0),
+        ),
+        TextNode(
+            text="Bob document content",
+            id_="doc_bob",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc_bob")},
+            extra_info={"author": "bob", "category": "engineering"},
+            embedding=_get_sample_vector(0.1),
+        ),
+    ]
+
+    if use_async:
+        await pg_fixture.async_add(nodes)
+    else:
+        pg_fixture.add(nodes)
+
+    malicious_key = "author' = 'alice' OR '1'='1' --"
+
+    # 1. Normal query should match only alice
+    normal_q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=10,
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="author", value="alice", operator=FilterOperator.EQ)
+            ]
+        ),
+    )
+    res_normal = (
+        await pg_fixture.aquery(normal_q) if use_async else pg_fixture.query(normal_q)
+    )
+    assert res_normal.nodes
+    assert len(res_normal.nodes) == 1
+    assert res_normal.nodes[0].node_id == "doc_alice"
+
+    # 2. Malicious key query: without parameter binding this injection would match all rows.
+    # With parameter binding, it looks for the literal key and matches 0 rows.
+    malicious_q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=10,
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key=malicious_key, value="alice", operator=FilterOperator.EQ
+                )
+            ]
+        ),
+    )
+    res_malicious = (
+        await pg_fixture.aquery(malicious_q)
+        if use_async
+        else pg_fixture.query(malicious_q)
+    )
+    assert len(res_malicious.nodes) == 0
+
+    # 3. Combined AND query with category=engineering AND malicious_key=alice -> 0 rows
+    combined_and_q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=10,
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="category",
+                    value="engineering",
+                    operator=FilterOperator.EQ,
+                ),
+                MetadataFilter(
+                    key=malicious_key,
+                    value="alice",
+                    operator=FilterOperator.EQ,
+                ),
+            ],
+            condition="and",
+        ),
+    )
+    res_and = (
+        await pg_fixture.aquery(combined_and_q)
+        if use_async
+        else pg_fixture.query(combined_and_q)
+    )
+    assert len(res_and.nodes) == 0
+
+    # 4. Combined OR query with author=alice OR malicious_key=alice -> returns only alice (not bob)
+    combined_or_q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=10,
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="author", value="alice", operator=FilterOperator.EQ),
+                MetadataFilter(
+                    key=malicious_key,
+                    value="alice",
+                    operator=FilterOperator.EQ,
+                ),
+            ],
+            condition="or",
+        ),
+    )
+    res_or = (
+        await pg_fixture.aquery(combined_or_q)
+        if use_async
+        else pg_fixture.query(combined_or_q)
+    )
+    assert res_or.nodes
+    assert len(res_or.nodes) == 1
+    assert res_or.nodes[0].node_id == "doc_alice"
