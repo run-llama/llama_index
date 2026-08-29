@@ -321,7 +321,9 @@ def get_text_representation(
 
         # Handle cases where the extracted text needs generation
         if extracted_text_entry.status.state == "none":
-            _do_request(extracted_text_entry.info.url)  # Trigger text generation
+            _do_request(
+                box_client, extracted_text_entry.info.url
+            )  # Trigger text generation
 
         # Construct the download URL and sanitize filename
         url = extracted_text_entry.content.url_template.replace("{+asset_path}", "")
