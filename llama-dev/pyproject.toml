@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "diff-cover>=9.2.4",
-    "pytest>=8.3.5",
+    "pytest",
     "pytest-cov>=6.1.1",
 ]
 
