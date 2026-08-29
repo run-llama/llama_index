@@ -1,4 +1,4 @@
-aiohttp==3.8.4
+aiohttp==3.14.3
 Faker==19.1.0
 ratelimit==2.2.1
 starlette==0.30.0

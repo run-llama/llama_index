@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "diff-cover>=9.2.0",
-    "pytest>=8.3.5",
+    "pytest",
     "pytest-cov>=6.1.1",
     "ruff==0.11.11",
 ]
 
 [project]
 name = "llama-index-readers-uniprot"
-version = "0.3.0"
+version = "0.4.0"
 description = "UniProt reader for LlamaIndex"
 authors = [{name = "Evgenii Neumerzhitckii", email = "sausageskin@gmail.com"}]
 requires-python = ">=3.10,<4.0"
