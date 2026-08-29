@@ -263,15 +263,13 @@ class SambaNovaCloud(LLM):
         if response.status_code != 200:
             raise RuntimeError(
                 f"Sambanova /complete call failed with status code "
-                f"{response.status_code}.",
-                f"{response.text}.",
+                f"{response.status_code}. {response.text}."
             )
         response_dict = response.json()
         if response_dict.get("error"):
             raise RuntimeError(
                 f"Sambanova /complete call failed with status code "
-                f"{response.status_code}.",
-                f"{response_dict}.",
+                f"{response.status_code}. {response_dict}."
             )
         return response_dict
 
@@ -309,14 +307,14 @@ class SambaNovaCloud(LLM):
             ) as response:
                 if response.status != 200:
                     raise RuntimeError(
-                        f"Sambanova /complete call failed with status code {response.status}.",
-                        f"{await response.text()}.",
+                        f"Sambanova /complete call failed with status code {response.status}. "
+                        f"{await response.text()}."
                     )
                 response_dict = await response.json()
                 if response_dict.get("error"):
                     raise RuntimeError(
-                        f"Sambanova /complete call failed with status code {response.status}.",
-                        f"{response_dict}.",
+                        f"Sambanova /complete call failed with status code {response.status}. "
+                        f"{response_dict}."
                     )
                 return response_dict
 
@@ -1157,8 +1155,8 @@ class SambaStudio(LLM):
                 response_dict = await response.json()
                 if response_dict.get("error"):
                     raise RuntimeError(
-                        f"Sambanova /complete call failed with status code {response.status}.",
-                        f"{response_dict}.",
+                        f"Sambanova /complete call failed with status code {response.status}. "
+                        f"{response_dict}."
                     )
                 return response_dict
 
