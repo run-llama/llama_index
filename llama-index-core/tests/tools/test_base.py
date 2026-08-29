@@ -603,3 +603,67 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_docstring_param_extraction_google_no_parens() -> None:
+    """Test Google-style parameter extraction without type parens."""
+
+    def google_no_parens(query: str) -> str:
+        """
+        Search function.
+
+        Args:
+            query: The search query string.
+
+        """
+        return ""
+
+    tool = FunctionTool.from_defaults(fn=google_no_parens)
+    props = tool.metadata.fn_schema.model_json_schema()["properties"]
+    assert props["query"]["description"] == "The search query string."
+
+
+def test_docstring_param_extraction_numpy_style() -> None:
+    """Test NumPy-style parameter extraction."""
+
+    def numpy_style(query: str) -> str:
+        """
+        Search function.
+
+        Parameters
+        ----------
+        query : str
+            The search query string.
+
+        """
+        return ""
+
+    tool = FunctionTool.from_defaults(fn=numpy_style)
+    props = tool.metadata.fn_schema.model_json_schema()["properties"]
+    assert props["query"]["description"] == "The search query string."
+
+
+def test_docstring_param_extraction_multiline_descriptions() -> None:
+    """Test multi-line parameter descriptions in docstrings."""
+
+    def google_with_multiline(query: str, mode: str) -> str:
+        """
+        Search function.
+
+        Args:
+            query (str): The search query string.
+            mode (str): One of:
+                - "fast": quick results
+                - "deep": exhaustive scan
+
+        """
+        return ""
+
+    tool = FunctionTool.from_defaults(fn=google_with_multiline)
+    props = tool.metadata.fn_schema.model_json_schema()["properties"]
+    assert props["query"]["description"] == "The search query string."
+    expected_mode_desc = (
+        'One of:\n- "fast": quick results\n- "deep": exhaustive scan'
+    )
+    assert props["mode"]["description"] == expected_mode_desc
+
