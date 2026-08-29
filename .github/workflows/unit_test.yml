@@ -6,10 +6,6 @@ on:
 env:
   # How many concurrent processes running pytest in a single CI job
   NUM_WORKERS: 8
-  # Copy instead of hardlinking from the uv cache: nltk >= 3.9.5 refuses to
-  # open multiply-linked data files (st_nlink > 1), which breaks reading
-  # llama-index-core's bundled nltk_cache from a hardlinked .venv
-  UV_LINK_MODE: copy
 
 jobs:
   test:
@@ -42,7 +38,8 @@ jobs:
           uv run -- llama-dev \
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }}
+            --base-ref ${{ github.event.pull_request.base.ref }} \
+            --clean
 
   test-core-py314:
     runs-on: ubuntu-latest-unit-tester

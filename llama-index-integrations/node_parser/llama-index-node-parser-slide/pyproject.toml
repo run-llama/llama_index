@@ -63,3 +63,9 @@ ignore_missing_imports = true
 namespace_packages = true
 plugins = "pydantic.mypy"
 python_version = "3.8"
+
+[tool.uv]
+# nltk >= 3.9.5 refuses to open multiply-linked data files (st_nlink > 1); uv
+# hardlinks venvs from its cache on Linux, so copy instead — these tests read
+# llama-index-core's bundled nltk_cache (stopwords)
+link-mode = "copy"
