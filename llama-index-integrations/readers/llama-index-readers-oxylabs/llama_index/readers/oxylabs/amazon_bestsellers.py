@@ -8,7 +8,7 @@ class OxylabsAmazonBestsellersReader(OxylabsBaseReader):
     """
     Get data from Amazon Best Sellers pages.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/amazon/best-sellers
+    https://developers.oxylabs.io/api-targets/e-commerce/amazon/best-sellers
     """
 
     top_level_header: str = "Bestsellers"
