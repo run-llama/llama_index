@@ -53,6 +53,39 @@ class MockAsyncResponse:
         return self._json_data
 
 
+class MockStreamContent:
+    """Mimics aiohttp's StreamReader: async line iteration and iter_any."""
+
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    def __aiter__(self):
+        return self._lines()
+
+    async def _lines(self):
+        for chunk in self._chunks:
+            yield chunk
+
+    async def iter_any(self):
+        for chunk in self._chunks:
+            yield chunk
+
+
+class MockAsyncStreamResponse:
+    def __init__(self, chunks):
+        self.status = 200
+        self.content = MockStreamContent(chunks)
+
+    def raise_for_status(self):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 def test_llm_class():
     names_of_base_classes = [b.__name__ for b in SiliconFlow.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
@@ -206,29 +239,6 @@ async def test_astream_chat():
         b"data: [DONE]\n",
     ]
 
-    # Create a mock async response with iter_any method
-    class MockStreamContent:
-        def __init__(self, chunks):
-            self._chunks = chunks
-
-        async def iter_any(self):
-            for chunk in self._chunks:
-                yield chunk
-
-    class MockAsyncStreamResponse:
-        def __init__(self, chunks):
-            self.status = 200
-            self.content = MockStreamContent(chunks)
-
-        def raise_for_status(self):
-            pass
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
-
     mock_response = MockAsyncStreamResponse(stream_chunks)
 
     llm = SiliconFlow(api_key="test_api_key")
@@ -278,3 +288,36 @@ async def test_astream_chat():
             headers=llm._headers,
             timeout=llm.timeout,
         )
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_content_containing_data_prefix():
+    """
+    Regression test: streamed content containing the literal string "data: "
+    must not corrupt event parsing.
+
+    The async generator used to split raw reads on "data: ", so a delta whose
+    text contained that substring was cut apart and json.loads raised
+    JSONDecodeError mid-stream.
+    """
+    messages = [ChatMessage(role=MessageRole.USER, content="Hello")]
+
+    stream_chunks = [
+        b'data: {"id": "1", "choices": [{"delta": {"role": "assistant", "content": "the log shows data: 42 here"}}]}\n',
+        b"data: [DONE]\n",
+    ]
+
+    mock_response = MockAsyncStreamResponse(stream_chunks)
+
+    llm = SiliconFlow(api_key="test_api_key")
+
+    with mock.patch("aiohttp.ClientSession.post", return_value=mock_response):
+        stream = await llm.astream_chat(messages)
+
+        responses = []
+        async for response in stream:
+            responses.append(response)
+
+        assert len(responses) == 1
+        assert responses[0].delta == "the log shows data: 42 here"
+        assert responses[0].message.content == "the log shows data: 42 here"
