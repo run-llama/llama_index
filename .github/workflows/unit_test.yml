@@ -38,7 +38,8 @@ jobs:
           uv run -- llama-dev \
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }}
+            --base-ref ${{ github.event.pull_request.base.ref }} \
+            --clean
 
   test-core-py314:
     runs-on: ubuntu-latest-unit-tester

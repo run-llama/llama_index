@@ -13,7 +13,6 @@ from llama_index.vector_stores.weaviate import (
     SyncClientNotProvidedError,
     AsyncClientNotProvidedError,
 )
-import asyncio
 import pytest
 import pytest_asyncio
 import weaviate
@@ -80,26 +79,17 @@ def test_no_weaviate_client_instance_provided():
     assert not weaviate_client.is_connected()  # As the Weaviate client was created within WeaviateVectorStore, it lies in its responsibility to close the connection when it is not longer needed
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="class")
 class TestWeaviateAsync:
-    @pytest_asyncio.fixture(scope="class")
+    @pytest_asyncio.fixture(scope="class", loop_scope="class")
     async def async_client(self):
         client = weaviate.use_async_with_embedded()
         await client.connect()
         yield client
         await client.close()
 
-    # This replaces the event loop which is deprecated (discussion: https://github.com/pytest-dev/pytest-asyncio/discussions/587)
-    # It was necessary to implement it this way due to pytest 7 currently always being used in the pants test performed during CI.
-    # TODO Revert the commit where it was implemented like this as soon as pytest >= 8 is used in the pants tests (discussion: https://github.com/run-llama/llama_index/pull/17220#issuecomment-2532175072)
-    @pytest.fixture(scope="session")
-    def event_loop(self):
-        loop = asyncio.get_event_loop()
-        yield loop
-        loop.close()
-
-    @pytest_asyncio.fixture
-    async def async_vector_store(self, async_client, event_loop):
+    @pytest_asyncio.fixture(loop_scope="class")
+    async def async_vector_store(self, async_client):
         vector_store = WeaviateVectorStore(
             weaviate_client=async_client, index_name=TEST_COLLECTION_NAME
         )
@@ -442,6 +432,7 @@ class TestWeaviateSync:
         assert len(results.nodes) == 1
         results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.mark.asyncio
     async def test_async_methods_called_without_async_client(self, vector_store):
         """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
         with pytest.raises(AsyncClientNotProvidedError):
