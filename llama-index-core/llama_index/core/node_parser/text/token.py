@@ -167,7 +167,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         NOTE: the splits contain the separators.
         """
-        if len(self._tokenizer(text)) <= chunk_size:
+        rendered_text = text if self.keep_whitespaces else text.strip()
+        if len(self._tokenizer(rendered_text)) <= chunk_size:
             return [text]
 
         for split_fn in self._split_fns:
@@ -177,7 +178,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         new_splits = []
         for split in splits:
-            split_len = len(self._tokenizer(split))
+            rendered_split = split if self.keep_whitespaces else split.strip()
+            split_len = len(self._tokenizer(rendered_split))
             if split_len <= chunk_size:
                 new_splits.append(split)
             elif len(splits) == 1:
@@ -207,6 +209,21 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         cur_chunk: List[str] = []
         cur_len = 0
+
+        def chunk_len_after_lstrip(splits: List[str], default_len: int) -> int:
+            if self.keep_whitespaces or not splits:
+                return default_len
+
+            first_split = splits[0]
+            stripped_split = first_split.lstrip()
+            if stripped_split == first_split:
+                return default_len
+            return (
+                default_len
+                - len(self._tokenizer(first_split))
+                + len(self._tokenizer(stripped_split))
+            )
+
         for split in splits:
             split_len = len(self._tokenizer(split))
             if split_len > chunk_size:
@@ -217,7 +234,10 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if cur_len + split_len > chunk_size:
+            if (
+                cur_chunk
+                and chunk_len_after_lstrip(cur_chunk, cur_len + split_len) > chunk_size
+            ):
                 # end the previous chunk
                 chunk = (
                     "".join(cur_chunk)
@@ -232,11 +252,22 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 #   1. the current chunk length is less than chunk overlap
                 #   2. the total length is less than chunk size
                 while cur_chunk and (
-                    cur_len > self.chunk_overlap or cur_len + split_len > chunk_size
+                    chunk_len_after_lstrip(cur_chunk, cur_len) > self.chunk_overlap
+                    or chunk_len_after_lstrip(cur_chunk, cur_len + split_len)
+                    > chunk_size
                 ):
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
                     cur_len -= len(self._tokenizer(first_chunk))
+                    while (
+                        not self.keep_whitespaces
+                        and cur_chunk
+                        and not cur_chunk[0].strip()
+                    ):
+                        cur_len -= len(self._tokenizer(cur_chunk.pop(0)))
+
+            if not self.keep_whitespaces and not cur_chunk and not split.strip():
+                continue
 
             cur_chunk.append(split)
             cur_len += split_len

@@ -61,6 +61,53 @@ def test_split_long_token() -> None:
     assert len(chunks[1]) == 50
 
 
+def test_stripped_chunks_do_not_exceed_chunk_size() -> None:
+    tokenizer = tiktoken.get_encoding("gpt2")
+    splitter = TokenTextSplitter(
+        chunk_size=12,
+        chunk_overlap=4,
+        tokenizer=tokenizer.encode,
+        keep_whitespaces=False,
+    )
+
+    chunks = splitter.split_text(
+        "The quick brown fox jumps over the lazy dog. "
+        "The quick brown fox jumps over the lazy dog. "
+        "The quick brown fox jumps over the lazy dog. "
+        "The quick brown fox jumps over the lazy dog. "
+    )
+
+    assert all(len(tokenizer.encode(chunk)) <= 12 for chunk in chunks)
+
+    splitter = TokenTextSplitter(
+        chunk_size=2,
+        chunk_overlap=1,
+        tokenizer=tokenizer.encode,
+        keep_whitespaces=False,
+    )
+    for text in (" 🙂a", "a 🙂a"):
+        chunks = splitter.split_text(text)
+        assert all(len(tokenizer.encode(chunk)) <= 2 for chunk in chunks)
+
+    splitter = TokenTextSplitter(
+        chunk_size=3,
+        chunk_overlap=2,
+        tokenizer=tokenizer.encode,
+        keep_whitespaces=False,
+    )
+    chunks = splitter.split_text("a 🙂a b")
+    assert chunks == ["a 🙂a", "b"]
+
+    splitter = TokenTextSplitter(
+        chunk_size=2,
+        chunk_overlap=0,
+        tokenizer=tokenizer.encode,
+        keep_whitespaces=False,
+    )
+    chunks = splitter.split_text("a a  🙂 the")
+    assert chunks == ["a a", "🙂", "the"]
+
+
 def test_split_chinese(chinese_text: str) -> None:
     text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=0)
     chunks = text_splitter.split_text(chinese_text)
