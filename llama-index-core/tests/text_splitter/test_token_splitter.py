@@ -107,6 +107,26 @@ def test_stripped_chunks_do_not_exceed_chunk_size() -> None:
     chunks = splitter.split_text("a a  🙂 the")
     assert chunks == ["a a", "🙂", "the"]
 
+    regressions = [
+        (tokenizer, "1  光💻a", 4, 0),
+        (tiktoken.get_encoding("cl100k_base"), "b; -/\n", 3, 0),
+        (
+            tiktoken.get_encoding("cl100k_base"),
+            "a" + " a" * 126 + " -/\n",
+            128,
+            20,
+        ),
+    ]
+    for encoding, text, chunk_size, chunk_overlap in regressions:
+        splitter = TokenTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            tokenizer=encoding.encode,
+            keep_whitespaces=False,
+        )
+        chunks = splitter.split_text(text)
+        assert all(len(encoding.encode(chunk)) <= chunk_size for chunk in chunks)
+
 
 def test_split_chinese(chinese_text: str) -> None:
     text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=0)
