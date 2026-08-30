@@ -224,6 +224,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 + len(self._tokenizer(stripped_split))
             )
 
+        def rendered_chunk_len(splits: List[str], extra_split: str = "") -> int:
+            return len(self._tokenizer(("".join(splits) + extra_split).strip()))
+
         for split in splits:
             split_len = len(self._tokenizer(split))
             if split_len > chunk_size:
@@ -234,9 +237,12 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if (
-                cur_chunk
-                and chunk_len_after_lstrip(cur_chunk, cur_len + split_len) > chunk_size
+            if cur_chunk and (
+                chunk_len_after_lstrip(cur_chunk, cur_len + split_len) > chunk_size
+                or (
+                    not self.keep_whitespaces
+                    and rendered_chunk_len(cur_chunk, split) > chunk_size
+                )
             ):
                 # end the previous chunk
                 chunk = (
@@ -253,8 +259,16 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 #   2. the total length is less than chunk size
                 while cur_chunk and (
                     chunk_len_after_lstrip(cur_chunk, cur_len) > self.chunk_overlap
+                    or (
+                        not self.keep_whitespaces
+                        and rendered_chunk_len(cur_chunk) > self.chunk_overlap
+                    )
                     or chunk_len_after_lstrip(cur_chunk, cur_len + split_len)
                     > chunk_size
+                    or (
+                        not self.keep_whitespaces
+                        and rendered_chunk_len(cur_chunk, split) > chunk_size
+                    )
                 ):
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
