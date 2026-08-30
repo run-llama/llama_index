@@ -10,6 +10,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     PlainSerializer,
     PrivateAttr,
+    RootModel,
     Secret,
     SecretStr,
     SerializationInfo,
@@ -35,6 +36,7 @@ from pydantic.json_schema import JsonSchemaValue
 __all__ = [
     "pydantic",
     "BaseModel",
+    "RootModel",
     "ConfigDict",
     "GetJsonSchemaHandler",
     "GetCoreSchemaHandler",
