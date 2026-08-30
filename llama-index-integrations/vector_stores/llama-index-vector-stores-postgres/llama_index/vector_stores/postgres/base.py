@@ -688,67 +688,53 @@ class PGVectorStore(BasePydanticVectorStore):
             return "="
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+        metadata_column = self._table_class.metadata_
+        metadata_text = metadata_column[filter_.key].astext
+
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-            # Expects a single value in the metadata, and a list to compare
-
-            # In Python, to create a tuple with a single element, you need to include a comma after the element
-            # This code will correctly format the IN clause whether there is one element or multiple elements in the list:
-            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
-
-            return text(
-                f"metadata_->>'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)} "
-                f"({filter_value})"
-            )
+            expression = metadata_text.in_(filter_.value)
+            return expression if filter_.operator == FilterOperator.IN else ~expression
         elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
             # Expects a text array stored in the metadata, and a list of values to compare
             # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
             # Example: metadata_::jsonb->'tags' ?| array['AI', 'ML']
-            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
+            from sqlalchemy import cast, String
+            from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
-            return text(
-                f"metadata_::jsonb->'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)} "
-                f"array[{filter_value}]"
-            )
+            metadata_json = sqlalchemy.cast(metadata_column, JSONB)[filter_.key]
+            values = cast(filter_.value, ARRAY(String))
+            return metadata_json.op(self._to_postgres_operator(filter_.operator))(values)
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
-            return text(
-                f"metadata_::jsonb->'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)} "
-                f"'[\"{filter_.value}\"]'"
-            )
+            from sqlalchemy import cast
+            from sqlalchemy.dialects.postgresql import JSONB
+
+            return sqlalchemy.cast(metadata_column, JSONB)[filter_.key].op(
+                self._to_postgres_operator(filter_.operator)
+            )(cast([filter_.value], JSONB))
         elif (
             filter_.operator == FilterOperator.TEXT_MATCH
             or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
         ):
             # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
-            return text(
-                f"metadata_->>'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)} "
-                f"'%{filter_.value}%'"
+            return metadata_text.op(self._to_postgres_operator(filter_.operator))(
+                f"%{filter_.value}%"
             )
         elif filter_.operator == FilterOperator.IS_EMPTY:
             # Where the operator is is_empty, we need to check if the metadata is null
-            return text(
-                f"metadata_->>'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)}"
-            )
+            return metadata_text.is_(None)
         else:
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
-                return text(
-                    f"(metadata_->>'{filter_.key}')::float "
-                    f"{self._to_postgres_operator(filter_.operator)} "
-                    f"{float(filter_.value)}"
-                )
+                value = float(filter_.value)
+                return sqlalchemy.cast(metadata_text, sqlalchemy.Float).op(
+                    self._to_postgres_operator(filter_.operator)
+                )(value)
             except ValueError:
                 # If not a number, then treat it as a string
-                return text(
-                    f"metadata_->>'{filter_.key}' "
-                    f"{self._to_postgres_operator(filter_.operator)} "
-                    f"'{filter_.value}'"
+                return metadata_text.op(self._to_postgres_operator(filter_.operator))(
+                    filter_.value
                 )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
