@@ -29,7 +29,7 @@ from llama_index.core.memory import BaseMemory, Memory
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import NodeWithScore, TextNode
 from llama_index.core.settings import Settings
 from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
@@ -79,6 +79,16 @@ DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
   {chat_history}
   Follow Up Input: {question}
   Standalone question:"""
+
+
+def _empty_context_node() -> NodeWithScore:
+    return NodeWithScore(node=TextNode(text=""))
+
+
+def _drop_source_nodes(response: RESPONSE_TYPE) -> RESPONSE_TYPE:
+    response.source_nodes = []
+    response.metadata = {}
+    return response
 
 
 class CondensePlusContextChatEngine(BaseChatEngine):
@@ -334,8 +344,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if context_nodes or not self._respond_with_llm_on_empty_context:
             return synthesizer.synthesize(message, context_nodes)
 
-        response = synthesizer.get_response(query_str=message, text_chunks=[""])
-        return synthesizer._prepare_response_output(response, [])
+        # A placeholder chunk keeps the fallback on the regular synthesize path,
+        # which the synthesize events and the SYNTHESIZE callback hang off, and
+        # is then dropped because it is not a retrieved source.
+        response = synthesizer.synthesize(message, [_empty_context_node()])
+        return _drop_source_nodes(response)
 
     async def _asynthesize(
         self,
@@ -346,8 +359,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if context_nodes or not self._respond_with_llm_on_empty_context:
             return await synthesizer.asynthesize(message, context_nodes)
 
-        response = await synthesizer.aget_response(query_str=message, text_chunks=[""])
-        return synthesizer._prepare_response_output(response, [])
+        response = await synthesizer.asynthesize(message, [_empty_context_node()])
+        return _drop_source_nodes(response)
 
     @trace_method("chat")
     def chat(
