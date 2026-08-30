@@ -96,6 +96,26 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "SentenceEmbeddingOptimizer"
 
+    def _resolve_query_embedding(self, query_bundle: QueryBundle) -> List[float]:
+        """Return the query embedding, computing and caching it on first use."""
+        query_embedding = query_bundle.embedding
+        if query_embedding is None:
+            query_embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
+            query_bundle.embedding = query_embedding
+        return query_embedding
+
+    async def _aresolve_query_embedding(self, query_bundle: QueryBundle) -> List[float]:
+        """Return the query embedding, computing and caching it on first use."""
+        query_embedding = query_bundle.embedding
+        if query_embedding is None:
+            query_embedding = await self._embed_model.aget_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
+            query_bundle.embedding = query_embedding
+        return query_embedding
+
     def _split_node_text(self, node_with_score: NodeWithScore) -> List[str]:
         """Tokenize a node's text into sentences."""
         text = node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
@@ -106,7 +126,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         node_with_score: NodeWithScore,
         split_text: List[str],
         text_embeddings: List[List[float]],
-        query_bundle: QueryBundle,
+        query_embedding: List[float],
     ) -> None:
         """Shorten a single node in place, keeping only its top sentences."""
         num_top_k = None
@@ -117,7 +137,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             threshold = self.threshold_cutoff
 
         top_similarities, top_idxs = get_top_k_embeddings(
-            query_embedding=query_bundle.embedding,
+            query_embedding=query_embedding,
             embeddings=text_embeddings,
             similarity_fn=self._embed_model.similarity,
             similarity_top_k=num_top_k,
@@ -165,18 +185,13 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         for node_idx in range(len(nodes)):
             split_text = self._split_node_text(nodes[node_idx])
 
-            if query_bundle.embedding is None:
-                query_bundle.embedding = (
-                    self._embed_model.get_agg_embedding_from_queries(
-                        query_bundle.embedding_strs
-                    )
-                )
+            query_embedding = self._resolve_query_embedding(query_bundle)
 
             # embed each node's sentences independently
             text_embeddings = self._embed_model._get_text_embeddings(split_text)
 
             self._apply_optimization(
-                nodes[node_idx], split_text, text_embeddings, query_bundle
+                nodes[node_idx], split_text, text_embeddings, query_embedding
             )
 
         return nodes
@@ -190,14 +205,12 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         if query_bundle is None:
             return nodes
 
+        if not nodes:
+            return nodes
+
         split_texts = [self._split_node_text(node) for node in nodes]
 
-        if query_bundle.embedding is None:
-            query_bundle.embedding = (
-                await self._embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
-                )
-            )
+        query_embedding = await self._aresolve_query_embedding(query_bundle)
 
         # embed each node's sentences independently, in parallel
         embeddings_per_node = await run_jobs(
@@ -211,7 +224,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             nodes, split_texts, embeddings_per_node
         ):
             self._apply_optimization(
-                node_with_score, split_text, text_embeddings, query_bundle
+                node_with_score, split_text, text_embeddings, query_embedding
             )
 
         return nodes
