@@ -101,3 +101,17 @@ def test_split_token_does_not_overflow_when_stripped() -> None:
     chunks = splitter.split_text(text)
     for chunk in chunks:
         assert len(tokenizer.encode(chunk)) <= 12
+
+
+def test_split_token_preserves_content_when_stripping_would_overflow() -> None:
+    """Trimming a leading separator must not drop the first split."""
+
+    def tokenizer(value: str) -> list[int]:
+        # The leading separator shares a token with the following text before
+        # trimming, so stripping it makes the combined chunk one token longer.
+        return [0] * (len(value) - int(value.startswith(" ")))
+
+    splitter = TokenTextSplitter(chunk_size=2, chunk_overlap=0, tokenizer=tokenizer)
+    chunks = splitter.split_text("a b")
+
+    assert "".join(chunks).replace(" ", "") == "ab"
