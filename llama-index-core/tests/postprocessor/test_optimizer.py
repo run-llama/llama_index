@@ -143,3 +143,26 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
         [NodeWithScore(node=orig_node)], query
     )[0]
     assert optimized_node.node.get_content() == "world foo bar"
+
+
+@patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
+@patch.object(
+    MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+def test_optimizer_keeps_document_order(_mock_embeds: Any, _mock_embed: Any) -> None:
+    """Sentences are kept in the order they appear, not in similarity order."""
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
+        tokenizer_fn=mock_tokenizer_fn2,
+        threshold_cutoff=0.3,
+        context_before=0,
+        context_after=0,
+    )
+    # Closest to "bar", second closest to "foo", so both clear the threshold
+    # and "bar" is the stronger match even though it comes second in the text.
+    query = QueryBundle(query_str="foo bar", embedding=[0, 0, 0.4, 0.9, 0])
+    orig_node = TextNode(text="hello,world,foo,bar")
+    optimized_node = optimizer.postprocess_nodes(
+        [NodeWithScore(node=orig_node)], query
+    )[0]
+    assert optimized_node.node.get_content() == "foo bar"
