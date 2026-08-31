@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llama-index-tools-hive"
-version = "0.3.0"
+version = "0.3.1"
 description = "LlamaIndex Tool for Hive Intelligence"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
