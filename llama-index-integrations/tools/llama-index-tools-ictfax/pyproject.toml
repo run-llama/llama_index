@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-tools-ictfax"
+version = "0.1.0"
+description = "llama-index tools ICTFax integration — send and track faxes over the ICTCore REST API"
+authors = [{name = "ICT Innovations", email = "tahir@ictinnovations.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+keywords = ["fax", "ictfax", "ictcore", "telephony", "t38"]
+dependencies = [
+    "llama-index-core>=0.11.0",
+    "requests>=2.31.0",
+]
+
+[project.urls]
+Homepage = "https://ictfax.org"
+Repository = "https://github.com/ictinnovations/ictfax"
+"ICT Innovations" = "https://www.ictinnovations.com/"
+
+[tool.hatch.build.targets.wheel]
+packages = ["llama_index"]
