@@ -2,16 +2,17 @@ import logging
 import re
 from typing import (
     Any,
+    Callable,
     Dict,
+    Iterator,
     List,
+    Literal,
     NamedTuple,
     Optional,
-    Type,
-    Union,
     Set,
     Tuple,
-    Literal,
-    Callable,
+    Type,
+    Union,
 )
 
 import asyncpg  # noqa
@@ -766,7 +767,7 @@ class PGVectorStore(BasePydanticVectorStore):
     def _recursively_apply_filters(
         self,
         filters: List[MetadataFilters],
-        param_counter: Optional[Any] = None,
+        param_counter: Optional[Iterator[int]] = None,
     ) -> Any:
         """
         Returns a sqlalchemy where clause.
