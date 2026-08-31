@@ -3298,21 +3298,35 @@ def test_filter_key_is_bound_not_interpolated(operator):
 
 def test_filter_key_param_names_are_unique_across_filters():
     """
-    Combined filters must not collide on the key bind-parameter name.
-
-    Filters combined via AND/OR each receive a UUID-based key parameter, so
-    their names are distinct without depending on object lifetimes.
+    Combined filters must not collide on the key bind-parameter name,
+    and identical filter trees must generate stable SQL for caching.
     """
+    from sqlalchemy import select, column
+
     store = _bare_store()
     f1 = MetadataFilter(key="k1", value="v1", operator=FilterOperator.EQ)
     f2 = MetadataFilter(key="k2", value="v2", operator=FilterOperator.EQ)
-    filters = [f1, f2]  # keep both alive, as MetadataFilters would
+    filters = MetadataFilters(filters=[f1, f2], condition="and")
 
-    c1 = store._build_filter_clause(filters[0])
-    c2 = store._build_filter_clause(filters[1])
-    p1 = set(c1._bindparams)
-    p2 = set(c2._bindparams)
-    assert p1.isdisjoint(p2)
+    clause1 = store._recursively_apply_filters(filters)
+    # The two filter clauses receive distinct parameter names (filter_key_0, filter_key_1)
+    p0 = next(iter(clause1.clauses[0]._bindparams.values()))
+    p1 = next(iter(clause1.clauses[1]._bindparams.values()))
+    assert p0.key != p1.key
+    assert p0.value == "k1"
+    assert p1.value == "k2"
+
+    # When compiled in a query, parameters are distinct and bound correctly
+    stmt1 = select(column("id")).where(clause1)
+    compiled1 = stmt1.compile(compile_kwargs={"literal_binds": False})
+    assert p0.key in compiled1.params
+    assert p1.key in compiled1.params
+
+    # Repeated calls with the same filter structure produce identical SQL for compiled caching
+    clause2 = store._recursively_apply_filters(filters)
+    stmt2 = select(column("id")).where(clause2)
+    compiled2 = stmt2.compile(compile_kwargs={"literal_binds": False})
+    assert str(compiled1) == str(compiled2)
 
 
 def test_combined_metadata_filters_tree_bind_params():

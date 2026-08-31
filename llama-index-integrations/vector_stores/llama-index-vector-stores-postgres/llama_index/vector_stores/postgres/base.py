@@ -1,6 +1,5 @@
 import logging
 import re
-import uuid
 from typing import (
     Any,
     Dict,
@@ -688,13 +687,18 @@ class PGVectorStore(BasePydanticVectorStore):
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
 
-    def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+    def _build_filter_clause(
+        self, filter_: MetadataFilter, key_param: Optional[str] = None
+    ) -> Any:
         # Bind the metadata key as a SQL parameter so that keys coming from
         # untrusted sources (e.g. an agent choosing which field to filter on)
-        # cannot alter the query. Use a UUID rather than an object id so the
-        # uniqueness does not depend on CPython object lifetimes. This matches
-        # the parameter naming scheme used by the companion value-binding fix.
-        key_param = f"filter_key_{uuid.uuid4().hex}"
+        # cannot alter the query. Parameter names use a deterministic counter
+        # scoped to the filter tree (or filter_key_0 when called standalone)
+        # so identical filter structures produce stable SQL text and hit
+        # SQLAlchemy's statement compilation cache while guaranteeing
+        # parameter name uniqueness across the query tree.
+        if key_param is None:
+            key_param = "filter_key_0"
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
@@ -759,11 +763,19 @@ class PGVectorStore(BasePydanticVectorStore):
                     f"'{filter_.value}'"
                 ).bindparams(**{key_param: filter_.key})
 
-    def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
+    def _recursively_apply_filters(
+        self,
+        filters: List[MetadataFilters],
+        param_counter: Optional[Any] = None,
+    ) -> Any:
         """
         Returns a sqlalchemy where clause.
         """
+        import itertools
         import sqlalchemy
+
+        if param_counter is None:
+            param_counter = itertools.count()
 
         sqlalchemy_conditions = {
             "or": sqlalchemy.sql.or_,
@@ -779,9 +791,13 @@ class PGVectorStore(BasePydanticVectorStore):
         return sqlalchemy_conditions[filters.condition](
             *(
                 (
-                    self._build_filter_clause(filter_)
+                    self._build_filter_clause(
+                        filter_, key_param=f"filter_key_{next(param_counter)}"
+                    )
                     if not isinstance(filter_, MetadataFilters)
-                    else self._recursively_apply_filters(filter_)
+                    else self._recursively_apply_filters(
+                        filter_, param_counter=param_counter
+                    )
                 )
                 for filter_ in filters.filters
             )
