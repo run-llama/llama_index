@@ -808,3 +808,69 @@ def test_chat_completions_tool_kwargs_string_passthrough() -> None:
     assert len(tool_calls) == 1
     function = tool_calls[0]["function"]
     assert function["arguments"] == '{"q": "test"}'
+
+
+def test_responses_api_tool_result_image_becomes_image_content() -> None:
+    """Test that an image returned by a tool reaches the model as image content.
+
+    function_call_output.output takes a list of input_text / input_image / input_file
+    parts as well as a plain string, so an ImageBlock on a tool result does not have to
+    be dropped.
+    """
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        blocks=[
+            TextBlock(text="Retrieved embedded image."),
+            ImageBlock(image=b"png bytes", image_mimetype="image/png"),
+        ],
+        additional_kwargs={"tool_call_id": "call_1"},
+    )
+
+    result = to_openai_responses_message_dict(msg, model="gpt-5.4")
+
+    assert result["type"] == "function_call_output"
+    assert result["call_id"] == "call_1"
+    assert result["output"] == [
+        {"type": "input_text", "text": "Retrieved embedded image."},
+        {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,cG5nIGJ5dGVz",
+            "detail": "auto",
+        },
+    ]
+
+
+def test_responses_api_text_only_tool_result_stays_a_string() -> None:
+    """Test that a tool result with no image or file is still sent as a plain string."""
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        blocks=[TextBlock(text="xml result")],
+        additional_kwargs={"tool_call_id": "call_1"},
+    )
+
+    result = to_openai_responses_message_dict(msg, model="gpt-5.4")
+
+    assert result["output"] == "xml result"
+
+
+def test_responses_api_lone_tool_message_does_not_raise() -> None:
+    """Test that a single tool message survives the one-item user-content shortcut.
+
+    A function_call_output carries no "role", so reading it unconditionally raised
+    KeyError for any history that serialized to exactly one tool message.
+    """
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        blocks=[TextBlock(text="xml result")],
+        additional_kwargs={"tool_call_id": "call_1"},
+    )
+
+    result = to_openai_message_dicts([msg], model="gpt-5.4", is_responses_api=True)
+
+    assert result == [
+        {"type": "function_call_output", "output": "xml result", "call_id": "call_1"}
+    ]
