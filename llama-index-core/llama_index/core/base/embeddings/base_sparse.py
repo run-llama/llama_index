@@ -4,7 +4,7 @@ import asyncio
 import math
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, Callable, Coroutine, Dict, List, Optional
+from typing import Any, Callable, Coroutine, Dict, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -216,7 +216,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         for res in results:
             if isinstance(res, Exception):
                 raise res
-        return results
+        return cast(List[SparseEmbedding], results)
 
     @dispatcher.span
     def get_text_embedding(self, text: str) -> SparseEmbedding:
@@ -353,7 +353,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
                 nested_embeddings = await asyncio.gather(
                     *embeddings_coroutines, return_exceptions=True
                 )
-                
+
             for res in nested_embeddings:
                 if isinstance(res, Exception):
                     raise res

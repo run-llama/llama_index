@@ -310,7 +310,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         for res in results:
             if isinstance(res, Exception):
                 raise res
-        return results
+        return cast(List[Embedding], results)
 
     async def _aget_text_embeddings_rate_limited(
         self, texts: List[str]
@@ -609,7 +609,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 nested_embeddings = await asyncio.gather(
                     *embeddings_coroutines, return_exceptions=True
                 )
-                
+
             for res in nested_embeddings:
                 if isinstance(res, Exception):
                     raise res
