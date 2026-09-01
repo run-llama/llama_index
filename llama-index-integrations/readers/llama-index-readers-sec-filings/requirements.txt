@@ -1,7 +1,7 @@
 aiohttp==3.14.3
 Faker==19.1.0
 ratelimit==2.2.1
-starlette==0.30.0
-unstructured==0.8.1
-urllib3==2.0.4
+starlette==1.3.1
+unstructured==0.18.18
+urllib3==2.7.0
 scikit-learn
