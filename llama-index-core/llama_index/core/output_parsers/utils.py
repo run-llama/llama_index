@@ -33,6 +33,12 @@ def _marshal_llm_to_json(output: str) -> str:
         left = left_brace
         right = output.rfind("}")
 
+    if left == -1:
+        return ""
+
+    if right == -1 or right < left:
+        return output[left:]
+
     return output[left : right + 1]
 
 
@@ -41,6 +47,11 @@ def parse_json_markdown(text: str) -> Any:
         text = text.split("```json")[1].strip().strip("```").strip()
 
     json_string = _marshal_llm_to_json(text)
+
+    if not json_string:
+        raise OutputParserException(
+            f"No JSON object or array found in output: {text}"
+        )
 
     try:
         json_obj = json.loads(json_string)
@@ -58,6 +69,12 @@ def parse_json_markdown(text: str) -> Any:
             )
         except NameError as exc:
             raise ImportError("Please pip install PyYAML.") from exc
+
+    if json_obj is None:
+        raise OutputParserException(
+            f"Got invalid JSON object (parsed as None). "
+            f"Got JSON string: {json_string}"
+        )
 
     return json_obj
 
