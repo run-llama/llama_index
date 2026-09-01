@@ -79,6 +79,23 @@ def test_empty_payload_rejected_before_aws_call():
         embedding._get_request_body("cohere", [], "text")
 
 
+def test_whitespace_only_cohere_payload_rejected():
+    """
+    A non-empty list whose strings are all empty or whitespace must be rejected
+    locally before reaching AWS. Without this guard, e.g. ['', '  '] produced by
+    ''.split() would sail past the empty-list check and get a real embedding for
+    a null/whitespace query.
+    """
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name="cohere.embed-english-v3", client=bedrock_client
+    )
+
+    for payload in [[""], ["   "], ["", "  ", "\t"]]:
+        with pytest.raises(ValueError, match="at least one non-empty text"):
+            embedding._get_request_body("cohere", payload, "text")
+
+
 def test_non_empty_payload_still_builds_request_body():
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
     embedding = BedrockEmbedding(
