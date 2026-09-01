@@ -33,6 +33,14 @@ def _marshal_llm_to_json(output: str) -> str:
         left = left_brace
         right = output.rfind("}")
 
+    if left == -1:
+        return ""
+
+    # rfind returns -1 when the payload was truncated before its closer, and
+    # output[left:0] would then collapse to "" and hide the partial JSON.
+    if right == -1:
+        return output[left:]
+
     return output[left : right + 1]
 
 
@@ -58,6 +66,13 @@ def parse_json_markdown(text: str) -> Any:
             )
         except NameError as exc:
             raise ImportError("Please pip install PyYAML.") from exc
+
+        # yaml.safe_load returns None for a document it cannot read, it does not raise.
+        if json_obj is None:
+            raise OutputParserException(
+                f"Got invalid JSON object. Error: {e_json}. "
+                f"Got JSON string: {json_string}"
+            )
 
     return json_obj
 
