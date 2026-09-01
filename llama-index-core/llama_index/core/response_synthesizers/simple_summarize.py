@@ -69,18 +69,19 @@ class SimpleSummarize(BaseSynthesizer):
             text_chunks=[single_text_chunk],
             llm=self._llm,
         )
+        context_str = "\n".join(truncated_chunks)
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
             response = self._llm.predict(
                 text_qa_template,
-                context_str=truncated_chunks,
+                context_str=context_str,
                 **kwargs,
             )
         else:
             response = self._llm.stream(
                 text_qa_template,
-                context_str=truncated_chunks,
+                context_str=context_str,
                 **kwargs,
             )
 
@@ -104,18 +105,19 @@ class SimpleSummarize(BaseSynthesizer):
             text_chunks=[single_text_chunk],
             llm=self._llm,
         )
+        context_str = "\n".join(truncated_chunks)
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
             response = await self._llm.apredict(
                 text_qa_template,
-                context_str=truncated_chunks,
+                context_str=context_str,
                 **response_kwargs,
             )
         else:
             response = await self._llm.astream(
                 text_qa_template,
-                context_str=truncated_chunks,
+                context_str=context_str,
                 **response_kwargs,
             )
 
