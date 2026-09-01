@@ -146,6 +146,38 @@ def test_embed_model_single_sentence_document() -> None:
     assert nodes[0].get_content() == "Only one sentence here."
 
 
+def test_embed_model_empty_document() -> None:
+    """
+    Empty or whitespace-only documents yield no nodes instead of raising.
+
+    Regression test for issue #17032: ``build_semantic_nodes_from_nodes`` ->
+    ``_create_initial_chunks`` raised ``IndexError`` on ``sentences[0]`` because
+    an empty document produces no sentences.
+    """
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(embed_model=embed)
+
+    assert splitter.get_nodes_from_documents([Document(text="")]) == []
+    assert splitter.get_nodes_from_documents([Document(text="   \n\t  ")]) == []
+
+
+def test_embed_model_empty_document_in_batch() -> None:
+    """A single empty document must not crash a whole batch of documents."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(embed_model=embed)
+
+    docs = [
+        Document(text="Only one sentence here."),
+        Document(text=""),
+        Document(text="Another standalone sentence."),
+    ]
+    nodes = splitter.get_nodes_from_documents(docs)
+
+    # The two non-empty documents still produce nodes; the empty one is skipped.
+    assert len(nodes) == 2
+    assert all(len(n.get_content()) > 0 for n in nodes)
+
+
 def test_clean_text_advanced() -> None:
     """Test that _clean_text_advanced properly filters out stopwords from a string."""
     from llama_index.core.utils import globals_helper
