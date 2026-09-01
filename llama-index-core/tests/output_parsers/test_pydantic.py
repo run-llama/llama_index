@@ -1,9 +1,12 @@
 """Test pydantic output parser."""
 
+import json
+
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.prompts import PromptTemplate
 
 
 class AttrDict(BaseModel):
@@ -58,6 +61,34 @@ def test_pydantic_format() -> None:
     parser = PydanticOutputParser(output_cls=AttrDict)
     formatted_query = parser.format(query)
     assert "hello world" in formatted_query
+
+
+def test_pydantic_format_emits_valid_unescaped_schema() -> None:
+    """format() must emit the real JSON schema, not a '{{'-escaped one."""
+    parser = PydanticOutputParser(output_cls=AttrDict)
+    formatted_query = parser.format("hello world")
+
+    assert "{{" not in formatted_query
+
+    # the embedded schema must be valid JSON
+    schema_str = formatted_query.split("Here's a JSON schema to follow:")[1]
+    schema_str = schema_str.split("Output a valid JSON object")[0].strip()
+    schema = json.loads(schema_str)
+    assert schema["title"] == "AttrDict"
+
+    # the escaped variant is still available for embedding into raw templates
+    assert "{{" in parser.format_string
+
+
+def test_pydantic_output_parser_no_escaped_braces_in_final_prompt() -> None:
+    """The final prompt built by PromptTemplate must contain a valid schema."""
+    parser = PydanticOutputParser(output_cls=AttrDict)
+    prompt = PromptTemplate("Extract the object: {text}", output_parser=parser)
+    final_prompt = prompt.format(text="some text")
+
+    assert "Extract the object: some text" in final_prompt
+    assert "{{" not in final_prompt
+    assert '"title": "AttrDict"' in final_prompt
 
 
 def test_pydantic_format_with_blocks() -> None:
