@@ -41,7 +41,7 @@ keywords = [
     "wordlift",
 ]
 dependencies = [
-    "langchain>=0.1.4,<0.2",
+    "langchain>=0.1.4,<1.4",
     "graphql-core>=3.2.3,<4",
     "bs4",
     "llama-index-core>=0.13.0,<0.15",

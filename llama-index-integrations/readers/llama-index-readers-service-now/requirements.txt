@@ -92,7 +92,7 @@ comm==0.2.2
     #   ipywidgets
 coverage==7.9.2
     # via pytest-cov
-cryptography==45.0.5
+cryptography==50.0.0
     # via
     #   types-pyopenssl
     #   types-redis
@@ -345,7 +345,7 @@ pexpect==4.9.0 ; sys_platform != 'win32'
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==12.2.0
+pillow==12.3.0
     # via llama-index-core
 platformdirs==4.3.8
     # via
@@ -436,7 +436,7 @@ regex==2024.11.6
     # via
     #   nltk
     #   tiktoken
-requests==2.32.5
+requests==2.33.0
     # via
     #   jupyterlab-server
     #   llama-index-core
@@ -458,7 +458,7 @@ rpds-py==0.26.0
 ruff==0.11.11
 send2trash==1.8.3
     # via jupyter-server
-setuptools==80.9.0
+setuptools==83.0.0
     # via
     #   jupyterlab
     #   llama-index-core
