@@ -443,9 +443,21 @@ async def chat_message_to_gemini(
     # the tool call response is the content of the message, overriding the existing content
     # (the only content before this should be the tool call)
     if message.additional_kwargs.get("tool_call_id"):
+        # A tool may return an image, and FunctionResponse.parts takes
+        # FunctionResponsePart inline media. The loop above already built those
+        # images as ordinary Parts, which this branch then threw away.
+        image_parts = [
+            types.FunctionResponsePart.from_bytes(
+                data=block.resolve_image(as_base64=False).read(),
+                mime_type=block.image_mimetype or "image/jpeg",
+            )
+            for block in message.blocks
+            if isinstance(block, ImageBlock)
+        ]
         function_response_part = types.Part.from_function_response(
             name=message.additional_kwargs.get("tool_call_id"),
             response={"result": message.content},
+            parts=image_parts or None,
         )
         return (
             types.Content(
