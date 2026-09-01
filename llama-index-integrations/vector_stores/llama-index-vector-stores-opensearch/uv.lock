@@ -2094,7 +2094,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-opensearch"
-version = "1.2.0"
+version = "1.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
