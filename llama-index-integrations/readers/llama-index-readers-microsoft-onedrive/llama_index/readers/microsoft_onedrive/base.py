@@ -267,13 +267,18 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         """
         # Extract download URL and filename from the provided item.
         file_download_url = item["@microsoft.graph.downloadUrl"]
-        file_name = item["name"]
+        file_name = os.path.basename(str(item["name"]).replace("\\", "/"))
+        if file_name in ("", ".", ".."):
+            raise ValueError(f"Invalid OneDrive file name: {item['name']!r}")
 
         # Download the file.
         file_data = requests.get(file_download_url)
 
         # Save the downloaded file to the specified local directory.
-        file_path = os.path.join(local_dir, file_name)
+        local_dir = os.path.abspath(local_dir)
+        file_path = os.path.abspath(os.path.join(local_dir, file_name))
+        if os.path.commonpath([local_dir, file_path]) != local_dir:
+            raise ValueError(f"Refusing to write outside download directory: {file_name!r}")
         with open(file_path, "wb") as f:
             f.write(file_data.content)
 
