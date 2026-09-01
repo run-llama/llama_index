@@ -1,9 +1,8 @@
-import asyncio
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 import re
 import json
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import asyncio_run, run_jobs
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.llms.llm import LLM
 from llama_index.core.graph_stores.types import (
@@ -300,7 +299,7 @@ class DynamicLLMPathExtractor(TransformComponent):
             List[BaseNode]: Processed nodes with extracted information.
 
         """
-        return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
+        return asyncio_run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
     async def _apredict_without_props(self, text: str) -> str:
         """
