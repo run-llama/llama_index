@@ -68,7 +68,7 @@ def parse_code_markdown(text: str, only_last: bool) -> List[str]:
 
     # Regular expression pattern to match code within triple backticks with
     # a Python marker. Like: ```python df.columns```
-    python_str_pattern = re.compile(r"^```python", re.IGNORECASE)
+    python_str_pattern = re.compile(r"^```python", re.IGNORECASE | re.MULTILINE)
     text = python_str_pattern.sub("```", text)
 
     # Find all matches of the pattern in the text
