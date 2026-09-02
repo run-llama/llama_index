@@ -122,7 +122,7 @@ def test_stream_chat_runs_cleanup(monkeypatch):
     monkeypatch.setattr(
         base_mod,
         "chat_from_gemini_response",
-        lambda *_args, **_kwargs: SimpleNamespace(delta=None),
+        lambda *_args, **_kwargs: SimpleNamespace(delta=None, additional_kwargs={}),
     )
 
     deleted = {"called": False}
@@ -166,7 +166,7 @@ async def test_astream_chat_runs_cleanup(monkeypatch):
     monkeypatch.setattr(
         base_mod,
         "chat_from_gemini_response",
-        lambda *_args, **_kwargs: SimpleNamespace(delta=None),
+        lambda *_args, **_kwargs: SimpleNamespace(delta=None, additional_kwargs={}),
     )
 
     deleted = {"called": False}
