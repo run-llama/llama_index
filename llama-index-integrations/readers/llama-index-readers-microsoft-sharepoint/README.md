@@ -38,7 +38,7 @@ This loader loads the files present in a specific folder in SharePoint.
 
 If the files are present in the `Test` folder in SharePoint Site under `root` directory, then the input for the loader for `file_path` is `Test`
 
-![FilePath](file_path_info.png)
+![FilePath](llama_index/readers/microsoft_sharepoint/file_path_info.png)
 
 ```python
 from llama_index.readers.microsoft_sharepoint import SharePointReader

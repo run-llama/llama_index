@@ -15,7 +15,7 @@ This integration enables the use of WordLift as a vector store for LlamaIndex, a
 
 ## Usage
 
-Please refer to the [notebook](./examples/wordlift_vector_store_demo.ipynb) for usage of WordLift as vector store in LlamaIndex.
+Please refer to the [notebook](../../../docs/examples/vector_stores/WordLiftDemo.ipynb) for usage of WordLift as vector store in LlamaIndex.
 
 WordLift Knowledge Graphs are built on the principles of fully Linked Data, where each entity is assigned a permanent dereferentiable URI.\
 When adding nodes to an existing Knowledge Graph, it's essential to include an "entity_id" in the metadata of each loaded document.\
