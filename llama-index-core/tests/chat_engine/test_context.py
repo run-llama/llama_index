@@ -51,10 +51,13 @@ def test_chat_stream(chat_engine: ContextChatEngine):
     response = chat_engine.stream_chat("Hello World!")
 
     num_iters = 0
-    for _ in response.response_gen:
+    response_text = ""
+    for chunk in response.response_gen:
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert len(chat_engine.chat_history) == 2
@@ -62,10 +65,13 @@ def test_chat_stream(chat_engine: ContextChatEngine):
     response = chat_engine.stream_chat("What is the capital of the moon?")
 
     num_iters = 0
-    for _ in response.response_gen:
+    response_text = ""
+    for chunk in response.response_gen:
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
@@ -75,9 +81,12 @@ def test_chat_stream(chat_engine: ContextChatEngine):
     q = QueryBundle("Hello World through QueryBundle")
     response = chat_engine.stream_chat(q)
     num_iters = 0
-    for _ in response.response_gen:
+    response_text = ""
+    for chunk in response.response_gen:
         num_iters += 1
-    assert num_iters == 1
+        response_text += chunk
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert str(q) in str(response)
     assert len(chat_engine.chat_history) == 2
     assert str(q) in str(chat_engine.chat_history[0])
@@ -109,10 +118,13 @@ async def test_chat_astream(chat_engine: ContextChatEngine):
     response = await chat_engine.astream_chat("Hello World!")
 
     num_iters = 0
-    async for _ in response.async_response_gen():
+    response_text = ""
+    async for chunk in response.async_response_gen():
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert len(chat_engine.chat_history) == 2
@@ -120,10 +132,13 @@ async def test_chat_astream(chat_engine: ContextChatEngine):
     response = await chat_engine.astream_chat("What is the capital of the moon?")
 
     num_iters = 0
-    async for _ in response.async_response_gen():
+    response_text = ""
+    async for chunk in response.async_response_gen():
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
@@ -133,9 +148,12 @@ async def test_chat_astream(chat_engine: ContextChatEngine):
     q = QueryBundle("Hello World through QueryBundle")
     response = await chat_engine.astream_chat(q)
     num_iters = 0
-    async for _ in response.async_response_gen():
+    response_text = ""
+    async for chunk in response.async_response_gen():
         num_iters += 1
-    assert num_iters == 1
+        response_text += chunk
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert str(q) in str(response)
     assert len(chat_engine.chat_history) == 2
     assert str(q) in str(chat_engine.chat_history[0])
