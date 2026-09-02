@@ -70,6 +70,13 @@ def azure_llm_async_fixture():
     client_instance = mock_async_client_cls.return_value
     # Azure async client's __aenter__ returns self; mirror that behavior in tests.
     client_instance.__aenter__.return_value = client_instance
+    # llama-index-core accesses `metadata` (via `to_payload`) on every chat call,
+    # which queries the sync client's model info.
+    llm._client.get_model_info.return_value = ModelInfo(
+        model_name="my_model_name",
+        model_provider_name="my_provider_name",
+        model_type="chat-completions",
+    )
     return AsyncClientFixture(llm=llm, client_instance=client_instance)
 
 
@@ -124,6 +131,11 @@ def test_llm_json():
             )
         ]
     )
+    llm._client.get_model_info.return_value = ModelInfo(
+        model_name="my_model_name",
+        model_provider_name="my_provider_name",
+        model_type="chat-completions",
+    )
     return llm
 
 
@@ -156,6 +168,11 @@ def test_llm_tools():
                 )
             )
         ]
+    )
+    llm._client.get_model_info.return_value = ModelInfo(
+        model_name="my_model_name",
+        model_provider_name="my_provider_name",
+        model_type="chat-completions",
     )
     return llm
 
