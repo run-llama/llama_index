@@ -33,3 +33,8 @@ async def test_aretrieve_uses_async_query_generation():
     await retriever.aretrieve("test query")
 
     assert async_called
+
+
+def test_query_fusion_retriever_requires_retrievers():
+    with pytest.raises(ValueError, match="retriever"):
+        QueryFusionRetriever(retrievers=[])
