@@ -1,5 +1,7 @@
 import pytest
 
+from typing import Any, List, Optional
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     DocumentBlock,
@@ -7,7 +9,8 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     VideoBlock,
 )
-from llama_index.core.memory.memory import Memory
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.memory.memory import BaseMemoryBlock, Memory
 from llama_index.core.storage.chat_store.sql import MessageStatus
 
 
@@ -337,3 +340,135 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+class _RecordingBlock(BaseMemoryBlock[str]):
+    """Test block that records every batch pushed from short-term memory."""
+
+    received: List[List[str]] = Field(default_factory=list)
+    fail_next: bool = False
+
+    async def _aget(
+        self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any
+    ) -> str:
+        return ""
+
+    async def _aput(self, messages: List[ChatMessage]) -> None:
+        if self.fail_next:
+            self.fail_next = False
+            raise RuntimeError("transient block failure")
+        self.received.append([m.content or "" for m in messages])
+
+
+class _OrderCheckingBlock(BaseMemoryBlock[str]):
+    """Test block that checks the flushed messages are still active when called."""
+
+    sql_store: Any = None
+    saw_active: List[bool] = Field(default_factory=list)
+
+    async def _aget(
+        self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any
+    ) -> str:
+        return ""
+
+    async def _aput(self, messages: List[ChatMessage]) -> None:
+        session_id = messages[0].additional_kwargs["session_id"]
+        active = await self.sql_store.get_messages(
+            session_id, status=MessageStatus.ACTIVE
+        )
+        active_contents = {m.content for m in active}
+        self.saw_active.append(all(m.content in active_contents for m in messages))
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_block_failure_keeps_messages_active() -> None:
+    """A failing memory block must not cause flushed messages to be archived."""
+    block = _RecordingBlock(name="rec", fail_next=True)
+    memory = Memory(
+        token_limit=1000,
+        token_flush_size=700,
+        chat_history_token_ratio=0.9,
+        session_id="test_block_failure",
+        memory_blocks=[block],
+    )
+    chat_messages = [
+        ChatMessage(role="user", content="x " * 500),
+        ChatMessage(role="assistant", content="y " * 500),
+        ChatMessage(role="user", content="z " * 500),
+    ]
+
+    with pytest.raises(RuntimeError, match="transient block failure"):
+        await memory.aput_messages(chat_messages)
+
+    # Nothing may be archived: the block never accepted the messages, so they
+    # must stay active for a later flush to retry the delivery.
+    active = await memory.aget_all(status=MessageStatus.ACTIVE)
+    archived = await memory.aget_all(status=MessageStatus.ARCHIVED)
+    assert {m.content for m in active} == {m.content for m in chat_messages}
+    assert len(archived) == 0
+    assert block.received == []
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_blocks_run_before_archiving() -> None:
+    """Memory blocks receive flushed messages while they are still active."""
+    memory = Memory(
+        token_limit=1000,
+        token_flush_size=700,
+        chat_history_token_ratio=0.9,
+        session_id="test_flush_ordering",
+    )
+    block = _OrderCheckingBlock(name="order", sql_store=memory.sql_store)
+    memory.memory_blocks.append(block)
+
+    await memory.aput_messages(
+        [
+            ChatMessage(role="user", content="x " * 500),
+            ChatMessage(role="assistant", content="y " * 500),
+            ChatMessage(role="user", content="z " * 500),
+        ]
+    )
+
+    # Every batch the block received was still active at delivery time.
+    assert block.saw_active
+    assert all(block.saw_active)
+
+    # After a successful flush the delivered messages are archived.
+    archived = await memory.aget_all(status=MessageStatus.ARCHIVED)
+    assert len(archived) > 0
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_retries_block_delivery_after_failure() -> None:
+    """After a block failure, the next flush redelivers the backlog (at-least-once)."""
+    block = _RecordingBlock(name="rec_retry", fail_next=True)
+    memory = Memory(
+        token_limit=1000,
+        token_flush_size=700,
+        chat_history_token_ratio=0.9,
+        session_id="test_block_retry",
+        memory_blocks=[block],
+    )
+    chat_messages = [
+        ChatMessage(role="user", content="x " * 500),
+        ChatMessage(role="assistant", content="y " * 500),
+        ChatMessage(role="user", content="z " * 500),
+    ]
+
+    with pytest.raises(RuntimeError, match="transient block failure"):
+        await memory.aput_messages(chat_messages)
+    assert block.received == []
+
+    # The block has recovered; adding another message triggers a new flush.
+    await memory.aput(ChatMessage(role="assistant", content="w " * 500))
+
+    # Everything that ends up archived must have been delivered to the block.
+    archived = await memory.aget_all(status=MessageStatus.ARCHIVED)
+    delivered = {content for batch in block.received for content in batch}
+    assert len(archived) > 0
+    assert all(m.content in delivered for m in archived)
+
+    # And nothing was lost: every message is still either active or archived.
+    active = await memory.aget_all(status=MessageStatus.ACTIVE)
+    remaining = {m.content for m in active} | {m.content for m in archived}
+    assert remaining == {m.content for m in chat_messages} | {"w " * 500}

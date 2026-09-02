@@ -778,13 +778,12 @@ class Memory(BaseMemory):
                             reversed_queue = turn_messages[::-1] + reversed_queue
                         # else: No user message found - queue may remain empty (defensive)
 
-                # Archive the flushed messages
+                # Waterfall the flushed messages to memory blocks. This must
+                # happen BEFORE archiving: if a block raises (e.g. a transient
+                # LLM/embedding failure), the messages stay active so a later
+                # flush can retry the delivery instead of the messages being
+                # silently dropped from the conversation.
                 if messages_to_flush:
-                    await self.sql_store.archive_oldest_messages(
-                        self.session_id, n=len(messages_to_flush)
-                    )
-
-                    # Waterfall the flushed messages to memory blocks
                     await asyncio.gather(
                         *[
                             block.aput(
@@ -794,6 +793,14 @@ class Memory(BaseMemory):
                             )
                             for block in self.memory_blocks
                         ]
+                    )
+
+                    # Archive the flushed messages only once every block has
+                    # accepted them. If archiving itself fails, the messages
+                    # stay active and are delivered to the blocks again on the
+                    # next flush, which is the safer failure mode.
+                    await self.sql_store.archive_oldest_messages(
+                        self.session_id, n=len(messages_to_flush)
                     )
 
                 # Recalculate remaining tokens
