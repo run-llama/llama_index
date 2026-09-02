@@ -144,8 +144,7 @@ def input_to_query_satisfied(png_1px_b64) -> OrderedDict[str | None, bool]:
                 input2_value=True,
                 expected_response="input2",
                 expected_last_llm_message_prefix=(
-                    # Refine template is used after first query satisfied results in a temporary answer
-                    "You are an expert Q&A system that strictly operates in two modes when refining existing answers:"
+                    "You are an expert Q&A system that is trusted around the world"
                 ),
             ),
             id="one query satisfied",
@@ -588,7 +587,7 @@ class TestRefine:
         if llm_case.chat_function is not None:
             assert llm.last_called_chat_function.count(llm_case.chat_function) == len(
                 nodes
-            )
+            ) - int(query_satisfied_case.input2_value)
             assert llm.last_chat_messages[0].content.startswith(
                 query_satisfied_case.expected_last_llm_message_prefix
             )
@@ -632,7 +631,7 @@ class TestRefine:
         if llm_case.async_chat_function is not None:
             assert llm.last_called_chat_function.count(
                 llm_case.async_chat_function
-            ) == len(nodes)
+            ) == len(nodes) - int(query_satisfied_case.input2_value)
             assert llm.last_chat_messages[0].content.startswith(
                 query_satisfied_case.expected_last_llm_message_prefix
             )
@@ -660,15 +659,15 @@ class TestRefine:
             response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == ["chat", "chat", "chat"], "One per node"
+        assert llm.last_called_chat_function == ["chat"] * (
+            len(multimodal_nodes) - int(query_satisfied_case.input2_value)
+        )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == (
+            ["text"] if query_satisfied_case.input2_value else ["text", "image", "text"]
+        )
 
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal_structured_answer_filtering_default_text_completion_refine_program(
@@ -693,17 +692,15 @@ class TestRefine:
             )
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == ["achat", "achat", "achat"], (
-            "One per node, no sync call for mock"
+        assert llm.last_called_chat_function == ["achat"] * (
+            len(multimodal_nodes) - int(query_satisfied_case.input2_value)
         )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == (
+            ["text"] if query_satisfied_case.input2_value else ["text", "image", "text"]
+        )
 
     def test_synthesize__structured_answer_filtering_with_streaming_default_text_completion_refine_program(
         self,
@@ -742,7 +739,7 @@ class TestRefine:
         if llm_case.streaming_chat_function is not None:
             assert llm.last_called_chat_function.count(
                 llm_case.streaming_chat_function
-            ) == len(nodes)
+            ) == len(nodes) - int(query_satisfied_case.input2_value)
             assert llm.last_chat_messages[0].content.startswith(
                 query_satisfied_case.expected_last_llm_message_prefix
             )
@@ -788,7 +785,7 @@ class TestRefine:
         if llm_case.async_streaming_chat_function is not None:
             assert llm.last_called_chat_function.count(
                 llm_case.async_streaming_chat_function
-            ) == len(nodes)
+            ) == len(nodes) - int(query_satisfied_case.input2_value)
             assert llm.last_chat_messages[0].content.startswith(
                 query_satisfied_case.expected_last_llm_message_prefix
             )
@@ -814,7 +811,9 @@ class TestRefine:
         response = synthesizer.synthesize(query="test", nodes=nodes)
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function.count("chat") == len(nodes)
+        assert llm.last_called_chat_function.count("chat") == len(nodes) - int(
+            query_satisfied_case.input2_value
+        )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
@@ -838,7 +837,9 @@ class TestRefine:
         response = await synthesizer.asynthesize(query="test", nodes=nodes)
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function.count("achat") == len(nodes)
+        assert llm.last_called_chat_function.count("achat") == len(nodes) - int(
+            query_satisfied_case.input2_value
+        )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
@@ -861,15 +862,15 @@ class TestRefine:
         response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == ["chat", "chat", "chat"], "One per node"
+        assert llm.last_called_chat_function == ["chat"] * (
+            len(multimodal_nodes) - int(query_satisfied_case.input2_value)
+        )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == (
+            ["text"] if query_satisfied_case.input2_value else ["text", "image", "text"]
+        )
 
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal_structured_answer_filtering_default_function_calling_refine_program(
@@ -890,18 +891,18 @@ class TestRefine:
         response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function.count("achat") == 3, "One per node"
-        assert llm.last_called_chat_function.count("chat") == 3, (
-            "Async calls sync under hood"
-        )
+        assert llm.last_called_chat_function.count("achat") == len(
+            multimodal_nodes
+        ) - int(query_satisfied_case.input2_value)
+        assert llm.last_called_chat_function.count("chat") == len(
+            multimodal_nodes
+        ) - int(query_satisfied_case.input2_value)
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == (
+            ["text"] if query_satisfied_case.input2_value else ["text", "image", "text"]
+        )
 
     def test_synthesize__structured_answer_filtering_with_streaming_default_function_calling_refine_program(
         self,
@@ -923,7 +924,9 @@ class TestRefine:
             "Not a generator since the tokens were consumed as part of the last refine call"
         )
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function.count("stream_chat") == len(nodes)
+        assert llm.last_called_chat_function.count("stream_chat") == len(nodes) - int(
+            query_satisfied_case.input2_value
+        )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
@@ -949,7 +952,9 @@ class TestRefine:
             "Not a generator since the tokens were consumed as part of the last refine call"
         )
         assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function.count("astream_chat") == len(nodes)
+        assert llm.last_called_chat_function.count("astream_chat") == len(nodes) - int(
+            query_satisfied_case.input2_value
+        )
         assert llm.last_chat_messages[0].content.startswith(
             query_satisfied_case.expected_last_llm_message_prefix
         )
