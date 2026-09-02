@@ -36,6 +36,10 @@ def rake_extract_keywords(
     except ImportError:
         raise ImportError("Please install rake_nltk: `pip install rake_nltk`")
 
+    # ensures nltk.data.path points at our (hardlink-safe) bundled cache and
+    # that punkt_tab is present before sent_tokenize/wordpunct_tokenize need it
+    globals_helper.wait_for_nltk_check()
+
     r = Rake(
         sentence_tokenizer=nltk.tokenize.sent_tokenize,
         word_tokenizer=nltk.tokenize.wordpunct_tokenize,
