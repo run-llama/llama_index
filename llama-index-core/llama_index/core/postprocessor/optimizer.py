@@ -162,6 +162,14 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                         f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
                     )
 
-            nodes[node_idx].node.set_content(" ".join(top_sentences))
+            # `top_idxs`/`top_sentences` are in similarity-rank order (highest first),
+            # which is the right order for the debug log above but scrambles the
+            # excerpt's reading order. Rebuild the final content in original
+            # document order instead.
+            ordered_sentences = [
+                sentence for _, sentence in sorted(zip(top_idxs, top_sentences))
+            ]
+
+            nodes[node_idx].node.set_content(" ".join(ordered_sentences))
 
         return nodes
