@@ -227,6 +227,10 @@ class Cohere(FunctionCallingLLM):
             The request for the Cohere chat API.
 
         """
+        if not messages:
+            raise ValueError("At least one message must be provided.")
+
+        messages, documents = remove_documents_from_messages(messages)
         additional_kwargs = messages[-1].additional_kwargs
 
         # cohere SDK will fail loudly if both connectors and documents are provided
@@ -234,8 +238,6 @@ class Cohere(FunctionCallingLLM):
             raise ValueError(
                 "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."
             )
-
-        messages, documents = remove_documents_from_messages(messages)
 
         tool_results: Optional[List[Dict[str, Any]]] = (
             _messages_to_cohere_tool_results_curr_chat_turn(messages)
@@ -269,7 +271,7 @@ class Cohere(FunctionCallingLLM):
         else:
             message_str = ""
             # if force_single_step is set to True, then message is the last human message in the conversation
-            for message in messages[:-1]:
+            for i, message in enumerate(messages[:-1]):
                 if message.role in (
                     MessageRole.CHATBOT,
                     MessageRole.ASSISTANT,
