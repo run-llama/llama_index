@@ -17,7 +17,9 @@ from llama_index.core.schema import (
     MediaResource,
     MetadataMode,
     Node,
+    NodeRelationship,
     NodeWithScore,
+    RelatedNodeInfo,
     TextNode,
 )
 
@@ -61,6 +63,71 @@ def test_create_citation_nodes_text__prefixes_each_chunk_with_source_label():
     assert len(nodes) >= 2  # got chunked
     for i, nws in enumerate(nodes, start=1):
         assert nws.node.get_content().startswith(f"Source {i}:\n")
+
+
+def _text_citation_query_engine() -> CitationQueryEngine:
+    return CitationQueryEngine(
+        retriever=MagicMock(),
+        llm=MockLLM(),
+        multimodal=False,
+        citation_chunk_size=32,
+        citation_chunk_overlap=0,
+        text_splitter=SentenceSplitter(chunk_size=32, chunk_overlap=0),
+    )
+
+
+def test_create_citation_nodes_text__gives_each_chunk_its_own_id():
+    query_engine = _text_citation_query_engine()
+    src = NodeWithScore(node=TextNode(id_="src-1", text="A. " * 200), score=0.5)
+
+    nodes = query_engine._create_citation_nodes([src])
+
+    assert len(nodes) >= 2  # got chunked
+    ids = [nws.node.node_id for nws in nodes]
+    assert len(set(ids)) == len(ids)
+    assert "src-1" not in ids
+
+
+def test_create_citation_nodes_text__drops_source_char_offsets():
+    query_engine = _text_citation_query_engine()
+    text = "A. " * 200
+    src = NodeWithScore(
+        node=TextNode(text=text, start_char_idx=0, end_char_idx=len(text)),
+        score=0.5,
+    )
+
+    nodes = query_engine._create_citation_nodes([src])
+
+    assert len(nodes) >= 2  # got chunked
+    for nws in nodes:
+        # the chunk is not the span the source offsets describe
+        assert nws.node.start_char_idx is None
+        assert nws.node.end_char_idx is None
+
+
+def test_create_citation_nodes_text__preserves_source_node_metadata():
+    query_engine = _text_citation_query_engine()
+    src = NodeWithScore(
+        node=TextNode(
+            text="A. " * 200,
+            metadata={"file": "doc1.txt"},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc-1")},
+        ),
+        score=0.42,
+    )
+
+    nodes = query_engine._create_citation_nodes([src])
+
+    assert len(nodes) >= 2  # got chunked
+    for nws in nodes:
+        assert nws.node.metadata == {"file": "doc1.txt"}
+        assert nws.node.ref_doc_id == "doc-1"
+        assert nws.score == 0.42
+
+    # each chunk owns its metadata, so editing one does not touch the others
+    nodes[0].node.metadata["file"] = "other.txt"
+    assert nodes[1].node.metadata == {"file": "doc1.txt"}
+    assert src.node.metadata == {"file": "doc1.txt"}
 
 
 def test_create_multimodal_citation_nodes__text_only_chunks_with_source_labels():

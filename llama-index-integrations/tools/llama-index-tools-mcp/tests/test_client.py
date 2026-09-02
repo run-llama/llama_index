@@ -1,5 +1,5 @@
 import os
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
@@ -73,7 +73,7 @@ async def test_read_resources(client: BasicMCPClient):
     # Test static resource
     resource = await client.read_resource("config://app")
     assert isinstance(resource, types.ReadResourceResult)
-    assert resource.contents[0].mimeType == "text/plain"
+    assert resource.contents[0].mime_type == "text/plain"
     config_text = resource.contents[0].text
     assert "app_name" in config_text
     assert "MCP Test Server" in config_text
@@ -259,3 +259,54 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+@pytest.mark.asyncio
+async def test_streamable_http_tuple_unpack():
+    """
+    Regression test for #22655: streamable_http_client yields 2-tuple in mcp 2.0.
+
+    Previously _run_session unpacked ``(read, write, _)``, which fails when
+    streamable_http_client yields exactly two items under mcp >= 2.0.0.
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    client = BasicMCPClient("https://example.com/mcp")
+
+    fake_read = MagicMock()
+    fake_write = MagicMock()
+
+    class FakeACM:
+        async def __aenter__(self):
+            return (fake_read, fake_write)
+
+        async def __aexit__(self, *args):
+            pass
+
+    # Mock ClientSession as an async context manager that yields a mock session
+    mock_session_instance = MagicMock()
+    mock_session_instance.initialize = AsyncMock()
+
+    class MockClientSession:
+        def __init__(self, read, write, read_timeout_seconds, sampling_callback):
+            self.read = read
+            self.write = write
+
+        async def __aenter__(self):
+            return mock_session_instance
+
+        async def __aexit__(self, *args):
+            pass
+
+    with (
+        patch(
+            "llama_index.tools.mcp.client.streamable_http_client",
+            return_value=FakeACM(),
+        ) as mock_shc,
+        patch("llama_index.tools.mcp.client.ClientSession", MockClientSession),
+    ):
+        async with client._run_session() as session:
+            pass
+
+    # streamable_http_client was called for the https endpoint
+    assert mock_shc.called

@@ -1,6 +1,7 @@
 import pytest
 
 from llama_index.llms.anthropic.utils import (
+    anthropic_modelname_to_contextsize,
     is_anthropic_prompt_caching_supported_model,
     ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS,
     update_tool_calls,
@@ -418,3 +419,15 @@ class TestCacheControlOnlyLastBlock:
         )
         # Verify it's on the last block
         assert "cache_control" in result[-1]
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-opus-4-6",
+        "anthropic.claude-opus-4-6-v1:0",
+    ],
+)
+def test_opus_4_6_has_1m_context_window(model: str) -> None:
+    """Opus 4.6 has a 1M context window, like the 4.6+ models around it."""
+    assert anthropic_modelname_to_contextsize(model) == 1000000

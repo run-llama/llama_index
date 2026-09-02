@@ -1,5 +1,5 @@
 import argparse
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from pydantic import BaseModel, IPvAnyAddress
 import ipinfo
 import os
@@ -8,7 +8,7 @@ import dotenv
 dotenv.load_dotenv()
 
 # Create MCP server
-mcp = FastMCP("BasicServer")
+mcp = MCPServer("BasicServer")
 
 
 class IPDetails(BaseModel):

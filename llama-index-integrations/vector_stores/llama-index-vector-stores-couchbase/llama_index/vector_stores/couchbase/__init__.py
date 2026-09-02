@@ -1,5 +1,6 @@
 """Couchbase vector stores."""
 
+import llama_index.vector_stores.couchbase.telemetry  # noqa: F401
 from llama_index.vector_stores.couchbase.base import (
     CouchbaseVectorStore,  # Deprecated
     CouchbaseSearchVectorStore,  # FTS-based
