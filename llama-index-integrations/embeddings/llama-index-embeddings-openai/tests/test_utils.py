@@ -49,6 +49,17 @@ def test_resolve_openai_credentials_with_env_vars(monkeypatch) -> None:
     assert api_base == "env_api_base"
     assert api_version == "env_api_version"
 
+    monkeypatch.delenv("OPENAI_API_BASE")
+    monkeypatch.setenv("OPENAI_BASE_URL", "env_base_url")
+    api_key, api_base, api_version = resolve_openai_credentials()
+    assert api_base == "env_base_url"
+
+    # legacy OPENAI_API_BASE must take precedence over OPENAI_BASE_URL
+    monkeypatch.setenv("OPENAI_API_BASE", "env_api_base")
+    monkeypatch.setenv("OPENAI_BASE_URL", "env_base_url")
+    api_key, api_base, api_version = resolve_openai_credentials()
+    assert api_base == "env_api_base"
+
 
 def test_resolve_openai_credentials_with_openai_module(monkeypatch) -> None:
     monkeypatch.setattr("openai.base_url", "module_api_base")

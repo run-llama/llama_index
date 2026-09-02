@@ -137,7 +137,8 @@ def resolve_openai_credentials(
     """
     # resolve from param or env
     api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
-    api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", "")
+    base_url = get_from_param_or_env("api_base", api_base, "OPENAI_BASE_URL", "")
+    api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", base_url)
     api_version = get_from_param_or_env(
         "api_version", api_version, "OPENAI_API_VERSION", ""
     )
