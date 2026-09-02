@@ -41,6 +41,15 @@ def test_truncate_token() -> None:
     assert text == "foo"
 
 
+def test_truncate_whitespace_only_text() -> None:
+    """Whitespace-only text yields no chunks; truncate_text must not raise."""
+    text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
+    # The splitter drops the whitespace-only chunk, returning [].
+    assert text_splitter.split_text("   ") == []
+    # Previously this raised IndexError (chunks[0] on an empty list).
+    assert truncate_text("   ", text_splitter) == ""
+
+
 def test_split_long_token() -> None:
     """Test split a really long token."""
     token = "a" * 100
