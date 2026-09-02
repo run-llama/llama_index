@@ -16,7 +16,7 @@ dev = [
     "pytest-asyncio",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
-    "requests>=2.31.0,<2.34.0",
+    "requests>=2.31.0,<2.35.0",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
