@@ -1,7 +1,9 @@
 """Test text splitter."""
 
+import logging
 from typing import List
 
+import pytest
 import tiktoken
 from llama_index.core.node_parser.text import TokenTextSplitter
 from llama_index.core.node_parser.text.utils import truncate_text
@@ -89,3 +91,24 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_oversized_split_warning_is_emitted(caplog: pytest.LogCaptureFixture) -> None:
+    """
+    The oversized-split warning passed two arguments to logger.warning().
+
+    The second was treated as a %-format argument for a message that has no placeholders, so
+    logging raised internally and printed "--- Logging error ---" instead of the warning.
+    """
+    # Every character costs 5 tokens, so no split can get under chunk_size.
+    splitter = TokenTextSplitter(
+        chunk_size=2, chunk_overlap=0, tokenizer=lambda t: ["x"] * (len(t) * 5)
+    )
+
+    logger_name = "llama_index.core.node_parser.text.token"
+    with caplog.at_level(logging.WARNING, logger=logger_name):
+        splitter.split_text("ab")
+
+    assert any(
+        "larger than chunk size" in record.getMessage() for record in caplog.records
+    )
