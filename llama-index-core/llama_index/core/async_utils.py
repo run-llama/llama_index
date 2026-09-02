@@ -12,6 +12,36 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 def get_asyncio_module(show_progress: bool = False) -> Any:
+    """Return the appropriate asyncio-compatible module based on progress display preference.
+
+    When ``show_progress`` is ``True`` the function returns
+    :class:`tqdm.asyncio.tqdm_asyncio`, which wraps standard asyncio gather
+    calls with a ``tqdm`` progress bar.  Otherwise the built-in
+    :mod:`asyncio` module is returned unchanged.
+
+    Args:
+        show_progress (bool):
+            If ``True``, return ``tqdm.asyncio.tqdm_asyncio`` so that callers
+            can display a progress bar while awaiting coroutines.
+            Defaults to ``False``.
+
+    Returns:
+        Any:
+            Either ``tqdm.asyncio.tqdm_asyncio`` (when *show_progress* is
+            ``True``) or the standard :mod:`asyncio` module.
+
+    Example:
+        >>> import asyncio
+        >>> module = get_asyncio_module(show_progress=False)
+        >>> module is asyncio
+        True
+
+        >>> # With progress bar enabled (requires tqdm):
+        >>> # module = get_asyncio_module(show_progress=True)
+        >>> # from tqdm.asyncio import tqdm_asyncio
+        >>> # module is tqdm_asyncio  # True
+
+    """
     if show_progress:
         from tqdm.asyncio import tqdm_asyncio
 
