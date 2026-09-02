@@ -73,7 +73,10 @@ class Bedrock(LLM):
     model: str = Field(description="The modelId of the Bedrock model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    context_size: int = Field("The maximum number of tokens available for input.")
+    context_size: int = Field(
+        default=4096,
+        description="The maximum number of tokens available for input.",
+    )
     profile_name: Optional[str] = Field(
         description="The name of aws profile to use. If not given, then the default profile is used."
     )
@@ -105,20 +108,17 @@ class Bedrock(LLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
-    guardrail_identifier: Optional[str] = (
-        Field(
-            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
-        ),
+    guardrail_identifier: Optional[str] = Field(
+        default=None,
+        description="The unique identifier of the guardrail that you want to use. If you don't provide a value, no guardrail is applied to the invocation.",
     )
-    guardrail_version: Optional[str] = (
-        Field(
-            description="The version number for the guardrail. The value can also be DRAFT"
-        ),
+    guardrail_version: Optional[str] = Field(
+        default=None,
+        description="The version number for the guardrail. The value can also be DRAFT",
     )
-    trace: Optional[str] = (
-        Field(
-            description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
-        ),
+    trace: Optional[str] = Field(
+        default=None,
+        description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace.",
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
@@ -393,7 +393,7 @@ class Bedrock(LLM):
         input_tokens = headers.get("x-amzn-bedrock-input-token-count", None)
         output_tokens = headers.get("x-amzn-bedrock-output-token-count", None)
         # NOTE: other model providers that use the OpenAI client may not report usage
-        if (input_tokens and output_tokens) is None:
+        if input_tokens is None or output_tokens is None:
             return {}
 
         return {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}
