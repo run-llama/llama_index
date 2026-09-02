@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import uuid
 from abc import ABC
 
 from enum import Enum
@@ -1162,6 +1163,32 @@ class ChatMessage(BaseRecursiveContentBlock):
     role: MessageRole = MessageRole.USER
     additional_kwargs: dict[str, Any] = Field(default_factory=dict)
     blocks: list[ContentBlock] = Field(default_factory=list)
+    id_: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description=(
+            "Unique ID of the message. Generated on creation, so a message read "
+            "back from a store persisted before this field existed gets a new one."
+        ),
+    )
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare messages by content.
+
+        The per-message ``id_`` is deliberately excluded, so two messages carrying
+        the same thing stay equal the way they were before ``id_`` existed.
+        """
+        if not isinstance(other, ChatMessage) or type(self) is not type(other):
+            return NotImplemented
+        return (self.role, self.additional_kwargs, self.blocks) == (
+            other.role,
+            other.additional_kwargs,
+            other.blocks,
+        )
+
+    def can_merge(self, other: Self) -> bool:
+        """Two mergeable messages differ in ``id_``, which must not block the merge."""
+        return super().can_merge(other.model_copy(update={"id_": self.id_}))
 
     def __init__(self, /, content: Any | None = None, **data: Any) -> None:
         """
