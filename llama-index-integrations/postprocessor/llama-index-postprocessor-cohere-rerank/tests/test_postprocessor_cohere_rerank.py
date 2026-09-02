@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import cohere
+import pytest
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.postprocessor.cohere_rerank import CohereRerank
@@ -103,3 +104,10 @@ def test_max_retries_parameter():
 
         reranker_default = CohereRerank(api_key="test_key")
         assert reranker_default.max_retries == 10
+
+
+def test_missing_api_key_raises_value_error():
+    """Test that a missing Cohere API key raises a helpful ValueError."""
+    with patch.dict("os.environ", {}, clear=True):
+        with pytest.raises(ValueError, match="COHERE_API_KEY"):
+            CohereRerank()
