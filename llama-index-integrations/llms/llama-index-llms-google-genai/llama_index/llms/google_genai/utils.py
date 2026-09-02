@@ -140,6 +140,57 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
             raise RuntimeError(f"Response was terminated early: {reason}")
 
 
+def _apply_usage_metadata(
+    response: types.GenerateContentResponse,
+    raw: Dict[str, Any],
+    additional_kwargs: Dict[str, Any],
+) -> Optional[int]:
+    """
+    Copy Gemini usage metadata onto the response surfaces used by tracing.
+
+    Sets ``raw["usage_metadata"]`` and the token-count keys on
+    ``additional_kwargs`` that MLFlow tracing, TokenCountingHandler and
+    OpenInference-style instrumentation consume. Gemini 2.5 thinking models
+    also report ``thoughts_token_count``; it is returned so callers can
+    annotate thinking blocks.
+    """
+    if not response.usage_metadata:
+        return None
+
+    raw["usage_metadata"] = response.usage_metadata.model_dump()
+
+    # Set token usage information as required by MLFlow Tracing
+    additional_kwargs["prompt_tokens"] = response.usage_metadata.prompt_token_count
+    additional_kwargs["completion_tokens"] = (
+        response.usage_metadata.candidates_token_count
+    )
+    additional_kwargs["total_tokens"] = response.usage_metadata.total_token_count
+
+    thought_tokens: Optional[int] = None
+    if response.usage_metadata.thoughts_token_count:
+        thought_tokens = response.usage_metadata.thoughts_token_count
+        # Gemini 2.5 thinking models: expose reasoning tokens so observability
+        # tools can break them out from completion tokens (issue #19293).
+        additional_kwargs["thoughts_token_count"] = thought_tokens
+
+    return thought_tokens
+
+
+def _annotate_thought_tokens(
+    content_blocks: List[ContentBlock], thought_tokens: int
+) -> None:
+    """Attach a thinking-token count to the ThinkingBlock(s) in content_blocks."""
+    thinking_blocks = [
+        i for i, block in enumerate(content_blocks) if isinstance(block, ThinkingBlock)
+    ]
+    if len(thinking_blocks) == 1:
+        content_blocks[thinking_blocks[0]].num_tokens = thought_tokens
+    elif len(thinking_blocks) > 1:
+        content_blocks[thinking_blocks[-1]].additional_information.update(
+            {"total_thinking_tokens": thought_tokens}
+        )
+
+
 def chat_from_gemini_response(
     response: types.GenerateContentResponse,
     existing_content: List[ContentBlock],
@@ -158,24 +209,12 @@ def chat_from_gemini_response(
         **(top_candidate.model_dump()),
         **response_feedback,
     }
-    thought_tokens: Optional[int] = None
 
     if thought_signatures is None:
         thought_signatures = []
 
     additional_kwargs: Dict[str, Any] = {"thought_signatures": thought_signatures}
-    if response.usage_metadata:
-        raw["usage_metadata"] = response.usage_metadata.model_dump()
-
-        # Set token usage information as required by MLFlow Tracing
-        additional_kwargs["prompt_tokens"] = response.usage_metadata.prompt_token_count
-        additional_kwargs["completion_tokens"] = (
-            response.usage_metadata.candidates_token_count
-        )
-        additional_kwargs["total_tokens"] = response.usage_metadata.total_token_count
-
-        if response.usage_metadata.thoughts_token_count:
-            thought_tokens = response.usage_metadata.thoughts_token_count
+    thought_tokens = _apply_usage_metadata(response, raw, additional_kwargs)
 
     if hasattr(response, "cached_content") and response.cached_content:
         raw["cached_content"] = response.cached_content
@@ -251,22 +290,46 @@ def chat_from_gemini_response(
                 )
 
     if thought_tokens:
-        thinking_blocks = [
-            i
-            for i, block in enumerate(content_blocks)
-            if isinstance(block, ThinkingBlock)
-        ]
-        if len(thinking_blocks) == 1:
-            content_blocks[thinking_blocks[0]].num_tokens = thought_tokens
-        elif len(thinking_blocks) > 1:
-            content_blocks[thinking_blocks[-1]].additional_information.update(
-                {"total_thinking_tokens": thought_tokens}
-            )
+        _annotate_thought_tokens(content_blocks, thought_tokens)
 
     role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
     return ChatResponse(
         message=ChatMessage(
             role=role, blocks=content_blocks, additional_kwargs=additional_kwargs
+        ),
+        raw=raw,
+        additional_kwargs=additional_kwargs,
+    )
+
+
+def chat_response_from_usage_metadata(
+    response: types.GenerateContentResponse,
+    existing_content: List[ContentBlock],
+    thought_signatures: Optional[List[Optional[str]]] = None,
+) -> ChatResponse:
+    """
+    Build a ChatResponse carrying token counts from a trailing stream chunk.
+
+    Gemini streams report ``usage_metadata`` on a trailing chunk that usually
+    carries no candidate content (only token usage). Streaming generators used
+    to drop that chunk, so streamed responses never exposed token counts to
+    callbacks and instrumentation (issue #19293). This rebuilds the final
+    response from the blocks accumulated so far plus the chunk's usage.
+    """
+    if thought_signatures is None:
+        thought_signatures = []
+
+    additional_kwargs: Dict[str, Any] = {"thought_signatures": thought_signatures}
+    raw: Dict[str, Any] = {}
+    thought_tokens = _apply_usage_metadata(response, raw, additional_kwargs)
+    if thought_tokens:
+        _annotate_thought_tokens(existing_content, thought_tokens)
+
+    return ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=existing_content,
+            additional_kwargs=additional_kwargs,
         ),
         raw=raw,
         additional_kwargs=additional_kwargs,
