@@ -156,3 +156,14 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+def test_empty_document_returns_no_nodes() -> None:
+    """An empty or whitespace-only document yields no sentences and must not raise IndexError."""
+    # A custom splitter that returns no sentences reproduces the empty/whitespace-document case;
+    # MockEmbedding avoids the spacy model load (as in test_embed_model_path_returns_nodes).
+    splitter = SemanticDoubleMergingSplitterNodeParser(
+        embed_model=MockEmbedding(embed_dim=4),
+        sentence_splitter=lambda text: [],
+    )
+    assert splitter.get_nodes_from_documents([Document(text="")]) == []
