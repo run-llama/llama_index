@@ -708,3 +708,14 @@ def resolve_binary(
         return BytesIO(response.content)
 
     raise ValueError("No valid source provided to resolve binary data!")
+
+
+def truncate_text_middle(text: str, max_length: int) -> str:
+    """Truncates a text string in the middle with an ellipsis if it exceeds max_length."""
+    if len(text) <= max_length or max_length <= 3:
+        return text
+    chars_to_show = max_length - 3
+    front_chars = (chars_to_show + 1) // 2
+    back_chars = chars_to_show // 2
+    return f"{text[:front_chars]}...{text[len(text) - back_chars:]}"
+
