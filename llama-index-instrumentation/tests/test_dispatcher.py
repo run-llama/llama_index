@@ -35,6 +35,17 @@ value_error = ValueError("value error")
 cancelled_error = CancelledError("cancelled error")
 
 
+def test_dispatcher_default_handlers_are_not_shared():
+    first = Dispatcher()
+    second = Dispatcher()
+
+    first.add_event_handler(_TestEventHandler())
+    first.span_handlers.append(None)  # type: ignore[arg-type]
+
+    assert second.event_handlers == []
+    assert second.span_handlers == []
+
+
 class _TestStartEvent(BaseEvent):
     @classmethod
     def class_name(cls):
