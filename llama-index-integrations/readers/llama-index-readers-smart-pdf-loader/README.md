@@ -45,7 +45,7 @@ print(response)
 
 ## More Examples
 
-SmartPDFLoader is based on LayoutPDFReader from [llmsherpa](https://github.com/nlmatics/llmsherpa) library. See the [documentation](<(https://github.com/nlmatics/llmsherpa)>) there to explore other ways to use the library for connecting data from your PDFs with LLMs.
+SmartPDFLoader is based on LayoutPDFReader from [llmsherpa](https://github.com/nlmatics/llmsherpa) library. See the [documentation](https://github.com/nlmatics/llmsherpa#readme) there to explore other ways to use the library for connecting data from your PDFs with LLMs.
 
 - [Summarize a section using prompts](https://github.com/nlmatics/llmsherpa#summarize-a-section-using-prompts)
 - [Analyze a table using prompts](https://github.com/nlmatics/llmsherpa#analyze-a-table-using-prompts)

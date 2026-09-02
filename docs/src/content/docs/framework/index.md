@@ -30,7 +30,7 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
   Get help and meet collaborators on Discord, Twitter, LinkedIn, and learn how to contribute to the project.
 
-- <span style="font-size: 200%">[Related projects](#related-projects)</span>
+## Related projects
 
   Check out our library of connectors, readers, and other integrations at [LlamaHub](https://llamahub.ai) as well as demos and starter apps like [create-llama](https://www.npmjs.com/package/create-llama).
 
