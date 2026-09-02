@@ -1009,3 +1009,43 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_process_response_event_ignores_unhandled_event_type():
+    """An event the isinstance chain does not recognise must pass through cleanly.
+
+    ``ResponseStreamEvent`` is an open union that openai keeps extending, with
+    3.x adding five shell-call events alone. process_response_event dispatches on
+    isinstance with no else branch, so unrecognised members are dropped; this
+    pins that they are dropped *silently* rather than raising or corrupting the
+    accumulated state.
+    """
+    from openai.types.responses import ResponseRefusalDeltaEvent
+
+    built_in_tool_calls: List = []
+    additional_kwargs = {"existing": "value"}
+
+    event = ResponseRefusalDeltaEvent(
+        content_index=0,
+        delta="refused",
+        item_id="123",
+        output_index=0,
+        sequence_number=1,
+        type="response.refusal.delta",
+    )
+
+    blocks, tool_calls, updated_kwargs, current_call, prev_id, delta = (
+        OpenAIResponses.process_response_event(
+            event=event,
+            built_in_tool_calls=built_in_tool_calls,
+            additional_kwargs=additional_kwargs,
+            current_tool_call=None,
+            track_previous_responses=False,
+        )
+    )
+
+    assert blocks == []
+    assert tool_calls == []
+    assert updated_kwargs == {"existing": "value"}
+    assert current_call is None
+    assert delta == ""
