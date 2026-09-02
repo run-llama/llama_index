@@ -38,12 +38,16 @@ def info(obj: dict, all: bool, use_json: bool, package_names: tuple):
             packages.add(package_path)
 
     if use_json:
-        data = {}
+        data = []
         for package in packages:
             package_data = load_pyproject(package)
-            data["name"] = package_data["project"]["name"]
-            data["version"] = package_data["project"]["version"]
-            data["path"] = str(package)
+            data.append(
+                {
+                    "name": package_data["project"]["name"],
+                    "version": package_data["project"]["version"],
+                    "path": str(package),
+                }
+            )
         obj["console"].print(json.dumps(data))
     else:
         table = Table(box=None)
