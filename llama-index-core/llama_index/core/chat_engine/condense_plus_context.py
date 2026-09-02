@@ -102,6 +102,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        fallback_to_llm: bool = False,
     ):
         self._retriever = retriever
         self._llm = llm
@@ -133,6 +134,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         self._token_counter = TokenCounter()
         self._verbose = verbose
+        self._fallback_to_llm = fallback_to_llm
 
     @classmethod
     def from_defaults(
@@ -148,6 +150,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
+        fallback_to_llm: bool = False,
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
@@ -170,6 +173,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,
+            fallback_to_llm=fallback_to_llm,
         )
 
     def _condense_question(
@@ -251,6 +255,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             streaming,
             qa_function_mappings=self._context_prompt_template.function_mappings,
             refine_function_mappings=self._context_refine_prompt_template.function_mappings,
+            fallback_to_llm=self._fallback_to_llm,
         )
 
     def _run_c3(

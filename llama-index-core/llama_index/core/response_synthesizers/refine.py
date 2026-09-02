@@ -222,6 +222,7 @@ class Refine(BaseSynthesizer):
             Callable[[BasePromptTemplate], BasePydanticProgram]
         ] = None,
         multimodal: bool = False,
+        fallback_to_llm: bool = False,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -230,6 +231,7 @@ class Refine(BaseSynthesizer):
             chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             multimodal=multimodal,
+            fallback_to_llm=fallback_to_llm,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
