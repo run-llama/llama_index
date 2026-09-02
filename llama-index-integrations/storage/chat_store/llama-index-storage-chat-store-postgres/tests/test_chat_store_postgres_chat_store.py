@@ -1,5 +1,6 @@
 import time
 from typing import Dict, Generator, Union
+from unittest.mock import MagicMock, patch
 
 import pytest
 import docker
@@ -25,6 +26,43 @@ except ImportError:
 def test_class():
     names_of_base_classes = [b.__name__ for b in PostgresChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_engine_kwargs_forwarded_to_sqlalchemy():
+    mock_engine = MagicMock()
+    mock_async_engine = MagicMock()
+
+    with (
+        patch(
+            "llama_index.storage.chat_store.postgres.base.create_engine",
+            return_value=mock_engine,
+        ) as mock_ce,
+        patch(
+            "llama_index.storage.chat_store.postgres.base.create_async_engine",
+            return_value=mock_async_engine,
+        ) as mock_cae,
+        patch.object(
+            PostgresChatStore, "_check_legacy_table_exists", return_value=False
+        ),
+        patch.object(PostgresChatStore, "_initialize", return_value=None),
+    ):
+        PostgresChatStore(
+            table_name="test_table",
+            schema_name="test_schema",
+            connection_string="postgresql+psycopg://user:pass@localhost/db",
+            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            create_engine_kwargs={"connect_args": {"timeout": 123}},
+        )
+
+    mock_ce.assert_called_once()
+    _, ce_kwargs = mock_ce.call_args
+    assert ce_kwargs["echo"] is False
+    assert ce_kwargs["connect_args"] == {"timeout": 123}
+
+    mock_cae.assert_called_once()
+    _, cae_kwargs = mock_cae.call_args
+    assert cae_kwargs["connect_args"] == {"timeout": 123}
 
 
 @pytest.fixture(scope="session")
