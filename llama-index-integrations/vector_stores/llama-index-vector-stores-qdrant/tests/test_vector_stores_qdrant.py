@@ -882,15 +882,55 @@ async def test_async_hybrid_vector_store_query(
         sparse_top_k=1,
         hybrid_top_k=2,
         mode=VectorStoreQueryMode.HYBRID,
+        alpha=0,
     )
-    results = await hybrid_vector_store.aquery(query)
+    with patch.object(
+        hybrid_vector_store,
+        "_hybrid_fusion_fn",
+        wraps=hybrid_vector_store._hybrid_fusion_fn,
+    ) as fusion_mock:
+        results = await hybrid_vector_store.aquery(query)
+
     assert len(results.nodes) == 2
+    assert fusion_mock.call_args.kwargs["alpha"] == 0
 
     # disable hybrid, and it should still work
     hybrid_vector_store.enable_hybrid = False
     query.mode = VectorStoreQueryMode.DEFAULT
     results = await hybrid_vector_store.aquery(query)
     assert len(results.nodes) == 1
+
+
+@pytest.mark.asyncio
+async def test_hybrid_vector_store_query_alpha_sync_async_parity(
+    hybrid_vector_store: QdrantVectorStore,
+) -> None:
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0],
+        query_str="test1",
+        similarity_top_k=1,
+        sparse_top_k=1,
+        hybrid_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+        alpha=0,
+    )
+
+    with patch.object(
+        hybrid_vector_store,
+        "_hybrid_fusion_fn",
+        wraps=hybrid_vector_store._hybrid_fusion_fn,
+    ) as sync_fusion_mock:
+        hybrid_vector_store.query(query)
+
+    with patch.object(
+        hybrid_vector_store,
+        "_hybrid_fusion_fn",
+        wraps=hybrid_vector_store._hybrid_fusion_fn,
+    ) as async_fusion_mock:
+        await hybrid_vector_store.aquery(query)
+
+    assert sync_fusion_mock.call_args.kwargs["alpha"] == query.alpha
+    assert async_fusion_mock.call_args.kwargs["alpha"] == query.alpha
 
 
 def test_vector_store_query(vector_store: QdrantVectorStore) -> None:
