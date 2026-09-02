@@ -22,7 +22,9 @@ from typing import (
     Type,
     TypeVar,
     cast,
+    Iterator,
 )
+from contextlib import contextmanager
 
 from llama_index.core.schema import (
     BaseNode,
@@ -36,6 +38,7 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    VectorStoreQueryMode,
     FilterOperator,
     MetadataFilters,
     MetadataFilter,
@@ -46,6 +49,14 @@ if TYPE_CHECKING:
 
 from llama_index.core.vector_stores.utils import metadata_dict_to_node
 from pydantic import PrivateAttr
+
+try:
+    import oracledb
+except ImportError as e:
+    raise ImportError(
+        "Unable to import oracledb, please install with `pip install -U oracledb`."
+    ) from e
+
 
 logger = logging.getLogger(__name__)
 log_level = os.getenv("LOG_LEVEL", "ERROR").upper()
@@ -89,22 +100,16 @@ def _handle_exceptions(func: T) -> T:
     return cast(T, wrapper)
 
 
-def _get_connection(client: Any) -> Connection | None:
-    # Dynamically import oracledb and the required classes
-    try:
-        import oracledb
-    except ImportError as e:
-        raise ImportError(
-            "Unable to import oracledb, please install with `pip install -U oracledb`."
-        ) from e
-
+@contextmanager
+def _get_connection(client: Any) -> Iterator[Connection]:
     # check if ConnectionPool exists
     connection_pool_class = getattr(oracledb, "ConnectionPool", None)
 
     if isinstance(client, oracledb.Connection):
-        return client
+        yield client
     elif connection_pool_class and isinstance(client, connection_pool_class):
-        return client.acquire()
+        with client.acquire() as connection:
+            yield connection
     else:
         valid_types = "oracledb.Connection"
         if connection_pool_class:
@@ -120,6 +125,67 @@ def _escape_str(value: str) -> str:
     return (
         "".join(f"{BS}{c}" if c in must_escape else c for c in value) if value else ""
     )
+
+
+_IDENTIFIER_RE = re.compile(r'^(?:"[^"]+"|[^".]+)(?:\.(?:"[^"]+"|[^".]+))*$')
+_IDENTIFIER_PART_RE = re.compile(r'"([^"]+)"|([^".]+)')
+
+
+def _quote_identifier(name: str) -> str:
+    parts = _identifier_parts(name)
+    return ".".join(f'"{part}"' for part in parts)
+
+
+def _identifier_parts(name: str) -> list[str]:
+    if not isinstance(name, str):
+        raise ValueError("Identifier name must be a string.")
+
+    name = name.strip()
+    if not name:
+        raise ValueError("Identifier name must not be empty.")
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(f"Identifier name {name} is not valid.")
+
+    groups = _IDENTIFIER_PART_RE.findall(name)
+    return [quoted or unquoted.upper() for quoted, unquoted in groups]
+
+
+def _identifier_lookup_name(name: str) -> str:
+    return _identifier_parts(name)[-1]
+
+
+def _validate_int_param(
+    config: dict[str, Any],
+    key: str,
+    min_value: int,
+    max_value: Optional[int] = None,
+) -> None:
+    if key not in config:
+        return
+
+    value = config[key]
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{key} must be an integer.")
+    if value < min_value:
+        raise ValueError(f"{key} must be at least {min_value}.")
+    if max_value is not None and value > max_value:
+        raise ValueError(f"{key} must be at most {max_value}.")
+
+
+def _validate_index_type(config: dict[str, Any], expected_type: str) -> None:
+    if "idx_type" not in config:
+        return
+
+    idx_type = config["idx_type"]
+    if not isinstance(idx_type, str) or idx_type.upper() != expected_type:
+        raise ValueError(f"idx_type must be {expected_type}.")
+    config["idx_type"] = expected_type
+
+
+def _validate_vector_index_common(config: dict[str, Any]) -> None:
+    config["idx_name"] = _quote_identifier(config["idx_name"])
+    _validate_int_param(config, "accuracy", 1, 100)
+    _validate_int_param(config, "parallel", 1)
 
 
 column_config: Dict = {
@@ -154,6 +220,7 @@ def _table_exists(connection: Connection, table_name: str) -> bool:
             "Unable to import oracledb, please install with `pip install -U oracledb`."
         ) from e
     try:
+        table_name = _quote_identifier(table_name)
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             return True
@@ -167,13 +234,19 @@ def _table_exists(connection: Connection, table_name: str) -> bool:
 @_handle_exceptions
 def _index_exists(connection: Connection, index_name: str) -> bool:
     # Check if the index exists
-    query = (
-        "SELECT index_name FROM all_indexes WHERE upper(index_name) = upper(:idx_name)"
-    )
+    parts = _identifier_parts(index_name)
+    if len(parts) > 2:
+        raise ValueError("Index name must be unqualified or schema-qualified.")
+
+    query = "SELECT index_name FROM all_indexes WHERE index_name = :idx_name"
+    params = {"idx_name": parts[-1]}
+    if len(parts) == 2:
+        query += " AND owner = :owner"
+        params["owner"] = parts[0]
 
     with connection.cursor() as cursor:
         # Execute the query
-        cursor.execute(query, idx_name=index_name.upper())
+        cursor.execute(query, **params)
         result = cursor.fetchone()
 
     # Check if the index exists
@@ -206,6 +279,7 @@ def _get_index_name(base_name: str) -> str:
 
 @_handle_exceptions
 def _create_table(connection: Connection, table_name: str) -> None:
+    table_name = _quote_identifier(table_name)
     if not _table_exists(connection, table_name):
         with connection.cursor() as cursor:
             column_definitions = ", ".join(
@@ -227,33 +301,41 @@ def create_index(
     vector_store: OraLlamaVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
-    connection = _get_connection(client)
-    if params:
-        if params["idx_type"] == "HNSW":
-            _create_hnsw_index(
-                connection,
-                vector_store.table_name,
-                vector_store.distance_strategy,
-                params,
-            )
-        elif params["idx_type"] == "IVF":
-            _create_ivf_index(
-                connection,
-                vector_store.table_name,
-                vector_store.distance_strategy,
-                params,
-            )
-        else:
-            _create_hnsw_index(
-                connection,
-                vector_store.table_name,
-                vector_store.distance_strategy,
-                params,
-            )
+    with _get_connection(client) as connection:
+        if params:
+            params = params.copy()
+            if "idx_name" in params:
+                params["idx_name"] = _quote_identifier(params["idx_name"])
+            idx_type = params.get("idx_type", "HNSW")
+            if not isinstance(idx_type, str):
+                raise ValueError("idx_type must be a string.")
+            idx_type = idx_type.upper()
+            params["idx_type"] = idx_type
+            if idx_type == "HNSW":
+                _create_hnsw_index(
+                    connection,
+                    vector_store.table_name,
+                    vector_store.distance_strategy,
+                    params,
+                )
+            elif idx_type == "IVF":
+                _create_ivf_index(
+                    connection,
+                    vector_store.table_name,
+                    vector_store.distance_strategy,
+                    params,
+                )
+            else:
+                _create_hnsw_index(
+                    connection,
+                    vector_store.table_name,
+                    vector_store.distance_strategy,
+                    params,
+                )
 
 
 @_handle_exceptions
-def _create_config(defaults: dict, params: dict) -> dict:
+def _create_config(defaults: dict, params: Optional[dict]) -> dict:
     config: dict = {}
     if params:
         config = params.copy()
@@ -270,7 +352,7 @@ def _create_config(defaults: dict, params: dict) -> dict:
             if key not in defaults:
                 raise ValueError(f"Invalid parameter: {key}")
     else:
-        config = defaults
+        config = defaults.copy()
     return config
 
 
@@ -281,6 +363,7 @@ def _create_hnsw_index(
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
+    table_name = _quote_identifier(table_name)
     defaults = {
         "idx_name": "HNSW",
         "idx_type": "HNSW",
@@ -291,6 +374,14 @@ def _create_hnsw_index(
     }
 
     config = _create_config(defaults, params)
+    if (
+        "neighbors" in config or "efConstruction" in config
+    ) and "idx_type" not in config:
+        config["idx_type"] = defaults["idx_type"]
+    _validate_index_type(config, "HNSW")
+    _validate_int_param(config, "neighbors", 2, 2048)
+    _validate_int_param(config, "efConstruction", 1, 65535)
+    _validate_vector_index_common(config)
 
     # Base SQL statement
     idx_name = config["idx_name"]
@@ -336,6 +427,7 @@ def _create_ivf_index(
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
+    table_name = _quote_identifier(table_name)
     # Default configuration
     defaults = {
         "idx_name": "IVF",
@@ -346,6 +438,11 @@ def _create_ivf_index(
     }
 
     config = _create_config(defaults, params)
+    if "neighbor_part" in config and "idx_type" not in config:
+        config["idx_type"] = defaults["idx_type"]
+    _validate_index_type(config, "IVF")
+    _validate_int_param(config, "neighbor_part", 1, 10000000)
+    _validate_vector_index_common(config)
 
     # Base SQL statement
     idx_name = config["idx_name"]
@@ -380,45 +477,95 @@ def _create_ivf_index(
 
 @_handle_exceptions
 def drop_table_purge(client: Any, table_name: str) -> None:
-    connection = _get_connection(client)
-    if _table_exists(connection, table_name):
-        cursor = connection.cursor()
-        with cursor:
-            ddl = f"DROP TABLE {table_name} PURGE"
-            cursor.execute(ddl)
-        logger.info("Table dropped successfully...")
-    else:
-        logger.info("Table not found...")
+    table_name = _quote_identifier(table_name)
+    with _get_connection(client) as connection:
+        if _table_exists(connection, table_name):
+            cursor = connection.cursor()
+            with cursor:
+                ddl = f"DROP TABLE {table_name} PURGE"
+                cursor.execute(ddl)
+            logger.info("Table dropped successfully...")
+        else:
+            logger.info("Table not found...")
 
 
 @_handle_exceptions
-def drop_index_if_exists(connection: Connection, index_name: str):
+def drop_index_if_exists(connection: Connection, index_name: str) -> None:
+    index_name = _quote_identifier(index_name)
     if _index_exists(connection, index_name):
         drop_query = f"DROP INDEX {index_name}"
         with connection.cursor() as cursor:
             cursor.execute(drop_query)
             logger.info(f"Index {index_name} has been dropped.")
     else:
-        logger.exception(f"Index {index_name} does not exist.")
+        logger.info(f"Index {index_name} does not exist.")
+
+
+def output_type_string_handler(cursor: Any, metadata: Any) -> Any | None:
+    if metadata.type_code is oracledb.DB_TYPE_CLOB:
+        return cursor.var(oracledb.DB_TYPE_LONG, arraysize=cursor.arraysize)
+    if metadata.type_code is oracledb.DB_TYPE_NCLOB:
+        return cursor.var(oracledb.DB_TYPE_LONG_NVARCHAR, arraysize=cursor.arraysize)
+    return None
+
+
+def _generate_accum_query(query: str, fuzzy: Optional[bool] = False) -> str:
+    """
+    Tokenize query on non-word boundaries and join with Oracle Text ACCUM.
+
+    Behavior:
+    - Splits on non-word characters, discarding empty tokens.
+    - When fuzzy is False: each token is quoted: "token".
+    - When fuzzy is True: wraps each token as FUZZY("token").
+    - Joins tokens with ' ACCUM '.
+
+    Examples:
+    'refund policy' -> '"refund" ACCUM "policy"'
+    fuzzy=True -> 'fuzzy("refund") ACCUM fuzzy("policy")'
+
+    """
+    words = re.split(r"\W+", query)
+    words = [f'"{word}"' if not fuzzy else f'fuzzy("{word}")' for word in words if word]
+    return " ACCUM ".join(words)
 
 
 class OraLlamaVS(BasePydanticVectorStore):
     """
-    `OraLlamaVS` vector store.
+    Oracle Database vector store for LlamaIndex.
 
-    To use, you should have both:
-    - the ``oracledb`` python package installed
-    - a connection string associated with a OracleVS having deployed an
-       Search index
+    - Requires the ``oracledb`` Python package and an Oracle Database with Vector
+      and Hybrid Search features enabled.
+    - On initialization, creates the target table if it does not exist.
+    - Supports:
+      - DEFAULT mode: pure vector similarity using VECTOR_DISTANCE.
+      - HYBRID mode: calls DBMS_HYBRID_VECTOR.SEARCH when ``VectorStoreQuery.mode == HYBRID``.
+    - Hybrid search:
+      - Create a hybrid vector index using ``create_hybrid_index`` from
+        ``llama_index.vector_stores.oracledb.hybrid``.
+      - Set ``hybrid_index_name`` (and optionally ``hybrid_search_params``) before
+        querying in HYBRID mode.
 
     Example:
         .. code-block:: python
 
-            from llama-index.core.vectorstores import OracleVS
-            from oracledb import oracledb
+            import oracledb
+            from llama_index.vector_stores.oracledb import OraLlamaVS, DistanceStrategy
+            from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
-            with oracledb.connect(user = user, passwd = pwd, dsn = dsn) as connection:
-                print ("Database version:", connection.version)
+            conn = oracledb.connect(dsn=os.environ["ORACLE_DB_DSN"])
+            vs = OraLlamaVS(
+                _client=conn,
+                table_name="llama_index",
+                distance_strategy=DistanceStrategy.COSINE,
+            )
+
+            # DEFAULT (vector) search
+            q = VectorStoreQuery(
+                query_str="hello",
+                similarity_top_k=3,
+                mode=VectorStoreQueryMode.DEFAULT,
+            )
+            res = vs.query(q)
 
     """
 
@@ -428,18 +575,27 @@ class OraLlamaVS(BasePydanticVectorStore):
     metadata_column: str = "metadata"
     stores_text: bool = True
     _client: Connection = PrivateAttr()
+    _quoted_table_name: str = PrivateAttr()
     table_name: str
     distance_strategy: DistanceStrategy
     batch_size: Optional[int]
     params: Optional[dict[str, Any]]
+    hybrid_index_name: Optional[str] = None
+    hybrid_search_params: Optional[dict] = None
+    use_fuzzy_text_search: Optional[bool] = False
 
     def __init__(
         self,
         _client: Connection,
         table_name: str,
-        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
+        distance_strategy: Optional[
+            DistanceStrategy
+        ] = DistanceStrategy.EUCLIDEAN_DISTANCE,
         batch_size: Optional[int] = 32,
         params: Optional[dict[str, Any]] = None,
+        hybrid_index_name: Optional[str] = None,
+        hybrid_search_params: Optional[dict] = None,
+        use_fuzzy_text_search: Optional[bool] = False,
     ):
         try:
             import oracledb
@@ -457,10 +613,16 @@ class OraLlamaVS(BasePydanticVectorStore):
                 batch_size=batch_size,
                 params=params,
             )
-            connection = _get_connection(_client)
-            # Assign _client to PrivateAttr after the Pydantic initialization
-            object.__setattr__(self, "_client", _client)
-            _create_table(connection, table_name)
+            with _get_connection(_client) as connection:
+                # Assign _client to PrivateAttr after the Pydantic initialization
+                object.__setattr__(self, "_client", _client)
+                object.__setattr__(
+                    self, "_quoted_table_name", _quote_identifier(table_name)
+                )
+                _create_table(connection, self._quoted_table_name)
+            self.hybrid_index_name = hybrid_index_name
+            self.hybrid_search_params = hybrid_search_params
+            self.use_fuzzy_text_search = use_fuzzy_text_search
 
         except oracledb.DatabaseError as db_err:
             logger.exception(f"Database error occurred while create table: {db_err}")
@@ -486,6 +648,9 @@ class OraLlamaVS(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "OraLlamaVS"
+
+    def set_hybrid_index(self, hybrid_index_name: str) -> None:
+        self.hybrid_index_name = hybrid_index_name
 
     def _convert_oper_to_sql(
         self,
@@ -516,10 +681,22 @@ class OraLlamaVS(BasePydanticVectorStore):
                     f"FilterOperation {oper} cannot be used with this vector store."
                 )
 
-            operation_f = oper_map.get(oper)
+            operation_f: str = oper_map.get(oper)
+            returning_number = (
+                "RETURNING NUMBER"
+                if oper
+                in [
+                    FilterOperator.GT,
+                    FilterOperator.LT,
+                    FilterOperator.GTE,
+                    FilterOperator.LTE,
+                ]
+                else ""
+            )
 
             return operation_f.format(
-                f"JSON_VALUE({metadata_column}, '$.{filter_key}')", value_bind
+                f"JSON_VALUE({metadata_column}, '$.{filter_key}' {returning_number})",
+                value_bind,
             )
 
     def _get_filter_string(
@@ -555,10 +732,79 @@ class OraLlamaVS(BasePydanticVectorStore):
 
         return f" {filter.condition.value.upper()} ".join(filter_strings)
 
+    def _get_filter_json(self, filter: MetadataFilters | MetadataFilter) -> dict:
+        if isinstance(filter, MetadataFilter):
+            if not re.match(r"^[a-zA-Z0-9_]+$", filter.key):
+                raise ValueError(f"Invalid metadata key format: {filter.key}")
+
+            oper_map = {
+                FilterOperator.EQ: "=",  # default operator (string, int, float)
+                FilterOperator.GT: ">",  # greater than (int, float)
+                FilterOperator.LT: "<",  # less than (int, float)
+                FilterOperator.NE: "!=",  # not equal to (string, int, float)
+                FilterOperator.GTE: ">=",  # greater than or equal to (int, float)
+                FilterOperator.LTE: "<=",  # less than or equal to (int, float)
+                FilterOperator.IN: "IN",  # In array (string or number)
+                # FilterOperator.ANY: "ANY",  # Contains any (array of strings)
+                # FilterOperator.ALL: "ALL",  # Contains all (array of strings)
+                FilterOperator.TEXT_MATCH: "INSTR",  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+            }
+
+            oper = filter.operator
+            if oper not in oper_map:
+                raise ValueError(
+                    f"FilterOperation {oper} cannot be used with this vector store."
+                )
+
+            number_ops = {
+                FilterOperator.GT,
+                FilterOperator.LT,
+                FilterOperator.GTE,
+                FilterOperator.LTE,
+            }
+
+            string_ops = {
+                FilterOperator.ANY,
+                FilterOperator.ALL,
+                FilterOperator.TEXT_MATCH,
+            }
+
+            op_type = "string"
+            if oper in number_ops:
+                op_type = "number"
+            elif oper in string_ops:
+                op_type = "string"
+            elif isinstance(filter.value, (int, float)):
+                op_type = "number"
+            elif isinstance(filter.value, str):
+                op_type = "string"
+            elif isinstance(filter.value, list):
+                if isinstance(filter.value[0], (int, float)):
+                    op_type = "number"
+                elif isinstance(filter.value[0], str):
+                    op_type = "string"
+
+            return {
+                "op": oper_map[oper],
+                "path": f"metadata.{filter.key}",
+                "type": op_type,
+                "args": filter.value
+                if isinstance(filter.value, list)
+                else [filter.value],
+            }
+
+        # Combine all sub filters
+        filter_strings = [self._get_filter_json(f_) for f_ in filter.filters]
+
+        if len(filter_strings) == 1:
+            return filter_strings[0]
+
+        return {"op": filter.condition.value.upper(), "args": filter_strings}
+
     def _append_meta_filter_condition(
         self, where_str: Optional[str], filters: Optional[MetadataFilters]
     ) -> Tuple[str, list]:
-        bind_variables = []
+        bind_variables: list = []
 
         filter_str = self._get_filter_string(filters, bind_variables)
 
@@ -579,7 +825,7 @@ class OraLlamaVS(BasePydanticVectorStore):
             _data.append(item_values)
 
         dml = f"""
-           INSERT INTO {self.table_name} ({", ".join(column_config.keys())})
+           INSERT INTO {self._quoted_table_name} ({", ".join(column_config.keys())})
            VALUES ({", ".join([":" + str(i + 1) for i in range(len(column_config))])})
         """
         return dml, _data
@@ -596,50 +842,110 @@ class OraLlamaVS(BasePydanticVectorStore):
                 node_info,
                 metadata,
                 vector_distance(embedding, :embedding, {distance_function}) AS distance
-            FROM {self.table_name}
+            FROM {self._quoted_table_name}
             {where_clause}
             ORDER BY distance
             FETCH APPROX FIRST {k} ROWS ONLY
         """
 
-    def _build_hybrid_query(
-        self, sub_query: str, query_str: str, similarity_top_k: int
-    ) -> str:
-        terms_pattern = [f"(?i){x}" for x in query_str.split(" ")]
-        column_keys = column_config.keys()
-        return (
-            f"SELECT {','.join(filter(lambda k: k != 'embedding', column_keys))}, "
-            f"distance FROM ({sub_query}) temp_table "
-            f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
-            f"AS distance1 DESC, "
-            f"log(1 + countMatches(text, '(?i)({query_str.replace(' ', '|')})')) "
-            f"AS distance2 DESC limit {similarity_top_k}"
-        )
+    def _get_search_params(self, query: VectorStoreQuery, **kwargs: Any) -> dict:
+        """
+        Build the JSON-serializable parameter dict for DBMS_HYBRID_VECTOR.SEARCH.
+
+        Behavior:
+        - Sets "hybrid_index_name" from ``self.hybrid_index_name``.
+        - Sets both "vector.search_text" and "text.search_text" to the query string.
+        - Sets "return.topN", "return.values" and "return.format" ("JSON").
+
+        Args:
+            query: VectorStoreQuery carrying the user query text and top-k.
+
+        Returns:
+            dict: Parameters suitable for binding as json(:search_params)
+                in DBMS_HYBRID_VECTOR.SEARCH.
+
+        """
+        query_text = query.query_str
+        search_params = dict(self.hybrid_search_params or {})
+
+        if not self.hybrid_index_name:
+            raise ValueError("Need to set `hybrid_index_name`")
+        search_params["hybrid_index_name"] = _quote_identifier(self.hybrid_index_name)
+
+        if "search_text" in search_params:
+            raise ValueError(
+                "Cannot provide search_text as a parameter at the top level; "
+                "it is derived from the query."
+            )
+        if "return" in search_params:
+            raise ValueError(
+                "Cannot provide return as a parameter in params; "
+                "it is handled internally. Use `return_scores` "
+                "parameter to get the scores."
+            )
+
+        search_params["vector"] = dict(search_params.get("vector") or {})
+
+        if (
+            "search_text" in search_params["vector"]
+            or "search_vector" in search_params["vector"]
+        ):
+            raise ValueError(
+                "Cannot provide search_text as a parameter in params['vector']; "
+                "it is derived from the query."
+            )
+
+        search_params["vector"]["search_text"] = query_text
+
+        search_params["text"] = dict(search_params.get("text") or {})
+        if (
+            "search_text" in search_params["text"]
+            or "search_vector" in search_params["text"]
+            or "contains" in search_params["text"]
+        ):
+            raise ValueError(
+                "Cannot provide search_text as a parameter in params['text']; "
+                "it is derived from the query."
+            )
+        search_params["text"]["search_text"] = query_text
+
+        search_params["return"] = {}
+        search_params["return"]["topN"] = query.hybrid_top_k or 4
+        search_params["return"]["values"] = [
+            "rowid",
+            "score",
+            "vector_score",
+            "text_score",
+        ]
+        search_params["return"]["format"] = "JSON"
+
+        return search_params
 
     @_handle_exceptions
     def add(self, nodes: list[BaseNode], **kwargs: Any) -> list[str]:
         if not nodes:
             return []
 
-        connection = _get_connection(self._client)
+        with _get_connection(self._client) as connection:
+            for result_batch in iter_batch(nodes, self.batch_size):
+                dml, bind_values = self._build_insert(values=result_batch)
 
-        for result_batch in iter_batch(nodes, self.batch_size):
-            dml, bind_values = self._build_insert(values=result_batch)
-
-            with connection.cursor() as cursor:
-                # Use executemany to insert the batch
-                cursor.executemany(dml, bind_values)
-                connection.commit()
+                with connection.cursor() as cursor:
+                    # Use executemany to insert the batch
+                    cursor.executemany(dml, bind_values)
+                    connection.commit()
 
         return [node.node_id for node in nodes]
 
     @_handle_exceptions
     def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
-        connection = _get_connection(self._client)
-        with connection.cursor() as cursor:
-            ddl = f"DELETE FROM {self.table_name} WHERE doc_id = :ref_doc_id"
-            cursor.execute(ddl, [ref_doc_id])
-            connection.commit()
+        with _get_connection(self._client) as connection:
+            with connection.cursor() as cursor:
+                ddl = (
+                    f"DELETE FROM {self._quoted_table_name} WHERE doc_id = :ref_doc_id"
+                )
+                cursor.execute(ddl, [ref_doc_id])
+                connection.commit()
 
     @_handle_exceptions
     def _get_clob_value(self, result: Any) -> str:
@@ -671,11 +977,11 @@ class OraLlamaVS(BasePydanticVectorStore):
     def drop(self) -> None:
         drop_table_purge(self._client, self.table_name)
 
-    @_handle_exceptions
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    def _get_default_query(self, query: VectorStoreQuery) -> Tuple[str, Dict[str, Any]]:
         distance_function = _get_distance_function(self.distance_strategy)
         where_str = None
         params = {}
+
         if query.doc_ids:
             placeholders = ", ".join([f":doc_id{i}" for i in range(len(query.doc_ids))])
             where_str = f"doc_id in ({placeholders})"
@@ -692,78 +998,184 @@ class OraLlamaVS(BasePydanticVectorStore):
         query_sql = self._build_query(
             distance_function, query.similarity_top_k, where_str
         )
-        """
-        if query.mode == VectorStoreQueryMode.HYBRID and query.query_str is not None:
-            amplify_ratio = self.AMPLIFY_RATIO_LE5
-            if 5 < query.similarity_top_k < 50:
-                amplify_ratio = self.AMPLIFY_RATIO_GT5
-            if query.similarity_top_k > 50:
-                amplify_ratio = self.AMPLIFY_RATIO_GT50
-            query_sql = self._build_hybrid_query(
-                self._build_query(
-                    query_embed=query.query_embedding,
-                    k=query.similarity_top_k,
-                    where_str=where_str,
-                    limit=query.similarity_top_k * amplify_ratio,
-                ),
-                query.query_str,
-                query.similarity_top_k,
-            )
-            logger.debug(f"hybrid query_statement={query_statement}")
-        """
+
         embedding = array.array("f", query.query_embedding)
-        params = {"embedding": embedding}
+        params["embedding"] = embedding
         for i, value in enumerate(bind_vars):
             params[f"value{i}"] = value
 
-        connection = _get_connection(self._client)
-        with connection.cursor() as cursor:
-            cursor.execute(query_sql, **params)
-            results = cursor.fetchall()
+        return query_sql, params
 
-            similarities = []
-            ids = []
-            nodes = []
-            for result in results:
-                doc_id = result[1]
-                text = self._get_clob_value(result[2])
-                node_info = (
-                    json.loads(result[3]) if isinstance(result[3], str) else result[3]
-                )
-                metadata = (
-                    json.loads(result[4]) if isinstance(result[4], str) else result[4]
-                )
+    def _get_hybrid_query(self, query: VectorStoreQuery) -> Tuple[str, Dict[str, Any]]:
+        SQL_QUERY = "SELECT DBMS_HYBRID_VECTOR.SEARCH(json(:search_params))"
 
-                if query.node_ids:
-                    if result[0] not in query.node_ids:
-                        continue
+        json_filter = {}
+        if query.doc_ids:
+            json_filter = {
+                "op": "IN",
+                "col": "doc_id",
+                "type": "string",
+                "args": query.doc_ids,
+            }
 
-                if isinstance(node_info, dict):
-                    start_char_idx = node_info.get("start", None)
-                    end_char_idx = node_info.get("end", None)
-                try:
-                    node = metadata_dict_to_node(metadata)
-                    node.set_content(text)
-                except Exception:
-                    # Note: deprecated legacy logic for backward compatibility
+        if query.filters is not None:
+            json_filter_metadata = self._get_filter_json(query.filters)
+            if len(json_filter) > 0:
+                json_filter = {"op": "AND", "args": [json_filter, json_filter_metadata]}
+            else:
+                json_filter = json_filter_metadata
 
-                    node = TextNode(
-                        id_=result[0],
-                        text=text,
-                        metadata=metadata,
-                        start_char_idx=start_char_idx,
-                        end_char_idx=end_char_idx,
-                        relationships={
-                            NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
-                        },
+        search_params = self._get_search_params(query)
+
+        if len(json_filter) > 0:
+            search_params["filter_by"] = json_filter
+
+        return SQL_QUERY, {"search_params": search_params}
+
+    def _get_text_query(self, query: VectorStoreQuery) -> Tuple[str, Dict[str, Any]]:
+        where_str = None
+        params = {}
+
+        if query.doc_ids:
+            placeholders = ", ".join([f":doc_id{i}" for i in range(len(query.doc_ids))])
+            where_str = f"doc_id in ({placeholders})"
+            for i, doc_id in enumerate(query.doc_ids):
+                params[f"doc_id{i}"] = doc_id
+
+        bind_vars = []
+        if query.filters is not None:
+            where_str, bind_vars = self._append_meta_filter_condition(
+                where_str, query.filters
+            )
+
+        text_query = _generate_accum_query(query.query_str, self.use_fuzzy_text_search)
+        k = query.similarity_top_k or 4
+
+        params["query"] = text_query
+
+        for i, value in enumerate(bind_vars):
+            params[f"value{i}"] = value
+
+        search_query = f"""
+        SELECT id,
+                doc_id,
+                text,
+                node_info,
+                metadata,
+                SCORE(1) score
+        FROM {self._quoted_table_name}
+        WHERE CONTAINS(text, :query, 1) > 0
+        {"AND " + where_str if where_str else ""}
+        ORDER BY score DESC FETCH FIRST {k} ROWS ONLY
+        """
+
+        return search_query, params
+
+    def _resolve_rowids(self, result: Any) -> list:
+        rowids = []
+        scores = []
+        text_scores = []
+        vector_scores = []
+        for row in result:
+            rowids.append((row["rowid"],))
+            scores.append(row["score"])
+            text_scores.append(row["text_score"])
+            vector_scores.append(row["vector_score"])
+
+        res = []
+        with _get_connection(self._client) as connection:
+            with connection.cursor() as cursor:
+                cursor.outputtypehandler = output_type_string_handler
+                for i, rid_tuple in enumerate(rowids):
+                    rid = rid_tuple[0]
+                    cursor.execute(
+                        "SELECT id, doc_id, text, node_info, metadata "
+                        f"FROM {self._quoted_table_name} "
+                        "WHERE rowid = :1",
+                        [rid],
+                    )
+                    row = cursor.fetchone()
+                    res.append((*row, scores[i]))
+
+        return res
+
+    @_handle_exceptions
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            query_sql, params = self._get_default_query(query)
+
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            query_sql, params = self._get_hybrid_query(query)
+
+        if query.mode == VectorStoreQueryMode.TEXT_SEARCH:
+            query_sql, params = self._get_text_query(query)
+
+        with _get_connection(self._client) as connection:
+            with connection.cursor() as cursor:
+                if query.mode == VectorStoreQueryMode.HYBRID:
+                    cursor.setinputsizes(search_params=oracledb.DB_TYPE_JSON)
+                cursor.execute(query_sql, **params)
+                results = cursor.fetchall()
+
+                if query.mode == VectorStoreQueryMode.HYBRID:
+                    results = results[0][0]
+                    if hasattr(results, "read"):
+                        results = results.read()
+                    results = self._resolve_rowids(json.loads(results))
+
+                similarities = []
+                ids = []
+                nodes = []
+                for result in results:
+                    doc_id = result[1]
+                    text = self._get_clob_value(result[2])
+                    node_info = (
+                        json.loads(result[3])
+                        if isinstance(result[3], str)
+                        else result[3]
+                    )
+                    metadata = (
+                        json.loads(result[4])
+                        if isinstance(result[4], str)
+                        else result[4]
                     )
 
-                nodes.append(node)
-                similarities.append(1.0 - math.exp(-result[5]))
-                ids.append(result[0])
-            return VectorStoreQueryResult(
-                nodes=nodes, similarities=similarities, ids=ids
-            )
+                    if query.node_ids:
+                        if result[0] not in query.node_ids:
+                            continue
+
+                    start_char_idx = None
+                    end_char_idx = None
+                    if isinstance(node_info, dict):
+                        start_char_idx = node_info.get("start", None)
+                        end_char_idx = node_info.get("end", None)
+                    try:
+                        node = metadata_dict_to_node(metadata)
+                        node.set_content(text)
+                    except Exception:
+                        # Note: deprecated legacy logic for backward compatibility
+
+                        node = TextNode(
+                            id_=result[0],
+                            text=text,
+                            metadata=metadata,
+                            start_char_idx=start_char_idx,
+                            end_char_idx=end_char_idx,
+                            relationships={
+                                NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
+                            },
+                        )
+
+                    nodes.append(node)
+                    if (
+                        query.mode == VectorStoreQueryMode.HYBRID
+                        or query.mode == VectorStoreQueryMode.TEXT_SEARCH
+                    ):
+                        similarities.append(result[5])
+                    else:
+                        similarities.append(1.0 - math.exp(-result[5]))
+                    ids.append(result[0])
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
     @classmethod
     @_handle_exceptions
