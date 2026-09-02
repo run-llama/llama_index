@@ -1,3 +1,5 @@
+import json
+
 import boto3
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -87,6 +89,24 @@ def test_non_empty_payload_still_builds_request_body():
 
     body = embedding._get_request_body("cohere", ["hello", "world"], "text")
     assert '"hello"' in body and '"world"' in body
+
+
+def test_cohere_additional_kwargs_are_included_in_request_body():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name="cohere.embed-v4",
+        client=bedrock_client,
+        additional_kwargs={"output_dimension": 512, "truncate": "END"},
+    )
+
+    body = json.loads(embedding._get_request_body("cohere", ["hello"], "text"))
+
+    assert body == {
+        "texts": ["hello"],
+        "input_type": "search_document",
+        "output_dimension": 512,
+        "truncate": "END",
+    }
 
     embedding = BedrockEmbedding(
         model_name="too.many.parts.in.name", client=bedrock_client
