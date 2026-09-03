@@ -3,8 +3,10 @@
 from importlib.util import find_spec
 from pathlib import Path
 from typing import Dict, cast
+from unittest.mock import patch
 
 import pytest
+
 from llama_index.core.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
@@ -379,3 +381,139 @@ def test_keyword_postprocessor_for_non_english() -> None:
         assert len(new_nodes) == 2
     except ImportError:
         pass
+
+
+def _recency_nodes() -> list:
+    """Node set shared by the sync/async recency equivalence tests."""
+    return [
+        TextNode(
+            text="Hello world.",
+            id_="1",
+            metadata={"date": "2020-01-01"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="This is a test.",
+            id_="2",
+            metadata={"date": "2020-01-02"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="This is another test.",
+            id_="3",
+            metadata={"date": "2020-01-02"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="This is another test.",
+            id_="3v2",
+            metadata={"date": "2020-01-03"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="This is a test v2.",
+            id_="4",
+            metadata={"date": "2020-01-04"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_aembedding_recency_postprocessor() -> None:
+    """Async recency postprocessing must match the sync result."""
+    nodes_with_scores = [NodeWithScore(node=node) for node in _recency_nodes()]
+
+    postprocessor = EmbeddingRecencyPostprocessor(
+        top_k=1,
+        in_metadata=False,
+        query_embedding_tmpl="{context_str}",
+    )
+    query_bundle: QueryBundle = QueryBundle(query_str="What is?")
+    result_nodes = await postprocessor.apostprocess_nodes(
+        nodes_with_scores, query_bundle=query_bundle
+    )
+    assert result_nodes[0].node.get_content() == "This is a test v2."
+    assert cast(Dict, result_nodes[0].node.metadata)["date"] == "2020-01-04"
+
+
+@pytest.mark.asyncio
+async def test_aembedding_recency_postprocessor_matches_sync() -> None:
+    """Sync and async must return the same nodes in the same order."""
+    query_bundle: QueryBundle = QueryBundle(query_str="What is?")
+
+    def _make() -> EmbeddingRecencyPostprocessor:
+        return EmbeddingRecencyPostprocessor(
+            top_k=1,
+            in_metadata=False,
+            query_embedding_tmpl="{context_str}",
+        )
+
+    sync_result = _make().postprocess_nodes(
+        [NodeWithScore(node=n) for n in _recency_nodes()], query_bundle=query_bundle
+    )
+    async_result = await _make().apostprocess_nodes(
+        [NodeWithScore(node=n) for n in _recency_nodes()], query_bundle=query_bundle
+    )
+
+    assert [n.node.node_id for n in async_result] == [
+        n.node.node_id for n in sync_result
+    ]
+    assert [n.node.get_content() for n in async_result] == [
+        n.node.get_content() for n in sync_result
+    ]
+
+
+@pytest.mark.asyncio
+async def test_aembedding_recency_makes_no_extra_requests() -> None:
+    """
+    The async path must not embed nodes the sync path skips.
+
+    The de-duplication loop is sequential by nature: `node_ids_to_skip` grows as
+    it runs and decides whether the next node needs a query embedding at all.
+    Dispatching those concurrently would return the same nodes while issuing
+    extra embedding requests, so the counts must match exactly.
+    """
+    query_bundle: QueryBundle = QueryBundle(query_str="What is?")
+
+    postprocessor = EmbeddingRecencyPostprocessor(
+        top_k=1,
+        in_metadata=False,
+        query_embedding_tmpl="{context_str}",
+    )
+    embed_model = postprocessor.embed_model
+    embed_cls = type(embed_model)
+
+    # bound to the instance before patching, so these keep the originals
+    orig_sync = embed_model.get_query_embedding
+    orig_async = embed_model.aget_query_embedding
+
+    sync_calls = 0
+    async_calls = 0
+
+    def counting_sync(query: str):
+        nonlocal sync_calls
+        sync_calls += 1
+        return orig_sync(query)
+
+    async def counting_async(query: str):
+        nonlocal async_calls
+        async_calls += 1
+        return await orig_async(query)
+
+    with patch.object(embed_cls, "get_query_embedding", side_effect=counting_sync):
+        postprocessor.postprocess_nodes(
+            [NodeWithScore(node=n) for n in _recency_nodes()],
+            query_bundle=query_bundle,
+        )
+
+    with patch.object(embed_cls, "aget_query_embedding", side_effect=counting_async):
+        await postprocessor.apostprocess_nodes(
+            [NodeWithScore(node=n) for n in _recency_nodes()],
+            query_bundle=query_bundle,
+        )
+
+    assert sync_calls > 0
+    assert async_calls == sync_calls, (
+        f"async issued {async_calls} query embeddings, sync issued {sync_calls}"
+    )
