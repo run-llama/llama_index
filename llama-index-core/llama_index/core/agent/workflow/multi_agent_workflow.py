@@ -451,6 +451,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             "formatted_input_with_state", default=False
         )
         if state and not formatted_input_with_state:
+            llm_input[-1] = llm_input[-1].model_copy(deep=True)
             # update last message with current state
             for block in llm_input[-1].blocks[::-1]:
                 if isinstance(block, TextBlock):
@@ -705,6 +706,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         await ctx.store.set("current_tool_calls", cur_tool_calls)
 
         await agent.handle_tool_call_results(ctx, tool_call_results, memory)
+        await ctx.store.set("formatted_input_with_state", False)
 
         # set the next agent, if needed
         # the handoff tool sets this

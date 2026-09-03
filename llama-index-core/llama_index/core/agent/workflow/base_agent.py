@@ -450,6 +450,7 @@ class BaseWorkflowAgent(
             "formatted_input_with_state", default=False
         )
         if state and not formatted_input_with_state:
+            llm_input[-1] = llm_input[-1].model_copy(deep=True)
             # update last message with current state
             for block in llm_input[-1].blocks[::-1]:
                 if isinstance(block, TextBlock):
@@ -683,6 +684,7 @@ class BaseWorkflowAgent(
         await ctx.store.set("current_tool_calls", cur_tool_calls)
 
         await self.handle_tool_call_results(ctx, tool_call_results, memory)
+        await ctx.store.set("formatted_input_with_state", False)
 
         if any(
             tool_call_result.return_direct and not tool_call_result.tool_output.is_error
