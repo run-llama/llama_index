@@ -10,7 +10,7 @@ from functools import partial
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Sequence, Union
+from typing import Any, Generator, List, Optional, Sequence, Tuple, Union
 
 from fsspec import AbstractFileSystem
 
@@ -469,12 +469,13 @@ class IngestionPipeline(BaseModel):
     def _handle_upserts(
         self,
         nodes: Sequence[BaseNode],
-    ) -> Sequence[BaseNode]:
+    ) -> Tuple[Sequence[BaseNode], List[str]]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = []
+        ref_doc_ids_to_delete: List[str] = []
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
@@ -483,11 +484,8 @@ class IngestionPipeline(BaseModel):
                 # document doesn't exist, so add it
                 deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
-
+                # defer the delete until the re-ingest actually succeeds
+                ref_doc_ids_to_delete.append(ref_doc_id)
                 deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
@@ -504,7 +502,7 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-        return deduped_nodes_to_run
+        return deduped_nodes_to_run, ref_doc_ids_to_delete
 
     @staticmethod
     def _node_batcher(
@@ -588,12 +586,15 @@ class IngestionPipeline(BaseModel):
             effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
 
         # check if we need to dedup
+        ref_doc_ids_to_delete: List[str] = []
         if self.docstore is not None and self.vector_store is not None:
             if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = self._handle_upserts(input_nodes)
+                nodes_to_run, ref_doc_ids_to_delete = self._handle_upserts(
+                    input_nodes
+                )
             elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
                 nodes_to_run = self._handle_duplicates(input_nodes)
             else:
@@ -646,6 +647,11 @@ class IngestionPipeline(BaseModel):
             )
 
         nodes = nodes or []
+
+        for ref_doc_id in ref_doc_ids_to_delete:
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)  # type: ignore
+            if self.vector_store is not None:
+                self.vector_store.delete(ref_doc_id)
 
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
@@ -705,12 +711,13 @@ class IngestionPipeline(BaseModel):
         self,
         nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> Sequence[BaseNode]:
+    ) -> Tuple[Sequence[BaseNode], List[str]]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = []
+        ref_doc_ids_to_delete: List[str] = []
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
@@ -719,11 +726,8 @@ class IngestionPipeline(BaseModel):
                 # document doesn't exist, so add it
                 deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    await self.vector_store.adelete(ref_doc_id)
-
+                # defer the delete until the re-ingest actually succeeds
+                ref_doc_ids_to_delete.append(ref_doc_id)
                 deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
@@ -740,7 +744,7 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     await self.vector_store.adelete(ref_doc_id)
 
-        return deduped_nodes_to_run
+        return deduped_nodes_to_run, ref_doc_ids_to_delete
 
     @dispatcher.span
     async def arun(
@@ -795,12 +799,13 @@ class IngestionPipeline(BaseModel):
             effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
 
         # check if we need to dedup
+        ref_doc_ids_to_delete: List[str] = []
         if self.docstore is not None and self.vector_store is not None:
             if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = await self._ahandle_upserts(
+                nodes_to_run, ref_doc_ids_to_delete = await self._ahandle_upserts(
                     input_nodes, store_doc_text=store_doc_text
                 )
             elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
@@ -866,6 +871,11 @@ class IngestionPipeline(BaseModel):
             nodes = nodes
 
         nodes = nodes or []
+
+        for ref_doc_id in ref_doc_ids_to_delete:
+            await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)  # type: ignore
+            if self.vector_store is not None:
+                await self.vector_store.adelete(ref_doc_id)
 
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
