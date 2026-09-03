@@ -8,12 +8,28 @@ from pydantic import BaseModel, create_model
 
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.core.tools.types import ToolMetadata
+from llama_index.core.tools.types import ToolMetadata, ToolOutput
 from llama_index.tools.mcp.tool_spec_mixins import (
     TypeResolutionMixin,
     TypeCreationMixin,
     FieldExtractionMixin,
 )
+
+
+def _result_text(result: Any) -> str:
+    """
+    The text a server sent with a failed call.
+
+    The blocks carry the reason the call failed, so they are what the agent
+    needs to read. Falls back to the result itself when a server sends
+    something other than text.
+    """
+    texts = [
+        block.text
+        for block in getattr(result, "content", None) or []
+        if getattr(block, "text", None)
+    ]
+    return "\n".join(texts) if texts else str(result)
 
 
 class McpToolSpec(
@@ -113,6 +129,34 @@ class McpToolSpec(
 
         return async_tool_fn
 
+    def _create_tool_callback(self, tool_name: str) -> Callable:
+        """
+        Create the async callback that carries an MCP failure into ToolOutput.
+
+        A server reports a failed call with ``isError`` on the result rather than
+        by raising, so without this the failure reaches the agent as a success:
+        ``ToolOutput.is_error`` defaults to False, and both agent workflows gate
+        ``return_direct`` on it.
+        """
+
+        async def async_tool_callback(raw_output: Any) -> Optional[ToolOutput]:
+            # The field is `is_error` on the Python model and `isError` on the
+            # wire; read both so this holds whichever the client hands back.
+            failed = getattr(raw_output, "is_error", None)
+            if failed is None:
+                failed = getattr(raw_output, "isError", False)
+            if not failed:
+                return None
+            return ToolOutput(
+                content=_result_text(raw_output),
+                tool_name=tool_name,
+                raw_input={},
+                raw_output=raw_output,
+                is_error=True,
+            )
+
+        return async_tool_callback
+
     def _create_resource_fn(self, resource_uri: str) -> Callable:
         """
         Create a resource call function for a specified MCP resource name. The function internally wraps the read_resource call to the MCP Client.
@@ -166,7 +210,10 @@ class McpToolSpec(
                 fn_schema=model_schema,
             )
             function_tool = FunctionTool.from_defaults(
-                async_fn=fn, tool_metadata=metadata, partial_params=tool_partial_params
+                async_fn=fn,
+                async_callback=self._create_tool_callback(tool.name),
+                tool_metadata=metadata,
+                partial_params=tool_partial_params,
             )
             function_tool_list.append(function_tool)
 
