@@ -519,27 +519,27 @@ class SiliconFlow(FunctionCallingLLM):
                     response.raise_for_status()
                     response_txt = ""
                     response_role = "assistant"
-                    async for line in response.content.iter_any():
-                        line = cast(bytes, line).decode("utf-8")
-                        chunks = list(filter(None, line.split("data: ")))
-                        for chunk in chunks:
-                            if chunk.strip() == "[DONE]":
-                                break
-                            chunk_json = json.loads(chunk)
-                            delta: dict = chunk_json["choices"][0]["delta"]
-                            response_role = delta.get("role") or response_role
-                            delta_txt = delta["content"] or ""
-                            response_txt += delta_txt
-                            tool_calls = delta.get("tool_calls")
-                            yield ChatResponse(
-                                message=ChatMessage(
-                                    content=response_txt,
-                                    role=response_role,
-                                    additional_kwargs={"tool_calls": tool_calls},
-                                ),
-                                delta=delta_txt,
-                                raw=line,
-                            )
+                    async for line in response.content:
+                        line = cast(bytes, line).decode("utf-8").rstrip("\r\n")
+                        if not line.startswith("data:"):
+                            continue
+                        if line.strip() == "data: [DONE]":
+                            break
+                        chunk_json = json.loads(line[5:])
+                        delta: dict = chunk_json["choices"][0]["delta"]
+                        response_role = delta.get("role") or response_role
+                        delta_txt = delta["content"] or ""
+                        response_txt += delta_txt
+                        tool_calls = delta.get("tool_calls")
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                content=response_txt,
+                                role=response_role,
+                                additional_kwargs={"tool_calls": tool_calls},
+                            ),
+                            delta=delta_txt,
+                            raw=chunk_json,
+                        )
 
         return gen()
 
