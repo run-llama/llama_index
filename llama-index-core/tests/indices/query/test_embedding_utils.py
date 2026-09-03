@@ -108,3 +108,49 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_top_k_zero() -> None:
+    """
+    An explicit similarity_top_k of 0 must return zero results.
+
+    Because 0 is falsy, ``if similarity_top_k:`` skipped the heap-trimming
+    logic entirely, causing every embedding to be returned instead of none.
+    """
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0], [0.7, 0.7], [0.5, 0.5]]
+
+    result_sims, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert result_sims == []
+    assert result_ids == []
+
+    # similarity_top_k=None should still return all embeddings (no limit).
+    result_sims_none, result_ids_none = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=None
+    )
+    assert len(result_ids_none) == 4
+
+
+def test_get_top_k_mmr_embeddings_top_k_zero() -> None:
+    """
+    An explicit similarity_top_k of 0 must return zero results from MMR.
+
+    Because 0 is falsy, ``similarity_top_k or embedding_length`` silently
+    replaced 0 with the full embedding count, returning all embeddings.
+    """
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0], [0.7, 0.7], [0.5, 0.5]]
+
+    result_sims, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert result_sims == []
+    assert result_ids == []
+
+    # similarity_top_k=None should still return all embeddings (no limit).
+    result_sims_none, result_ids_none = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=None
+    )
+    assert len(result_ids_none) == 4
