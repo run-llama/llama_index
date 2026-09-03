@@ -1,4 +1,6 @@
 import os
+from contextlib import asynccontextmanager
+
 from httpx2 import AsyncClient
 import pytest
 
@@ -168,6 +170,48 @@ async def test_use_provided_http_client():
 
 
 @pytest.mark.asyncio
+async def test_streamable_http_client_two_streams(monkeypatch):
+    read_stream = AsyncMock()
+    write_stream = AsyncMock()
+
+    class MockStreamableHTTPClient:
+        async def __aenter__(self):
+            return read_stream, write_stream
+
+        async def __aexit__(self, *args):
+            pass
+
+    class MockClientSession:
+        def __init__(self, read, write, **kwargs):
+            assert read is read_stream
+            assert write is write_stream
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def initialize(self):
+            pass
+
+    monkeypatch.setattr(
+        "llama_index.tools.mcp.client.streamable_http_client",
+        lambda **kwargs: MockStreamableHTTPClient(),
+    )
+    monkeypatch.setattr(
+        "llama_index.tools.mcp.client.ClientSession",
+        MockClientSession,
+    )
+
+    client = BasicMCPClient("https://example.com/mcp")
+
+    session = await anext(client._run_session())
+
+    assert isinstance(session, MockClientSession)
+
+
+@pytest.mark.asyncio
 async def test_use_provided_http_client_with_oauth():
     """Test the use of a provided HTTP client."""
     # Create client with OAuth
@@ -223,6 +267,44 @@ async def test_image_return_value(client: BasicMCPClient):
     # Check that we got image data back
     assert isinstance(result, types.CallToolResult)
     assert len(result.content[0].data) > 0
+
+
+@pytest.mark.asyncio
+async def test_streamable_http_client_two_streams(monkeypatch):
+    read_stream = object()
+    write_stream = object()
+
+    @asynccontextmanager
+    async def mock_streamable_http_client(**kwargs):
+        yield read_stream, write_stream
+
+    class MockClientSession:
+        def __init__(self, read, write, **kwargs):
+            assert read is read_stream
+            assert write is write_stream
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def initialize(self):
+            pass
+
+    monkeypatch.setattr(
+        "llama_index.tools.mcp.client.streamable_http_client",
+        mock_streamable_http_client,
+    )
+    monkeypatch.setattr(
+        "llama_index.tools.mcp.client.ClientSession",
+        MockClientSession,
+    )
+
+    client = BasicMCPClient("https://example.com/mcp")
+
+    async with client._run_session() as session:
+        assert isinstance(session, MockClientSession)
 
 
 def test_enable_sse():
