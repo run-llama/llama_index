@@ -31,7 +31,7 @@ def get_top_k_embeddings(
         similarity = similarity_fn(query_embedding_np, emb)  # type: ignore[arg-type]
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
-            if similarity_top_k and len(similarity_heap) > similarity_top_k:
+            if similarity_top_k is not None and len(similarity_heap) > similarity_top_k:
                 heapq.heappop(similarity_heap)
     result_tups = sorted(similarity_heap, key=lambda x: x[0], reverse=True)
 
