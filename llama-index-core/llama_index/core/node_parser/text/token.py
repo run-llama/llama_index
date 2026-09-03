@@ -193,6 +193,28 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 new_splits.extend(self._split(split, chunk_size=chunk_size))
         return new_splits
 
+    def _merge_trimmed_splits(self, splits: List[str], chunk_size: int) -> List[str]:
+        """Merge splits without dropping content when trimming changes token counts."""
+        chunks: List[str] = []
+        current: List[str] = []
+
+        for split in splits:
+            candidate = "".join(current + [split]).strip()
+            if current and len(self._tokenizer(candidate)) > chunk_size:
+                chunks.append("".join(current).strip())
+                current = []
+                candidate = split.strip()
+
+            current.append(split)
+            if len(self._tokenizer(candidate)) > chunk_size and len(current) == 1:
+                chunks.append(candidate)
+                current = []
+
+        if current:
+            chunks.append("".join(current).strip())
+
+        return [chunk for chunk in chunks if chunk]
+
     def _merge(self, splits: List[str], chunk_size: int) -> List[str]:
         """
         Merge splits into chunks.
@@ -225,7 +247,10 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                     else "".join(cur_chunk).strip()
                 )
                 if chunk:
-                    chunks.append(chunk)
+                    if not self.keep_whitespaces:
+                        chunks.extend(self._merge_trimmed_splits(cur_chunk, chunk_size))
+                    else:
+                        chunks.append(chunk)
 
                 # start a new chunk with overlap
                 # keep popping off the first element of the previous chunk until:
@@ -246,6 +271,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
         )
         if chunk:
-            chunks.append(chunk)
+            if not self.keep_whitespaces:
+                chunks.extend(self._merge_trimmed_splits(cur_chunk, chunk_size))
+            else:
+                chunks.append(chunk)
 
         return chunks
