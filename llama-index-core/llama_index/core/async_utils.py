@@ -6,9 +6,31 @@ import concurrent.futures
 from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
 
+import logging
+
 import llama_index.core.instrumentation as instrument
 
+logger = logging.getLogger(__name__)
+
 dispatcher = instrument.get_dispatcher(__name__)
+
+
+def _shutdown_default_executor(loop: asyncio.AbstractEventLoop) -> None:
+    """
+    Best-effort shutdown of the loop's default executor.
+
+    Mirrors the cleanup that ``asyncio.run()`` performs (bpo-34037) so that
+    worker threads created by ``loop.run_in_executor(None, ...)`` are joined
+    before the loop is closed.
+    """
+    if loop.is_closed():
+        return
+    if getattr(loop, "_default_executor", None) is None:
+        return
+    try:
+        loop.run_until_complete(loop.shutdown_default_executor())
+    except Exception:
+        logger.debug("Failed to shut down default executor for %r", loop, exc_info=True)
 
 
 def get_asyncio_module(show_progress: bool = False) -> Any:
@@ -57,6 +79,11 @@ def asyncio_run(coro: Coroutine) -> Any:
                 try:
                     return ctx.run(new_loop.run_until_complete, coro)
                 finally:
+                    # Shut down the default executor before closing, matching
+                    # asyncio.run() behavior (bpo-34037).  Without this, any
+                    # ThreadPoolExecutor lazily created by
+                    # loop.run_in_executor(None, ...) leaks its worker threads.
+                    _shutdown_default_executor(new_loop)
                     new_loop.close()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
