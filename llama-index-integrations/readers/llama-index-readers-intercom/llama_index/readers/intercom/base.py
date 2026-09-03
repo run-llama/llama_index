@@ -16,9 +16,12 @@ class IntercomReader(BaseReader):
 
     """
 
-    def __init__(self, intercom_access_token: str) -> None:
+    def __init__(
+        self, intercom_access_token: str, timeout: float = 30.0
+    ) -> None:
         """Initialize Intercom reader."""
         self.intercom_access_token = intercom_access_token
+        self.timeout = timeout
 
     def load_data(self) -> List[Document]:
         """
@@ -87,7 +90,7 @@ class IntercomReader(BaseReader):
             "authorization": f"Bearer {self.intercom_access_token}",
         }
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=self.timeout)
 
         response_json = json.loads(response.text)
 

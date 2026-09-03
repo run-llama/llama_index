@@ -2,8 +2,8 @@ import requests
 import time
 
 
-def post(base_url: str, headers: dict, params: dict):
-    response = requests.post(base_url, headers=headers, json=params)
+def post(base_url: str, headers: dict, params: dict, timeout: float = 60.0):
+    response = requests.post(base_url, headers=headers, json=params, timeout=timeout)
     if response.status_code != 200:
         raise RuntimeError(response.text)
     response_dict = response.json()
@@ -12,8 +12,8 @@ def post(base_url: str, headers: dict, params: dict):
     return response_dict
 
 
-def get(base_url: str, headers: dict, params: dict):
-    response = requests.get(base_url, headers=headers, params=params)
+def get(base_url: str, headers: dict, params: dict, timeout: float = 60.0):
+    response = requests.get(base_url, headers=headers, params=params, timeout=timeout)
     if response.status_code != 200:
         raise RuntimeError(response.text)
 
@@ -23,12 +23,14 @@ def get(base_url: str, headers: dict, params: dict):
     return response_dict
 
 
-def get_pipeline_id(base_url: str, headers: dict, params: dict):
-    response_dict = get(base_url, headers, params)
+def get_pipeline_id(base_url: str, headers: dict, params: dict, timeout: float = 60.0):
+    response_dict = get(base_url, headers, params, timeout=timeout)
     return response_dict.get("id", "")
 
 
-def run_ingestion(request_url: str, headers: dict, verbose: bool = False):
+def run_ingestion(
+    request_url: str, headers: dict, verbose: bool = False, timeout: float = 60.0
+):
     ingestion_status = ""
     failed_docs = []
 
@@ -36,6 +38,7 @@ def run_ingestion(request_url: str, headers: dict, verbose: bool = False):
         response = requests.get(
             request_url,
             headers=headers,
+            timeout=timeout,
         )
         try:
             response_text = response.json()

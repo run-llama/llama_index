@@ -17,10 +17,16 @@ class ZendeskReader(BaseReader):
 
     """
 
-    def __init__(self, zendesk_subdomain: str, locale: str = "en-us") -> None:
+    def __init__(
+        self,
+        zendesk_subdomain: str,
+        locale: str = "en-us",
+        timeout: float = 30.0,
+    ) -> None:
         """Initialize Zendesk reader."""
         self.zendesk_subdomain = zendesk_subdomain
         self.locale = locale
+        self.timeout = timeout
 
     def load_data(self) -> List[Document]:
         """
@@ -83,7 +89,7 @@ class ZendeskReader(BaseReader):
         else:
             url = next_page
 
-        response = requests.get(url)
+        response = requests.get(url, timeout=self.timeout)
 
         response_json = json.loads(response.text)
 
