@@ -1,6 +1,7 @@
 import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_onedrive import OneDriveReader
+from llama_index.readers.microsoft_onedrive.base import DEFAULT_REQUEST_TIMEOUT
 
 test_client_id = "test_client_id"
 test_tenant_id = "test_tenant_id"
@@ -31,6 +32,81 @@ def test_serialize():
     assert new_reader.client_id == reader.client_id
     assert new_reader.tenant_id == reader.tenant_id
     assert new_reader.required_exts == reader.required_exts
+
+
+def test_onedrive_requests_use_default_timeout(monkeypatch, tmp_path):
+    calls = []
+
+    class MockResponse:
+        status_code = 200
+        content = b"file contents"
+
+        def json(self):
+            return {"value": []}
+
+    def mock_get(*args, **kwargs):
+        calls.append((args, kwargs))
+        return MockResponse()
+
+    monkeypatch.setattr(
+        "llama_index.readers.microsoft_onedrive.base.requests.get", mock_get
+    )
+
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+
+    reader._get_items_in_drive_with_maxretries("access-token")
+    reader._download_file_by_url(
+        {
+            "@microsoft.graph.downloadUrl": "https://download.example/file",
+            "name": "a.txt",
+        },
+        str(tmp_path),
+    )
+    reader._get_permissions_info({"id": "file-id"}, "user@example.com", "access-token")
+
+    assert len(calls) == 3
+    assert all(
+        call_kwargs["timeout"] == DEFAULT_REQUEST_TIMEOUT for _, call_kwargs in calls
+    )
+
+
+def test_onedrive_requests_use_custom_timeout(monkeypatch, tmp_path):
+    calls = []
+
+    class MockResponse:
+        status_code = 200
+        content = b"file contents"
+
+        def json(self):
+            return {"value": []}
+
+    def mock_get(*args, **kwargs):
+        calls.append((args, kwargs))
+        return MockResponse()
+
+    monkeypatch.setattr(
+        "llama_index.readers.microsoft_onedrive.base.requests.get", mock_get
+    )
+
+    request_timeout = (1.0, 5.0)
+    reader = OneDriveReader(
+        client_id=test_client_id,
+        tenant_id=test_tenant_id,
+        request_timeout=request_timeout,
+    )
+
+    reader._get_items_in_drive_with_maxretries("access-token")
+    reader._download_file_by_url(
+        {
+            "@microsoft.graph.downloadUrl": "https://download.example/file",
+            "name": "a.txt",
+        },
+        str(tmp_path),
+    )
+    reader._get_permissions_info({"id": "file-id"}, "user@example.com", "access-token")
+
+    assert len(calls) == 3
+    assert all(call_kwargs["timeout"] == request_timeout for _, call_kwargs in calls)
 
 
 @pytest.fixture()
