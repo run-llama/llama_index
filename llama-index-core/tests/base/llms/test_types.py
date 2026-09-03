@@ -109,6 +109,30 @@ def test_chat_message_from_str():
     assert m.blocks[0].text == "test content"
 
 
+def test_chat_message_to_xml_string_escapes_text_content():
+    message = ChatMessage(role=MessageRole.USER, content="Use <pgvector> & a reranker")
+
+    assert (
+        message.to_xml_string() == "<user>Use &lt;pgvector&gt; &amp; a reranker</user>"
+    )
+
+
+def test_chat_message_to_xml_string_ignores_non_text_blocks():
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            TextBlock(text="I will inspect the index."),
+            ToolCallBlock(
+                tool_name="inspect_index",
+                tool_kwargs={"index": "docs"},
+                tool_call_id="call-1",
+            ),
+        ],
+    )
+
+    assert message.to_xml_string() == "<assistant>I will inspect the index.</assistant>"
+
+
 def test_chat_message_content_legacy_get():
     m = ChatMessage(content="test content")
     assert m.content == "test content"
