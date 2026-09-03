@@ -527,12 +527,15 @@ class BedrockEmbedding(BaseEmbedding):
             }
             payload = [payload] if isinstance(payload, str) else payload
             payload = [p[:2048] if len(p) > 2048 else p for p in payload]
-            request_body = json.dumps(
-                {
-                    "texts": payload,
-                    "input_type": input_types[input_type],
-                }
-            )
+            cohere_body = {
+                "texts": payload,
+                "input_type": input_types[input_type],
+            }
+            if "output_dimension" in self.additional_kwargs:
+                cohere_body["output_dimension"] = self.additional_kwargs[
+                    "output_dimension"
+                ]
+            request_body = json.dumps(cohere_body)
         else:
             raise ValueError("Provider not supported")
         return request_body
