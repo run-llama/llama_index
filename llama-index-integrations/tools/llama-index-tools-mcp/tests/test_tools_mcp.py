@@ -777,3 +777,46 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+def test_defs_name_collision_across_tools(client: BasicMCPClient):
+    """
+    Regression: properties_cache persisted across create_model_from_json_schema
+    calls on one spec, so two tools that each defined a $defs type of the same
+    name (e.g. "Item") with different shapes silently shared the first one's
+    model — the LLM got the wrong parameter schema for the second tool.
+    """
+    tool_spec = McpToolSpec(client)
+    schema_a = {
+        "type": "object",
+        "properties": {"item": {"$ref": "#/$defs/Item"}},
+        "required": ["item"],
+        "$defs": {
+            "Item": {
+                "type": "object",
+                "properties": {"weight_kg": {"type": "number"}},
+                "required": ["weight_kg"],
+            }
+        },
+    }
+    schema_b = {
+        "type": "object",
+        "properties": {"item": {"$ref": "#/$defs/Item"}},
+        "required": ["item"],
+        "$defs": {
+            "Item": {
+                "type": "object",
+                "properties": {"color": {"type": "string"}},
+                "required": ["color"],
+            }
+        },
+    }
+
+    model_a = tool_spec.create_model_from_json_schema(schema_a, "toolA_Schema")
+    model_b = tool_spec.create_model_from_json_schema(schema_b, "toolB_Schema")
+
+    item_a = model_a.model_fields["item"].annotation
+    item_b = model_b.model_fields["item"].annotation
+
+    assert set(item_a.model_fields) == {"weight_kg"}
+    assert set(item_b.model_fields) == {"color"}
