@@ -123,17 +123,17 @@ class SemanticScholarReader(BaseReader):
             # Then, check if it's a valid PDF. If it's not, skip to the next document.
             if file_path:
                 try:
-                    pdf = PdfReader(open(file_path, "rb"))
+                    with open(file_path, "rb") as f:
+                        pdf = PdfReader(f)
+                        text = ""
+                        for page in pdf.pages:
+                            text += page.extract_text()
+                        full_text_docs.append(Document(text=text, extra_info=metadata))
                 except Exception as e:
                     logging.error(
                         f"Failed to read pdf with exception: {e}. Skipping document..."
                     )
                     continue
-
-                text = ""
-                for page in pdf.pages:
-                    text += page.extract_text()
-                full_text_docs.append(Document(text=text, extra_info=metadata))
 
         return full_text_docs
 
