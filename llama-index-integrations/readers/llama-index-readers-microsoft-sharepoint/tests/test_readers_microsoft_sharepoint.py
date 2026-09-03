@@ -215,6 +215,41 @@ def test_load_documents_with_metadata(sharepoint_reader):
         assert documents[1].text == "File 2 content"
 
 
+def test_download_file_by_url_rejects_path_traversal():
+    reader = SharePointReader(
+        client_id=test_client_id,
+        client_secret=test_client_secret,
+        tenant_id=test_tenant_id,
+    )
+    with patch.object(
+        SharePointReader, "_get_file_content_by_url", return_value=b"malicious"
+    ):
+        with tempfile.TemporaryDirectory() as download_dir:
+            for malicious_name in (
+                "../../../../tmp/evil_via_traversal",
+                "/etc/cron.d/evil",
+            ):
+                item = {"name": malicious_name}
+                with pytest.raises(ValueError):
+                    reader._download_file_by_url(item, download_dir)
+
+
+def test_download_file_by_url_normal_name():
+    reader = SharePointReader(
+        client_id=test_client_id,
+        client_secret=test_client_secret,
+        tenant_id=test_tenant_id,
+    )
+    with patch.object(
+        SharePointReader, "_get_file_content_by_url", return_value=b"content"
+    ):
+        with tempfile.TemporaryDirectory() as download_dir:
+            item = {"name": "report.pdf"}
+            file_path = reader._download_file_by_url(item, download_dir)
+            assert Path(file_path).parent == Path(download_dir).resolve()
+            assert Path(file_path).read_bytes() == b"content"
+
+
 def test_required_exts():
     sharepoint_reader = SharePointReader(
         client_id="dummy_client_id",
