@@ -1,7 +1,7 @@
 import asyncio
 import contextvars
 import pytest
-from llama_index.core.async_utils import batch_gather, asyncio_run
+from llama_index.core.async_utils import batch_gather, asyncio_run, run_async_tasks
 
 
 def test_batch_gather_indivisible_task_list() -> None:
@@ -37,3 +37,20 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+def test_run_async_tasks_propagates_task_exception_with_progress() -> None:
+    """
+    Validate that show_progress does not change which exception reaches
+    the caller: a task failure must surface instead of being swallowed by
+    the tqdm fallback.
+    """
+
+    async def ok() -> int:
+        return 1
+
+    async def fail() -> None:
+        raise ValueError("ORIGINAL task failure")
+
+    with pytest.raises(ValueError, match="ORIGINAL task failure"):
+        run_async_tasks([ok(), fail()], show_progress=True)
