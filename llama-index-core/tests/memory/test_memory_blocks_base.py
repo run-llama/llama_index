@@ -47,17 +47,21 @@ class ContentBlocksMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
 
 
 class UrlBackedMediaMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
-    """Memory block that returns URL-backed media content blocks."""
+    """Memory block that returns media content blocks with URL and data."""
 
     async def _aget(
         self, messages: List[ChatMessage], **kwargs: Any
     ) -> List[ContentBlock]:
         return [
             TextBlock(text="Media context"),
-            VideoBlock(url="https://example.com/video.mp4"),
+            VideoBlock(
+                url="https://example.com/video.mp4",
+                video=b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom",
+            ),
             DocumentBlock(
                 url="https://example.com/document.pdf",
                 document_mimetype="application/pdf",
+                data=b"%PDF-1.4 dummy pdf content",
             ),
         ]
 
