@@ -18,6 +18,29 @@ def test_batch_gather_indivisible_task_list() -> None:
     assert results == list(range(len(coroutines)))
 
 
+def test_asyncio_run_preserves_runtime_error_from_coroutine() -> None:
+    async def fail() -> None:
+        raise RuntimeError("original failure")
+
+    with pytest.raises(RuntimeError, match="original failure"):
+        asyncio_run(fail())
+
+
+def test_asyncio_run_preserves_runtime_error_in_no_loop_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fail() -> None:
+        raise RuntimeError("fallback failure")
+
+    def raise_no_loop() -> None:
+        raise RuntimeError("no current event loop")
+
+    monkeypatch.setattr(asyncio, "get_event_loop", raise_no_loop)
+
+    with pytest.raises(RuntimeError, match="fallback failure"):
+        asyncio_run(fail())
+
+
 @pytest.mark.asyncio
 async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
     """
@@ -37,3 +60,12 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_asyncio_run_preserves_runtime_error_when_loop_running() -> None:
+    async def fail() -> None:
+        raise RuntimeError("threaded failure")
+
+    with pytest.raises(RuntimeError, match="threaded failure"):
+        asyncio_run(fail())
