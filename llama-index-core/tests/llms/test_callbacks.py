@@ -130,6 +130,20 @@ def test_to_payload_excludes_secrets() -> None:
     assert payload["class_name"] == llm.class_name()
 
 
+class _ModelMockLLM(MockLLM):
+    """MockLLM with model/temperature fields, like concrete LLM integrations."""
+
+    model: str = "test-model"
+    temperature: float = 0.5
+
+
+def test_to_payload_includes_model_and_temperature() -> None:
+    llm = _ModelMockLLM()
+    payload = llm.to_payload()
+    assert payload["model"] == "test-model"
+    assert payload["temperature"] == 0.5
+
+
 def test_callback_serialized_excludes_secrets(prompt: str) -> None:
     handler = _CapturingHandler()
     llm = _SecretMockLLM(callback_manager=CallbackManager([handler]))
