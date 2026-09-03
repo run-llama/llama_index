@@ -19,6 +19,18 @@ from llama_index.core.schema import QueryBundle
 logger = logging.getLogger(__name__)
 
 
+def _get_response_for_guideline_evaluation(response: Response) -> Response:
+    """Return a bounded response for guideline evaluation when SQL is available."""
+    sql_query = response.metadata.get("sql_query") if response.metadata else None
+    if isinstance(sql_query, str) and sql_query.strip():
+        return Response(
+            response=sql_query,
+            source_nodes=response.source_nodes,
+            metadata=response.metadata,
+        )
+    return response
+
+
 class RetryQueryEngine(BaseQueryEngine):
     """
     Does retry on query engine if it fails evaluation.
@@ -123,8 +135,9 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
         typed_response = (
             response if isinstance(response, Response) else response.get_response()
         )
+        eval_response = _get_response_for_guideline_evaluation(typed_response)
         query_str = query_bundle.query_str
-        eval = self._guideline_evaluator.evaluate_response(query_str, typed_response)
+        eval = self._guideline_evaluator.evaluate_response(query_str, eval_response)
         if eval.passing:
             logger.debug("Evaluation returned True.")
             return response
