@@ -204,6 +204,25 @@ def test_llm_rerank_multimodal(png_1px_b64, mp3_bytes, mp4_bytes) -> None:
     assert result_nodes[3].node.get_content_blocks() == [TextBlock(text="Test3")]
 
 
+def test_llm_rerank_filters_invalid_custom_choices() -> None:
+    """Test that custom parsers cannot select nodes outside the current batch."""
+
+    def parse_choices(_raw_response: str, _num_choices: int):
+        return [0, 2, 4], [0.9, 0.8, 0.7]
+
+    nodes = [TextNode(text=f"Document {idx}") for idx in range(3)]
+    llm_rerank = LLMRerank(
+        llm=MockLLM(),
+        parse_choice_select_answer_fn=parse_choices,
+    )
+
+    result_nodes = llm_rerank._parse_raw_response("ignored", nodes)
+
+    assert len(result_nodes) == 1
+    assert result_nodes[0].node.get_content() == "Document 1"
+    assert result_nodes[0].score == 0.8
+
+
 @patch.object(
     MockLLM,
     "chat",
