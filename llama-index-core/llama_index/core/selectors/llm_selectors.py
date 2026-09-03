@@ -200,7 +200,7 @@ class LLMMultiSelector(BaseSelector):
     ) -> SelectorResult:
         # prepare input
         context_list = _build_choices_text(choices)
-        max_outputs = self._max_outputs or len(choices)
+        max_outputs = self._max_outputs if self._max_outputs is not None else len(choices)
 
         prediction = self._llm.predict(
             prompt=self._prompt,
@@ -219,7 +219,7 @@ class LLMMultiSelector(BaseSelector):
     ) -> SelectorResult:
         # prepare input
         context_list = _build_choices_text(choices)
-        max_outputs = self._max_outputs or len(choices)
+        max_outputs = self._max_outputs if self._max_outputs is not None else len(choices)
 
         prediction = await self._llm.apredict(
             prompt=self._prompt,
