@@ -30,7 +30,6 @@ from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
 )
 
-
 SKIP_GEMINI = (
     os.environ.get("GOOGLE_API_KEY") is None
     or os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "true"
@@ -2206,3 +2205,191 @@ async def test_create_file_part_no_display_name_by_default():
     call_kwargs = mock_client.aio.files.upload.call_args
     upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
     assert upload_config.display_name is None
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for https://github.com/run-llama/llama_index/issues/19293
+# Token counts for Gemini 2.5 models must reach instrumentation surfaces
+# (ChatResponse.additional_kwargs / raw) in both chat and streaming paths.
+# ---------------------------------------------------------------------------
+
+
+def _mock_usage_metadata(
+    prompt: int = 11,
+    candidates: int = 22,
+    total: int = 40,
+    thoughts: int = 7,
+    cached: int = 3,
+) -> MagicMock:
+    """Build a Gemini 2.5-style usage metadata mock (incl. thinking tokens)."""
+    usage_metadata = MagicMock()
+    usage_metadata.prompt_token_count = prompt
+    usage_metadata.candidates_token_count = candidates
+    usage_metadata.total_token_count = total
+    usage_metadata.thoughts_token_count = thoughts
+    usage_metadata.cached_content_token_count = cached
+    usage_metadata.model_dump.return_value = {
+        "prompt_token_count": prompt,
+        "candidates_token_count": candidates,
+        "total_token_count": total,
+        "thoughts_token_count": thoughts,
+        "cached_content_token_count": cached,
+    }
+    return usage_metadata
+
+
+def _mock_text_chunk(text: str, usage_metadata: Any = None) -> MagicMock:
+    """Build a GenerateContentResponse-shaped stream chunk with one text part."""
+    part = MagicMock()
+    part.text = text
+    part.thought = None
+    part.thought_signature = None
+    part.inline_data = None
+    part.function_call = None
+    part.function_response = None
+
+    candidate = MagicMock()
+    candidate.finish_reason = types.FinishReason.STOP
+    candidate.content.role = "model"
+    candidate.content.parts = [part]
+    candidate.model_dump.return_value = {
+        "finish_reason": types.FinishReason.STOP,
+        "content": {"role": "model", "parts": [{"text": text}]},
+    }
+
+    chunk = MagicMock()
+    chunk.candidates = [candidate]
+    chunk.usage_metadata = usage_metadata
+    chunk.prompt_feedback = None
+    chunk.function_calls = None
+    del chunk.cached_content
+    return chunk
+
+
+def _mock_usage_only_chunk(usage_metadata: MagicMock) -> MagicMock:
+    """Build the trailing Gemini stream chunk that carries usage only."""
+    chunk = MagicMock()
+    chunk.candidates = []
+    chunk.usage_metadata = usage_metadata
+    return chunk
+
+
+def _mock_google_genai_llm() -> GoogleGenAI:
+    """Build a GoogleGenAI instance against a fully mocked client."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_model.supported_generation_methods = ["generateContent"]
+        mock_model.input_token_limit = 1000000
+        mock_model.output_token_limit = 8192
+        mock_client.models.get.return_value = mock_model
+
+        llm = GoogleGenAI(
+            model="gemini-2.5-flash",
+            max_tokens=8192,
+            context_window=1000000,
+        )
+        llm._client = mock_client  # keep the mocked client for the caller
+        return llm
+
+
+def test_usage_metadata_exposes_gemini_2_5_token_counts() -> None:
+    """Token counts, incl. Gemini 2.5 thinking tokens, surface on the response."""
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    part = MagicMock()
+    part.text = "Hello."
+    part.thought = None
+    part.thought_signature = None
+    part.inline_data = None
+    part.function_call = None
+    part.function_response = None
+    mock_response.candidates[0].content.parts = [part]
+    mock_response.candidates[0].model_dump = MagicMock(return_value={})
+    mock_response.prompt_feedback = None
+    mock_response.function_calls = None
+    del mock_response.cached_content
+    mock_response.usage_metadata = _mock_usage_metadata()
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert chat_response.additional_kwargs["prompt_tokens"] == 11
+    assert chat_response.additional_kwargs["completion_tokens"] == 22
+    assert chat_response.additional_kwargs["total_tokens"] == 40
+    # Gemini 2.5 thinking models: reasoning tokens must be visible to
+    # instrumentation that reads additional_kwargs.
+    assert chat_response.additional_kwargs["thoughts_token_count"] == 7
+    assert chat_response.raw["usage_metadata"] == {
+        "prompt_token_count": 11,
+        "candidates_token_count": 22,
+        "total_token_count": 40,
+        "thoughts_token_count": 7,
+        "cached_content_token_count": 3,
+    }
+
+
+def test_stream_chat_surfaces_usage_metadata_from_trailing_chunk() -> None:
+    """Gemini streams usage on a trailing chunk w/o content; last response must carry it."""
+    mock_client = MagicMock()
+    usage_metadata = _mock_usage_metadata()
+    mock_client.chats.create.return_value.send_message_stream.return_value = [
+        _mock_text_chunk("Hello from Gemini"),
+        _mock_usage_only_chunk(usage_metadata),
+    ]
+
+    llm = _mock_google_genai_llm()
+    llm._client = mock_client
+
+    responses = list(llm.stream_chat(messages=[ChatMessage(role="user", content="Hi")]))
+
+    assert len(responses) == 2
+    last = responses[-1]
+    assert last.delta == ""
+    assert last.additional_kwargs["prompt_tokens"] == 11
+    assert last.additional_kwargs["completion_tokens"] == 22
+    assert last.additional_kwargs["total_tokens"] == 40
+    assert last.additional_kwargs["thoughts_token_count"] == 7
+    assert last.raw["usage_metadata"]["prompt_token_count"] == 11
+    # accumulated content is preserved on the final response
+    assert "Hello from Gemini" in last.message.content
+    # earlier chunk keeps streaming deltas as before
+    assert responses[0].delta == "Hello from Gemini"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_surfaces_usage_metadata_from_trailing_chunk() -> None:
+    """Async streaming must also surface usage from the trailing usage-only chunk."""
+
+    async def async_chunks():
+        for chunk in [
+            _mock_text_chunk("Hello from Gemini"),
+            _mock_usage_only_chunk(_mock_usage_metadata()),
+        ]:
+            yield chunk
+
+    mock_client = MagicMock()
+    mock_chat = MagicMock()
+    mock_chat.send_message_stream = AsyncMock(return_value=async_chunks())
+    mock_client.aio.chats.create.return_value = mock_chat
+
+    llm = _mock_google_genai_llm()
+    llm._client = mock_client
+
+    responses = [
+        resp
+        async for resp in await llm.astream_chat(
+            messages=[ChatMessage(role="user", content="Hi")]
+        )
+    ]
+
+    assert len(responses) == 2
+    last = responses[-1]
+    assert last.delta == ""
+    assert last.additional_kwargs["prompt_tokens"] == 11
+    assert last.additional_kwargs["completion_tokens"] == 22
+    assert last.additional_kwargs["total_tokens"] == 40
+    assert last.raw["usage_metadata"]["prompt_token_count"] == 11
