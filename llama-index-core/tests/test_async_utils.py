@@ -1,7 +1,7 @@
 import asyncio
 import contextvars
 import pytest
-from llama_index.core.async_utils import batch_gather, asyncio_run
+from llama_index.core.async_utils import batch_gather, asyncio_run, run_async_tasks
 
 
 def test_batch_gather_indivisible_task_list() -> None:
@@ -37,3 +37,19 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+def test_run_async_tasks_propagates_progress_task_errors() -> None:
+    """
+    A task error must propagate when show_progress=True.
+
+    Previously the progress path wrapped both the optional tqdm/nest_asyncio
+    import and task execution in a bare ``except Exception: pass``, so an
+    exception raised by a task was swallowed and the call returned silently.
+    """
+
+    async def _raise_task_error() -> None:
+        raise ValueError("task failed")
+
+    with pytest.raises(ValueError, match="task failed"):
+        run_async_tasks([_raise_task_error()], show_progress=True)
