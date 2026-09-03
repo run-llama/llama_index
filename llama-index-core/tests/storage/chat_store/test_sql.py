@@ -285,3 +285,92 @@ async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
     messages = await loaded_store.get_messages("dump_user2")
     assert len(messages) == 1
     assert messages[0].content == "message2"
+
+
+@pytest.mark.asyncio
+async def test_stored_message_gets_an_id(chat_store: SQLAlchemyChatStore):
+    """A message written without an id is given one, and it survives the round trip."""
+    message = ChatMessage(role="user", content="hello")
+    assert message.id_ is None
+
+    await chat_store.add_message("id_user", message)
+    assert message.id_ is not None
+
+    stored = await chat_store.get_messages("id_user")
+    assert len(stored) == 1
+    assert stored[0].id_ == message.id_
+
+
+@pytest.mark.asyncio
+async def test_stored_message_keeps_a_caller_supplied_id(
+    chat_store: SQLAlchemyChatStore,
+):
+    """An id the caller chose is not overwritten."""
+    message = ChatMessage(role="user", content="hello", id_="from-the-caller")
+
+    await chat_store.add_message("id_user", message)
+
+    stored = await chat_store.get_messages("id_user")
+    assert [m.id_ for m in stored] == ["from-the-caller"]
+
+
+@pytest.mark.asyncio
+async def test_batched_and_set_messages_get_distinct_ids(
+    chat_store: SQLAlchemyChatStore,
+):
+    """add_messages and set_messages assign ids too, one per message."""
+    await chat_store.add_messages(
+        "id_user",
+        [
+            ChatMessage(role="user", content="hello"),
+            ChatMessage(role="assistant", content="world"),
+        ],
+    )
+    ids = [m.id_ for m in await chat_store.get_messages("id_user")]
+    assert len(ids) == 2
+    assert all(i is not None for i in ids)
+    assert len(set(ids)) == 2
+
+    await chat_store.set_messages(
+        "id_user",
+        [
+            ChatMessage(role="user", content="again"),
+            ChatMessage(role="assistant", content="and again"),
+        ],
+    )
+    replaced = [m.id_ for m in await chat_store.get_messages("id_user")]
+    assert len(replaced) == 2
+    assert all(i is not None for i in replaced)
+    assert len(set(replaced)) == 2
+    assert not set(replaced) & set(ids)
+
+
+@pytest.mark.asyncio
+async def test_get_message_by_id(chat_store: SQLAlchemyChatStore):
+    """A stored message can be fetched back by its id, and only under its own key."""
+    first = ChatMessage(role="user", content="hello")
+    second = ChatMessage(role="user", content="hello")
+    await chat_store.add_messages("id_user", [first, second])
+
+    # The two have identical content, which is exactly the case that comparing
+    # by content cannot tell apart.
+    found = await chat_store.get_message_by_id("id_user", second.id_)
+    assert found is not None
+    assert found.id_ == second.id_
+
+    assert await chat_store.get_message_by_id("id_user", "no-such-id") is None
+    assert await chat_store.get_message_by_id("other_user", first.id_) is None
+
+
+@pytest.mark.asyncio
+async def test_get_message_by_id_respects_status(chat_store: SQLAlchemyChatStore):
+    """An archived message is not returned by the default ACTIVE lookup."""
+    message = ChatMessage(role="user", content="hello")
+    await chat_store.add_message("id_user", message, status=MessageStatus.ARCHIVED)
+
+    assert await chat_store.get_message_by_id("id_user", message.id_) is None
+    assert (
+        await chat_store.get_message_by_id(
+            "id_user", message.id_, status=MessageStatus.ARCHIVED
+        )
+    ) is not None

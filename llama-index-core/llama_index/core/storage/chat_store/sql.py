@@ -1,4 +1,5 @@
 import time
+import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import (
@@ -221,6 +222,18 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             rows = result.fetchall()
             return len(rows)
 
+    @staticmethod
+    def _assign_id(message: ChatMessage) -> None:
+        """
+        Give a message an id if it does not have one yet.
+
+        Stored messages need a handle that survives a round trip, so that a
+        caller can address one later without relying on its position in the
+        list. A message that already carries an id keeps it.
+        """
+        if message.id_ is None:
+            message.id_ = str(uuid.uuid4())
+
     async def add_message(
         self,
         key: str,
@@ -229,6 +242,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     ) -> None:
         """Add a message for a key with the specified status (async)."""
         session_factory, table = await self._initialize()
+        self._assign_id(message)
 
         async with session_factory() as session:
             await session.execute(
@@ -250,6 +264,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     ) -> None:
         """Add a list of messages in batch for the specified key and status (async)."""
         session_factory, table = await self._initialize()
+        for message in messages:
+            self._assign_id(message)
 
         async with session_factory() as session:
             await session.execute(
@@ -282,6 +298,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
         # Then add new messages
         current_time = time.time_ns()
+        for message in messages:
+            self._assign_id(message)
 
         async with session_factory() as session:
             for i, message in enumerate(messages):

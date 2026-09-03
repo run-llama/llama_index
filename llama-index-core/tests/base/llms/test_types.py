@@ -169,6 +169,7 @@ def test_chat_message_serializer():
         additional_kwargs={"some_list": ["a", "b", "c"], "some_object": SimpleModel()},
     )
     assert m.model_dump() == {
+        "id_": None,
         "role": MessageRole.USER,
         "additional_kwargs": {
             "some_list": ["a", "b", "c"],
@@ -186,6 +187,7 @@ def test_chat_message_legacy_roundtrip():
     }
     m = ChatMessage(**legacy_message)
     assert m.model_dump() == {
+        "id_": None,
         "additional_kwargs": {},
         "blocks": [{"block_type": "text", "text": "foo"}],
         "role": MessageRole.USER,
@@ -1956,3 +1958,33 @@ def test_tool_call_block_format():
     # Currently, ToolCallBlock does not support template vars
     assert formatted_block.tool_name == "{tool_name}"
     assert formatted_block.tool_kwargs == {"param": "{param_value}"}
+
+
+def test_chat_message_id_is_absent_by_default():
+    """
+    Identity is opt-in, and that is the point of the default being None.
+
+    A default id would give every message a fresh uuid, which would make two
+    otherwise identical messages compare unequal and change model_dump() for
+    every existing caller.
+    """
+    assert ChatMessage(content="hello").id_ is None
+    assert ChatMessage(content="hello") == ChatMessage(content="hello")
+
+
+def test_chat_message_id_round_trips():
+    """An id that was set survives serialization and validation."""
+    m = ChatMessage(content="hello", id_="an-id")
+    assert m.id_ == "an-id"
+
+    restored = ChatMessage.model_validate(m.model_dump(mode="json"))
+    assert restored.id_ == "an-id"
+
+
+def test_chat_message_ids_distinguish_identical_messages():
+    """Two messages with the same content are told apart by their ids."""
+    first = ChatMessage(content="say that again", id_="first")
+    second = ChatMessage(content="say that again", id_="second")
+
+    assert first != second
+    assert [m for m in (first, second) if m.id_ == "second"] == [second]

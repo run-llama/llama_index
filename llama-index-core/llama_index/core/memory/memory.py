@@ -840,6 +840,20 @@ class Memory(BaseMemory):
         """Get all messages."""
         return await self.sql_store.get_messages(self.session_id, status=status)
 
+    async def aget_by_id(
+        self, id_: str, status: Optional[MessageStatus] = None
+    ) -> Optional[ChatMessage]:
+        """
+        Get a single message from this session by its `ChatMessage.id_`.
+
+        Returns None if this session holds no message with that id. Messages
+        are given an id when they are written, so the id to pass here is the
+        one read off a message returned by `get_all()`.
+        """
+        return await self.sql_store.get_message_by_id(
+            self.session_id, id_, status=status
+        )
+
     async def areset(self, status: Optional[MessageStatus] = None) -> None:
         """Reset the memory."""
         await self.sql_store.delete_messages(self.session_id, status=status)
@@ -867,6 +881,12 @@ class Memory(BaseMemory):
     def set(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""
         return asyncio_run(self.aset(messages))
+
+    def get_by_id(
+        self, id_: str, status: Optional[MessageStatus] = None
+    ) -> Optional[ChatMessage]:
+        """Get a single message from this session by its `ChatMessage.id_`."""
+        return asyncio_run(self.aget_by_id(id_, status=status))
 
     def reset(self) -> None:
         """Reset the memory."""
