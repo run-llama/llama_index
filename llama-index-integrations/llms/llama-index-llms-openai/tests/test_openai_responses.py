@@ -444,6 +444,153 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required():
     assert result["tools"][0]["name"] == "search_tool"
 
 
+def _make_fake_reasoning_response(reasoning_tokens: int = 321):
+    """Build a fake Responses-API reply for a reasoning model that did not
+    request a visible reasoning summary (the default), i.e. the
+    ResponseReasoningItem has no content/summary -- exactly like a real
+    default-settings call.
+    """
+    from types import SimpleNamespace
+
+    reasoning_item = ResponseReasoningItem(
+        id="rs_fake123",
+        summary=[],
+        type="reasoning",
+        content=None,
+    )
+    usage = SimpleNamespace(
+        input_tokens=10,
+        output_tokens=50,
+        total_tokens=60,
+        output_tokens_details=SimpleNamespace(reasoning_tokens=reasoning_tokens),
+    )
+    return SimpleNamespace(id="resp_fake123", output=[reasoning_item], usage=usage)
+
+
+def _make_fake_text_response():
+    """A plain, non-reasoning response: a single assistant text message."""
+    from types import SimpleNamespace
+
+    message_item = ResponseOutputMessage(
+        id="msg_fake123",
+        content=[
+            ResponseOutputText(annotations=[], text="hello there", type="output_text")
+        ],
+        role="assistant",
+        status="completed",
+        type="message",
+    )
+    usage = SimpleNamespace(
+        input_tokens=5,
+        output_tokens=5,
+        total_tokens=10,
+        output_tokens_details=SimpleNamespace(reasoning_tokens=0),
+    )
+    return SimpleNamespace(id="resp_fake456", output=[message_item], usage=usage)
+
+
+def test_chat_sets_thinking_block_num_tokens_from_reasoning_tokens(
+    default_responses_llm,
+):
+    """Regression: sync chat() populates ThinkingBlock.num_tokens from
+    usage.output_tokens_details.reasoning_tokens.
+    """
+    llm = default_responses_llm
+    llm._client.responses.create = MagicMock(
+        return_value=_make_fake_reasoning_response(321)
+    )
+
+    result = llm.chat([ChatMessage(role=MessageRole.USER, content="hi")])
+
+    thinking_blocks = [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ]
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].num_tokens == 321
+
+
+@pytest.mark.asyncio
+async def test_achat_sets_thinking_block_num_tokens_from_reasoning_tokens(
+    default_responses_llm,
+):
+    """achat() must set ThinkingBlock.num_tokens from
+    usage.output_tokens_details.reasoning_tokens, matching sync chat().
+
+    Before the fix, _achat() never touched ThinkingBlock.num_tokens, so this
+    came back None even though the API billed and reported real reasoning
+    tokens.
+    """
+    from unittest.mock import AsyncMock
+
+    llm = default_responses_llm
+    llm._aclient.responses.create = AsyncMock(
+        return_value=_make_fake_reasoning_response(321)
+    )
+
+    result = await llm.achat([ChatMessage(role=MessageRole.USER, content="hi")])
+
+    thinking_blocks = [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ]
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].num_tokens == 321
+
+
+def test_chat_non_reasoning_response_unaffected(default_responses_llm):
+    """Regression: a plain text response through chat() is unaffected --
+    no ThinkingBlock is created and no error is raised.
+    """
+    llm = default_responses_llm
+    llm._client.responses.create = MagicMock(return_value=_make_fake_text_response())
+
+    result = llm.chat([ChatMessage(role=MessageRole.USER, content="hi")])
+
+    assert not any(isinstance(block, ThinkingBlock) for block in result.message.blocks)
+    assert any(isinstance(block, TextBlock) for block in result.message.blocks)
+
+
+@pytest.mark.asyncio
+async def test_achat_non_reasoning_response_unaffected(default_responses_llm):
+    """Regression: a plain text response through achat() is unaffected --
+    no ThinkingBlock is created and no error is raised.
+    """
+    from unittest.mock import AsyncMock
+
+    llm = default_responses_llm
+    llm._aclient.responses.create = AsyncMock(return_value=_make_fake_text_response())
+
+    result = await llm.achat([ChatMessage(role=MessageRole.USER, content="hi")])
+
+    assert not any(isinstance(block, ThinkingBlock) for block in result.message.blocks)
+    assert any(isinstance(block, TextBlock) for block in result.message.blocks)
+
+
+@pytest.mark.asyncio
+async def test_achat_forwards_store_to_message_dicts(default_responses_llm):
+    """achat() must forward the configured `store` flag into
+    to_openai_message_dicts(...), same as sync _chat(), so that prior
+    ThinkingBlock reasoning items survive re-serialisation of multi-turn
+    history when store=True.
+
+    Before the fix, _achat() never passed `store=` at all, so
+    to_openai_message_dicts always got its default (store=False)
+    regardless of the caller's configured store.
+    """
+    from unittest.mock import AsyncMock
+
+    llm = default_responses_llm
+    llm.store = True
+    llm._aclient.responses.create = AsyncMock(return_value=_make_fake_text_response())
+
+    with patch(
+        "llama_index.llms.openai.responses.to_openai_message_dicts"
+    ) as mock_to_dicts:
+        mock_to_dicts.return_value = []
+        await llm.achat([ChatMessage(role=MessageRole.USER, content="hi")])
+
+    assert mock_to_dicts.call_args.kwargs["store"] is True
+
+
 @pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
 def test_chat_with_api():
     """Test the chat method with real API call."""
