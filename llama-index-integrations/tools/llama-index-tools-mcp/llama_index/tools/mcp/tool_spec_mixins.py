@@ -93,6 +93,10 @@ class TypeResolutionMixin:
             return self._create_list_type(schema, defs)
         if self._is_simple_object(schema):
             return self._create_dict_type(schema, defs)
+        # Inline nested object with its own properties (no $ref, no additionalProperties)
+        if json_type == "object" and "properties" in schema:
+            model_name = schema.get("title", f"InlineModel_{id(schema)}")
+            return self._create_model(schema, model_name, defs)
         return json_type_mapping.get(json_type, str)
 
 
