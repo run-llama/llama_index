@@ -54,6 +54,9 @@ from llama_index.core.query_engine.sub_question_query_engine import (
 from llama_index.core.query_engine.transform_query_engine import (
     TransformQueryEngine,
 )
+from llama_index.core.query_engine.verification_query_engine import (
+    VerificationQueryEngine,
+)
 
 __all__ = [
     "CitationQueryEngine",
@@ -78,6 +81,7 @@ __all__ = [
     "KnowledgeGraphQueryEngine",
     "BaseQueryEngine",
     "CustomQueryEngine",
+    "VerificationQueryEngine",
     # multimodal
     "SimpleMultiModalQueryEngine",
     # SQL
