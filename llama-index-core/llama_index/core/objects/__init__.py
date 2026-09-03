@@ -4,6 +4,7 @@ from llama_index.core.objects.base import ObjectIndex, ObjectRetriever
 from llama_index.core.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.core.objects.table_node_mapping import (
     SQLTableNodeMapping,
+    TrinoSQLDatabase,
     SQLTableSchema,
 )
 from llama_index.core.objects.tool_node_mapping import (
@@ -14,6 +15,7 @@ from llama_index.core.objects.tool_node_mapping import (
 __all__ = [
     "ObjectRetriever",
     "ObjectIndex",
+    "TrinoSQLDatabase",
     "SimpleObjectNodeMapping",
     "SimpleToolNodeMapping",
     "SimpleQueryToolNodeMapping",
