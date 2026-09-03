@@ -3,6 +3,7 @@ import shutil
 import os
 import requests
 import uuid
+from unittest.mock import AsyncMock, MagicMock
 from lancedb import AsyncConnection, DBConnection
 from lancedb.table import AsyncTable, Table
 from typing import Generator
@@ -150,3 +151,41 @@ async def test_retriever_qe(uri: str, document_data: List[Document]) -> None:
     assert isinstance(qe, LanceDBRetrieverQueryEngine)
     response = await qe.aquery(query_str="Hello")
     assert isinstance(response.response, str)
+
+
+def test_delete_ref_doc_escapes_quotes(uri: str) -> None:
+    index = LanceDBMultiModalIndex(uri=uri, text_embedding_model="sentence-transformers")
+    index._table = MagicMock()
+    index.delete_ref_doc("x' OR '1'='1")
+    where = index._table.delete.call_args.kwargs["where"]
+    assert where == "id = 'x'' OR ''1''=''1'"
+
+
+@pytest.mark.asyncio
+async def test_adelete_ref_doc_escapes_quotes(uri: str) -> None:
+    index = LanceDBMultiModalIndex(
+        uri=uri, text_embedding_model="sentence-transformers", use_async=True
+    )
+    index._table = AsyncMock()
+    await index.adelete_ref_doc("it's_a_note")
+    where = index._table.delete.call_args.kwargs["where"]
+    assert where == "id = 'it''s_a_note'"
+
+
+def test_delete_nodes_escapes_quotes(uri: str) -> None:
+    index = LanceDBMultiModalIndex(uri=uri, text_embedding_model="sentence-transformers")
+    index._table = MagicMock()
+    index.delete_nodes(["a'b", "c"])
+    where = index._table.delete.call_args.kwargs["where"]
+    assert where == "id IN ('a''b', 'c')"
+
+
+@pytest.mark.asyncio
+async def test_adelete_nodes_escapes_quotes(uri: str) -> None:
+    index = LanceDBMultiModalIndex(
+        uri=uri, text_embedding_model="sentence-transformers", use_async=True
+    )
+    index._table = AsyncMock()
+    await index.adelete_nodes(["a'b", "c"])
+    where = index._table.delete.call_args.kwargs["where"]
+    assert where == "id IN ('a''b', 'c')"
