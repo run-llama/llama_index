@@ -59,6 +59,7 @@ def create_schema_from_function(
         param_default = params[param_name].default
         description = None
         json_schema_extra: dict[str, Any] = {}
+        annotated_field_info: Optional[FieldInfo] = None
 
         if get_origin(param_type) is typing.Annotated:
             args = get_args(param_type)
@@ -67,6 +68,10 @@ def create_schema_from_function(
             if isinstance(args[1], str):
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
+                # Keep the whole FieldInfo: it carries constraints
+                # (ge/le/pattern/min_length/...) that must survive into the
+                # generated schema, not just description and extras.
+                annotated_field_info = args[1]
                 description = args[1].description
                 if args[1].json_schema_extra and isinstance(
                     args[1].json_schema_extra, dict
@@ -87,32 +92,65 @@ def create_schema_from_function(
         if param_type is params[param_name].empty:
             param_type = Any
 
+        merge_overrides: dict[str, Any] = {}
+        if description is not None:
+            merge_overrides["description"] = description
+        if json_schema_extra:
+            merge_overrides["json_schema_extra"] = json_schema_extra
+
         if param_default is params[param_name].empty:
             # Required field
-            fields[param_name] = (
-                param_type,
-                FieldInfo(description=description, json_schema_extra=json_schema_extra),
-            )
-        elif isinstance(param_default, FieldInfo):
-            # Field with pydantic.Field as default value
-            if param_default.description is None and description is not None:
-                # Merge rather than assign: pydantic builds the field from the
-                # attributes the FieldInfo records as explicitly set, so a plain
-                # `param_default.description = ...` would never reach the schema
-                # (and would edit the caller's instance).
-                param_default = FieldInfo.merge_field_infos(
-                    param_default, description=description
+            if annotated_field_info is not None:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo.merge_field_infos(annotated_field_info, **merge_overrides),
                 )
+            else:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo(
+                        description=description, json_schema_extra=json_schema_extra
+                    ),
+                )
+        elif isinstance(param_default, FieldInfo):
+            # Field with pydantic.Field as default value. Merge rather than
+            # assign: pydantic builds the field from the attributes the
+            # FieldInfo records as explicitly set, so a plain
+            # `param_default.description = ...` would never reach the schema
+            # (and would edit the caller's instance). An Annotated FieldInfo
+            # merges first so the default-position Field wins conflicts,
+            # matching pydantic's own precedence.
+            merge_sources = (
+                (annotated_field_info, param_default)
+                if annotated_field_info is not None
+                else (param_default,)
+            )
+            if param_default.description is None and description is not None:
+                param_default = FieldInfo.merge_field_infos(
+                    *merge_sources, description=description
+                )
+            elif annotated_field_info is not None:
+                param_default = FieldInfo.merge_field_infos(*merge_sources)
             fields[param_name] = (param_type, param_default)
         else:
-            fields[param_name] = (
-                param_type,
-                FieldInfo(
-                    default=param_default,
-                    description=description,
-                    json_schema_extra=json_schema_extra,
-                ),
-            )
+            if annotated_field_info is not None:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo.merge_field_infos(
+                        annotated_field_info,
+                        default=param_default,
+                        **merge_overrides,
+                    ),
+                )
+            else:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo(
+                        default=param_default,
+                        description=description,
+                        json_schema_extra=json_schema_extra,
+                    ),
+                )
 
     additional_fields = additional_fields or []
     for field_info in additional_fields:
