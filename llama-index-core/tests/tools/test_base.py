@@ -458,6 +458,116 @@ def test_docstring_param_extraction_google_style():
     assert fields["b"].description == "string input"
 
 
+def test_docstring_param_extraction_google_style_without_types():
+    def tool_fn(query: str, result: str = "") -> str:
+        """
+        Test tool.
+
+        Args:
+            query: search query
+
+        Returns:
+            result: unrelated return description
+
+        """
+        return query
+
+    properties = FunctionTool.from_defaults(fn=tool_fn).metadata.to_openai_tool()[
+        "function"
+    ]["parameters"]["properties"]
+
+    assert properties["query"].get("description") == "search query"
+    assert properties["result"].get("description") is None
+
+
+def test_docstring_param_extraction_numpy_style():
+    def tool_fn(query: str) -> str:
+        """
+        Test tool.
+
+        Parameters
+        ----------
+        query : str
+            search query
+
+        Returns
+        -------
+        str
+            search result
+
+        """
+        return query
+
+    properties = FunctionTool.from_defaults(fn=tool_fn).metadata.to_openai_tool()[
+        "function"
+    ]["parameters"]["properties"]
+
+    assert properties["query"].get("description") == "search query"
+
+
+def test_docstring_param_extraction_multiline_google_description():
+    def tool_fn(mode: str) -> str:
+        """
+        Test tool.
+
+        Args:
+            mode (str): One of:
+                - "fast": quick results
+                - "deep": exhaustive scan
+
+        """
+        return mode
+
+    properties = FunctionTool.from_defaults(fn=tool_fn).metadata.to_openai_tool()[
+        "function"
+    ]["parameters"]["properties"]
+
+    assert properties["mode"].get("description") == (
+        'One of:\n- "fast": quick results\n- "deep": exhaustive scan'
+    )
+
+
+def test_docstring_ignores_google_section_nested_in_examples():
+    docs, unknown = FunctionTool.extract_param_docs(
+        """
+        Test tool.
+
+        Examples:
+            A nested callable may document its own parameter:
+
+                Args:
+                    query: belongs to the example
+
+        """,
+        {"query"},
+    )
+
+    assert docs == {}
+    assert unknown == set()
+
+
+def test_docstring_ignores_numpy_section_nested_in_examples():
+    docs, unknown = FunctionTool.extract_param_docs(
+        """
+        Test tool.
+
+        Examples
+        --------
+        A nested callable may document its own parameter::
+
+            Parameters
+            ----------
+            query : str
+                belongs to the example
+
+        """,
+        {"query"},
+    )
+
+    assert docs == {}
+    assert unknown == set()
+
+
 def test_docstring_ignores_unknown_params():
     def tool_fn(a: int) -> str:
         """
