@@ -20,6 +20,8 @@ class TypeResolutionMixin:
         self: "McpToolSpec",
         field_schema: dict,
         defs: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
     ) -> Any:
         """Resolve the Python type from a field schema."""
         if "$ref" in field_schema:
@@ -27,8 +29,12 @@ class TypeResolutionMixin:
         if "enum" in field_schema:
             return Literal[tuple(field_schema["enum"])]
         if "anyOf" in field_schema:
-            return self._resolve_union_type(field_schema, defs)
-        return self._resolve_basic_type(field_schema, defs)
+            return self._resolve_union_type(
+                field_schema, defs, field_name, parent_model_name
+            )
+        return self._resolve_basic_type(
+            field_schema, defs, field_name, parent_model_name
+        )
 
     def _resolve_reference(
         self: "McpToolSpec",
@@ -59,10 +65,13 @@ class TypeResolutionMixin:
         self: "McpToolSpec",
         schema: dict,
         defs: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
     ) -> Any:
         """Resolve a Union type (anyOf)."""
         union_types = [
-            self._resolve_union_option(option, defs) for option in schema["anyOf"]
+            self._resolve_union_option(option, defs, field_name, parent_model_name)
+            for option in schema["anyOf"]
         ]
         return Union[tuple(union_types)] if len(union_types) > 1 else union_types[0]
 
@@ -70,6 +79,8 @@ class TypeResolutionMixin:
         self: "McpToolSpec",
         option: dict,
         defs: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
     ) -> Any:
         """Resolve a single option in a union type."""
         if "$ref" in option:
@@ -78,28 +89,42 @@ class TypeResolutionMixin:
             return Literal[tuple(option["enum"])]
         if option.get("type") == "null":
             return type(None)
-        return self._resolve_basic_type(option, defs)
+        return self._resolve_basic_type(option, defs, field_name, parent_model_name)
 
     def _resolve_basic_type(
         self: "McpToolSpec",
         schema: dict,
         defs: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
     ) -> Any:
         """Resolve a basic JSON Schema type."""
         json_type = schema.get("type", "string")
         json_type = json_type[0] if isinstance(json_type, list) else json_type
 
         if self._is_simple_array(schema):
-            return self._create_list_type(schema, defs)
+            return self._create_list_type(schema, defs, field_name, parent_model_name)
+        if self._is_object_with_properties(schema):
+            return self._create_inline_object_model(
+                schema, defs, field_name, parent_model_name
+            )
         if self._is_simple_object(schema):
             return self._create_dict_type(schema, defs)
         return json_type_mapping.get(json_type, str)
 
 
 class TypeCreationMixin:
-    def _create_list_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
+    def _create_list_type(
+        self: "McpToolSpec",
+        schema: dict,
+        defs: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
+    ) -> type:
         """Create a List type from schema."""
-        item_type = self._resolve_field_type(schema["items"], defs)
+        item_type = self._resolve_field_type(
+            schema["items"], defs, field_name, parent_model_name
+        )
         return List[item_type]
 
     def _create_dict_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
@@ -115,6 +140,17 @@ class TypeCreationMixin:
 
         return Dict[str, Any]
 
+    def _create_inline_object_model(
+        self: "McpToolSpec",
+        schema: dict,
+        defs: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
+    ) -> type:
+        """Create a Pydantic model for an inline object schema."""
+        model_name = self._get_inline_model_name(schema, field_name, parent_model_name)
+        return self._create_model(schema, model_name, defs)
+
     def _is_simple_array(self: "McpToolSpec", schema: dict) -> bool:
         """Check if schema is a simple array type."""
         return schema.get("type") == "array" and "items" in schema
@@ -129,13 +165,41 @@ class TypeCreationMixin:
             and isinstance(additional_props, dict)
         )
 
+    def _is_object_with_properties(self: "McpToolSpec", schema: dict) -> bool:
+        """Check if schema is an object type with declared properties."""
+        return schema.get("type") == "object" and "properties" in schema
+
+    def _get_inline_model_name(
+        self: "McpToolSpec",
+        schema: dict,
+        field_name: str | None = None,
+        parent_model_name: str | None = None,
+    ) -> str:
+        """Build a stable model name for inline object schemas."""
+        if schema.get("title"):
+            return schema["title"]
+
+        parts = [parent_model_name, field_name]
+        raw_name = "".join(part or "" for part in parts) or "InlineObject"
+        return "".join(
+            segment.capitalize()
+            for segment in "".join(
+                char if char.isalnum() else " " for char in raw_name
+            ).split()
+        )
+
     def _extract_ref_name(self: "McpToolSpec", ref_path: str) -> str:
         """Extract reference name from $ref path."""
         return ref_path.split("#/$defs/")[-1]
 
 
 class FieldExtractionMixin:
-    def _extract_fields(self: "McpToolSpec", schema: dict, defs: dict) -> dict:
+    def _extract_fields(
+        self: "McpToolSpec",
+        schema: dict,
+        defs: dict,
+        model_name: str | None = None,
+    ) -> dict:
         """Extract Pydantic fields from schema."""
         properties = self._get_properties(schema)
         required_fields = set(schema.get("required", []))
@@ -146,7 +210,9 @@ class FieldExtractionMixin:
 
         fields = {}
         for field_name, field_schema in properties.items():
-            field_type = self._resolve_field_type(field_schema, defs)
+            field_type = self._resolve_field_type(
+                field_schema, defs, field_name, schema.get("title") or model_name
+            )
             default_value, final_type = self._set_field_default(
                 field_name,
                 required_fields,
