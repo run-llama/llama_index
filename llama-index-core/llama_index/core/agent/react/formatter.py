@@ -14,6 +14,7 @@ from llama_index.core.agent.react.types import (
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict, Field
+from llama_index.core.prompts.utils import format_string
 from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -78,7 +79,8 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         if self.context:
             format_args["context"] = self.context
 
-        fmt_sys_header = self.system_header.format(**format_args)
+        fmt_sys_header = format_string(self.system_header, **format_args)
+        fmt_sys_header = fmt_sys_header.replace("{{", "{").replace("}}", "}")
 
         # format reasoning history as alternating user and assistant messages
         # where the assistant messages are thoughts and actions and the tool
