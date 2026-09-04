@@ -1,4 +1,7 @@
+import pytest
+
 from llama_index.core.llms.mock import MockLLM
+from llama_index.core.node_parser.relational.base_element import TableOutput
 from llama_index.core.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
 )
@@ -2755,6 +2758,50 @@ def test_extract_html_table():
     assert test_document.text[nodes[3].start_char_idx : nodes[3].end_char_idx] == table2
     assert type(nodes[4]) is TextNode
     assert test_document.text[nodes[4].start_char_idx : nodes[4].end_char_idx] == table2
+
+
+@pytest.mark.asyncio
+async def test_extract_html_table_async() -> None:
+    """Async path must extract HTML tables like the sync path does.
+
+    Stub the LLM table-summarization so the test isolates the
+    extract_html_tables step, which was previously skipped on the async path.
+    """
+    test_document = Document(
+        text="""
+<table>
+  <tr>
+    <th>Month</th>
+    <th>Savings</th>
+  </tr>
+  <tr>
+    <td>January</td>
+    <td>$100</td>
+  </tr>
+</table>
+"""
+    )
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+
+    async def _stub_summaries(*_args: object) -> None:
+        # Mimic the real method's contract without depending on the LLM:
+        # mark every table element with a placeholder TableOutput.
+        elements = _args[-1]
+        for el in elements:  # type: ignore[attr-defined]
+            if el.type in ("table", "table_text"):
+                el.table_output = TableOutput(summary="x", columns=[])
+
+    # Stub async table-summarization so the test isolates the
+    # extract_html_tables step rather than depending on the LLM.
+    original = MarkdownElementNodeParser.aextract_table_summaries
+    MarkdownElementNodeParser.aextract_table_summaries = _stub_summaries  # type: ignore[assignment]
+    try:
+        nodes = await node_parser.aget_nodes_from_documents([test_document])
+    finally:
+        MarkdownElementNodeParser.aextract_table_summaries = original  # type: ignore[assignment]
+
+    # HTML tables must become IndexNodes, same as the sync path.
+    assert any(type(n) is IndexNode for n in nodes)
 
 
 def test_code_block_extraction() -> None:
