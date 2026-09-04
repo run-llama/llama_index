@@ -26,6 +26,8 @@ class WikipediaToolSpec(BaseToolSpec):
             wikipedia_page = wikipedia.page(page, auto_suggest=False)
         except wikipedia.PageError:
             return "Unable to load page. Try searching instead."
+        except wikipedia.DisambiguationError as e:
+            return f"Disambiguation error: {e}. Try being more specific."
         return wikipedia_page.content
 
     def search_data(self, query: str, lang: str = "en") -> str:
