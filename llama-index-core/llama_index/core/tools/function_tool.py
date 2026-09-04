@@ -341,6 +341,10 @@ class FunctionTool(AsyncBaseTool):
 
         raw_output = self._fn(*args, **all_kwargs)
 
+        # A check if function already returns ToolOutput
+        if isinstance(raw_output, ToolOutput):
+            return raw_output
+
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
@@ -379,6 +383,9 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = await self._async_fn(*args, **all_kwargs)
+
+        if isinstance(raw_output, ToolOutput):
+            return raw_output
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
