@@ -302,8 +302,20 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        response_str, metadata = self._run_with_sql_only_check(sql_query_str)
+        raw_response_str, metadata = self._run_with_sql_only_check(sql_query_str)
+
         metadata["sql_query"] = sql_query_str
+
+        if self._synthesize_response:
+            response_str = await self._llm.apredict(
+                self._response_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query=sql_query_str,
+                sql_response_str=raw_response_str,
+            )
+        else:
+            response_str = raw_response_str
+
         return Response(response=response_str, metadata=metadata)
 
 
