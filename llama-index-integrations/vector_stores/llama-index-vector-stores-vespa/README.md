@@ -14,7 +14,7 @@ Huggingface 🤗 embedders are supported, as well as SPLADE and ColBERT.
 
 ## Abstraction level of this integration
 
-To make it really simple to get started, we provide a template Vespa application that will be deployed upon initializing the vector store. This removes some of the complexity of setting up Vespa for the first time, but for serious use cases, we strongly recommend that you read the [Vespa documentation](docs.vespa.ai) and tailor the application to your needs.
+To make it really simple to get started, we provide a template Vespa application that will be deployed upon initializing the vector store. This removes some of the complexity of setting up Vespa for the first time, but for serious use cases, we strongly recommend that you read the [Vespa documentation](https://docs.vespa.ai) and tailor the application to your needs.
 
 ## The template
 
