@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+
 import pytest
 from llama_index.core.async_utils import batch_gather, asyncio_run
 
@@ -37,3 +38,44 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+def test_asyncio_run_propagates_coroutine_runtime_error() -> None:
+    """A RuntimeError raised by the coroutine itself must propagate unchanged."""
+
+    async def fail() -> None:
+        raise RuntimeError("original failure")
+
+    with pytest.raises(RuntimeError, match="original failure"):
+        asyncio_run(fail())
+
+
+def test_asyncio_run_propagates_runtime_error_in_no_loop_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The no-event-loop fallback must not mask the coroutine's RuntimeError."""
+
+    async def fail() -> None:
+        raise RuntimeError("fallback failure")
+
+    def raise_no_loop() -> None:
+        raise RuntimeError("no current event loop in thread")
+
+    monkeypatch.setattr(asyncio, "get_event_loop", raise_no_loop)
+    with pytest.raises(RuntimeError, match="fallback failure"):
+        asyncio_run(fail())
+
+
+def test_asyncio_run_no_loop_fallback_runs_coroutine(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With no current event loop, the coroutine still runs via asyncio.run()."""
+
+    async def answer() -> int:
+        return 42
+
+    def raise_no_loop() -> None:
+        raise RuntimeError("no current event loop in thread")
+
+    monkeypatch.setattr(asyncio, "get_event_loop", raise_no_loop)
+    assert asyncio_run(answer()) == 42
