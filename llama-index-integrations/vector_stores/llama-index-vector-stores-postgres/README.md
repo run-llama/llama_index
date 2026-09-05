@@ -8,6 +8,14 @@ This integration allows you to use PostgreSQL with the `pgvector` extension as a
 pip install llama-index-vector-stores-postgres
 ```
 
+Before creating a store, enable the `pgvector` extension in the target PostgreSQL database:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+The database user must have permission to create the extension, or an administrator must enable it first.
+
 ## Usage
 
 ### Basic Setup
@@ -25,6 +33,9 @@ vector_store = PGVectorStore.from_params(
     embed_dim=1536,  # OpenAI embedding dimension
 )
 ```
+
+The `embed_dim` value must match the dimensionality of the embedding model used by your index. For example, the
+OpenAI `text-embedding-3-small` model uses 1536 dimensions by default.
 
 ### Query Modes
 
