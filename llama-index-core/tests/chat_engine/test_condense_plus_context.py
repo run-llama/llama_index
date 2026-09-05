@@ -1,9 +1,22 @@
 import time
+from typing import Any, List
 
 import pytest
+from pydantic import Field
 
+import llama_index.core.instrumentation as instrument
 from llama_index.core import MockEmbedding
 from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.callbacks import (
+    CallbackManager,
+    CBEventType,
+    LlamaDebugHandler,
+)
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.instrumentation.events.synthesis import (
+    SynthesizeEndEvent,
+    SynthesizeStartEvent,
+)
 from llama_index.core.chat_engine.condense_plus_context import (
     CondensePlusContextChatEngine,
 )
@@ -15,6 +28,18 @@ from llama_index.core.schema import Document
 SYSTEM_PROMPT = "Talk like a pirate."
 
 
+class _SynthesizeEventCollector(BaseEventHandler):
+    collected: List[str] = Field(default_factory=list)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "_SynthesizeEventCollector"
+
+    def handle(self, event: Any, **kwargs: Any) -> None:
+        if isinstance(event, (SynthesizeStartEvent, SynthesizeEndEvent)):
+            self.collected.append(type(event).__name__)
+
+
 @pytest.fixture()
 def chat_engine() -> CondensePlusContextChatEngine:
     index = VectorStoreIndex.from_documents(
@@ -23,6 +48,25 @@ def chat_engine() -> CondensePlusContextChatEngine:
     retriever = index.as_retriever()
     return CondensePlusContextChatEngine.from_defaults(
         retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
+    )
+
+
+@pytest.fixture()
+def empty_chat_engine() -> CondensePlusContextChatEngine:
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    return CondensePlusContextChatEngine.from_defaults(
+        index.as_retriever(), llm=MockLLM(), system_prompt=SYSTEM_PROMPT
+    )
+
+
+@pytest.fixture()
+def empty_chat_engine_with_llm_fallback() -> CondensePlusContextChatEngine:
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    return CondensePlusContextChatEngine.from_defaults(
+        index.as_retriever(),
+        llm=MockLLM(),
+        system_prompt=SYSTEM_PROMPT,
+        respond_with_llm_on_empty_context=True,
     )
 
 
@@ -37,6 +81,67 @@ def test_chat(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+def test_chat_empty_context_returns_empty_response_by_default(
+    empty_chat_engine: CondensePlusContextChatEngine,
+):
+    response = empty_chat_engine.chat("Hello World!")
+
+    assert str(response) == "Empty Response"
+    assert response.source_nodes == []
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+def test_chat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = empty_chat_engine_with_llm_fallback.chat("Hello World!")
+
+    assert SYSTEM_PROMPT in str(response)
+    assert "Hello World!" in str(response)
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
+
+
+def test_chat_empty_context_fallback_keeps_synthesize_instrumentation():
+    debug_handler = LlamaDebugHandler()
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    llm = MockLLM()
+    engine = CondensePlusContextChatEngine(
+        retriever=index.as_retriever(),
+        llm=llm,
+        memory=ChatMemoryBuffer.from_defaults(llm=llm),
+        system_prompt=SYSTEM_PROMPT,
+        callback_manager=CallbackManager([debug_handler]),
+        respond_with_llm_on_empty_context=True,
+    )
+
+    collector = _SynthesizeEventCollector()
+    dispatcher = instrument.get_dispatcher()
+    dispatcher.add_event_handler(collector)
+    try:
+        response = engine.chat("Hello World!")
+    finally:
+        dispatcher.event_handlers.remove(collector)
+
+    assert SYSTEM_PROMPT in str(response)
+    assert response.source_nodes == []
+    assert collector.collected.count("SynthesizeStartEvent") == 1
+    assert collector.collected.count("SynthesizeEndEvent") == 1
+    assert len(debug_handler.get_event_pairs(CBEventType.SYNTHESIZE)) == 1
+
+
+def test_stream_chat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = empty_chat_engine_with_llm_fallback.stream_chat("Hello World!")
+    full_response = "".join(response.response_gen)
+
+    assert SYSTEM_PROMPT in full_response
+    assert "Hello World!" in full_response
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
 
 
 def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
@@ -82,6 +187,47 @@ def test_stream_chat_memory_not_lost_on_incomplete_consumption(
     assert response.is_done
     assert len(chat_engine.chat_history) == 2
     assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_empty_context_returns_empty_response_by_default(
+    empty_chat_engine: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine.astream_chat("Hello World!")
+    full_response = ""
+    async for token in response.async_response_gen():
+        full_response += token
+
+    assert full_response == "Empty Response"
+    assert response.source_nodes == []
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+@pytest.mark.asyncio
+async def test_achat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine_with_llm_fallback.achat("Hello World!")
+
+    assert SYSTEM_PROMPT in str(response)
+    assert "Hello World!" in str(response)
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine_with_llm_fallback.astream_chat("Hello World!")
+    full_response = ""
+    async for token in response.async_response_gen():
+        full_response += token
+
+    assert SYSTEM_PROMPT in full_response
+    assert "Hello World!" in full_response
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
 
 
 @pytest.mark.asyncio

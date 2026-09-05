@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.base.response.schema import (
     AsyncStreamingResponse,
+    RESPONSE_TYPE,
     StreamingResponse,
 )
 from llama_index.core.callbacks import CallbackManager, trace_method
@@ -28,7 +29,7 @@ from llama_index.core.memory import BaseMemory, Memory
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import NodeWithScore, TextNode
 from llama_index.core.settings import Settings
 from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
@@ -80,6 +81,16 @@ DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
   Standalone question:"""
 
 
+def _empty_context_node() -> NodeWithScore:
+    return NodeWithScore(node=TextNode(text=""))
+
+
+def _drop_source_nodes(response: RESPONSE_TYPE) -> RESPONSE_TYPE:
+    response.source_nodes = []
+    response.metadata = {}
+    return response
+
+
 class CondensePlusContextChatEngine(BaseChatEngine):
     """
     Condensed Conversation & Context Chat Engine.
@@ -87,6 +98,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     First condense a conversation and latest user message to a standalone question
     Then build a context for the standalone question from a retriever,
     Then pass the context along with prompt and user message to LLM to generate a response.
+    Empty retrieval results can optionally be passed to the LLM without context.
     """
 
     def __init__(
@@ -102,6 +114,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        respond_with_llm_on_empty_context: bool = False,
     ):
         self._retriever = retriever
         self._llm = llm
@@ -133,6 +146,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         self._token_counter = TokenCounter()
         self._verbose = verbose
+        self._respond_with_llm_on_empty_context = respond_with_llm_on_empty_context
 
     @classmethod
     def from_defaults(
@@ -148,6 +162,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
+        respond_with_llm_on_empty_context: bool = False,
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
@@ -170,6 +185,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,
+            respond_with_llm_on_empty_context=respond_with_llm_on_empty_context,
         )
 
     def _condense_question(
@@ -319,13 +335,40 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         return response_synthesizer, context_source, context_nodes
 
+    def _synthesize(
+        self,
+        synthesizer: CompactAndRefine,
+        message: str,
+        context_nodes: List[NodeWithScore],
+    ) -> RESPONSE_TYPE:
+        if context_nodes or not self._respond_with_llm_on_empty_context:
+            return synthesizer.synthesize(message, context_nodes)
+
+        # A placeholder chunk keeps the fallback on the regular synthesize path,
+        # which the synthesize events and the SYNTHESIZE callback hang off, and
+        # is then dropped because it is not a retrieved source.
+        response = synthesizer.synthesize(message, [_empty_context_node()])
+        return _drop_source_nodes(response)
+
+    async def _asynthesize(
+        self,
+        synthesizer: CompactAndRefine,
+        message: str,
+        context_nodes: List[NodeWithScore],
+    ) -> RESPONSE_TYPE:
+        if context_nodes or not self._respond_with_llm_on_empty_context:
+            return await synthesizer.asynthesize(message, context_nodes)
+
+        response = await synthesizer.asynthesize(message, [_empty_context_node()])
+        return _drop_source_nodes(response)
+
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = self._synthesize(synthesizer, message, context_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -348,7 +391,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = self._synthesize(synthesizer, message, context_nodes)
         assert isinstance(response, StreamingResponse)
 
         self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
@@ -384,7 +427,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await self._asynthesize(synthesizer, message, context_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -407,7 +450,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await self._asynthesize(synthesizer, message, context_nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
         await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
