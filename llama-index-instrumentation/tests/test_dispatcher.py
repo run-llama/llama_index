@@ -1220,3 +1220,12 @@ async def test_aevent_no_propagation():
     assert len(parent_handler.events) == 0
     assert child_handler.async_calls == 1
     assert parent_handler.async_calls == 0
+
+
+def test_dispatcher_default_arguments_immutability():
+    """Ensure that default event_handlers and span_handlers lists are not shared between instances."""
+    d1 = Dispatcher(name="d1")
+    d2 = Dispatcher(name="d2")
+    assert d1.event_handlers is not d2.event_handlers
+    assert d1.span_handlers is not d2.span_handlers
+
