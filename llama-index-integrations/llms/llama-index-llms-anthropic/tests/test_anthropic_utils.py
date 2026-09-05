@@ -1,5 +1,6 @@
 import pytest
 
+from llama_index.llms.anthropic.base import DEFAULT_ANTHROPIC_MODEL
 from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
     is_anthropic_prompt_caching_supported_model,
@@ -431,3 +432,8 @@ class TestCacheControlOnlyLastBlock:
 def test_opus_4_6_has_1m_context_window(model: str) -> None:
     """Opus 4.6 has a 1M context window, like the 4.6+ models around it."""
     assert anthropic_modelname_to_contextsize(model) == 1000000
+
+
+def test_default_model_is_one_the_package_knows() -> None:
+    """The default has to resolve, or Anthropic().metadata raises on construction."""
+    assert anthropic_modelname_to_contextsize(DEFAULT_ANTHROPIC_MODEL) > 0
