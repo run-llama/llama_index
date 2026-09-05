@@ -735,9 +735,23 @@ def to_openai_responses_message_dict(
                 "tool_call_id or call_id is required in additional_kwargs for tool messages"
             )
 
+        # A tool may return an image or a file, and function_call_output.output takes a list
+        # of input_text / input_image / input_file parts as well as a plain string. Text is
+        # re-tagged input_text because the loop above tags it output_text for every role
+        # other than user, which function_call_output does not accept. A result that returned
+        # only text stays a string, since some openai-like APIs accept nothing else there.
+        output: Union[str, List[Dict[str, Any]]] = content_txt
+        if any(part["type"] in ("input_image", "input_file") for part in content):
+            output = [
+                {"type": "input_text", "text": part["text"]}
+                if part["type"] == "output_text"
+                else part
+                for part in content
+            ]
+
         message_dict = {
             "type": "function_call_output",
-            "output": content_txt,
+            "output": output,
             "call_id": call_id,
         }
 
@@ -809,10 +823,12 @@ def to_openai_message_dicts(
                 final_message_dicts.append(message_dicts)
 
         # If there is only one message, and it is a user message, return the content string directly
+        # .get() because not every item carries a role: a lone tool message serializes to a
+        # function_call_output, which has none.
         if (
             len(final_message_dicts) == 1
-            and final_message_dicts[0]["role"] == "user"
-            and isinstance(final_message_dicts[0]["content"], str)
+            and final_message_dicts[0].get("role") == "user"
+            and isinstance(final_message_dicts[0].get("content"), str)
         ):
             return final_message_dicts[0]["content"]
 

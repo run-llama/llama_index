@@ -353,6 +353,71 @@ def test_fn_schema_docstring_descriptions():
     assert fields["b"].description == "an optional string"
 
 
+def test_fn_schema_docstring_descriptions_reach_the_json_schema():
+    """
+    Docstring param descriptions must survive into the schema sent to the LLM.
+
+    Regression test: they used to be assigned to `model_fields` after
+    `create_model()` had already frozen the core schema, so `model_json_schema()`
+    -- and therefore `to_openai_tool()` -- never saw them.
+    """
+
+    def search(query: str, top_k: int = 5) -> str:
+        """
+        Search the web.
+
+        Args:
+            query (str): The search query string.
+            top_k (int): Number of results to return.
+
+        """
+        return "ok"
+
+    tool = FunctionTool.from_defaults(fn=search)
+
+    properties = tool.metadata.to_openai_tool()["function"]["parameters"]["properties"]
+    assert properties["query"]["description"] == "The search query string."
+    assert properties["top_k"]["description"] == "Number of results to return."
+
+
+def test_explicit_field_description_wins_over_docstring():
+    """A description on the parameter itself takes precedence over the docstring."""
+
+    def search(query: str = Field(default="", description="explicit")) -> str:
+        """
+        Search the web.
+
+        Args:
+            query (str): from the docstring
+
+        """
+        return "ok"
+
+    tool = FunctionTool.from_defaults(fn=search)
+
+    properties = tool.metadata.to_openai_tool()["function"]["parameters"]["properties"]
+    assert properties["query"]["description"] == "explicit"
+
+
+def test_docstring_fills_a_field_default_without_a_description():
+    """A bare `Field` default still picks the description up from the docstring."""
+
+    def search(query: str = Field(default="")) -> str:
+        """
+        Search the web.
+
+        Args:
+            query (str): The search query string.
+
+        """
+        return "ok"
+
+    tool = FunctionTool.from_defaults(fn=search)
+
+    properties = tool.metadata.to_openai_tool()["function"]["parameters"]["properties"]
+    assert properties["query"]["description"] == "The search query string."
+
+
 def test_docstring_param_extraction_javadoc_style():
     def tool_fn(foo: int, bar: str) -> str:
         """

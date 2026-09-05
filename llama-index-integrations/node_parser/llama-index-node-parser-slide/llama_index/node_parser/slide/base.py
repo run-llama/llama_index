@@ -39,7 +39,7 @@ class SlideNodeParser(NodeParser):
 
     window_size: int = Field(
         default=11,
-        description="Window size for the sliding window approach. This is the total number chunks to include in the context window, ideall an odd number.",
+        description="Window size for the sliding window approach. This is the total number chunks to include in the context window, ideally an odd number.",
     )
 
     llm_workers: int = Field(

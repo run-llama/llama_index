@@ -1066,5 +1066,5 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
 
 class ThinkingDict(TypedDict):
-    type: Literal["enabled", "adaptive"]
+    type: Literal["enabled", "adaptive", "disabled"]
     budget_tokens: NotRequired[int]
