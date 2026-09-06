@@ -230,6 +230,43 @@ def test_SimpleDirectoryReader_load_file_error(data_path):
         )
 
 
+@pytest.mark.asyncio
+async def test_SimpleDirectoryReader_aload_file_error(data_path):
+    extractor = mock.AsyncMock()
+    extractor.aload_data.side_effect = ValueError("boom")
+
+    # Raise on error: unlike the sync path (which wraps as
+    # ``Exception("Error loading file")``), the async path re-raises the
+    # ORIGINAL exception. Assert the original ValueError propagates and is
+    # NOT wrapped, to lock in this deliberate divergence.
+    with pytest.raises(ValueError, match="boom"):
+        await SimpleDirectoryReader.aload_file(
+            input_file=data_path / "file_0.md",
+            file_metadata=lambda x: {},
+            file_extractor={".md": extractor},
+            raise_on_error=True,
+        )
+
+    # Continue on error
+    docs = await SimpleDirectoryReader.aload_file(
+        input_file=data_path / "file_0.md",
+        file_metadata=lambda x: {},
+        file_extractor={".md": extractor},
+        raise_on_error=False,
+    )
+    assert not docs
+
+    # Always raise ImportError
+    extractor.aload_data.side_effect = ImportError("Module Foo not found.")
+    with pytest.raises(ImportError, match="Module Foo not found."):
+        await SimpleDirectoryReader.aload_file(
+            input_file=data_path / "file_0.md",
+            file_metadata=lambda x: {},
+            file_extractor={".md": extractor},
+            raise_on_error=False,
+        )
+
+
 def test_SimpleDirectoryReader_load_file_unknown(data_path):
     docs = SimpleDirectoryReader.load_file(
         input_file=data_path / "file_0.xyz",
