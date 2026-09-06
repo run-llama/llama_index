@@ -80,7 +80,9 @@ def agent_example():
         serpex_tool = SerpexToolSpec()
 
         # Create agent
-        llm = OpenAI(model="gpt-4")
+        # Use gpt-4o-mini for examples: ~20x cheaper than gpt-4 and sufficient
+        # for tool-routing tasks. Users can swap for a larger model if needed.
+        llm = OpenAI(model="gpt-4o-mini")
         agent = OpenAIAgent.from_tools(serpex_tool.to_tool_list(), llm=llm, verbose=True)
 
         # Ask question that requires web search
