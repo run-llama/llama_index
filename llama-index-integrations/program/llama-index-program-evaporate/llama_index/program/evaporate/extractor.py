@@ -187,6 +187,20 @@ def _validate_generated_code(code: str) -> None:
                 f"Generated code accesses a dunder attribute '{node.attr}' "
                 f"which is not allowed in the sandbox"
             )
+        # Block getattr/hasattr calls with dunder string arguments, which
+        # bypass the ast.Attribute check (e.g. getattr(type, '__subclasses__')).
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id in ("getattr", "hasattr") and len(node.args) >= 2:
+                arg = node.args[1]
+                if (
+                    isinstance(arg, ast.Constant)
+                    and isinstance(arg.value, str)
+                    and arg.value.startswith("__")
+                ):
+                    raise RuntimeError(
+                        f"Generated code calls '{node.func.id}' with dunder "
+                        f"string '{arg.value}' which is not allowed in the sandbox"
+                    )
 
 
 def _restricted_import(
