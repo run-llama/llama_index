@@ -359,36 +359,37 @@ class VectaraIndex(BaseManagedIndex):
         if filename is None:
             filename = file_path.split("/")[-1]
 
-        files = {"file": (filename, open(file_path, "rb"))}
+        with open(file_path, "rb") as f:
+            files = {"file": (filename, f)}
 
-        if metadata:
-            metadata["framework"] = "llama_index"
-            files["metadata"] = (None, json.dumps(metadata), "application/json")
+            if metadata:
+                metadata["framework"] = "llama_index"
+                files["metadata"] = (None, json.dumps(metadata), "application/json")
 
-        if chunking_strategy:
-            files["chunking_strategy"] = (
-                None,
-                json.dumps(chunking_strategy),
-                "application/json",
+            if chunking_strategy:
+                files["chunking_strategy"] = (
+                    None,
+                    json.dumps(chunking_strategy),
+                    "application/json",
+                )
+
+            if enable_table_extraction:
+                files["table_extraction_config"] = (
+                    None,
+                    json.dumps({"extract_tables": enable_table_extraction}),
+                    "application/json",
+                )
+
+            headers = self._get_post_headers()
+            headers.pop("Content-Type")
+            valid_corpus_key = self._get_corpus_key(corpus_key)
+            response = self._session.post(
+                f"{self._base_url}/v2/corpora/{valid_corpus_key}/upload_file",
+                files=files,
+                verify=True,
+                headers=headers,
+                timeout=self.vectara_api_timeout,
             )
-
-        if enable_table_extraction:
-            files["table_extraction_config"] = (
-                None,
-                json.dumps({"extract_tables": enable_table_extraction}),
-                "application/json",
-            )
-
-        headers = self._get_post_headers()
-        headers.pop("Content-Type")
-        valid_corpus_key = self._get_corpus_key(corpus_key)
-        response = self._session.post(
-            f"{self._base_url}/v2/corpora/{valid_corpus_key}/upload_file",
-            files=files,
-            verify=True,
-            headers=headers,
-            timeout=self.vectara_api_timeout,
-        )
 
         res = response.json()
         if response.status_code == 201:

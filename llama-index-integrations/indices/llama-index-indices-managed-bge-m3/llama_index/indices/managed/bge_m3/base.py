@@ -154,9 +154,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
             int(k): v for k, v in index.index_struct.nodes_dict.items()
         }
         index._docs_pos_to_node_id = docs_pos_to_node_id
-        index._multi_embed_store = pickle.load(
-            open(Path(persist_dir) / "multi_embed_store.pkl", "rb")
-        )
+        with open(Path(persist_dir) / "multi_embed_store.pkl", "rb") as f:
+            index._multi_embed_store = pickle.load(f)
         return index
 
     def query(self, query_str: str, top_k: int = 10) -> List[NodeWithScore]:
