@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import List
 
 import pytest
+import numpy as np
+from pytest_mock import MockerFixture
+import llama_index.core.vector_stores.simple as simple_module
 
 from llama_index.core import VectorStoreIndex, MockEmbedding
 from llama_index.core.schema import (
@@ -19,7 +22,33 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
     MetadataFilter,
     FilterOperator,
+    VectorStoreQueryMode,
 )
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        VectorStoreQueryMode.SVM,
+        VectorStoreQueryMode.LINEAR_REGRESSION,
+        VectorStoreQueryMode.LOGISTIC_REGRESSION,
+    ],
+)
+@pytest.mark.parametrize("top_k", [1, 3])
+def test_query_learner_mode(
+    mode: VectorStoreQueryMode, top_k: int, mocker: MockerFixture
+) -> None:
+    store = SimpleVectorStore()
+    store.add(_node_embeddings_for_test())
+    learner = mocker.spy(simple_module, "get_top_k_embeddings_learner")
+    result = store.query(
+        VectorStoreQuery(query_embedding=[0.7, 1.0], mode=mode, similarity_top_k=top_k)
+    )
+    assert learner.call_args.kwargs["query_mode"] == mode
+    assert len(result.ids) == len(result.similarities) == top_k
+    assert np.all(np.isfinite(result.similarities))
+    assert np.all(np.diff(result.similarities) <= 0)
+
 
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
 _NODE_ID_WEIGHT_2_RANK_C = "7D9CD555-846C-445C-A9DD-F8924A01411D"
