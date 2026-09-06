@@ -47,6 +47,7 @@ from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.mistralai.utils import (
     MISTRAL_AI_REASONING_MODELS,
+    MISTRALAI_CODE_MODELS,
     THINKING_REGEX,
     THINKING_START_REGEX,
     is_mistralai_code_model,
@@ -790,7 +791,9 @@ class MistralAI(FunctionCallingLLM):
     ) -> CompletionResponse:
         if not is_mistralai_code_model(self.model):
             raise ValueError(
-                "Please provide code model from MistralAI. Currently supported code model is 'codestral-latest'."
+                "Please provide a code model from MistralAI. Currently supported code models are: "
+                + ", ".join(MISTRALAI_CODE_MODELS)
+                + "."
             )
 
         if stop:
