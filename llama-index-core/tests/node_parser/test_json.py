@@ -41,3 +41,17 @@ def test_split_invalid_json() -> None:
     input_text = Document(text='{"name": "John", "age": 30,}')
     result = json_splitter.get_nodes_from_documents([input_text])
     assert result == []
+
+
+def test_split_scalar_json() -> None:
+    json_splitter = JSONNodeParser()
+
+    for text, expected in [
+        ('"hello"', "hello"),
+        ("123", "123"),
+        ("true", "True"),
+        ("null", "None"),
+    ]:
+        result = json_splitter.get_nodes_from_documents([Document(text=text)])
+        assert len(result) == 1
+        assert result[0].text == expected
