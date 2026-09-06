@@ -74,6 +74,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         output_cls: Optional[Type[BaseModel]] = None,
         empty_response: Optional[str] = None,
         multimodal: bool = False,
+        fallback_to_llm: bool = False,
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
@@ -86,6 +87,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         self._output_cls = output_cls
         self._empty_response = empty_response or "Empty Response"
         self._multimodal = multimodal
+        self._fallback_to_llm = fallback_to_llm
         self._prompt_helper: PromptHelper
         if multimodal:
             if not is_chat_model(self._llm):
@@ -242,7 +244,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             )
         )
 
-        if len(nodes) == 0:
+        if len(nodes) == 0 and not self._fallback_to_llm:
             if self._streaming:
                 empty_response_stream = StreamingResponse(
                     response_gen=self._empty_response_generator()
@@ -322,7 +324,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
                 query=query,
             )
         )
-        if len(nodes) == 0:
+        if len(nodes) == 0 and not self._fallback_to_llm:
             if self._streaming:
                 empty_response_stream = AsyncStreamingResponse(
                     response_gen=self._empty_response_agenerator()
