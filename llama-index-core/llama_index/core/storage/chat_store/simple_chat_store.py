@@ -83,7 +83,6 @@ class SimpleChatStore(BaseChatStore):
         self,
         persist_path: str = "chat_store.json",
         fs: Optional[fsspec.AbstractFileSystem] = None,
-        encoding: Optional[str] = "utf-8",
     ) -> None:
         """Persist the docstore to a file."""
         fs = fs or fsspec.filesystem("file")
@@ -91,7 +90,7 @@ class SimpleChatStore(BaseChatStore):
         if dirpath and not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w", encoding=encoding) as f:
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
             # model_dump_json writes non-ascii characters as-is, while BaseComponent.json()
             # escapes them to \uXXXX sequences (json.dumps default).
             f.write(self.model_dump_json())
