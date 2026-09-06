@@ -225,6 +225,76 @@ def test_function_tool_partial_params() -> None:
     assert tool(x=1, y=3).raw_input == {"args": (), "kwargs": {"x": 1, "y": 3}}
 
 
+def test_function_tool_with_partial_params_returns_request_scoped_view() -> None:
+    class LookupSchema(BaseModel):
+        query: str
+        client_id: str
+        debug_mode: bool = False
+
+    def lookup_client(query: str, client_id: str, debug_mode: bool = False) -> str:
+        return f"{client_id}: {query}: {debug_mode}"
+
+    tool = FunctionTool.from_defaults(
+        lookup_client,
+        fn_schema=LookupSchema,
+    )
+
+    user_tool = tool.with_partial_params({"client_id": "client-123"})
+
+    assert tool.metadata.fn_schema is LookupSchema
+    assert tool.partial_params == {}
+    assert user_tool.partial_params == {"client_id": "client-123"}
+
+    assert tool.metadata.fn_schema is not None
+    original_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "client_id" in original_schema["properties"]
+
+    assert user_tool.metadata.fn_schema is not None
+    request_schema = user_tool.metadata.fn_schema.model_json_schema()
+    assert "client_id" not in request_schema["properties"]
+    assert "query" in request_schema["properties"]
+    assert "debug_mode" in request_schema["properties"]
+
+    assert user_tool(query="renewal").raw_output == "client-123: renewal: False"
+    assert user_tool(query="renewal").raw_input == {
+        "args": (),
+        "kwargs": {"client_id": "client-123", "query": "renewal"},
+    }
+    assert tool(query="renewal", client_id="admin-picked").raw_output == (
+        "admin-picked: renewal: False"
+    )
+
+
+def test_function_tool_with_partial_params_preserves_existing_partial_params() -> None:
+    def lookup_client(query: str, client_id: str, debug_mode: bool = False) -> str:
+        return f"{client_id}: {query}: {debug_mode}"
+
+    tool = FunctionTool.from_defaults(
+        lookup_client,
+        partial_params={"debug_mode": False},
+    )
+
+    user_tool = tool.with_partial_params({"client_id": "client-123"})
+
+    assert user_tool.partial_params == {
+        "debug_mode": False,
+        "client_id": "client-123",
+    }
+
+    assert tool.metadata.fn_schema is not None
+    original_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "client_id" in original_schema["properties"]
+    assert "debug_mode" not in original_schema["properties"]
+
+    assert user_tool.metadata.fn_schema is not None
+    request_schema = user_tool.metadata.fn_schema.model_json_schema()
+    assert "query" in request_schema["properties"]
+    assert "client_id" not in request_schema["properties"]
+    assert "debug_mode" not in request_schema["properties"]
+
+    assert user_tool(query="renewal").raw_output == "client-123: renewal: False"
+
+
 @pytest.mark.asyncio
 async def test_function_tool_partial_params_async() -> None:
     async def test_function(x: int, y: int) -> str:
