@@ -13,8 +13,8 @@ from sqlalchemy import (
     select,
     insert,
     update,
-    text,
 )
+from sqlalchemy.schema import CreateSchema
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -143,7 +143,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             # Create schema if it doesn't exist (PostgreSQL, SQL Server, etc.)
             async with async_engine.begin() as conn:
                 await conn.execute(
-                    text(f'CREATE SCHEMA IF NOT EXISTS "{self.db_schema}"')
+                    CreateSchema(self.db_schema, if_not_exists=True)
                 )
 
         # Create messages table with status column
