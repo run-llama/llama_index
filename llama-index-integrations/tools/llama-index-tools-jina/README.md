@@ -16,17 +16,17 @@ This tool enables agents to search and retrieve results from the Jina search api
 
 This tool has a more extensive example usage documented in a Jupyter notebook [here](./examples/jina_search.ipynb)
 
-Here's an example usage of the JinaSearchToolSpec.
+Here's an example usage of the JinaToolSpec.
 
 ```python
-from llama_index.tools.jina import JinaSearchToolSpec
+from llama_index.tools.jina import JinaToolSpec
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
-tool_spec = JinaSearchToolSpec()
+tool_spec = JinaToolSpec()
 
 agent = FunctionAgent(
-    tools=JinaSearchToolSpec.to_tool_list(),
+    tools=tool_spec.to_tool_list(),
     llm=OpenAI(model="gpt-4.1"),
 )
 
