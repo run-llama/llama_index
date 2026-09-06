@@ -1,8 +1,10 @@
+import inspect
 from math import log2
 
 import pytest
 from llama_index.core.evaluation.retrieval.metrics import (
     AveragePrecision,
+    CohereRerankRelevancyMetric,
     HitRate,
     MRR,
     NDCG,
@@ -245,3 +247,14 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         ndcg = NDCG()
         ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+
+def test_cohere_rerank_relevancy_default_model() -> None:
+    """
+    The default Cohere rerank model must be one that Cohere still serves.
+
+    `rerank-english-v2.0` was shut down on 2025-04-30, so the default
+    constructor path failed. Cohere's documented replacement is `rerank-v3.5`.
+    """
+    signature = inspect.signature(CohereRerankRelevancyMetric.__init__)
+    assert signature.parameters["model"].default == "rerank-v3.5"
