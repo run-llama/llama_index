@@ -51,7 +51,6 @@ from qdrant_client.http.models import (
     HasIdCondition,
     IsEmptyCondition,
 )
-from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
@@ -67,6 +66,14 @@ LEGACY_UNNAMED_VECTOR = (
     ""  # The empty string used for unnamed vectors in older collections
 )
 DOCUMENT_ID_KEY = "doc_id"
+
+
+def _requires_idf(model_name: Optional[str]) -> bool:
+    if model_name is None:
+        return False
+
+    model_config = QdrantClient.list_sparse_models().get(model_name)
+    return bool(model_config and model_config.get("requires_idf"))
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
@@ -811,7 +818,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                if _requires_idf(self.fastembed_sparse_model)
                 else None
             ),
         )
@@ -886,7 +893,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                if _requires_idf(self.fastembed_sparse_model)
                 else None
             ),
         )
@@ -1201,7 +1208,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         shard_identifier = kwargs.get("shard_identifier")
         shard_key = (
             self._generate_shard_key_selector(shard_identifier)
-            if shard_identifier
+            if shard_identifier is not None
             else None
         )
 

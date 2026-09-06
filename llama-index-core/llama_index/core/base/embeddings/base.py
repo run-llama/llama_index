@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Tuple, cast
 from typing_extensions import Self
 
 import numpy as np
@@ -103,6 +103,20 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         exclude=True,
     )
 
+    def to_payload(self) -> Dict[str, Any]:
+        """
+        Non-sensitive representation of this embedding model for observability.
+
+        Emitted via instrumentation events and callback payloads, so it must
+        never contain credentials (e.g. ``api_key``) or auth headers. Subclasses
+        may override to add safe details.
+        """
+        return {
+            "class_name": self.class_name(),
+            "model_name": self.model_name,
+            "embed_batch_size": self.embed_batch_size,
+        }
+
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
         from llama_index.core.storage.kvstore.types import BaseKVStore
@@ -144,15 +158,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
-        model_dict = self.to_dict()
-        model_dict.pop("api_key", None)
+        model_dict = self.to_payload()
         dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -191,15 +204,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        model_dict = self.to_dict()
-        model_dict.pop("api_key", None)
+        model_dict = self.to_payload()
         dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -379,15 +391,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
-        model_dict = self.to_dict()
-        model_dict.pop("api_key", None)
+        model_dict = self.to_payload()
         dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -427,15 +438,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        model_dict = self.to_dict()
-        model_dict.pop("api_key", None)
+        model_dict = self.to_payload()
         dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -487,8 +497,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             get_tqdm_iterable(texts, show_progress, "Generating embeddings")
         )
 
-        model_dict = self.to_dict()
-        model_dict.pop("api_key", None)
+        model_dict = self.to_payload()
         for idx, text in queue_with_progress:
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
@@ -500,7 +509,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 )
                 with self.callback_manager.event(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: model_dict},
                 ) as event:
                     if self.rate_limiter is not None:
                         self.rate_limiter.acquire()
@@ -535,8 +544,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         """Asynchronously get a list of text embeddings, with batching."""
         num_workers = self.num_workers
 
-        model_dict = self.to_dict()
-        model_dict.pop("api_key", None)
+        model_dict = self.to_payload()
 
         cur_batch: List[str] = []
         embeddings_coroutines: List[Coroutine] = []
@@ -554,7 +562,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 )
                 event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: model_dict},
                 )
                 callback_payloads.append((event_id, cur_batch))
 

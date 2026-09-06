@@ -92,9 +92,9 @@ class SimpleChatStore(BaseChatStore):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w", encoding=encoding) as f:
-            # ensure_ascii=False preserves non-ASCII characters (e.g. Persian, Arabic)
-            # in their native form instead of Unicode escape sequences (\u0633\u0644\u0627\u0645).
-            f.write(self.json(ensure_ascii=False))
+            # model_dump_json writes non-ascii characters as-is, while BaseComponent.json()
+            # escapes them to \uXXXX sequences (json.dumps default).
+            f.write(self.model_dump_json())
 
     @classmethod
     def from_persist_path(

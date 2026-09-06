@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-    "pytest==7.2.1",
+    "pytest",
     "pytest-mock==3.11.1",
     "pre-commit==3.2.0",
     "pytest-cov>=6.1.1",
@@ -12,7 +12,7 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-alletra-x10000-retriever"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index retriever for AlletraMP X10000"
 readme = "README.md"
 requires-python = ">=3.11.2,<4.0"

@@ -74,14 +74,14 @@ def get_response_synthesizer(
     llm = llm or Settings.llm
     prompt_helper = (
         prompt_helper
-        or Settings.prompt_helper
+        or Settings._prompt_helper
         or PromptHelper.from_llm_metadata(
             llm.metadata,
         )
     )
     chat_prompt_helper = (
         chat_prompt_helper
-        or Settings.chat_prompt_helper
+        or Settings._chat_prompt_helper
         or ChatPromptHelper.from_llm_metadata(
             llm.metadata,
         )

@@ -29,7 +29,7 @@ MAX_BATCH_SIZE = 1000
 
 MULTIMODAL_MODELS = ["voyage-multimodal-3", "voyage-multimodal-3.5"]
 VIDEO_MODELS = ["voyage-multimodal-3.5"]  # Only voyage-multimodal-3.5 supports video
-CONTEXT_MODELS = ["voyage-context-3"]
+CONTEXT_MODELS = ["voyage-context-3", "voyage-context-4"]
 
 SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
 SUPPORTED_VIDEO_FORMATS = {
@@ -45,6 +45,9 @@ SUPPORTED_VIDEO_FORMATS = {
 }
 
 VOYAGE_TOTAL_TOKEN_LIMITS = {
+    # Contextualized models embed a batch as a single document; a single
+    # contextualized document is limited to 32k tokens per request.
+    "voyage-context-4": 32_000,
     "voyage-context-3": 32_000,
     "voyage-multimodal-3": 320_000,  # 32k per input, 320k total
     "voyage-multimodal-3.5": 320_000,  # 32k per input, 320k total

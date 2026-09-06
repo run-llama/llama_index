@@ -7,23 +7,18 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 import json
 import logging
-import warnings
-from importlib import metadata
-from typing import Any, Dict, List, Optional, Union, Tuple
-
+import time
 import uuid
-
-
-from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
-    metadata_dict_to_node,
-)
-
-from llama_index.core.vector_stores.types import MetadataFilters, FilterOperator
+import warnings
+from collections.abc import Callable
+from functools import wraps
+from importlib import metadata
+from typing import Any, TypeAlias, TypeVar
 
 from google.api_core.gapic_v1.client_info import ClientInfo
-
+from google.cloud.aiplatform.compat.types import (  # type: ignore[attr-defined, unused-ignore]
+    matching_engine_index as meidx_types,
+)
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
@@ -33,12 +28,20 @@ from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint impo
     Namespace,
     NumericNamespace,
 )
-
-
-from google.cloud.aiplatform.compat.types import (  # type: ignore[attr-defined, unused-ignore]
-    matching_engine_index as meidx_types,
-)
 from google.cloud.storage import Bucket  # type: ignore[import-untyped, unused-ignore]
+
+from llama_index.core.schema import TextNode
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+)
+from llama_index.core.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+)
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIInputError
 
 _logger = logging.getLogger(__name__)
 
@@ -68,7 +71,7 @@ def _import_vertexai(minimum_expected_version: str = "1.44.0") -> Any:
     return aiplatform
 
 
-def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
+def get_user_agent(module: str | None = None) -> tuple[str, str]:
     r"""
     Returns a custom user agent header.
 
@@ -95,7 +98,7 @@ def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
     )
 
 
-def get_client_info(module: Optional[str] = None) -> "ClientInfo":
+def get_client_info(module: str | None = None) -> "ClientInfo":
     r"""
     Returns a client info object with a custom user agent header.
 
@@ -108,7 +111,7 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
 
     """
     client_library_version, user_agent = get_user_agent(module)
-    return ClientInfo(
+    return ClientInfo(  # type: ignore[no-untyped-call]
         client_library_version=client_library_version,
         user_agent=user_agent,
     )
@@ -124,14 +127,16 @@ def to_node(match: MatchNeighbor, text_key: str) -> TextNode:
         }
         if "_node_content" in entry:
             entry["_node_content"] = entry["_node_content"][0]
-            node_content = json.loads(entry["_node_content"])
+            node_content = json.loads(entry["_node_content"])  # type: ignore[arg-type]
 
     id = match.id
-    embedding = list(match.feature_vector)
+    embedding = list(match.feature_vector) if match.feature_vector else []
     text = node_content.get(text_key, "")
 
     try:
         node = metadata_dict_to_node(entry)
+        if not isinstance(node, TextNode):
+            raise ValueError(f"Node type mismatch, expected TextNode: {node}")
         node.text = text
         node.embedding = embedding
     except Exception as e:
@@ -151,7 +156,7 @@ def to_node(match: MatchNeighbor, text_key: str) -> TextNode:
 
 
 def stream_update_index(
-    index: MatchingEngineIndex, data_points: List["meidx_types.IndexDataPoint"]
+    index: MatchingEngineIndex, data_points: list["meidx_types.IndexDataPoint"]
 ) -> None:
     """
     Updates an index using stream updating.
@@ -166,10 +171,10 @@ def stream_update_index(
 
 def batch_update_index(
     index: MatchingEngineIndex,
-    data_points: List["meidx_types.IndexDataPoint"],
+    data_points: list["meidx_types.IndexDataPoint"],
     *,
     staging_bucket: Bucket,
-    prefix: Union[str, None] = None,
+    prefix: str | None = None,
     file_name: str = "documents.json",
     is_complete_overwrite: bool = False,
 ) -> None:
@@ -206,10 +211,10 @@ def batch_update_index(
 
 
 def to_data_points(
-    ids: List[str],
-    embeddings: List[List[float]],
-    metadatas: Union[List[Dict[str, Any]], None],
-) -> List["meidx_types.IndexDataPoint"]:
+    ids: list[str],
+    embeddings: list[list[float]],
+    metadatas: list[dict[str, Any]] | None,
+) -> list["meidx_types.IndexDataPoint"]:
     """
     Converts triplets id, embedding, metadata into IndexDataPoints instances.
 
@@ -228,11 +233,11 @@ def to_data_points(
     data_points = []
     ignored_fields = set()
 
-    for id_, embedding, metadata in zip(ids, embeddings, metadatas):
+    for id_, embedding, metadata_ in zip(ids, embeddings, metadatas, strict=False):
         restricts = []
         numeric_restricts = []
 
-        for namespace, value in metadata.items():
+        for namespace, value in metadata_.items():
             if not isinstance(namespace, str):
                 raise ValueError("All metadata keys must be strings")
 
@@ -248,7 +253,7 @@ def to_data_points(
                     namespace=namespace, allow_list=value
                 )
                 restricts.append(restriction)
-            elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            elif isinstance(value, int | float) and not isinstance(value, bool):
                 restriction = meidx_types.IndexDatapoint.NumericRestriction(
                     namespace=namespace, value_float=value
                 )
@@ -260,7 +265,8 @@ def to_data_points(
             warnings.warn(
                 f"Some values in fields {', '.join(ignored_fields)} are not usable for"
                 f" restrictions. In order to be used they must be str, list[str] or"
-                f" numeric."
+                f" numeric.",
+                stacklevel=2,
             )
 
         data_point = meidx_types.IndexDatapoint(
@@ -276,8 +282,8 @@ def to_data_points(
 
 
 def data_points_to_batch_update_records(
-    data_points: List["meidx_types.IndexDataPoint"],
-) -> List[Dict[str, Any]]:
+    data_points: list["meidx_types.IndexDataPoint"],
+) -> list[dict[str, Any]]:
     """
     Given a list of datapoints, generates a list of records in the input format
     required to do a bactch update.
@@ -313,15 +319,15 @@ def data_points_to_batch_update_records(
     return records
 
 
-def find_neighbors(
+def find_neighbors(  # noqa: D417
     index: MatchingEngineIndex,
     endpoint: MatchingEngineIndexEndpoint,
-    embeddings: List[List[float]],
+    embeddings: list[list[float]],
     top_k: int = 4,
-    filter: Union[List[Namespace], None] = None,
-    numeric_filter: Union[List[NumericNamespace], None] = None,
+    filter: list[Namespace] | None = None,
+    numeric_filter: list[NumericNamespace] | None = None,
     return_full_datapoint: bool = True,
-) -> List[MatchNeighbor]:
+) -> list[MatchNeighbor]:
     """
     Finds the k closes neighbors of each instance of embeddings.
 
@@ -344,11 +350,9 @@ def find_neighbors(
         numeric_filter=numeric_filter,
         return_full_datapoint=True,
     )
-
     if len(neighbors) > 0:
-        neighbors = neighbors[0]
-
-    return neighbors
+        return neighbors[0]
+    return []
 
 
 def _get_deployed_index_id(
@@ -363,7 +367,7 @@ def _get_deployed_index_id(
     """
     for deployed_index in endpoint.deployed_indexes:
         if deployed_index.index == index.resource_name:
-            return deployed_index.id
+            return deployed_index.id  # type: ignore[no-any-return]
 
     raise ValueError(
         f"No index with id {index.resource_name} "
@@ -385,6 +389,8 @@ def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
         num_filters = []
         txt_filters = []
         for filter in filters.filters:
+            if not isinstance(filter, MetadataFilter):
+                raise ValueError(f"Nested filters are not supported: {filter}")
             num_filter = None
             txt_filter = None
             if filter.operator not in FILTER_MAP:
@@ -419,14 +425,16 @@ def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
 def get_datapoints_by_filter(
     index: MatchingEngineIndex,
     endpoint: MatchingEngineIndexEndpoint,
-    metadata: dict = {},
+    metadata: dict | None = None,
     max_datapoints: int = MAX_DATA_POINTS,
-) -> List[str]:
+) -> list[str]:
     """
     Gets all the datapoints matching the metadata filters (text only)
     on the specified deployed index.
     """
     # configure filter based on metadata
+    if metadata is None:
+        metadata = {}
     index_config = index.to_dict()["metadata"]["config"]
     embeddings = [[0.0] * int(index_config.get("dimensions", 1))]
     filter = None
@@ -451,3 +459,140 @@ def get_datapoints_by_filter(
         data_points = []
 
     return data_points
+
+
+T = TypeVar("T")
+
+
+def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
+    """
+    Simple retry decorator with exponential backoff.
+
+    Args:
+        max_attempts: Maximum number of retry attempts
+        delay: Initial delay in seconds (doubles on each retry)
+
+    Returns:
+        Decorator function
+
+    """
+
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> T:
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:  # noqa: PERF203
+                    if attempt == max_attempts - 1:
+                        # Last attempt, raise the exception
+                        raise
+                    # Exponential backoff
+                    sleep_time = delay * (2**attempt)
+                    _logger.warning(
+                        f"Attempt {attempt + 1}/{max_attempts} failed: {e}. "
+                        f"Retrying in {sleep_time}s..."
+                    )
+                    time.sleep(sleep_time)
+            # This should never be reached, but satisfies type checker
+            raise RuntimeError("Retry logic error")
+
+        return wrapper
+
+    return decorator
+
+
+# =============================================================================
+# Helper Functions for Search
+# =============================================================================
+
+# type aliases for type enforcement
+_SimpleFilter: TypeAlias = dict[
+    str, dict[str, int | list[int] | float | list[float] | str | list[str] | None]
+]
+_CompoundFilter: TypeAlias = dict[str, list["_SimpleFilter | _CompoundFilter"]]
+V2FilterDict: TypeAlias = _SimpleFilter | _CompoundFilter
+
+_OPERATOR_MAP = {
+    FilterOperator.EQ: "$eq",
+    FilterOperator.NE: "$ne",
+    FilterOperator.GT: "$gt",
+    FilterOperator.GTE: "$gte",
+    FilterOperator.LT: "$lt",
+    FilterOperator.LTE: "$lte",
+    FilterOperator.IN: "$in",
+    FilterOperator.NIN: "$nin",
+    FilterOperator.CONTAINS: "$contains",
+}
+
+
+def _convert_single_filter(f: MetadataFilter) -> _SimpleFilter:
+    v2_op = _OPERATOR_MAP.get(f.operator, "$eq")
+    return {f.key: {v2_op: f.value}}
+
+
+def convert_filters_to_v2_format(
+    filters: MetadataFilters | None,
+) -> V2FilterDict | None:
+    """
+    Convert llama-index MetadataFilters to Vertex V2 filter dictionary.
+
+    V2 filter format:
+    - Simple: ``{"field": {"$eq": "value"}}``
+    - AND: ``{"$and": [{...}, {...}]}``
+    - OR: ``{"$or": [{...}, {...}]}``
+
+    Args:
+        filters: llama-index ``MetadataFilters`` object, or None.
+
+    Returns:
+        A converted V2 filter dictionary, or ``None`` if no filters are provided.
+
+    Raises:
+        VertexAIInputError: For invalid filter inputs.
+
+    """
+    if not filters or not filters.filters:
+        return None
+
+    converted: list[_SimpleFilter | _CompoundFilter] = []
+    for filter_ in list(filters.filters):
+        if isinstance(filter_, MetadataFilters):
+            if compound := convert_filters_to_v2_format(filter_):
+                converted.append(compound)
+        elif single := _convert_single_filter(filter_):
+            converted.append(single)
+        else:  # pragma: no cover
+            _logger.error(
+                f"Filter instance of type={type(filter_)} could not be converted"
+            )
+
+    match filters.condition, len(converted):
+        case _, 1:
+            return converted[0]
+        case FilterCondition.AND, _:
+            return {"$and": converted}
+        case FilterCondition.OR, _:
+            return {"$or": converted}
+        case _:
+            raise VertexAIInputError(
+                f"Unsupported filter case, condition={filters.condition}, "
+                f"count={len(converted)}"
+            )
+
+
+def calculate_rrf_weights(alpha: float, num_searches: int = 2) -> list[float]:
+    """
+    Calculate RRF weights from alpha value.
+
+    Args:
+        alpha: Weight for vector search (0 = text only, 1 = vector only)
+        num_searches: Number of searches being combined
+
+    Returns:
+        List of weights [vector_weight, text_weight]
+
+    """
+    if num_searches == 2:
+        return [alpha, 1.0 - alpha]
+    return [1.0 / num_searches] * num_searches

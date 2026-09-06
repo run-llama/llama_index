@@ -52,6 +52,21 @@ def test_and_condition_matches_expected_nodes() -> None:
     assert fn("n3")
 
 
+def test_none_condition_defaults_to_and() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="rank", operator=FilterOperator.NE, value="a"),
+            MetadataFilter(key="weight", operator=FilterOperator.GTE, value=2.0),
+        ],
+        condition=None,
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    assert not fn("n1")
+    assert fn("n2")
+    assert fn("n3")
+
+
 def test_or_condition_matches_expected_nodes() -> None:
     filters = MetadataFilters(
         filters=[

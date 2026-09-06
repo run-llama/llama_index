@@ -14,7 +14,7 @@ Website: https://desearch.io
 
 Here's an example usage of the `DesearchToolSpec`.
 
-To get started, you will need an [Desearch API key](https://console.desearch.ai/api-keys)
+To get started, you will need a [Desearch API key](https://console.desearch.ai/api-keys)
 
 ```python
 # %pip install llama-index llama-index-core desearch-py

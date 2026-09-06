@@ -115,7 +115,7 @@ def get_top_k_mmr_embeddings(
     A mmr_threshold of 1 will check similarity the query and ignore previous results.
 
     """
-    threshold = mmr_threshold or 0.5
+    threshold = mmr_threshold if mmr_threshold is not None else 0.5
     similarity_fn = similarity_fn or default_similarity_fn
 
     if embedding_ids is None or embedding_ids == []:
