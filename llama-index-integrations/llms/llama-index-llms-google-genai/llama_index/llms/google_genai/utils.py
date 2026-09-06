@@ -174,6 +174,11 @@ def chat_from_gemini_response(
         )
         additional_kwargs["total_tokens"] = response.usage_metadata.total_token_count
 
+        if response.usage_metadata.cached_content_token_count:
+            additional_kwargs["cached_content_tokens"] = (
+                response.usage_metadata.cached_content_token_count
+            )
+
         if response.usage_metadata.thoughts_token_count:
             thought_tokens = response.usage_metadata.thoughts_token_count
 
