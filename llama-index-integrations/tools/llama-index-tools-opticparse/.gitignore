@@ -1,0 +1,12 @@
+llama_index/_static
+.DS_Store
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
