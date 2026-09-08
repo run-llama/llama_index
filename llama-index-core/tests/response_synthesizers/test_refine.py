@@ -69,6 +69,10 @@ class QuerySatisfiedCase(BaseModel):
     expected_last_llm_message_prefix: str
 
 
+class CustomOutput(BaseModel):
+    value: str
+
+
 class LLMCase(BaseModel):
     llm: MockLLMWithChatMemoryOfLastCall
     chat_function: str | None = None
@@ -552,6 +556,123 @@ class TestRefine:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    def test_synthesize__streaming_default_refine_program_does_not_buffer_tokens(
+        self,
+    ) -> None:
+        llm = MockLLM()
+
+        def stream_complete(
+            *args: Any, **kwargs: Any
+        ) -> Generator[CompletionResponse, None, None]:
+            for text, delta in (
+                ("hel", "hel"),
+                ("hello", "lo"),
+                ("hello world", " world"),
+            ):
+                yield CompletionResponse(text=text, delta=delta)
+
+        with patch.object(MockLLM, "stream_complete", side_effect=stream_complete):
+            response = Refine(llm=llm, streaming=True).synthesize(
+                query="test",
+                nodes=[NodeWithScore(node=TextNode(text="context"))],
+            )
+
+        assert isinstance(response, StreamingResponse)
+        assert list(response.response_gen) == ["hel", "lo", " world"]
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_default_refine_program_does_not_buffer_tokens(
+        self,
+    ) -> None:
+        llm = MockLLM()
+
+        async def astream_complete(
+            *args: Any, **kwargs: Any
+        ) -> AsyncGenerator[CompletionResponse, None]:
+            for text, delta in (
+                ("hel", "hel"),
+                ("hello", "lo"),
+                ("hello world", " world"),
+            ):
+                yield CompletionResponse(text=text, delta=delta)
+
+        with patch.object(MockLLM, "astream_complete", side_effect=astream_complete):
+            response = await Refine(llm=llm, streaming=True).asynthesize(
+                query="test",
+                nodes=[NodeWithScore(node=TextNode(text="context"))],
+            )
+
+        assert isinstance(response, AsyncStreamingResponse)
+        assert [token async for token in response.async_response_gen()] == [
+            "hel",
+            "lo",
+            " world",
+        ]
+
+    def test_update_response__streaming_output_cls_uses_structured_stream(self) -> None:
+        llm = MockLLM()
+        program = DefaultRefineProgram(
+            prompt=MagicMock(), llm=llm, output_cls=CustomOutput
+        )
+        synthesizer = Refine(llm=llm, streaming=True, output_cls=CustomOutput)
+
+        with (
+            patch.object(
+                program,
+                "stream_call",
+                return_value=iter(
+                    [
+                        StructuredRefineResponse(
+                            answer='{"value":"ok"}', query_satisfied=True
+                        )
+                    ]
+                ),
+            ) as stream_call,
+            patch.object(
+                program,
+                "_stream_answer",
+                side_effect=AssertionError("unstructured path must not be used"),
+            ),
+        ):
+            response = synthesizer._update_response(program, {}, {})
+
+        assert response is not None
+        assert list(cast(Generator[str, None, None], response)) == ['{"value":"ok"}']
+        stream_call.assert_called_once_with()
+
+    @pytest.mark.asyncio
+    async def test_aupdate_response__streaming_output_cls_uses_structured_stream(
+        self,
+    ) -> None:
+        llm = MockLLM()
+        program = DefaultRefineProgram(
+            prompt=MagicMock(), llm=llm, output_cls=CustomOutput
+        )
+        synthesizer = Refine(llm=llm, streaming=True, output_cls=CustomOutput)
+
+        async def structured_stream() -> AsyncGenerator[StructuredRefineResponse, None]:
+            yield StructuredRefineResponse(
+                answer='{"value":"ok"}', query_satisfied=True
+            )
+
+        with (
+            patch.object(
+                program, "astream_call", return_value=structured_stream()
+            ) as astream_call,
+            patch.object(
+                program,
+                "_astream_answer",
+                side_effect=AssertionError("unstructured path must not be used"),
+            ),
+        ):
+            response = await synthesizer._aupdate_response(program, {}, {})
+
+        assert response is not None
+        assert [token async for token in cast(AsyncGenerator[str, None], response)] == [
+            '{"value":"ok"}'
+        ]
+        astream_call.assert_awaited_once_with()
 
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
