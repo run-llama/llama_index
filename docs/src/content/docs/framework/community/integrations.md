@@ -19,6 +19,7 @@ The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Magic Hour](https://github.com/RhythmP28/llama-index-tools-magic-hour) — text-to-video, image-to-video, and image generation tools, available as the independently maintained [`llama-index-tools-magic-hour`](https://pypi.org/project/llama-index-tools-magic-hour/) package.
 
 ## LLMs
 
