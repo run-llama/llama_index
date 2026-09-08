@@ -76,6 +76,14 @@ class _TestAsyncEventHandler(BaseEventHandler):
         return None
 
 
+def test_dispatcher_constructor_does_not_use_mutable_handler_defaults():
+    """Handler defaults should be created per Dispatcher instance."""
+    signature = inspect.signature(Dispatcher.__init__)
+
+    assert signature.parameters["event_handlers"].default is None
+    assert signature.parameters["span_handlers"].default is None
+
+
 @dispatcher.span
 def func(a, b=3, **kwargs):
     return a + b
