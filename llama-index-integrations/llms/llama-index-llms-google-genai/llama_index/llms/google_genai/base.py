@@ -54,6 +54,7 @@ from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
+    chat_response_from_usage_metadata,
     convert_schema_to_function_declaration,
     prepare_chat_params,
     handle_streaming_flexible_model,
@@ -421,30 +422,38 @@ class GoogleGenAI(FunctionCallingLLM):
                 content = []
                 thought_signatures = []
                 for r in response:
-                    if candidates := r.candidates:
-                        if not candidates:
-                            continue
+                    top_candidate = r.candidates[0] if r.candidates else None
+                    if (
+                        top_candidate is not None
+                        and top_candidate.content
+                        and top_candidate.content.parts
+                    ):
+                        parts = top_candidate.content.parts
+                        # Only use non-thought text parts for the delta
+                        content_delta = "".join(
+                            part.text
+                            for part in parts
+                            if part.text and not part.thought
+                        )
 
-                        top_candidate = candidates[0]
-                        if response_content := top_candidate.content:
-                            if parts := response_content.parts:
-                                # Only use non-thought text parts for the delta
-                                content_delta = "".join(
-                                    part.text
-                                    for part in parts
-                                    if part.text and not part.thought
-                                )
+                        llama_resp = chat_from_gemini_response(
+                            r,
+                            existing_content=content,
+                            thought_signatures=thought_signatures,
+                        )
+                        llama_resp.delta = llama_resp.delta or content_delta or ""
 
-                                llama_resp = chat_from_gemini_response(
-                                    r,
-                                    existing_content=content,
-                                    thought_signatures=thought_signatures,
-                                )
-                                llama_resp.delta = (
-                                    llama_resp.delta or content_delta or ""
-                                )
-
-                                yield llama_resp
+                        yield llama_resp
+                    elif r.usage_metadata:
+                        # Gemini streams report token usage on a trailing chunk
+                        # that carries no candidate content; surface it as the
+                        # final response so callbacks/instrumentation see it
+                        # (issue #19293).
+                        usage_resp = chat_response_from_usage_metadata(
+                            r, content, thought_signatures
+                        )
+                        usage_resp.delta = ""
+                        yield usage_resp
             finally:
                 if self.file_mode in ("fileapi", "hybrid"):
                     delete_uploaded_files(file_api_names, self._client)
@@ -477,30 +486,38 @@ class GoogleGenAI(FunctionCallingLLM):
                 async for r in await chat.send_message_stream(
                     next_msg.parts if isinstance(next_msg, types.Content) else next_msg
                 ):
-                    if candidates := r.candidates:
-                        if not candidates:
-                            continue
+                    top_candidate = r.candidates[0] if r.candidates else None
+                    if (
+                        top_candidate is not None
+                        and top_candidate.content
+                        and top_candidate.content.parts
+                    ):
+                        parts = top_candidate.content.parts
+                        # Only use non-thought text parts for the delta
+                        content_delta = "".join(
+                            part.text
+                            for part in parts
+                            if part.text and not part.thought
+                        )
 
-                        top_candidate = candidates[0]
-                        if response_content := top_candidate.content:
-                            if parts := response_content.parts:
-                                # Only use non-thought text parts for the delta
-                                content_delta = "".join(
-                                    part.text
-                                    for part in parts
-                                    if part.text and not part.thought
-                                )
+                        llama_resp = chat_from_gemini_response(
+                            r,
+                            existing_content=content,
+                            thought_signatures=thought_signatures,
+                        )
+                        llama_resp.delta = llama_resp.delta or content_delta or ""
 
-                                llama_resp = chat_from_gemini_response(
-                                    r,
-                                    existing_content=content,
-                                    thought_signatures=thought_signatures,
-                                )
-                                llama_resp.delta = (
-                                    llama_resp.delta or content_delta or ""
-                                )
-
-                                yield llama_resp
+                        yield llama_resp
+                    elif r.usage_metadata:
+                        # Gemini streams report token usage on a trailing chunk
+                        # that carries no candidate content; surface it as the
+                        # final response so callbacks/instrumentation see it
+                        # (issue #19293).
+                        usage_resp = chat_response_from_usage_metadata(
+                            r, content, thought_signatures
+                        )
+                        usage_resp.delta = ""
+                        yield usage_resp
             finally:
                 if self.file_mode in ("fileapi", "hybrid"):
                     await adelete_uploaded_files(file_api_names, self._client)
