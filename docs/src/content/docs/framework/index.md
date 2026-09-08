@@ -102,7 +102,7 @@ Set an environment variable called `OPENAI_API_KEY` with an [OpenAI API key](htt
 pip install llama-index
 ```
 
-Put some documents in a folder called `data`, then ask questions about them with our famous 5-line starter:
+Put some documents in a folder called `data`, then run:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -110,9 +110,11 @@ from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
-response = query_engine.query("Some question about the data should go here")
+response = query_engine.query("What is this document about?")
 print(response)
 ```
+
+> **Note:** This creates an in-memory index. To save it to disk so you don't have to rebuild it every time, see the [Starter Tutorial](/python/framework/getting_started/starter_example).
 
 If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](/python/framework/getting_started/starter_example) or [any model that runs on your laptop](/python/framework/getting_started/starter_example_local).
 
