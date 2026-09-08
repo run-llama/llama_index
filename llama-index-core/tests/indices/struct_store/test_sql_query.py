@@ -172,6 +172,20 @@ def test_sql_index_async_query(
     response = asyncio_run(task)
     assert str(response) == sql_to_test
 
+    # query with markdown return (#16720: aquery ignored markdown_response)
+    nl_table_engine = NLSQLTableQueryEngine(
+        index.sql_database, synthesize_response=False, markdown_response=True
+    )
+    task = nl_table_engine.aquery("test_table:user_id,foo")
+    response = asyncio_run(task)
+    assert (
+        str(response)
+        == """| user_id | foo |
+|---|---|
+| 2 | bar |
+| 8 | hello |"""
+    )
+
 
 def test_default_output_parser() -> None:
     """Test default output parser."""
