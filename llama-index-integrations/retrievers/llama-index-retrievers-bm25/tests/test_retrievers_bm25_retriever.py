@@ -126,6 +126,33 @@ def _count_score_greater_than_zero(nodes):
     return count
 
 
+def test_metadata_filtering_excludes_non_matching_nodes():
+    documents = [
+        Document(text="apple pie recipe with cinnamon", metadata={"cat": "food"}),
+        Document(text="apple stock price analysis", metadata={"cat": "finance"}),
+        Document(text="banana bread baking guide", metadata={"cat": "food"}),
+        Document(text="banana republic clothing sale", metadata={"cat": "retail"}),
+    ]
+
+    splitter = SentenceSplitter(chunk_size=1024)
+    nodes = splitter.get_nodes_from_documents(documents)
+
+    # similarity_top_k is larger than the number of nodes the filter keeps
+    retriever = BM25Retriever.from_defaults(
+        nodes=nodes,
+        similarity_top_k=4,
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="cat", operator=FilterOperator.EQ, value="food")
+            ]
+        ),
+    )
+    result_nodes = retriever.retrieve("apple")
+
+    assert len(result_nodes) == 2
+    assert all(node.node.metadata["cat"] == "food" for node in result_nodes)
+
+
 def test_persist_and_load():
     documents = [Document.example()]
 
