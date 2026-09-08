@@ -45,6 +45,42 @@ def _is_context_param(param_annotation: Any) -> bool:
     return param_annotation == Context or (get_origin(param_annotation) is Context)
 
 
+def _get_mcp_is_error(raw_output: Any) -> Optional[bool]:
+    """
+    Return the MCP CallToolResult error flag when present, else None.
+
+    Supports both ``isError`` (camelCase, older mcp / dict payloads) and
+    ``is_error`` (snake_case, mcp>=2.x pydantic models where ``isError`` is
+    only a serialization alias), plus dict payloads with either key.
+    """
+    if isinstance(raw_output, dict):
+        for key in ("isError", "is_error"):
+            val = raw_output.get(key)
+            if isinstance(val, bool):
+                return val
+        return None
+    for attr in ("isError", "is_error"):
+        try:
+            val = getattr(raw_output, attr, None)
+        except Exception:
+            continue
+        if isinstance(val, bool):
+            return val
+    return None
+
+
+def _get_mcp_content(raw_output: Any) -> Optional[List[Any]]:
+    """Return MCP ``content`` list when present (object attr or dict key)."""
+    if isinstance(raw_output, dict):
+        content = raw_output.get("content")
+        return content if isinstance(content, list) else None
+    try:
+        content = getattr(raw_output, "content", None)
+    except Exception:
+        return None
+    return content if isinstance(content, list) else None
+
+
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
@@ -293,8 +329,8 @@ class FunctionTool(AsyncBaseTool):
         """
         Map MCP CallToolResult content items to LlamaIndex blocks.
 
-        Handled structurally (``content`` list + ``isError`` bool) so core
-        does not take a hard dependency on the ``mcp`` package.
+        Handled structurally (``content`` list + ``isError``/``is_error``
+        bool) so core does not take a hard dependency on the ``mcp`` package.
         """
         blocks: List[ContentBlock] = []
         for item in content:
@@ -338,12 +374,13 @@ class FunctionTool(AsyncBaseTool):
         # (is_error / exception are preserved by call/acall passthrough).
         if isinstance(raw_output, ToolOutput):
             return raw_output.blocks
-        # MCP CallToolResult shape: {"content": [...], "isError": bool}.
+        # MCP CallToolResult shape: {"content": [...], "isError"/"is_error": bool}.
         # Detected structurally to avoid a hard `mcp` dependency in core.
-        if isinstance(getattr(raw_output, "isError", None), bool) and isinstance(
-            getattr(raw_output, "content", None), list
-        ):
-            return self._parse_mcp_content(raw_output.content)
+        # mcp>=2.x exposes snake_case `is_error` (`isError` is only a
+        # serialization alias), older versions used camelCase `isError`.
+        _mcp_content = _get_mcp_content(raw_output)
+        if _get_mcp_is_error(raw_output) is not None and isinstance(_mcp_content, list):
+            return self._parse_mcp_content(_mcp_content)
         if isinstance(
             raw_output,
             (
@@ -431,13 +468,14 @@ class FunctionTool(AsyncBaseTool):
         output_blocks = self._parse_tool_output(raw_output)
 
         # Default ToolOutput based on the raw output.
-        # Propagate MCP CallToolResult.isError (camelCase) when present.
+        # Propagate MCP CallToolResult.isError/is_error when present.
+        _mcp_is_error = _get_mcp_is_error(raw_output)
         return ToolOutput(
             blocks=output_blocks,
             tool_name=self.metadata.get_name(),
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
-            is_error=bool(getattr(raw_output, "isError", False)),
+            is_error=bool(_mcp_is_error) if _mcp_is_error is not None else False,
         )
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
@@ -485,13 +523,14 @@ class FunctionTool(AsyncBaseTool):
         output_blocks = self._parse_tool_output(raw_output)
 
         # Default ToolOutput based on the raw output.
-        # Propagate MCP CallToolResult.isError (camelCase) when present.
+        # Propagate MCP CallToolResult.isError/is_error when present.
+        _mcp_is_error = _get_mcp_is_error(raw_output)
         return ToolOutput(
             blocks=output_blocks,
             tool_name=self.metadata.get_name(),
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
-            is_error=bool(getattr(raw_output, "isError", False)),
+            is_error=bool(_mcp_is_error) if _mcp_is_error is not None else False,
         )
 
     def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":
