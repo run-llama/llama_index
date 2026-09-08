@@ -155,3 +155,18 @@ Join us on Discord <https://discord.gg/dGcwcsnxhU>
 Thank you for considering contributing to LlamaIndex! Every contribution—whether it’s code, documentation, or ideas—helps make this project better for everyone.
 
 Happy coding! 😊
+
+---
+
+## 2 — Contribute a pack, reader, tool, or dataset (formerly from Llama Hub)
+
+New integration packages are no longer accepted in this monorepo. Please maintain new integrations in standalone repositories and publish them to PyPI independently.
+
+If you want an external integration to be considered for discovery on [LlamaHub](https://llamahub.ai/), use the [Feature Request form](https://github.com/run-llama/llama_index/issues/new?assignees=&labels=enhancement%2Ctriage&projects=&template=feature-form.yml&title=%5BFeature+Request%5D%3A+). Include:
+
+- the package name and PyPI URL
+- the source repository and documentation URL
+- the integration type (reader, retriever, tool, pack, or dataset)
+- the supported LlamaIndex version and a minimal usage example
+
+The historical [`run-llama/llama-hub`](https://github.com/run-llama/llama-hub) repository is archived and read-only; its old pull-request workflow is retained for historical reference only.
