@@ -1,6 +1,5 @@
 import logging
 import urllib.parse
-import warnings
 from abc import ABC
 from typing import List, Optional
 
@@ -12,7 +11,7 @@ from pymongo.collection import Collection
 
 logger = logging.getLogger(__name__)
 
-APP_NAME = "Llama-Index-CDBMongoVCore-ChatStore-Python"
+APP_NAME = "Llama-Index-AzureDocumentDB-ChatStore-Python"
 
 
 # Convert a ChatMessage to a JSON object
@@ -30,8 +29,8 @@ def _dict_to_message(d: dict) -> ChatMessage:
     return ChatMessage.model_validate(d)
 
 
-class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
-    """Creates an Azure Cosmos DB NoSql Chat Store."""
+class AzureDocumentDBChatStore(BaseChatStore, ABC):
+    """Creates an Azure DocumentDB chat store."""
 
     _mongo_client = MongoClient
     _database = Database
@@ -46,12 +45,6 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
-        warnings.warn(
-            "AzureCosmosMongoVCoreChatStore is deprecated; use "
-            "AzureDocumentDBChatStore from llama_index.storage.chat_store.azuredocumentdb instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         super().__init__(
             mongo_client=mongo_client,
             uri=uri,
@@ -73,10 +66,14 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         connection_string: str,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
-    ):
-        """Creates an instance of AzureCosmosMongoVCoreChatStore using a connection string."""
+    ) -> "AzureDocumentDBChatStore":
+        """Create an AzureDocumentDBChatStore from a connection string."""
         # Parse the MongoDB URI
         parsed_uri = urllib.parse.urlparse(connection_string)
+        if parsed_uri.username is None or parsed_uri.password is None:
+            raise ValueError(
+                "The connection string must include a username and password."
+            )
         # Extract username and password, and perform url_encoding
         username = urllib.parse.quote_plus(parsed_uri.username)
         password = urllib.parse.quote_plus(parsed_uri.password)
@@ -97,8 +94,8 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         port: int,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
-    ) -> "AzureCosmosMongoVCoreChatStore":
-        """Initializes AzureCosmosMongoVCoreChatStore from an endpoint url and key."""
+    ) -> "AzureDocumentDBChatStore":
+        """Initialize AzureDocumentDBChatStore from a host and port."""
         mongo_client = MongoClient(host=host, port=port, appname=APP_NAME)
 
         return cls(
@@ -169,4 +166,4 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return "AzureCosmosMongoVCoreChatStore"
+        return "AzureDocumentDBChatStore"
