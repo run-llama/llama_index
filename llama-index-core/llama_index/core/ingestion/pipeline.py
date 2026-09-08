@@ -460,7 +460,6 @@ class IngestionPipeline(BaseModel):
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
-                self.docstore.set_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
                 current_hashes.add(node.hash)
 
@@ -531,6 +530,7 @@ class IngestionPipeline(BaseModel):
             self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
@@ -678,6 +678,7 @@ class IngestionPipeline(BaseModel):
             await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
         elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
@@ -695,7 +696,6 @@ class IngestionPipeline(BaseModel):
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
-                await self.docstore.aset_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
                 current_hashes.add(node.hash)
 
