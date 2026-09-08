@@ -7,7 +7,7 @@
 [![Twitter](https://img.shields.io/twitter/follow/llama_index)](https://x.com/llama_index)
 [![Reddit](https://img.shields.io/reddit/subreddit-subscribers/LlamaIndex?style=plastic&logo=reddit&label=r%2FLlamaIndex&labelColor=white)](https://www.reddit.com/r/LlamaIndex/)
 
-LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)) is an open-source framework to build agentic applications. **[Parse](https://cloud.llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)** is our enterprise platform for agentic OCR, parsing, extraction, indexing and more. You can use LlamaParse with this framework or on its own; see [LlamaParse](#llamacloud-document-agent-platform) below for signup and product links.
+LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)) is an open-source framework to build agentic applications. **[Parse](https://cloud.llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)** is our enterprise platform for agentic OCR, parsing, extraction, indexing and more. You can use LlamaParse with this framework or on its own; see [LlamaParse](https://cloud.llamaindex.ai) for signup and product links.
 
 > ### 📚 **Documentation:**
 >
