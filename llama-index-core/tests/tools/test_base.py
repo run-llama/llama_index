@@ -163,6 +163,7 @@ async def test_function_tool_async_defaults_langchain() -> None:
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import Document
 from llama_index.core.tools import RetrieverTool, ToolMetadata
+from llama_index.core.tools.types import ToolOutput
 
 
 def test_retreiver_tool() -> None:
@@ -603,3 +604,91 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_function_tool_passthrough_tool_output_preserves_is_error() -> None:
+    """Regression test for #22929: a returned ToolOutput must not be re-wrapped."""
+    cause = RuntimeError("index down")
+
+    def lookup() -> ToolOutput:
+        return ToolOutput(
+            content="The lookup failed: index down",
+            tool_name="lookup",
+            raw_input={},
+            raw_output=None,
+            is_error=True,
+            exception=cause,
+        )
+
+    tool = FunctionTool.from_defaults(fn=lookup, name="lookup")
+    out = tool.call()
+
+    assert out.is_error is True
+    assert out.content == "The lookup failed: index down"
+    assert out.exception is cause
+
+
+@pytest.mark.asyncio
+async def test_function_tool_passthrough_tool_output_async() -> None:
+    """Async variant of the ToolOutput passthrough regression test."""
+    cause = RuntimeError("index down")
+
+    async def lookup() -> ToolOutput:
+        return ToolOutput(
+            content="The lookup failed: index down",
+            tool_name="lookup",
+            raw_input={},
+            raw_output=None,
+            is_error=True,
+            exception=cause,
+        )
+
+    tool = FunctionTool.from_defaults(async_fn=lookup, name="lookup")
+    out = await tool.acall()
+
+    assert out.is_error is True
+    assert out.content == "The lookup failed: index down"
+    assert out.exception is cause
+
+
+def _fake_mcp_result(text: str, is_error: bool):
+    """Mimic mcp.types.CallToolResult shape without requiring the mcp dep."""
+
+    class _FakeText:
+        def __init__(self, text: str) -> None:
+            self.text = text
+            self.type = "text"
+
+    class _FakeCallToolResult:
+        def __init__(self, text: str, is_error: bool) -> None:
+            self.content = [_FakeText(text)]
+            self.isError = is_error
+
+    return _FakeCallToolResult(text, is_error)
+
+
+def test_function_tool_mcp_error_result_is_error() -> None:
+    """Regression test for #22943: CallToolResult.isError must become is_error."""
+
+    def failing() -> object:
+        return _fake_mcp_result("boom failed", True)
+
+    tool = FunctionTool.from_defaults(fn=failing, name="failing")
+    out = tool.call()
+
+    assert out.is_error is True
+    assert out.content == "boom failed"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_mcp_success_result_is_not_error() -> None:
+    """CallToolResult with isError=False stays a success with clean text."""
+
+    async def working() -> object:
+        return _fake_mcp_result("ok result", False)
+
+    tool = FunctionTool.from_defaults(async_fn=working, name="working")
+    out = await tool.acall()
+
+    assert out.is_error is False
+    assert out.content == "ok result"

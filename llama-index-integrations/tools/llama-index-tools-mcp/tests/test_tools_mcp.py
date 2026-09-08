@@ -777,3 +777,59 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+@pytest.mark.asyncio
+async def test_mcp_tool_error_propagates_is_error():
+    """
+    Regression test for #22943: CallToolResult.isError must become
+    ToolOutput.is_error with clean text content (no pydantic repr).
+
+    Uses a fake client so no live MCP server is needed.
+    """
+    from types import SimpleNamespace
+
+    from mcp.types import CallToolResult, TextContent
+
+    class _FakeMCPClient:
+        def __init__(self, results):
+            self._results = results
+
+        async def list_tools(self):
+            return SimpleNamespace(
+                tools=[
+                    SimpleNamespace(
+                        name=name,
+                        description=f"{name} tool",
+                        input_schema={"type": "object", "properties": {}},
+                    )
+                    for name in self._results
+                ]
+            )
+
+        async def call_tool(self, tool_name, arguments=None, progress_callback=None):
+            return self._results[tool_name]
+
+    results = {
+        "failing": CallToolResult(
+            content=[TextContent(type="text", text="boom failed")],
+            isError=True,
+        ),
+        "working": CallToolResult(
+            content=[TextContent(type="text", text="ok result")],
+            isError=False,
+        ),
+    }
+    tool_spec = McpToolSpec(client=_FakeMCPClient(results))  # type: ignore[arg-type]
+    tools = await tool_spec.to_tool_list_async()
+    assert len(tools) == 2
+
+    failing = next(t for t in tools if t.metadata.name == "failing")
+    out = await failing.acall()
+    assert out.is_error is True
+    assert out.content == "boom failed"
+
+    working = next(t for t in tools if t.metadata.name == "working")
+    out = await working.acall()
+    assert out.is_error is False
+    assert out.content == "ok result"
