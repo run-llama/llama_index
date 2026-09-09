@@ -1,8 +1,8 @@
 from workflows.context.serializers import (
     BaseSerializer,  # noqa
     JsonSerializer,  # noqa
-    PickleSerializer,
+    MsgPackSerializer,
 )
 
 # provided for backward compatibility
-JsonPickleSerializer = PickleSerializer
+JsonPickleSerializer = MsgPackSerializer
