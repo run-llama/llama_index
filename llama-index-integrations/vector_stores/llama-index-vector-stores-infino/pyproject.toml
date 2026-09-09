@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "black[jupyter]>=23.7.0,<=26.5.1",
+    "codespell[toml]>=v2.2.6",
+]
+
+[project]
+name = "llama-index-vector-stores-infino"
+version = "0.1.0"
+description = "llama-index vector_stores Infino integration — embedded SQL + BM25 + vector search over object storage, no server"
+authors = [{name = "Infino", email = "tech@infino.ai"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+keywords = [
+    "llama-index", "infino", "vector-store", "retrieval", "rag",
+    "hybrid-search", "bm25", "vector-search", "vector-database",
+    "semantic-search", "embeddings", "object-storage", "s3", "parquet",
+]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    # The single-URI constructor modes (local / bucket / hosted) rely on
+    # connect(api_key=…, storage_options=…) and the create_table / IndexSpec /
+    # vector_search / hybrid_search surface used here. Those connect params ship
+    # in published wheels back to 0.4.0, but 0.6.0 is the release whose full
+    # surface this package was validated against end-to-end; hence the floor.
+    "infino>=0.6.0,<0.7",
+    "pyarrow>=14",
+]
+
+[project.urls]
+Homepage = "https://github.com/run-llama/llama_index"
+Repository = "https://github.com/run-llama/llama_index"
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.vector_stores.infino"
+
+[tool.llamahub.class_authors]
+InfinoVectorStore = "infino"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
