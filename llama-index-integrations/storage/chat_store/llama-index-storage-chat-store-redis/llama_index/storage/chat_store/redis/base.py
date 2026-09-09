@@ -13,6 +13,7 @@ from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
 from redis.asyncio.sentinel import Sentinel as AsyncSentinel
 from redis.client import Redis
 from redis.cluster import RedisCluster
+from redis.exceptions import AuthenticationError, RedisError
 from redis.sentinel import Sentinel
 
 
@@ -177,7 +178,7 @@ class RedisChatStore(BaseChatStore):
         try:
             cluster_info = redis_client.info("cluster")
             return cluster_info["cluster_enabled"] == 1
-        except redis.exceptions.RedisError:
+        except RedisError:
             return False
 
     def _redis_sentinel_parser(
@@ -238,7 +239,7 @@ class RedisChatStore(BaseChatStore):
         # again without pass, everything else cannot be handled here -> user needed
         try:
             sentinel_client.execute_command("ping")
-        except redis.exceptions.AuthenticationError:
+        except AuthenticationError:
             exception_info = sys.exc_info()
             exception = exception_info[1] or None
             if exception is not None and "no password is set" in exception.args[0]:
@@ -265,7 +266,7 @@ class RedisChatStore(BaseChatStore):
 
         try:
             asyncio.run(sentinel_client.execute_command("ping"))
-        except redis.exceptions.AuthenticationError:
+        except AuthenticationError:
             exception_info = sys.exc_info()
             exception = exception_info[1] or None
             if exception is not None and "no password is set" in exception.args[0]:

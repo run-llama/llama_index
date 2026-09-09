@@ -4,6 +4,7 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.redis import RedisChatStore
+from redis.exceptions import RedisError
 
 REDIS_KEY = "redis_chat_store_tests"
 
@@ -32,6 +33,16 @@ test is skipped.
 def test_class():
     names_of_base_classes = [b.__name__ for b in RedisChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
+
+
+def test_check_for_cluster_handles_redis_errors():
+    class FailingRedisClient:
+        def info(self, section: str) -> None:
+            raise RedisError("connection failed")
+
+    store = RedisChatStore.__new__(RedisChatStore)
+
+    assert store._check_for_cluster(FailingRedisClient()) is False
 
 
 @pytest.fixture()
