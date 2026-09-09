@@ -213,3 +213,212 @@ def test_aretrieve_concurrent_calls(mock_aioboto3_session, mock_get_aws_service_
     assert "Query 0" in results[0][0].node.text
     assert "Query 1" in results[1][0].node.text
     assert "Query 2" in results[2][0].node.text
+
+
+@patch("llama_index.core.utilities.aws_utils.get_aws_service_client")
+def test_managed_kb_retrieve(mock_get_aws_service_client):
+    """Test that passing managed_search_config results in the correct API call with managedSearchConfiguration."""
+    mock_client = MagicMock()
+    mock_client.retrieve.return_value = {
+        "retrievalResults": [
+            {
+                "content": {"text": "Managed KB result."},
+                "location": "managed_location",
+                "score": 0.92,
+            },
+        ]
+    }
+    mock_get_aws_service_client.return_value = mock_client
+
+    from llama_index.retrievers.bedrock import AmazonKnowledgeBasesRetriever
+
+    retriever = AmazonKnowledgeBasesRetriever(
+        knowledge_base_id="managed-kb-id",
+        managed_search_config={"numberOfResults": 5},
+    )
+    retriever._client = mock_client
+
+    query_bundle = QueryBundle(query_str="Managed query")
+    result = retriever._retrieve(query_bundle)
+
+    # Verify the API was called with managedSearchConfiguration
+    mock_client.retrieve.assert_called_once_with(
+        retrievalQuery={"text": "Managed query"},
+        knowledgeBaseId="managed-kb-id",
+        retrievalConfiguration={"managedSearchConfiguration": {"numberOfResults": 5}},
+    )
+
+    # Verify results are parsed correctly
+    assert len(result) == 1
+    assert result[0].node.text == "Managed KB result."
+    assert result[0].score == 0.92
+
+
+@patch("llama_index.core.utilities.aws_utils.get_aws_service_client")
+def test_managed_kb_type_auto_config(mock_get_aws_service_client):
+    """Test that knowledge_base_type='MANAGED' auto-uses managed config."""
+    mock_client = MagicMock()
+    mock_client.retrieve.return_value = {
+        "retrievalResults": [
+            {
+                "content": {"text": "Auto managed result."},
+                "score": 0.88,
+            },
+        ]
+    }
+    mock_get_aws_service_client.return_value = mock_client
+
+    from llama_index.retrievers.bedrock import AmazonKnowledgeBasesRetriever
+
+    retriever = AmazonKnowledgeBasesRetriever(
+        knowledge_base_id="auto-managed-kb-id",
+        knowledge_base_type="MANAGED",
+    )
+    retriever._client = mock_client
+
+    query_bundle = QueryBundle(query_str="Auto managed query")
+    result = retriever._retrieve(query_bundle)
+
+    # Verify the API was called with an empty managedSearchConfiguration
+    mock_client.retrieve.assert_called_once_with(
+        retrievalQuery={"text": "Auto managed query"},
+        knowledgeBaseId="auto-managed-kb-id",
+        retrievalConfiguration={"managedSearchConfiguration": {}},
+    )
+
+    assert len(result) == 1
+    assert result[0].node.text == "Auto managed result."
+    assert result[0].score == 0.88
+
+
+@patch("llama_index.core.utilities.aws_utils.get_aws_service_client")
+def test_vector_kb_backward_compat(mock_get_aws_service_client):
+    """Test that existing vector config still works unchanged (backward compatibility)."""
+    mock_client = MagicMock()
+    mock_client.retrieve.return_value = {
+        "retrievalResults": [
+            {
+                "content": {"text": "Vector result."},
+                "location": "vector_location",
+                "metadata": {"key": "value"},
+                "score": 0.95,
+            },
+        ]
+    }
+    mock_get_aws_service_client.return_value = mock_client
+
+    from llama_index.retrievers.bedrock import AmazonKnowledgeBasesRetriever
+
+    vector_config = {
+        "vectorSearchConfiguration": {
+            "numberOfResults": 4,
+            "overrideSearchType": "SEMANTIC",
+            "filter": {"equals": {"key": "tag", "value": "space"}},
+        }
+    }
+
+    retriever = AmazonKnowledgeBasesRetriever(
+        knowledge_base_id="vector-kb-id",
+        retrieval_config=vector_config,
+    )
+    retriever._client = mock_client
+
+    query_bundle = QueryBundle(query_str="Vector query")
+    result = retriever._retrieve(query_bundle)
+
+    # Verify the API was called with the original vectorSearchConfiguration
+    mock_client.retrieve.assert_called_once_with(
+        retrievalQuery={"text": "Vector query"},
+        knowledgeBaseId="vector-kb-id",
+        retrievalConfiguration=vector_config,
+    )
+
+    # Verify results
+    assert len(result) == 1
+    assert result[0].node.text == "Vector result."
+    assert result[0].score == 0.95
+    assert result[0].node.metadata["location"] == "vector_location"
+    assert result[0].node.metadata["sourceMetadata"] == {"key": "value"}
+
+
+@patch("boto3.Session")
+def test_agentic_retrieve_helper(mock_session):
+    """Test agentic_retrieve() standalone helper."""
+    from llama_index.retrievers.bedrock import agentic_retrieve
+
+    mock_client = MagicMock()
+    mock_session.return_value.client.return_value = mock_client
+    mock_client.agentic_retrieve_stream.return_value = {
+        "stream": [
+            {
+                "result": {
+                    "results": [
+                        {"content": {"text": "agentic llama result"}, "score": 0.88}
+                    ]
+                }
+            }
+        ]
+    }
+
+    result = agentic_retrieve(
+        knowledge_base_id="test-kb",
+        query="test query",
+        region_name="us-west-2",
+    )
+
+    assert "results" in result
+    assert len(result["results"]) == 1
+    assert result["results"][0]["content"]["text"] == "agentic llama result"
+    mock_client.agentic_retrieve_stream.assert_called_once()
+
+
+@patch("boto3.Session")
+def test_agentic_retrieve_with_generate_response(mock_session):
+    """Test agentic_retrieve() with generate_response=True returns cited answer."""
+    from llama_index.retrievers.bedrock import agentic_retrieve
+
+    mock_client = MagicMock()
+    mock_session.return_value.client.return_value = mock_client
+    mock_client.agentic_retrieve_stream.return_value = {
+        "stream": [
+            {
+                "result": {
+                    "results": [{"content": {"text": "source chunk 1"}, "score": 0.9}],
+                    "generatedResponse": {
+                        "answer": "Based on the documents, the answer is X.",
+                        "citations": [
+                            {
+                                "generatedResponsePart": {
+                                    "textResponsePart": {
+                                        "span": {"start": 0, "end": 40}
+                                    }
+                                }
+                            }
+                        ],
+                    },
+                }
+            },
+        ]
+    }
+
+    result = agentic_retrieve(
+        knowledge_base_id="test-kb",
+        query="What is X?",
+        region_name="us-west-2",
+        generate_response=True,
+    )
+
+    # Verify generateResponse was passed to the API
+    call_kwargs = mock_client.agentic_retrieve_stream.call_args[1]
+    assert call_kwargs["generateResponse"] is True
+
+    # Verify generated answer is returned
+    assert (
+        result["generatedResponse"]["answer"]
+        == "Based on the documents, the answer is X."
+    )
+    assert len(result["generatedResponse"]["citations"]) == 1
+
+    # Verify results are also present
+    assert len(result["results"]) == 1
+    assert result["results"][0]["content"]["text"] == "source chunk 1"
