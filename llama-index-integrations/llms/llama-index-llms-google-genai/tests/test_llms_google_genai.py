@@ -1914,6 +1914,138 @@ async def test_thoughts_with_async_streaming() -> None:
     )
 
 
+def _make_thought_stream_part(
+    text: Optional[str], thought: Optional[bool]
+) -> MagicMock:
+    """Build a mock streaming response part for thought/answer text."""
+    part = MagicMock()
+    part.text = text
+    part.thought = thought
+    part.thought_signature = None
+    part.inline_data = None
+    part.function_call = None
+    part.function_response = None
+    part.model_dump = MagicMock(return_value={})
+    return part
+
+
+def _make_thought_stream_chunk(
+    parts: List[MagicMock], finish_reason: Optional[Any] = None
+) -> MagicMock:
+    """Build a mock streaming response chunk wrapping the given parts."""
+    chunk = MagicMock()
+    candidate = MagicMock()
+    candidate.finish_reason = finish_reason
+    candidate.content.role = "model"
+    candidate.content.parts = parts
+    candidate.model_dump = MagicMock(return_value={})
+    chunk.candidates = [candidate]
+    chunk.prompt_feedback = None
+    chunk.usage_metadata = None
+    chunk.function_calls = None
+    del chunk.cached_content
+    return chunk
+
+
+def test_thinking_delta_with_mocked_streaming() -> None:
+    """Streaming exposes reasoning text on additional_kwargs['thinking_delta'], separate from the answer delta."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_model.supported_generation_methods = ["generateContent"]
+        mock_client.models.get.return_value = mock_model
+
+        thought_chunk = _make_thought_stream_chunk(
+            [_make_thought_stream_part("Let me think.", True)]
+        )
+        answer_chunk = _make_thought_stream_chunk(
+            [_make_thought_stream_part("Hello there!", None)],
+            finish_reason=types.FinishReason.STOP,
+        )
+
+        mock_chat = MagicMock()
+        mock_client.chats.create.return_value = mock_chat
+        mock_chat.send_message_stream.return_value = [thought_chunk, answer_chunk]
+
+        llm = GoogleGenAI(model="gemini-2.5-flash", file_mode="inline")
+
+        messages = [ChatMessage(content="Hi", role=MessageRole.USER)]
+        chunks = list(llm.stream_chat(messages))
+
+    assert len(chunks) == 2
+
+    thinking_text = "".join(
+        chunk.additional_kwargs.get("thinking_delta", "") for chunk in chunks
+    )
+    answer_text = "".join(chunk.delta or "" for chunk in chunks)
+
+    assert thinking_text == "Let me think."
+    assert answer_text == "Hello there!"
+    # Thought text must never leak into the answer delta channel.
+    assert "Let me think." not in answer_text
+
+    # The thought chunk carries reasoning but no answer delta.
+    assert chunks[0].additional_kwargs["thinking_delta"] == "Let me think."
+    assert chunks[0].delta == ""
+    # The answer chunk carries the answer but no reasoning delta.
+    assert chunks[1].additional_kwargs["thinking_delta"] == ""
+    assert chunks[1].delta == "Hello there!"
+
+
+@pytest.mark.asyncio
+async def test_thinking_delta_with_mocked_async_streaming() -> None:
+    """Async streaming exposes reasoning text on additional_kwargs['thinking_delta'], separate from the answer delta."""
+
+    async def _async_chunks(chunks: List[MagicMock]) -> Any:
+        for chunk in chunks:
+            yield chunk
+
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_model.supported_generation_methods = ["generateContent"]
+        mock_client.models.get.return_value = mock_model
+
+        thought_chunk = _make_thought_stream_chunk(
+            [_make_thought_stream_part("Let me think.", True)]
+        )
+        answer_chunk = _make_thought_stream_chunk(
+            [_make_thought_stream_part("Hello there!", None)],
+            finish_reason=types.FinishReason.STOP,
+        )
+
+        mock_chat = MagicMock()
+        mock_client.aio.chats.create.return_value = mock_chat
+        mock_chat.send_message_stream = AsyncMock(
+            return_value=_async_chunks([thought_chunk, answer_chunk])
+        )
+
+        llm = GoogleGenAI(model="gemini-2.5-flash", file_mode="inline")
+
+        messages = [ChatMessage(content="Hi", role=MessageRole.USER)]
+        chunks = [chunk async for chunk in await llm.astream_chat(messages)]
+
+    assert len(chunks) == 2
+
+    thinking_text = "".join(
+        chunk.additional_kwargs.get("thinking_delta", "") for chunk in chunks
+    )
+    answer_text = "".join(chunk.delta or "" for chunk in chunks)
+
+    assert thinking_text == "Let me think."
+    assert answer_text == "Hello there!"
+    assert "Let me think." not in answer_text
+
+    assert chunks[0].additional_kwargs["thinking_delta"] == "Let me think."
+    assert chunks[0].delta == ""
+    assert chunks[1].additional_kwargs["thinking_delta"] == ""
+    assert chunks[1].delta == "Hello there!"
+
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_thoughts_with_chat() -> None:
     """Test that thought summaries work correctly with chat responses."""
