@@ -1,2 +1,0 @@
-airbyte-cdk
-airbyte-protocol-models

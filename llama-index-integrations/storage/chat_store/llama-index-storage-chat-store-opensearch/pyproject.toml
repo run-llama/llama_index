@@ -9,8 +9,8 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest>=7.2.1",
-    "pytest-asyncio<0.24.0",
+    "pytest",
+    "pytest-asyncio",
     "pytest-mock>=3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-opensearch"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index storage-chat-store opensearch integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"

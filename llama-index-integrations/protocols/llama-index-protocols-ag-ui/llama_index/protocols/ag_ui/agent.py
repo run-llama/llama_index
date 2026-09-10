@@ -1,3 +1,4 @@
+import copy
 import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -17,6 +18,8 @@ from llama_index.protocols.ag_ui.events import (
     ToolCallChunkWorkflowEvent,
 )
 from llama_index.protocols.ag_ui.utils import (
+    AG_UI_PARTS_KEY,
+    AG_UI_STATE_BLOCK_KEY,
     llama_index_message_to_ag_ui_message,
     ag_ui_message_to_llama_index_message,
     timestamp,
@@ -84,6 +87,45 @@ DEFAULT_STATE_PROMPT = """<state>
 """
 
 
+def _copy_initial_state(initial_state: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    return copy.deepcopy(initial_state) if initial_state is not None else {}
+
+
+def _apply_state_prompt(chat_history: List[ChatMessage], state: Any) -> None:
+    """
+    Inject the state prompt into the latest user message, in place.
+
+    A legacy string-content message is rewritten exactly as before: its text is
+    embedded in ``DEFAULT_STATE_PROMPT``. A message whose wire content was a
+    parts list (marked ``AG_UI_PARTS_KEY`` by the inbound conversion) or that
+    carries media blocks gets the state as its own leading text block instead,
+    recorded via ``AG_UI_STATE_BLOCK_KEY`` so the reverse conversion drops
+    exactly that block. Every original block is kept in its original position:
+    rebuilding is required because the ``ChatMessage.content`` setter raises on
+    a multi-block message, collapsing text blocks would erase the fragment
+    boundaries a parts-array client sent, and reordering would detach captions
+    from the media they describe.
+    """
+    for msg in chat_history[::-1]:
+        if msg.role.value != "user":
+            continue
+        is_parts = bool(msg.additional_kwargs.get(AG_UI_PARTS_KEY)) or not (
+            len(msg.blocks) == 1 and isinstance(msg.blocks[0], TextBlock)
+        )
+        if not is_parts:
+            state_text = DEFAULT_STATE_PROMPT.format(
+                state=str(state), user_input=msg.content or ""
+            )
+            msg.blocks = [TextBlock(text=state_text)]
+        else:
+            state_prefix = DEFAULT_STATE_PROMPT.format(
+                state=str(state), user_input=""
+            ).rstrip()
+            msg.blocks = [TextBlock(text=state_prefix), *msg.blocks]
+            msg.additional_kwargs[AG_UI_STATE_BLOCK_KEY] = True
+        break
+
+
 class InputEvent(StartEvent):
     input_data: RunAgentInput
 
@@ -136,7 +178,7 @@ class AGUIChatWorkflow(Workflow):
         self.backend_tools = {
             tool.metadata.name: tool for tool in validated_backend_tools
         }
-        self.initial_state = initial_state or {}
+        self.initial_state = _copy_initial_state(initial_state)
         self.system_prompt = system_prompt
 
     def _snapshot_messages(self, ctx: Context, chat_history: List[ChatMessage]) -> None:
@@ -184,19 +226,14 @@ class AGUIChatWorkflow(Workflow):
                 state.pop("messages", None)
             else:
                 # initial state is not provided, use the default state
-                state = self.initial_state.copy()
+                state = _copy_initial_state(self.initial_state)
 
             # Save state to context for tools to use
             await ctx.store.set("state", state)
             ctx.write_event_to_stream(StateSnapshotWorkflowEvent(snapshot=state))
 
             if state:
-                for msg in chat_history[::-1]:
-                    if msg.role.value == "user":
-                        msg.content = DEFAULT_STATE_PROMPT.format(
-                            state=str(state), user_input=msg.content
-                        )
-                        break
+                _apply_state_prompt(chat_history, state)
 
             if self.system_prompt:
                 if chat_history[0].role.value == "system":
@@ -389,6 +426,11 @@ class AGUIChatWorkflow(Workflow):
             if tool_result.tool_name not in all_frontend_names
         ]
 
+        # Only backend tool results are persisted server-side. Frontend tool
+        # results are supplied by the client on the callback run (AG-UI
+        # contract): emitting a server-side result for a frontend tool call
+        # marks it as already resolved, so the client never executes its
+        # handler.
         new_tool_messages = []
         for tool_result in backend_tool_calls:
             new_tool_messages.append(

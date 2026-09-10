@@ -36,7 +36,7 @@ class MemosReader(BaseReader):
         realUrl = self._memoUrl
 
         if not params:
-            realUrl = urljoin(self._memoUrl, "all", False)
+            realUrl = urljoin(f"{self._memoUrl}/", "all")
 
         try:
             req = requests.get(realUrl, params)
@@ -53,7 +53,7 @@ class MemosReader(BaseReader):
             extra_info = {
                 "creator": memo["creator"],
                 "resource_list": memo["resourceList"],
-                id: memo["id"],
+                "id": memo["id"],
             }
             documents.append(Document(text=content, extra_info=extra_info))
 

@@ -2,16 +2,30 @@ import gc
 import asyncio
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import (
+    ChatResponse,
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
+    TextBlock,
 )
-from typing import Any
+from typing import Any, AsyncIterator, Iterator
 from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.core.llms.mock import MockLLM
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.chat_engine.simple import SimpleChatEngine
+from llama_index.core.chat_engine.types import StreamingAgentChatResponse
+
+
+class MockMemory:
+    def __init__(self) -> None:
+        self.messages: list[ChatMessage] = []
+
+    def put(self, message: ChatMessage) -> None:
+        self.messages.append(message)
+
+    async def aput(self, message: ChatMessage) -> None:
+        self.messages.append(message)
 
 
 def test_simple_chat_engine() -> None:
@@ -82,6 +96,45 @@ async def test_simple_chat_engine_astream_response_text_without_draining():
     assert response.response != ""
     assert str(response) == response.response
     assert "Hello World!" in str(response)
+
+
+def test_streaming_response_write_history_handles_multiblock_message():
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text="old text"), TextBlock(text="kept block")],
+    )
+
+    def chat_stream() -> Iterator[ChatResponse]:
+        yield ChatResponse(message=message, delta="new ")
+        yield ChatResponse(message=message, delta="text")
+
+    memory = MockMemory()
+    response = StreamingAgentChatResponse(chat_stream=chat_stream())
+
+    response.write_response_to_history(memory)  # type: ignore[arg-type]
+
+    assert memory.messages == [message]
+    assert message.blocks == [TextBlock(text="new text")]
+
+
+@pytest.mark.asyncio
+async def test_streaming_response_awrite_history_handles_multiblock_message():
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text="old text"), TextBlock(text="kept block")],
+    )
+
+    async def chat_stream() -> AsyncIterator[ChatResponse]:
+        yield ChatResponse(message=message, delta="new ")
+        yield ChatResponse(message=message, delta="text")
+
+    memory = MockMemory()
+    response = StreamingAgentChatResponse(achat_stream=chat_stream())
+
+    await response.awrite_response_to_history(memory)  # type: ignore[arg-type]
+
+    assert memory.messages == [message]
+    assert message.blocks == [TextBlock(text="new text")]
 
 
 def test_simple_chat_engine_astream_exception_handling():

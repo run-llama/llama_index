@@ -406,3 +406,45 @@ def complex_function():
     assert len(nodes) >= 1
     assert isinstance(nodes[0], TextNode)
     assert "def complex_function():" in nodes[0].text
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_oversized_leaf_not_dropped_char_mode() -> None:
+    """A leaf node larger than max_chars must be split, not silently dropped."""
+    if "CI" in os.environ:
+        return
+
+    # A single string literal whose content is one large AST leaf node that
+    # exceeds max_chars. Previously the leaf was dropped, losing the content.
+    long_str = "A" * 800
+    text = f'x = "{long_str}"\ny = 1\n'
+
+    code_splitter = CodeSplitter(language="python", max_chars=100)
+    chunks = code_splitter.split_text(text)
+
+    # All 800 characters of the string body are preserved across the chunks.
+    assert sum(chunk.count("A") for chunk in chunks) == 800
+    # Each chunk respects the character limit.
+    assert all(len(chunk) <= 100 for chunk in chunks)
+    # Surrounding code is still present.
+    assert any("y = 1" in chunk for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_oversized_leaf_not_dropped_token_mode() -> None:
+    """A leaf node larger than max_tokens must be split, not silently dropped."""
+    if "CI" in os.environ:
+        return
+
+    from llama_index.core.utils import get_tokenizer
+
+    tokenizer = get_tokenizer()
+    long_str = "A" * 800
+    text = f'x = "{long_str}"\ny = 1\n'
+
+    code_splitter = CodeSplitter(language="python", count_mode="token", max_tokens=20)
+    chunks = code_splitter.split_text(text)
+
+    assert sum(chunk.count("A") for chunk in chunks) == 800
+    assert all(len(tokenizer(chunk)) <= 20 for chunk in chunks)
+    assert any("y = 1" in chunk for chunk in chunks)
