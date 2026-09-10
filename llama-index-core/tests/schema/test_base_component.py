@@ -1,8 +1,15 @@
-from typing import Callable
+import pickle
+from typing import Any, Callable
 
 import pytest
 from llama_index.core.schema import BaseComponent
 from pydantic.fields import PrivateAttr
+
+
+class PickleableComponent(BaseComponent):
+    """Defined at module level so that instances can actually be pickled."""
+
+    fn: Any = None
 
 
 @pytest.fixture()
@@ -50,6 +57,40 @@ def test__getstate__():
         "__pydantic_fields_set__": set(),
         "__pydantic_private__": {"_text": "test private attr"},
     }
+
+
+def test__getstate__does_not_mutate_the_original():
+    """Pickling must not strip unpickleable attributes off the live object."""
+
+    class MyComponent(BaseComponent):
+        fn: Any = None
+        _private_fn: Any = PrivateAttr(default=None)
+
+    mc = MyComponent(fn=lambda x: x)
+    mc._private_fn = lambda x: x
+
+    state = mc.__getstate__()
+
+    # the emitted state still drops what cannot be pickled ...
+    assert "fn" not in state["__dict__"]
+    assert "_private_fn" not in state["__pydantic_private__"]
+
+    # ... but the object that was pickled is left intact
+    assert mc.fn is not None
+    assert mc._private_fn is not None
+
+
+def test_pickle_round_trip_leaves_original_usable():
+    """A real `pickle.dumps` must not break the object it serialized."""
+    component = PickleableComponent(fn=lambda x: x)
+
+    restored = pickle.loads(pickle.dumps(component))
+
+    # the unpickleable attribute is absent from the copy ...
+    assert restored.fn is None
+    # ... and still present on the original
+    assert component.fn is not None
+    assert component.fn(1) == 1
 
 
 def test__setstate__():
