@@ -92,15 +92,26 @@ def run_async_tasks(
             # tqdm/nest_asyncio are optional; fall back to a plain gather below.
             pass
         else:
-            # Jupyter notebooks already have an event loop running, so reuse it
-            # instead of creating a new one.
-            nest_asyncio.apply()
-            loop = asyncio.get_event_loop()
+            try:
+                # Jupyter notebooks already have an event loop running, so reuse
+                # it instead of creating a new one.
+                nest_asyncio.apply()
+                loop = asyncio.get_event_loop()
+            except Exception:
+                # The loop cannot be driven in this environment (for example
+                # nest_asyncio cannot patch a running loop). Fall back to a
+                # plain gather below rather than failing the call outright.
+                pass
+            else:
+                async def _tqdm_gather() -> List[Any]:
+                    return await tqdm.gather(
+                        *tasks_to_execute, desc=progress_bar_desc
+                    )
 
-            async def _tqdm_gather() -> List[Any]:
-                return await tqdm.gather(*tasks_to_execute, desc=progress_bar_desc)
-
-            return loop.run_until_complete(_tqdm_gather())
+                # Deliberately outside the try/except above: an error raised by a
+                # task must propagate here instead of being mistaken for a setup
+                # failure and swallowed.
+                return loop.run_until_complete(_tqdm_gather())
 
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)

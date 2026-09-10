@@ -53,3 +53,28 @@ def test_run_async_tasks_propagates_progress_task_errors() -> None:
 
     with pytest.raises(ValueError, match="task failed"):
         run_async_tasks([_raise_task_error()], show_progress=True)
+
+
+def test_run_async_tasks_falls_back_when_progress_loop_setup_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    A failure to set up the tqdm/nest_asyncio loop must not fail the call.
+
+    Only the optional imports are allowed to trigger the fallback, but the loop
+    setup itself can also fail (for example when nest_asyncio cannot patch an
+    already-running loop). That case must degrade to a plain gather instead of
+    propagating, while a task error still surfaces - see the test above.
+    """
+    nest_asyncio = pytest.importorskip("nest_asyncio")
+    pytest.importorskip("tqdm.asyncio")
+
+    def _boom() -> None:
+        raise RuntimeError("cannot patch a running loop")
+
+    monkeypatch.setattr(nest_asyncio, "apply", _boom)
+
+    async def _ok() -> str:
+        return "ok"
+
+    assert run_async_tasks([_ok()], show_progress=True) == ["ok"]
