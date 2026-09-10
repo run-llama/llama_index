@@ -23,11 +23,9 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         for n in nodes:
-            n.node.set_content(
-                n.node.metadata.get(
-                    self.target_metadata_key,
-                    n.node.get_content(metadata_mode=MetadataMode.NONE),
-                )
-            )
+            replacement = n.node.metadata.get(self.target_metadata_key)
+            if replacement is None:
+                replacement = n.node.get_content(metadata_mode=MetadataMode.NONE)
+            n.node.set_content(replacement)
 
         return nodes

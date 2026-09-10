@@ -16,8 +16,8 @@ package = ["build[uv]~=1.0", "twine~=6.0", "uv-secure[faster-async]~=0.12.0"]
 test = [
     "numpy~=2.0",
     "pycobertura~=4.0",
-    "pytest~=8.0",
-    "pytest-asyncio~=1.0",
+    "pytest",
+    "pytest-asyncio",
     "pytest-cov~=6.0",
     "scipy~=1.0",
     "tox~=4.0",
@@ -29,7 +29,7 @@ type = ["mypy~=1.0"]
 
 [project]
 name = "llama-index-vector-stores-azurepostgres"
-version = "0.2.0"
+version = "0.3.0"
 description = "AI framework integrations for Azure Database for PostgreSQL"
 readme = "README.md"
 license = {text = "MIT"}

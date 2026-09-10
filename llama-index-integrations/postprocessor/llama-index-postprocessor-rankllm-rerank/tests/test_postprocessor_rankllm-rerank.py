@@ -63,10 +63,17 @@ def _mock_rankllm_modules(monkeypatch):
     return PromptMode, reranker_module
 
 
-def test_class():
-    from llama_index.postprocessor.rankllm_rerank import RankLLMRerank
+def test_class(monkeypatch):
+    # rank_llm is mocked here: importing the real rank_llm.rerank package pulls
+    # in transformers/vllm model code (e.g. rank_llm's lit5 T5 modeling), which
+    # breaks at import time with transformers >= 4.56 until rank-llm catches up
+    # upstream. The unit test only verifies our class hierarchy.
+    _mock_rankllm_modules(monkeypatch)
+    _clear_rankllm_rerank_modules(monkeypatch)
 
-    names_of_base_classes = [b.__name__ for b in RankLLMRerank.__mro__]
+    rankllm_rerank = importlib.import_module("llama_index.postprocessor.rankllm_rerank")
+
+    names_of_base_classes = [b.__name__ for b in rankllm_rerank.RankLLMRerank.__mro__]
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
 
 
