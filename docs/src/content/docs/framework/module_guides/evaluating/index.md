@@ -57,6 +57,7 @@ We also integrate with community evaluation tools.
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 - [RAGChecker](https://github.com/amazon-science/RAGChecker)
 - [Cleanlab](/python/examples/evaluation/cleanlab)
+- [digline](/python/framework/community/integrations/digline)
 
 ## Usage Pattern
 
