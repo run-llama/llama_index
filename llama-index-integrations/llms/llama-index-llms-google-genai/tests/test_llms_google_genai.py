@@ -2049,6 +2049,116 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
 
 
 @pytest.mark.asyncio
+async def test_chat_message_to_gemini_thought_signatures() -> None:
+    """Test that chat_message_to_gemini does not aggressively overwrite thought_signatures."""
+    from llama_index.llms.google_genai.utils import chat_message_to_gemini
+
+    # existing thought_signature block
+    msg = ChatMessage(
+        role=MessageRole.MODEL,
+        blocks=[
+            ThinkingBlock(
+                content="thinking process",
+                additional_information={"thought_signature": "signature_123"},
+            ),
+            TextBlock(text="final answer"),
+        ],
+        # no thought_signatures stored separately here - these would normally
+        # overwrite existing blocks.
+        additional_kwargs={},
+    )
+
+    content, _ = await chat_message_to_gemini(msg, client=None, file_mode="hybrid")
+
+    assert len(content.parts) == 2
+    assert content.parts[0].thought is True
+    assert content.parts[0].thought_signature == "signature_123"
+    assert content.parts[1].text == "final answer"
+
+
+@pytest.mark.asyncio
+async def test_chat_message_to_gemini_tool_result_image_becomes_function_response_parts() -> (
+    None
+):
+    """Test that an image returned by a tool reaches Gemini as functionResponse.parts."""
+    from llama_index.llms.google_genai.utils import chat_message_to_gemini
+
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        blocks=[
+            TextBlock(text="Retrieved embedded image."),
+            ImageBlock(image=b"png bytes", image_mimetype="image/png"),
+        ],
+        additional_kwargs={"tool_call_id": "read_image"},
+    )
+
+    content, _ = await chat_message_to_gemini(msg, client=None, file_mode="inline")
+
+    response = content.parts[0].function_response
+    assert response.name == "read_image"
+    assert response.response == {"result": "Retrieved embedded image."}
+    assert [
+        (part.inline_data.mime_type, part.inline_data.data) for part in response.parts
+    ] == [("image/png", b"png bytes")]
+
+
+@pytest.mark.asyncio
+async def test_chat_message_to_gemini_text_only_tool_result_has_no_parts() -> None:
+    """Test that a tool result with no image is still sent as text-only."""
+    from llama_index.llms.google_genai.utils import chat_message_to_gemini
+
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        blocks=[TextBlock(text="xml result")],
+        additional_kwargs={"tool_call_id": "read_xml"},
+    )
+
+    content, _ = await chat_message_to_gemini(msg, client=None, file_mode="inline")
+
+    response = content.parts[0].function_response
+    assert response.response == {"result": "xml result"}
+    assert not response.parts
+
+
+@pytest.mark.asyncio
+async def test_prepare_chat_params_keeps_each_tool_image_on_its_own_response() -> None:
+    """Test that merged parallel tool results each keep the image they returned."""
+    next_msg, _, _ = await prepare_chat_params(
+        "models/gemini-3-flash-preview",
+        [
+            ChatMessage(content="look at these", role=MessageRole.USER),
+            ChatMessage(
+                role=MessageRole.ASSISTANT,
+                additional_kwargs={
+                    "tool_calls": [
+                        {"name": "tool_a", "args": {}},
+                        {"name": "tool_b", "args": {}},
+                    ]
+                },
+            ),
+            ChatMessage(
+                role=MessageRole.TOOL,
+                blocks=[
+                    TextBlock(text="first"),
+                    ImageBlock(image=b"first", image_mimetype="image/png"),
+                ],
+                additional_kwargs={"tool_call_id": "tool_a"},
+            ),
+            ChatMessage(
+                role=MessageRole.TOOL,
+                content="xml result",
+                additional_kwargs={"tool_call_id": "tool_b"},
+            ),
+        ],
+    )
+
+    responses = [part.function_response for part in next_msg.parts]
+    assert [response.name for response in responses] == ["tool_a", "tool_b"]
+    assert [part.inline_data.data for part in (responses[0].parts or [])] == [b"first"]
+    assert not responses[1].parts
+
+
+@pytest.mark.asyncio
 async def test_create_file_part_passes_display_name_to_file_api():
     mock_file = MagicMock()
     mock_file.state.name = "ACTIVE"

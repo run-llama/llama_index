@@ -68,7 +68,7 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "gemini-3-flash-preview"
+DEFAULT_MODEL = "gemini-3.7-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
