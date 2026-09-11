@@ -18,6 +18,9 @@ def get_top_k_embeddings(
     similarity_cutoff: Optional[float] = None,
 ) -> Tuple[List[float], List]:
     """Get top nodes by similarity to the query."""
+    if similarity_top_k == 0:
+        return [], []
+
     if embedding_ids is None:
         embedding_ids = list(range(len(embeddings)))
 
@@ -31,7 +34,7 @@ def get_top_k_embeddings(
         similarity = similarity_fn(query_embedding_np, emb)  # type: ignore[arg-type]
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
-            if similarity_top_k and len(similarity_heap) > similarity_top_k:
+            if similarity_top_k is not None and len(similarity_heap) > similarity_top_k:
                 heapq.heappop(similarity_heap)
     result_tups = sorted(similarity_heap, key=lambda x: x[0], reverse=True)
 
@@ -57,6 +60,9 @@ def get_top_k_embeddings_learner(
     Can fit SVM, linear regression, and more.
 
     """
+    if similarity_top_k == 0:
+        return [], []
+
     try:
         from sklearn import linear_model, svm
     except ImportError:
@@ -115,6 +121,9 @@ def get_top_k_mmr_embeddings(
     A mmr_threshold of 1 will check similarity the query and ignore previous results.
 
     """
+    if similarity_top_k == 0:
+        return [], []
+
     threshold = mmr_threshold if mmr_threshold is not None else 0.5
     similarity_fn = similarity_fn or default_similarity_fn
 
@@ -136,7 +145,9 @@ def get_top_k_mmr_embeddings(
     results: List[Tuple[Any, Any]] = []
 
     embedding_length = len(embeddings or [])
-    similarity_top_k_count = similarity_top_k or embedding_length
+    similarity_top_k_count = (
+        similarity_top_k if similarity_top_k is not None else embedding_length
+    )
     while len(results) < min(similarity_top_k_count, embedding_length):
         # Calculate the similarity score the for the leading one.
         results.append((score, high_score_id))
