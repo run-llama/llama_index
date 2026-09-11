@@ -112,6 +112,20 @@ if __name__ == "__main__":
 
 We also have a [demo repository](https://github.com/run-llama/agents-observability-demo) where we show how to trace agentic workflows and pipe the registered traces into a Postgres database.
 
+### New Relic
+
+[New Relic](https://newrelic.com) provides full-stack observability for applications and infrastructure. As an OpenTelemetry-native platform, New Relic ingests OTLP traces natively, making it compatible with LlamaIndex applications instrumented via OpenTelemetry.
+
+#### Usage Pattern
+
+LlamaIndex applications instrumented with [OpenTelemetry](https://opentelemetry.io) or OpenTelemetry-based tools (such as [OpenLLMetry](https://github.com/traceloop/openllmetry) or [openinference](https://github.com/Arize-ai/open-inference-spec)) can export their traces to New Relic by configuring the OTLP exporter to send to New Relic's OTLP endpoint.
+
+For details on setting up New Relic as your OTLP backend, see [New Relic's OpenTelemetry best practices guide](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/).
+
+#### Guides
+
+- [New Relic OpenTelemetry Integration](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/)
+
 ### LlamaTrace (Hosted Arize Phoenix)
 
 We've partnered with [Arize AI](https://arize.com/?utm_source=llamaindex-docs&utm_medium=partner&utm_campaign=partner-docs&utm_content=observability-arize-phoenix) on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaCloud.
