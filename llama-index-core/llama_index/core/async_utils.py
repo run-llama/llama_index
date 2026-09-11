@@ -42,39 +42,27 @@ def asyncio_run(coro: Coroutine) -> Any:
     If an event loop is already running, uses threading to run in a separate thread.
     """
     try:
-        # Check if there's an existing event loop
         loop = asyncio.get_event_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
 
-        # Check if the loop is already running
-        if loop.is_running():
-            # If loop is already running, run in a separate thread
-            # Snapshot the current context so we can propagate contextvars
-            ctx = contextvars.copy_context()
+    if loop.is_running():
+        # Snapshot the current context so we can propagate contextvars
+        ctx = contextvars.copy_context()
 
-            def run_coro_in_thread() -> Any:
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    return ctx.run(new_loop.run_until_complete, coro)
-                finally:
-                    new_loop.close()
+        def run_coro_in_thread() -> Any:
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            try:
+                return ctx.run(new_loop.run_until_complete, coro)
+            finally:
+                new_loop.close()
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(run_coro_in_thread)
-                return future.result()
-        else:
-            # If we're here, there's an existing loop but it's not running
-            return loop.run_until_complete(coro)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(run_coro_in_thread)
+            return future.result()
 
-    except RuntimeError as e:
-        # If we can't get the event loop, we're likely in a different thread
-        try:
-            return asyncio.run(coro)
-        except RuntimeError as e:
-            raise RuntimeError(
-                "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
-                "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
-            )
+    return loop.run_until_complete(coro)
 
 
 def run_async_tasks(
