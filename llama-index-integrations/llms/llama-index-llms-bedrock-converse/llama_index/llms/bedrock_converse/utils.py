@@ -1,6 +1,8 @@
 import base64
 import json
 import logging
+import re
+from collections.abc import Mapping
 from typing import (
     Any,
     Callable,
@@ -45,6 +47,25 @@ except ImportError:
     HAS_AIOBOTO3 = False
 
 logger = logging.getLogger(__name__)
+
+_BEDROCK_TOOL_USE_ID_PATTERN = re.compile(r"[a-zA-Z0-9_.:-]{1,64}")
+
+
+def _validate_tool_use_id(tool_use_id: Any, source: str) -> bool:
+    """Return whether a toolUseId satisfies the Bedrock API contract."""
+    if isinstance(tool_use_id, str) and _BEDROCK_TOOL_USE_ID_PATTERN.fullmatch(
+        tool_use_id
+    ):
+        return True
+
+    logger.warning(
+        "Skipping %s with invalid Bedrock toolUseId %r; expected a 1-64 "
+        "character string matching [a-zA-Z0-9_.:-]+.",
+        source,
+        tool_use_id,
+    )
+    return False
+
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -425,6 +446,10 @@ def _content_block_to_bedrock_format(
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
     elif isinstance(block, ToolCallBlock):
+        tool_use_id = block.tool_call_id
+        if not _validate_tool_use_id(tool_use_id, "tool call block"):
+            return None
+
         if isinstance(block.tool_kwargs, str):
             try:
                 tool_input = json.loads(block.tool_kwargs or "{}")
@@ -436,7 +461,7 @@ def _content_block_to_bedrock_format(
         return {
             "toolUse": {
                 "input": tool_input,
-                "toolUseId": block.tool_call_id or "",
+                "toolUseId": tool_use_id,
                 "name": block.tool_name,
             }
         }
@@ -518,6 +543,10 @@ def messages_to_converse_messages(
                         )
 
         elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
+            tool_use_id = message.additional_kwargs.get("tool_call_id")
+            if not _validate_tool_use_id(tool_use_id, "tool result"):
+                continue
+
             # Serialize tool result blocks using the same converter as user
             # messages.  Falls back to legacy message.content for plain-text
             # tool results.
@@ -532,7 +561,7 @@ def messages_to_converse_messages(
                 tool_content = [{"text": message.content}]
             content = {
                 "toolResult": {
-                    "toolUseId": message.additional_kwargs["tool_call_id"],
+                    "toolUseId": tool_use_id,
                     "content": tool_content,
                 }
             }
@@ -577,28 +606,31 @@ def messages_to_converse_messages(
         tool_calls = message.additional_kwargs.get("tool_calls", [])
         content = []
         for tool_call in tool_calls:
-            try:
-                assert "toolUseId" in tool_call
-                assert "input" in tool_call
-                assert "name" in tool_call
-                if (tool_call["toolUseId"], tool_call["name"]) not in unique_tool_calls:
-                    tool_input = tool_call["input"] if tool_call["input"] else {}
-                    if isinstance(tool_input, str):
-                        try:
-                            tool_input = json.loads(tool_input or "{}")
-                        except json.JSONDecodeError:
-                            tool_input = {}
-                    content.append(
-                        {
-                            "toolUse": {
-                                "input": tool_input,
-                                "toolUseId": tool_call["toolUseId"],
-                                "name": tool_call["name"],
-                            }
-                        }
-                    )
-            except AssertionError:
+            if not isinstance(tool_call, Mapping) or not all(
+                key in tool_call for key in ("toolUseId", "input", "name")
+            ):
                 continue
+
+            tool_use_id = tool_call["toolUseId"]
+            if not _validate_tool_use_id(tool_use_id, "legacy tool call"):
+                continue
+
+            if (tool_use_id, tool_call["name"]) not in unique_tool_calls:
+                tool_input = tool_call["input"] if tool_call["input"] else {}
+                if isinstance(tool_input, str):
+                    try:
+                        tool_input = json.loads(tool_input or "{}")
+                    except json.JSONDecodeError:
+                        tool_input = {}
+                content.append(
+                    {
+                        "toolUse": {
+                            "input": tool_input,
+                            "toolUseId": tool_use_id,
+                            "name": tool_call["name"],
+                        }
+                    }
+                )
         if len(content) > 0:
             converse_messages.append(
                 {
