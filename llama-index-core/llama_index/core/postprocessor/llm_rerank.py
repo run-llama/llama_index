@@ -101,9 +101,16 @@ class LLMRerank(BaseNodePostprocessor):
         raw_choices, relevances = self._parse_choice_select_answer_fn(
             raw_response, len(nodes_batch)
         )
-        choice_idxs = [int(choice) - 1 for choice in raw_choices]
-        choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
-        relevances = relevances or [1.0 for _ in choice_nodes]
+        valid_choices = []
+        for choice, relevance in zip(
+            raw_choices, relevances or [1.0 for _ in raw_choices]
+        ):
+            choice_idx = int(choice) - 1
+            if 0 <= choice_idx < len(nodes_batch):
+                valid_choices.append((choice_idx, relevance))
+
+        choice_nodes = [nodes_batch[idx] for idx, _ in valid_choices]
+        relevances = [relevance for _, relevance in valid_choices]
         return [
             NodeWithScore(node=node, score=relevance)
             for node, relevance in zip(choice_nodes, relevances)
