@@ -12,7 +12,7 @@
 >
 > The company itself has undergone an evolution since when this OSS framework first launched 3 years ago in 2023. Since the early days, the framework has consisted of a broad set of orchestration tools enabling developers to build various RAG and agent applications.
 >
-> While we still have the OSS framework available as an open toolkit that you're welcome to use, our primary focus has shifted towards LlamaParse, along with liteparse and our benchmarking efforts. We have a strong belief that agents are the new consumers of documents, and they fundamentally need the right tools to unlock context from the world's hardest documents accurately/cheaply at scale. Whether you're an AI startup processing documents or an enterprise looking to automate document workflows, [come talk to us](https://www.llamaindex.ai/contact). 
+> While we still have the OSS framework available as an open toolkit that you're welcome to use, our primary focus has shifted towards LlamaParse, along with liteparse and our benchmarking efforts. We have a strong belief that agents are the new consumers of documents, and they fundamentally need the right tools to unlock context from the world's hardest documents accurately/cheaply at scale. Whether you're an AI startup processing documents or an enterprise looking to automate document workflows, [come talk to us](https://www.llamaindex.ai/contact).
 
 LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)) is an open-source framework to build agentic applications. You can use LlamaParse with this framework or on its own; see [LlamaParse](#llamacloud-document-agent-platform) below for signup and product links.
 
