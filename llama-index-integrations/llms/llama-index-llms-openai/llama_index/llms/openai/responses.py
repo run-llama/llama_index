@@ -784,16 +784,18 @@ class OpenAIResponses(FunctionCallingLLM):
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        kwargs_dict = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(
             messages,
             model=self.model,
             is_responses_api=True,
+            store=kwargs_dict.get("store"),
         )
 
         response: Response = await self._aclient.responses.create(
             input=message_dicts,
             stream=False,
-            **self._get_model_kwargs(**kwargs),
+            **kwargs_dict,
         )
 
         if self.track_previous_responses:
@@ -802,6 +804,12 @@ class OpenAIResponses(FunctionCallingLLM):
         chat_response = OpenAIResponses._parse_response_output(response.output)
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
+        if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
+            for block in chat_response.message.blocks:
+                if isinstance(block, ThinkingBlock):
+                    block.num_tokens = (
+                        response.usage.output_tokens_details.reasoning_tokens
+                    )
 
         return chat_response
 
