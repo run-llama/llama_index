@@ -53,6 +53,32 @@ class MockAsyncResponse:
         return self._json_data
 
 
+class MockStreamContent:
+    """Mimics aiohttp's StreamReader, yielding one complete line at a time."""
+
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self._chunks:
+            yield chunk
+
+
+class MockAsyncStreamResponse:
+    def __init__(self, chunks):
+        self.status = 200
+        self.content = MockStreamContent(chunks)
+
+    def raise_for_status(self):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 def test_llm_class():
     names_of_base_classes = [b.__name__ for b in SiliconFlow.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
@@ -206,29 +232,6 @@ async def test_astream_chat():
         b"data: [DONE]\n",
     ]
 
-    # Create a mock async response with iter_any method
-    class MockStreamContent:
-        def __init__(self, chunks):
-            self._chunks = chunks
-
-        async def iter_any(self):
-            for chunk in self._chunks:
-                yield chunk
-
-    class MockAsyncStreamResponse:
-        def __init__(self, chunks):
-            self.status = 200
-            self.content = MockStreamContent(chunks)
-
-        def raise_for_status(self):
-            pass
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
-
     mock_response = MockAsyncStreamResponse(stream_chunks)
 
     llm = SiliconFlow(api_key="test_api_key")
@@ -278,3 +281,36 @@ async def test_astream_chat():
             headers=llm._headers,
             timeout=llm.timeout,
         )
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_content_containing_data_prefix():
+    """
+    Regression test: model output containing the literal substring
+    "data: " must not be mangled by the SSE parser (see GH issue #22223).
+    """
+    messages = [ChatMessage(role=MessageRole.USER, content="Hello")]
+
+    stream_chunks = [
+        b'data: {"id": "1", "choices": [{"delta": {"role": "assistant", '
+        b'"content": "the log shows data: 42 here"}}]}\n',
+        b"\n",  # blank keep-alive line between SSE events must be skipped
+        b'data: {"id": "2", "choices": [{"delta": {"content": " and more"}}]}\n',
+        b"data: [DONE]\n",
+    ]
+
+    mock_response = MockAsyncStreamResponse(stream_chunks)
+    llm = SiliconFlow(api_key="test_api_key")
+
+    with mock.patch("aiohttp.ClientSession.post", return_value=mock_response):
+        stream = await llm.astream_chat(messages)
+
+        responses = []
+        async for response in stream:
+            responses.append(response)
+
+        assert len(responses) == 2
+        assert responses[0].delta == "the log shows data: 42 here"
+        assert responses[0].message.content == "the log shows data: 42 here"
+        assert responses[1].delta == " and more"
+        assert responses[1].message.content == "the log shows data: 42 here and more"
