@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, Tuple, Callable, Mapping, cast
+from typing import Any, Dict, Optional, Tuple, Callable, Mapping
 
 from llama_index.core.schema import (
     BaseNode,
@@ -107,7 +107,7 @@ def build_metadata_filter_fn(
     if not filter_list or not metadata_filters:
         return lambda _: True
 
-    filter_condition = cast(MetadataFilters, metadata_filters.condition)
+    filter_condition = metadata_filters.condition or FilterCondition.AND
 
     def filter_fn(node_id: str) -> bool:
         def _process_filter_match(

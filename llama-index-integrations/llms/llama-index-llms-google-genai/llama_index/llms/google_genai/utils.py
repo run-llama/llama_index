@@ -428,11 +428,8 @@ async def chat_message_to_gemini(
                 thought_signatures = message.additional_kwargs.get(
                     "thought_signatures", []
                 )
-                part.thought_signature = (
-                    thought_signatures[index]
-                    if index < len(thought_signatures)
-                    else None
-                )
+                if index < len(thought_signatures):
+                    part.thought_signature = thought_signatures[index]
             parts.append(part)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
@@ -464,9 +461,21 @@ async def chat_message_to_gemini(
     if message.additional_kwargs.get("tool_call_id"):
         tool_call_id = message.additional_kwargs.get("tool_call_id")
         tool_name = (tool_id_to_name or {}).get(tool_call_id, tool_call_id)
+        # A tool may return an image, and FunctionResponse.parts takes
+        # FunctionResponsePart inline media. The loop above already built those
+        # images as ordinary Parts, which this branch then threw away.
+        image_parts = [
+            types.FunctionResponsePart.from_bytes(
+                data=block.resolve_image(as_base64=False).read(),
+                mime_type=block.image_mimetype or "image/jpeg",
+            )
+            for block in message.blocks
+            if isinstance(block, ImageBlock)
+        ]
         function_response_part = types.Part.from_function_response(
             name=tool_name,
             response={"result": message.content},
+            parts=image_parts or None,
         )
         if tool_call_id and tool_call_id != tool_name:
             function_response_part.function_response.id = tool_call_id

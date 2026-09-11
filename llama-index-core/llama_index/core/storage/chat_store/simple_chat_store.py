@@ -91,7 +91,9 @@ class SimpleChatStore(BaseChatStore):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w", encoding="utf-8") as f:
-            f.write(self.json())
+            # model_dump_json writes non-ascii characters as-is, while BaseComponent.json()
+            # escapes them to \uXXXX sequences (json.dumps default).
+            f.write(self.model_dump_json())
 
     @classmethod
     def from_persist_path(

@@ -35,6 +35,16 @@ def masked_env_var() -> Generator[str, None, None]:
 
 
 def pytest_collection_modifyitems(config, items):
+    for item in items:
+        # pytest-httpx >= 0.35 asserts that every registered mock is requested;
+        # these tests register broad mocks that individual cases don't all hit.
+        item.add_marker(
+            pytest.mark.httpx_mock(
+                assert_all_responses_were_requested=False,
+                assert_all_requests_were_expected=False,
+                can_send_already_matched_responses=True,
+            )
+        )
     if "NVIDIA_API_KEY" not in os.environ:
         skip_marker = pytest.mark.skip(
             reason="requires NVIDIA_API_KEY environment variable or --nim-endpoint option"
