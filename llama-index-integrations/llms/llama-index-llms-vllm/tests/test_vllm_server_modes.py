@@ -45,18 +45,24 @@ def test_openai_like_complete(monkeypatch):
     monkeypatch.setattr("requests.post", fake_post)
 
     llm = VllmServer(
-        api_url="http://mock/chat", openai_like=True, api_headers={"X-Test": "1"}
+        api_url="http://mock/chat",
+        openai_like=True,
+        api_headers={"X-Test": "1"},
+        max_new_tokens=999,
     )
-    result = llm.complete("hi")
+    result = llm.complete("hi", max_tokens=123)
 
     assert result.text == "hello"
     assert recorded["url"] == "http://mock/chat"
     assert recorded["stream"] is False
     assert recorded["json"]["messages"][0]["content"] == "hi"
+    assert recorded["json"]["max_tokens"] == 123
+    assert recorded["json"]["max_tokens"] != 999
     assert recorded["headers"]["X-Test"] == "1"
 
 
 def test_openai_like_stream(monkeypatch):
+    recorded = {}
     chunks = [
         b'data: {"choices":[{"delta":{"content":"he"}}]}\n',
         b'data: {"choices":[{"delta":{"content":"llo"}}]}\n',
@@ -64,15 +70,34 @@ def test_openai_like_stream(monkeypatch):
     ]
 
     def fake_post(url, headers=None, json=None, stream=False, timeout=None):
+        recorded["json"] = json
         return FakeResponse(iter_lines_data=chunks, json_data={"choices": []})
 
     monkeypatch.setattr("requests.post", fake_post)
 
-    llm = VllmServer(api_url="http://mock/chat", openai_like=True)
-    outputs = list(llm.stream_complete("hi"))
+    llm = VllmServer(api_url="http://mock/chat", openai_like=True, max_new_tokens=999)
+    outputs = list(llm.stream_complete("hi", max_tokens=123))
 
     assert [o.delta for o in outputs] == ["he", "llo"]
     assert outputs[-1].text == "hello"
+    assert recorded["json"]["max_tokens"] == 123
+    assert recorded["json"]["max_tokens"] != 999
+
+
+def test_openai_like_max_new_tokens_compatibility(monkeypatch):
+    recorded = {}
+
+    def fake_post(url, headers=None, json=None, stream=False, timeout=None):
+        recorded["json"] = json
+        return FakeResponse({"choices": [{"message": {"content": "hello"}}]})
+
+    monkeypatch.setattr("requests.post", fake_post)
+
+    llm = VllmServer(api_url="http://mock/chat", openai_like=True, max_new_tokens=999)
+    result = llm.complete("hi", max_new_tokens=321)
+
+    assert result.text == "hello"
+    assert recorded["json"]["max_tokens"] == 321
 
 
 def test_native_http_error(monkeypatch):
