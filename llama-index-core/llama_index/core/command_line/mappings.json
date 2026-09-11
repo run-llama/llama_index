@@ -844,6 +844,7 @@
   "ReadmeReader": "llama_index.readers.readme",
   "ZendeskReader": "llama_index.readers.zendesk",
   "BitbucketReader": "llama_index.readers.bitbucket",
+  "AntibrowWebReader": "llama_index.readers.web",
   "AsyncWebPageReader": "llama_index.readers.web",
   "BeautifulSoupWebReader": "llama_index.readers.web",
   "BrowserbaseWebReader": "llama_index.readers.web",
