@@ -708,3 +708,66 @@ def resolve_binary(
         return BytesIO(response.content)
 
     raise ValueError("No valid source provided to resolve binary data!")
+
+
+async def aresolve_binary(
+    raw_bytes: Optional[bytes] = None,
+    path: Optional[Union[str, Path]] = None,
+    url: Optional[str] = None,
+    as_base64: bool = False,
+) -> BytesIO:
+    """
+    Async version of resolve_binary.
+
+    Resolve binary data from various sources into a BytesIO object.
+    Uses httpx for async HTTP requests when fetching from URLs,
+    avoiding blocking the event loop in async contexts.
+
+    Args:
+        raw_bytes: Raw bytes data
+        path: File path to read bytes from
+        url: URL to fetch bytes from
+        as_base64: Whether to base64 encode the output bytes
+
+    Returns:
+        BytesIO object containing the binary data
+
+    Raises:
+        ValueError: If no valid source is provided
+
+    """
+    # For non-URL sources, delegate to the sync version since they are
+    # local operations (memory/filesystem) that don't block on network I/O.
+    if raw_bytes is not None or path is not None:
+        return resolve_binary(
+            raw_bytes=raw_bytes, path=path, url=None, as_base64=as_base64
+        )
+
+    if url is not None:
+        parsed_url = urlparse(url)
+        if parsed_url.scheme == "data":
+            # Data URLs are in-memory, no network I/O needed
+            return resolve_binary(url=url, as_base64=as_base64)
+
+        # Use httpx for async HTTP fetching
+        try:
+            import httpx
+        except ImportError:
+            raise ImportError(
+                "httpx is required for async document resolution. "
+                "Install it with: pip install httpx"
+            )
+
+        headers = {
+            "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url, headers=headers, timeout=httpx.Timeout(60.0, connect=60.0)
+            )
+            response.raise_for_status()
+            if as_base64:
+                return BytesIO(base64.b64encode(response.content))
+            return BytesIO(response.content)
+
+    raise ValueError("No valid source provided to resolve binary data!")
