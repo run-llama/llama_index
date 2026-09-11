@@ -711,6 +711,33 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### OrcaReplay
+
+[OrcaReplay](https://github.com/Continuum-AI-Corp/OrcaReplay) records a run to a file and then replays that file, serving the model's answers back from the recording — so the same run reproduces exactly, offline, as many times as you want, without spending a token. It is a debugger rather than a dashboard: the question it answers is "does this run still reproduce, and where did it first diverge", not "what did last week cost". Traces are plain JSONL on disk and nothing leaves the machine.
+
+Capture happens at the process boundary rather than through a callback, so no code in your application changes. For LlamaIndex the variable that matters is `OPENAI_API_BASE` — `OpenAI(...)` reads that one and not `OPENAI_BASE_URL` — and the `generic-openai` adapter sets both.
+
+#### Install
+
+```shell
+npm install -g orcareplay
+```
+
+#### Usage Pattern
+
+```shell
+# run your app as usual, capturing every model call
+orca record generic-openai -- python your_app.py
+
+# run it again with the network off, answered from the recording
+orca replay last
+```
+
+#### Guides
+
+- [Recording a framework](https://github.com/Continuum-AI-Corp/OrcaReplay/blob/main/docs/integrations.md) — one measured result per framework, each backed by a check that runs in CI
+- [OrcaReplay README](https://github.com/Continuum-AI-Corp/OrcaReplay)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
