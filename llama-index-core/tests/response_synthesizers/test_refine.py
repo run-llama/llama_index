@@ -553,6 +553,30 @@ class TestRefine:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
 
+    def test_synthesize__streaming_default_refine_program_streams_partials(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = synthesizer.synthesize(query="test", nodes=nodes)
+        assert isinstance(response, StreamingResponse)
+        # A collapsed stream concatenates to the same text, so assert on the
+        # granularity rather than on str(response).
+        assert len(list(response.response_gen)) == llm.max_tokens
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_default_refine_program_streams_partials(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = await synthesizer.asynthesize(query="test", nodes=nodes)
+        assert isinstance(response, AsyncStreamingResponse)
+        chunks = [chunk async for chunk in response.async_response_gen()]
+        assert len(chunks) == llm.max_tokens
+
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
         llm_case: LLMCase,

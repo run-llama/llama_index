@@ -317,7 +317,11 @@ class Refine(BaseSynthesizer):
             )
 
     def _update_response(
-        self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
+        self,
+        program: BasePydanticProgram,
+        prompt: BasePromptTemplate,
+        program_kwargs: dict,
+        response_kwargs: dict,
     ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Update response."""
         query_satisfied: bool | None = False
@@ -344,6 +348,11 @@ class Refine(BaseSynthesizer):
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
+            if not self._structured_answer_filtering and self._output_cls is None:
+                # Without an output_cls the program is only a wrapper around the LLM
+                # token stream, and the drain-once accessor below (meant for partial
+                # structured objects) would collapse it into a single chunk.
+                return self._llm.stream(prompt, **program_kwargs, **response_kwargs)
             try:
                 structured_response_gen = program.stream_call(
                     **program_kwargs,
@@ -368,7 +377,11 @@ class Refine(BaseSynthesizer):
         return None
 
     async def _aupdate_response(
-        self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
+        self,
+        program: BasePydanticProgram,
+        prompt: BasePromptTemplate,
+        program_kwargs: dict,
+        response_kwargs: dict,
     ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Update response."""
         query_satisfied: bool | None = False
@@ -394,6 +407,12 @@ class Refine(BaseSynthesizer):
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
+            if not self._structured_answer_filtering and self._output_cls is None:
+                # See the sync counterpart: the program would only wrap the token
+                # stream and collapse it into a single chunk.
+                return await self._llm.astream(
+                    prompt, **program_kwargs, **response_kwargs
+                )
             try:
                 structured_response_gen = await program.astream_call(
                     **program_kwargs,
@@ -479,7 +498,9 @@ class Refine(BaseSynthesizer):
                 prompt_kwargs = make_refine_prompt_kwargs(chunk)
 
             program = self._program_factory(prompt_template)
-            if resp := self._update_response(program, prompt_kwargs, response_kwargs):
+            if resp := self._update_response(
+                program, prompt_template, prompt_kwargs, response_kwargs
+            ):
                 response = resp
 
         if isinstance(response, str):
@@ -560,7 +581,7 @@ class Refine(BaseSynthesizer):
 
             program = self._program_factory(prompt_template)
             if resp := await self._aupdate_response(
-                program, prompt_kwargs, response_kwargs
+                program, prompt_template, prompt_kwargs, response_kwargs
             ):
                 response = resp
 
