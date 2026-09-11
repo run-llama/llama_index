@@ -217,3 +217,16 @@ def test_init():
 if __name__ == "__main__":
     test_sambanovacloud()
     test_sambastudio()
+
+
+def test_sambanova_url_not_overwritten_by_api_key(monkeypatch):
+    monkeypatch.delenv("SAMBANOVA_API_KEY", raising=False)
+    monkeypatch.delenv("SAMBANOVA_URL", raising=False)
+    from llama_index.llms.sambanovasystems import SambaNovaCloud
+
+    llm = SambaNovaCloud(
+        model="Meta-Llama-3.1-8B-Instruct",
+        sambanova_api_key="dummy-key",
+    )
+    assert llm.sambanova_url == "https://api.sambanova.ai/v1/chat/completions"
+    assert llm.sambanova_api_key.get_secret_value() == "dummy-key"
