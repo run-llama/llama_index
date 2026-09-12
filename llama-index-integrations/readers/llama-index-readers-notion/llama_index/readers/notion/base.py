@@ -9,9 +9,15 @@ from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
-BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
-DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
-SEARCH_URL = "https://api.notion.com/v1/search"
+BASE_URL_NAME = "NOTION_BASE_URL"
+DEFAULT_BASE_URL = "https://api.notion.com"
+
+# Kept for backward compatibility. The reader now builds request URLs from the instance's
+# ``base_url`` (see ``NotionPageReader.__init__``); these module-level constants describe the
+# default host and are no longer read by the class.
+BLOCK_CHILD_URL_TMPL = DEFAULT_BASE_URL + "/v1/blocks/{block_id}/children"
+DATABASE_URL_TMPL = DEFAULT_BASE_URL + "/v1/databases/{database_id}/query"
+SEARCH_URL = DEFAULT_BASE_URL + "/v1/search"
 
 
 # TODO: Notion DB reader coming soon!
@@ -23,14 +29,23 @@ class NotionPageReader(BasePydanticReader):
 
     Args:
         integration_token (str): Notion integration token.
+        base_url (str): Base URL of the Notion API. Defaults to the ``NOTION_BASE_URL``
+            environment variable, then to ``https://api.notion.com``. Override it to point the
+            reader at a proxy or a Notion-compatible mock server; the reader appends the
+            ``/v1/...`` paths itself.
 
     """
 
     is_remote: bool = True
     token: str
     headers: Dict[str, str]
+    base_url: str = DEFAULT_BASE_URL
 
-    def __init__(self, integration_token: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        integration_token: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ) -> None:
         """Initialize with parameters."""
         if integration_token is None:
             integration_token = os.getenv(INTEGRATION_TOKEN_NAME)
@@ -40,6 +55,10 @@ class NotionPageReader(BasePydanticReader):
                     "variable `NOTION_INTEGRATION_TOKEN`."
                 )
 
+        if base_url is None:
+            base_url = os.getenv(BASE_URL_NAME, DEFAULT_BASE_URL)
+        base_url = base_url.rstrip("/")
+
         token = integration_token
         headers = {
             "Authorization": "Bearer " + token,
@@ -47,12 +66,24 @@ class NotionPageReader(BasePydanticReader):
             "Notion-Version": "2022-06-28",
         }
 
-        super().__init__(token=token, headers=headers)
+        super().__init__(token=token, headers=headers, base_url=base_url)
 
     @classmethod
     def class_name(cls) -> str:
         """Get the name identifier of the class."""
         return "NotionPageReader"
+
+    @property
+    def _block_child_url_tmpl(self) -> str:
+        return self.base_url + "/v1/blocks/{block_id}/children"
+
+    @property
+    def _database_url_tmpl(self) -> str:
+        return self.base_url + "/v1/databases/{database_id}/query"
+
+    @property
+    def _search_url(self) -> str:
+        return self.base_url + "/v1/search"
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""
@@ -60,7 +91,7 @@ class NotionPageReader(BasePydanticReader):
         result_lines_arr = []
         cur_block_id = block_id
         while not done:
-            block_url = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
+            block_url = self._block_child_url_tmpl.format(block_id=cur_block_id)
             query_dict: Dict[str, Any] = {}
 
             res = self._request_with_retry(
@@ -141,7 +172,7 @@ class NotionPageReader(BasePydanticReader):
 
         res = self._request_with_retry(
             "POST",
-            DATABASE_URL_TMPL.format(database_id=database_id),
+            self._database_url_tmpl.format(database_id=database_id),
             headers=self.headers,
             json=query_dict,
         )
@@ -154,7 +185,7 @@ class NotionPageReader(BasePydanticReader):
             query_dict["start_cursor"] = data.get("next_cursor")
             res = self._request_with_retry(
                 "POST",
-                DATABASE_URL_TMPL.format(database_id=database_id),
+                self._database_url_tmpl.format(database_id=database_id),
                 headers=self.headers,
                 json=query_dict,
             )
@@ -176,7 +207,7 @@ class NotionPageReader(BasePydanticReader):
             if next_cursor is not None:
                 query_dict["start_cursor"] = next_cursor
             res = self._request_with_retry(
-                "POST", SEARCH_URL, headers=self.headers, json=query_dict
+                "POST", self._search_url, headers=self.headers, json=query_dict
             )
             data = res.json()
             for result in data["results"]:
@@ -239,7 +270,7 @@ class NotionPageReader(BasePydanticReader):
         """List all databases in the Notion workspace."""
         query_dict = {"filter": {"property": "object", "value": "database"}}
         res = self._request_with_retry(
-            "POST", SEARCH_URL, headers=self.headers, json=query_dict
+            "POST", self._search_url, headers=self.headers, json=query_dict
         )
         res.raise_for_status()
         data = res.json()
@@ -249,7 +280,7 @@ class NotionPageReader(BasePydanticReader):
         """List all pages in the Notion workspace."""
         query_dict = {"filter": {"property": "object", "value": "page"}}
         res = self._request_with_retry(
-            "POST", SEARCH_URL, headers=self.headers, json=query_dict
+            "POST", self._search_url, headers=self.headers, json=query_dict
         )
         res.raise_for_status()
         data = res.json()
