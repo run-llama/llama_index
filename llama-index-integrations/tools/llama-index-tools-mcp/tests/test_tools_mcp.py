@@ -136,6 +136,41 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
     assert set(json_schema["required"]) == {"name", "method", "lst"}
 
 
+def test_create_model_from_json_schema_preserves_nested_inline_object():
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/22141
+
+    Inline object properties should be converted to nested Pydantic models instead
+    of falling back to a bare Dict that drops the object's declared properties.
+    """
+    schema = {
+        "properties": {
+            "nested": {
+                "properties": {"value": {"title": "Value", "type": "string"}},
+                "required": ["value"],
+                "type": "object",
+            },
+        },
+        "required": ["nested"],
+        "type": "object",
+    }
+
+    model = McpToolSpec(None, allowed_tools=[]).create_model_from_json_schema(schema)
+    json_schema = model.model_json_schema()
+    nested_schema = json_schema["properties"]["nested"]
+
+    if "$ref" in nested_schema:
+        nested_schema = json_schema["$defs"][nested_schema["$ref"].split("/")[-1]]
+
+    assert nested_schema["type"] == "object"
+    assert nested_schema["properties"]["value"]["type"] == "string"
+    assert nested_schema["required"] == ["value"]
+
+    model(nested={"value": "ok"})
+    with pytest.raises(ValueError):
+        model(nested={})
+
+
 def test_resolve_union_option_with_enum(client: BasicMCPClient):
     """
     Regression test for https://github.com/run-llama/llama_index/issues/20109

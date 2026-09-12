@@ -237,7 +237,7 @@ class McpToolSpec(
         if model_name in self.properties_cache:
             return self.properties_cache[model_name]
 
-        fields = self._extract_fields(schema, defs)
+        fields = self._extract_fields(schema, defs, model_name)
         model = create_model(model_name, **fields)
         self.properties_cache[model_name] = model
         return model
