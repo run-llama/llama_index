@@ -272,3 +272,26 @@ def test_get_keys(redis_chat_store: RedisChatStore):
 
     assert len(keys) == 1
     assert keys[0] == REDIS_KEY
+
+
+def test_check_for_cluster_handles_redis_error_without_nameerror():
+    """
+    _check_for_cluster must catch RedisError cleanly without raising NameError.
+
+    Before the fix, `except redis.exceptions.RedisError` caused
+    `NameError: name 'redis' is not defined` because the `redis` module was
+    never imported — only specific members like `redis.client.Redis` were.
+    The fix adds explicit `from redis.exceptions import RedisError` so the
+    name is always in scope. This test exercises the exact except-branch
+    without needing a live Redis server.
+    """
+    from unittest.mock import MagicMock
+
+    from redis.exceptions import RedisError
+
+    mock_client = MagicMock()
+    mock_client.info.side_effect = RedisError("connection refused")
+
+    store = RedisChatStore.__new__(RedisChatStore)
+    result = store._check_for_cluster(mock_client)
+    assert result is False
