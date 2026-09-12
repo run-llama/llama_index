@@ -36,7 +36,7 @@ def baz():
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("def foo():")
-    assert chunks[1].startswith("def baz():")
+    assert "def baz():" in chunks[1]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -81,7 +81,7 @@ function baz() {
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("function foo()")
-    assert chunks[1].startswith("function baz()")
+    assert "function baz()" in chunks[1]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -114,8 +114,8 @@ def test_html_code_splitter() -> None:
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("<!DOCTYPE html>")
-    assert chunks[1].startswith("<html>")
-    assert chunks[2].startswith("<head>")
+    assert "<html>" in chunks[1]
+    assert "<head>" in chunks[2]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -154,7 +154,7 @@ export default ExampleComponent;"""
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("import React from 'react';")
-    assert chunks[1].startswith("interface Person")
+    assert "interface Person" in chunks[1]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -177,7 +177,7 @@ int main() {
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("#include <iostream>")
-    assert chunks[1].startswith("int main()")
+    assert "int main()" in chunks[1]
     assert chunks[2].startswith("{\n    std::cout")
 
 
@@ -232,7 +232,7 @@ def baz():
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("def foo():")
-    assert chunks[1].startswith("def baz():")
+    assert "def baz():" in chunks[1]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -321,7 +321,7 @@ def baz():
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("def foo():")
-    assert chunks[1].startswith("def baz():")
+    assert "def baz():" in chunks[1]
 
     # Verify it's using character mode by default
     assert code_splitter.count_mode == "char"
@@ -448,3 +448,62 @@ def test_oversized_leaf_not_dropped_token_mode() -> None:
     assert sum(chunk.count("A") for chunk in chunks) == 800
     assert all(len(tokenizer(chunk)) <= 20 for chunk in chunks)
     assert any("y = 1" in chunk for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_chunk_lines_caps_chunk_length() -> None:
+    """chunk_lines must cap how many lines land in each chunk (#23027)."""
+    code = "\n".join(f"def fn_{i}():\n    return {i}" for i in range(30))
+    document = Document(text=code)
+
+    splitter = CodeSplitter(
+        language="python", chunk_lines=5, chunk_lines_overlap=0, max_chars=100000
+    )
+    chunks = [c for c in splitter.split_text(code) if c.strip()]
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk.count("\n") + 1 <= 5
+
+    # A different chunk_lines value must produce a different split
+    other = CodeSplitter(
+        language="python", chunk_lines=2, chunk_lines_overlap=0, max_chars=100000
+    )
+    other_chunks = [c for c in other.split_text(code) if c.strip()]
+    assert other_chunks != chunks
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_chunk_lines_overlap_carries_trailing_lines() -> None:
+    """Consecutive chunks share chunk_lines_overlap trailing/leading lines (#23027)."""
+    code = "\n".join(f"def fn_{i}():\n    return {i}" for i in range(30))
+    splitter = CodeSplitter(
+        language="python", chunk_lines=6, chunk_lines_overlap=2, max_chars=100000
+    )
+    chunks = [c for c in splitter.split_text(code) if c.strip()]
+    assert len(chunks) > 1
+    for prev, nxt in zip(chunks, chunks[1:]):
+        prev_lines = [ln for ln in prev.splitlines() if ln.strip()]
+        next_lines = [ln for ln in nxt.splitlines() if ln.strip()]
+        assert prev_lines[-2:] == next_lines[:2]
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_chunk_lines_overlap_zero_is_allowed() -> None:
+    """overlap=0 (no overlap) must be expressible instead of failing validation."""
+    code = "\n".join(f"def fn_{i}():\n    return {i}" for i in range(10))
+    splitter = CodeSplitter(
+        language="python", chunk_lines=5, chunk_lines_overlap=0, max_chars=100000
+    )
+    chunks = [c for c in splitter.split_text(code) if c.strip()]
+    assert len(chunks) > 1
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_default_chunk_lines_still_caps_without_max_chars_constraint() -> None:
+    """With a huge max_chars, the 40-line default still ends up capping chunks."""
+    code = "\n".join(f"def fn_{i}():\n    return {i}" for i in range(120))
+    splitter = CodeSplitter(
+        language="python", chunk_lines=40, chunk_lines_overlap=15, max_chars=100000
+    )
+    chunks = [c for c in splitter.split_text(code) if c.strip()]
+    assert len(chunks) > 1
