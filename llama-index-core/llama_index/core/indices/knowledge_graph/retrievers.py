@@ -777,7 +777,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         # Get entities
         entities = self._get_entities(query_bundle.query_str)
         # Before we enable embedding/semantic search, we need to make sure
-        # we don't miss any entities that's synoynm of the entities we extracted
+        # we don't miss any entities that's synonym of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.
         if len(entities) == 0:
@@ -798,7 +798,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         # Get entities
         entities = await self._aget_entities(query_bundle.query_str)
         # Before we enable embedding/semantic search, we need to make sure
-        # we don't miss any entities that's synoynm of the entities we extracted
+        # we don't miss any entities that's synonym of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.
         if len(entities) == 0:

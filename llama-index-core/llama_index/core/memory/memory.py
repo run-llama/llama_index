@@ -39,6 +39,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts import RichPromptTemplate
+from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore
 from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore, MessageStatus
 from llama_index.core.utils import get_tokenizer
 
@@ -246,7 +247,7 @@ class Memory(BaseMemory):
         exclude=True,
         description="The tokenizer function to use for token counting.",
     )
-    sql_store: SQLAlchemyChatStore = Field(
+    sql_store: AsyncDBChatStore = Field(
         default_factory=get_default_chat_store,
         exclude=True,
         description="The chat store to use for storing messages.",
@@ -299,6 +300,9 @@ class Memory(BaseMemory):
         image_token_size_estimate: int = 256,
         audio_token_size_estimate: int = 256,
         video_token_size_estimate: int = 256,
+        # Any AsyncDBChatStore implementation. Takes precedence over the
+        # SQLAlchemyChatStore parameters below, which are then ignored.
+        chat_store: Optional[AsyncDBChatStore] = None,
         # SQLAlchemyChatStore parameters
         table_name: str = "llama_index_memory",
         async_database_uri: Optional[str] = None,
@@ -308,8 +312,7 @@ class Memory(BaseMemory):
         """Initialize Memory."""
         session_id = session_id or generate_chat_store_key()
 
-        # If not using the SQLAlchemyChatStore, provide an error
-        sql_store = SQLAlchemyChatStore(
+        sql_store = chat_store or SQLAlchemyChatStore(
             table_name=table_name,
             async_database_uri=async_database_uri,
             async_engine=async_engine,

@@ -30,7 +30,8 @@ class StripeDocsReader(BaseReader):
         self._limit = limit
 
     def _load_url(self, url: str) -> str:
-        return urllib.request.urlopen(url).read()
+        with urllib.request.urlopen(url) as response:
+            return response.read()
 
     def _load_sitemap(self) -> str:
         return self._load_url(STRIPE_SITEMAP_URL)
