@@ -43,6 +43,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [MyMagic](/python/examples/llm/mymagic)
 - [NeutrinoAI](/python/examples/llm/neutrino)
 - [Nebius AI](/python/examples/llm/nebius)
+- [Nebius Serverless Endpoint (OpenAI-compatible)](/python/framework/integrations/llm/nebius_serverless_endpoint/)
 - [Nvidia TensorRT-LLM](/python/examples/llm/nvidia_tensorrt)
 - [Nvidia Triton](/python/examples/llm/nvidia_triton)
 - [Ollama](/python/examples/llm/ollama)
