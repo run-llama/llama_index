@@ -4,7 +4,7 @@ import logging
 import os
 import tempfile
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from pathlib import Path
 
 import requests
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 # Scope for reading and downloading OneDrive files
 SCOPES = ["Files.Read.All"]
 CLIENTCREDENTIALSCOPES = ["https://graph.microsoft.com/.default"]
+DEFAULT_REQUEST_TIMEOUT = (3.0, 30.0)
 
 
 class _OneDriveResourcePayload(BaseModel):
@@ -73,6 +74,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         default=None, exclude=True
     )
     attach_permission_metadata: bool = False
+    request_timeout: Union[float, Tuple[float, float]] = DEFAULT_REQUEST_TIMEOUT
 
     _is_interactive_auth = PrivateAttr(False)
     _authority = PrivateAttr()
@@ -90,6 +92,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         attach_permission_metadata: bool = False,
         required_exts: Optional[List[str]] = None,
+        request_timeout: Union[float, Tuple[float, float]] = DEFAULT_REQUEST_TIMEOUT,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -104,6 +107,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
             file_extractor=file_extractor,
             attach_permission_metadata=attach_permission_metadata,
             required_exts=required_exts,
+            request_timeout=request_timeout,
             **kwargs,
         )
         self._is_interactive_auth = not client_secret
@@ -232,7 +236,9 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         retries = 0
 
         while retries < max_retries:
-            response = requests.get(endpoint, headers=headers)
+            response = requests.get(
+                endpoint, headers=headers, timeout=self.request_timeout
+            )
             if response.status_code == 200:
                 return response.json()
             # Check for Ratelimit error, this can happen if you query endpoint recursively
@@ -270,7 +276,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         file_name = item["name"]
 
         # Download the file.
-        file_data = requests.get(file_download_url)
+        file_data = requests.get(file_download_url, timeout=self.request_timeout)
 
         # Save the downloaded file to the specified local directory.
         file_path = os.path.join(local_dir, file_name)
@@ -714,7 +720,11 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        response = requests.get(url=permissions_info_endpoint, headers=headers)
+        response = requests.get(
+            url=permissions_info_endpoint,
+            headers=headers,
+            timeout=self.request_timeout,
+        )
         permissions = response.json()
         identity_sets = []
 
