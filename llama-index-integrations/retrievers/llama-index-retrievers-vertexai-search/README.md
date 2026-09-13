@@ -31,6 +31,13 @@ retrieved_results = retriever.retrieve(query)
 print(retrieved_results[0].get_content())
 ```
 
+For structured data stores (`engine_data_type=1`), each node's text contains the
+JSON serialization of `struct_data`. The structured fields are also available in
+`node.metadata`, alongside `document_id` and `document_name` from the Discovery
+Engine document. These two metadata keys are reserved for upstream identity and
+use an empty string when absent; any same-named structured fields remain in the
+JSON text. LlamaIndex continues to generate the local `node.id_` independently.
+
 ## Notebook
 
 Explore the retriever using Notebook present at:
