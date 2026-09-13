@@ -460,7 +460,6 @@ class IngestionPipeline(BaseModel):
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
-                self.docstore.set_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
                 current_hashes.add(node.hash)
 
@@ -483,11 +482,6 @@ class IngestionPipeline(BaseModel):
                 # document doesn't exist, so add it
                 deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
-
                 deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
@@ -528,9 +522,17 @@ class IngestionPipeline(BaseModel):
             DocstoreStrategy.UPSERTS,
             DocstoreStrategy.UPSERTS_AND_DELETE,
         ):
+            for node in nodes:
+                ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
+                existing_hash = self.docstore.get_document_hash(ref_doc_id)
+                if existing_hash and existing_hash != node.hash:
+                    self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+                    if self.vector_store is not None:
+                        self.vector_store.delete(ref_doc_id)
             self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
@@ -675,9 +677,17 @@ class IngestionPipeline(BaseModel):
             DocstoreStrategy.UPSERTS,
             DocstoreStrategy.UPSERTS_AND_DELETE,
         ):
+            for node in nodes:
+                ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
+                existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
+                if existing_hash and existing_hash != node.hash:
+                    await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
+                    if self.vector_store is not None:
+                        await self.vector_store.adelete(ref_doc_id)
             await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
         elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
             await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
@@ -695,7 +705,6 @@ class IngestionPipeline(BaseModel):
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
-                await self.docstore.aset_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
                 current_hashes.add(node.hash)
 
@@ -719,11 +728,6 @@ class IngestionPipeline(BaseModel):
                 # document doesn't exist, so add it
                 deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    await self.vector_store.adelete(ref_doc_id)
-
                 deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
