@@ -763,7 +763,7 @@ for query in queries:
     query_engine.query(query)
 
 # View your LLM app data as a dataframe in OpenInference format.
-from llama_index.core.callbacks.open_inference_callback import as_dataframe
+from llama_index.callbacks.openinference.base import as_dataframe
 
 query_data_buffer = llama_index.core.global_handler.flush_query_data_buffer()
 query_dataframe = as_dataframe(query_data_buffer)

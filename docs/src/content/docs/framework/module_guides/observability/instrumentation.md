@@ -130,7 +130,7 @@ items to this event payload, simply add them in as new `Fields` (since they are
 subclasses of `pydantic.BaseModel`).
 
 ```python
-from llama_index.core.instrumentation.event.base import BaseEvent
+from llama_index.core.instrumentation.events.base import BaseEvent
 
 
 class MyEvent(BaseEvent):
@@ -226,7 +226,7 @@ to add it to your desired dispatcher.
 
 ```python
 import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.span_handler import SimpleSpanHandler
+from llama_index.core.instrumentation.span_handlers import SimpleSpanHandler
 
 dispatcher = (
     instrument.get_dispatcher()
