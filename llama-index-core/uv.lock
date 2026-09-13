@@ -1384,6 +1384,7 @@ dependencies = [
     { name = "filetype" },
     { name = "fsspec" },
     { name = "httpx" },
+    { name = "llama-index-embeddings-openai" },
     { name = "llama-index-workflows" },
     { name = "nest-asyncio" },
     { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1449,6 +1450,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "fsspec", specifier = ">=2023.5.0" },
     { name = "httpx" },
+    { name = "llama-index-embeddings-openai", specifier = ">=0.6.0" },
     { name = "llama-index-workflows", specifier = ">=2.14.0,<3" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
@@ -1498,6 +1500,19 @@ dev = [
     { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
     { name = "types-requests", specifier = ">=2.28.11.8" },
     { name = "types-setuptools" },
+]
+
+[[package]]
+name = "llama-index-embeddings-openai"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-index-core" },
+    { name = "openai" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/52/eb56a4887501651fb17400f7f571c1878109ff698efbe0bbac9165a5603d/llama_index_embeddings_openai-0.6.0.tar.gz", hash = "sha256:eb3e6606be81cb89125073e23c97c0a6119dabb4827adbd14697c2029ad73f29", size = 7629, upload-time = "2026-03-12T20:21:27.234Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/d1/4bb0b80f4057903110060f617ef519197194b3ff5dd6153d850c8f5676fa/llama_index_embeddings_openai-0.6.0-py3-none-any.whl", hash = "sha256:039bb1007ad4267e25ddb89a206dfdab862bfb87d58da4271a3919e4f9df4d61", size = 7666, upload-time = "2026-03-12T20:21:28.079Z" },
 ]
 
 [[package]]
