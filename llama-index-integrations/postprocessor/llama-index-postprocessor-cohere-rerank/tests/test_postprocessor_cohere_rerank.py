@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import cohere
+import pytest
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.postprocessor.cohere_rerank import CohereRerank
@@ -10,6 +11,12 @@ from llama_index.postprocessor.cohere_rerank.base import _create_retry_decorator
 def test_class():
     names_of_base_classes = [b.__name__ for b in CohereRerank.__mro__]
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
+
+
+def test_missing_api_key_raises_value_error():
+    with patch.dict("os.environ", {}, clear=True):
+        with pytest.raises(ValueError, match="Must pass in cohere api key"):
+            CohereRerank()
 
 
 def test_create_retry_decorator():
