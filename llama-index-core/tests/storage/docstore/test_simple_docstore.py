@@ -152,3 +152,30 @@ def test_docstore_delete_all_ref_doc_nodes() -> None:
     assert docstore._kvstore.get("d1", docstore._node_collection) is None
     assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
     assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
+
+
+def test_get_all_document_ids_keeps_docs_sharing_a_hash() -> None:
+    docstore = SimpleDocumentStore()
+    docstore.add_documents(
+        [
+            Document(text="duplicate content", id_="d1"),
+            Document(text="duplicate content", id_="d2"),
+        ]
+    )
+
+    assert len(docstore.get_all_document_hashes()) == 1
+    assert docstore.get_all_document_ids() == {"d1", "d2"}
+
+
+@pytest.mark.asyncio
+async def test_aget_all_document_ids_keeps_docs_sharing_a_hash() -> None:
+    docstore = SimpleDocumentStore()
+    await docstore.async_add_documents(
+        [
+            Document(text="duplicate content", id_="d1"),
+            Document(text="duplicate content", id_="d2"),
+        ]
+    )
+
+    assert len(await docstore.aget_all_document_hashes()) == 1
+    assert await docstore.aget_all_document_ids() == {"d1", "d2"}

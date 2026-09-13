@@ -665,3 +665,53 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+
+def _upserts_and_delete_pipeline(docstore: SimpleDocumentStore) -> IngestionPipeline:
+    return IngestionPipeline(
+        transformations=[SentenceSplitter(), MockEmbedding(embed_dim=8)],
+        docstore=docstore,
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    )
+
+
+def test_pipeline_upserts_and_delete_removes_docs_sharing_a_hash() -> None:
+    """Docs sharing a content hash must still be deleted once they leave the source."""
+    docstore = SimpleDocumentStore()
+    pipeline = _upserts_and_delete_pipeline(docstore)
+
+    pipeline.run(
+        documents=[
+            Document(text="duplicate content", id_="doc_a"),
+            Document(text="duplicate content", id_="doc_b"),
+        ]
+    )
+    assert docstore.get_all_document_ids() == {"doc_a", "doc_b"}
+
+    pipeline.run(documents=[Document(text="brand new content", id_="doc_c")])
+
+    assert docstore.get_all_document_ids() == {"doc_c"}, (
+        "documents sharing a content hash must not survive deletion"
+    )
+
+
+@pytest.mark.asyncio
+async def test_apipeline_upserts_and_delete_removes_docs_sharing_a_hash() -> None:
+    """Async counterpart of ``test_pipeline_upserts_and_delete_removes_docs_sharing_a_hash``."""
+    docstore = SimpleDocumentStore()
+    pipeline = _upserts_and_delete_pipeline(docstore)
+
+    await pipeline.arun(
+        documents=[
+            Document(text="duplicate content", id_="doc_a"),
+            Document(text="duplicate content", id_="doc_b"),
+        ]
+    )
+    assert await docstore.aget_all_document_ids() == {"doc_a", "doc_b"}
+
+    await pipeline.arun(documents=[Document(text="brand new content", id_="doc_c")])
+
+    assert await docstore.aget_all_document_ids() == {"doc_c"}, (
+        "documents sharing a content hash must not survive deletion"
+    )

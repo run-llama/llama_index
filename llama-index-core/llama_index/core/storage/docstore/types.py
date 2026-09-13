@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Sequence, overload
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, overload
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
@@ -103,6 +103,24 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     async def aget_all_document_hashes(self) -> Dict[str, str]: ...
+
+    def get_all_document_ids(self) -> Set[str]:
+        """
+        Get the ids of every document that has a stored hash.
+
+        `get_all_document_hashes` is keyed by hash, so documents sharing
+        identical content collapse into a single entry and their ids are lost.
+        Callers that need the full set of ids should use this instead.
+
+        This default derives ids from `get_all_document_hashes` and therefore
+        inherits that collapsing. Subclasses that can enumerate ids directly
+        should override it.
+        """
+        return set(self.get_all_document_hashes().values())
+
+    async def aget_all_document_ids(self) -> Set[str]:
+        """Async version of `get_all_document_ids`."""
+        return set((await self.aget_all_document_hashes()).values())
 
     # ==== Ref Docs =====
     @abstractmethod
