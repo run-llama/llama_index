@@ -337,3 +337,46 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+async def test_aget_by_id_addresses_a_message_without_using_its_position(memory):
+    """
+    The use case from #14881: hold a handle on an earlier message.
+
+    Two messages with identical text are indistinguishable by content, which is
+    what a caller is otherwise reduced to comparing on.
+    """
+    first = ChatMessage(role="user", content="say that again")
+    second = ChatMessage(role="user", content="say that again")
+    await memory.aput_messages([first, second])
+
+    assert first.id_ is not None
+    assert second.id_ is not None
+    assert first.id_ != second.id_
+
+    found = await memory.aget_by_id(second.id_)
+    assert found is not None
+    assert found.id_ == second.id_
+
+
+@pytest.mark.asyncio
+async def test_aget_by_id_returns_none_for_an_unknown_id(memory):
+    """An id from another session, or no session at all, is not found here."""
+    await memory.aput(ChatMessage(role="user", content="hello"))
+
+    assert await memory.aget_by_id("no-such-id") is None
+
+
+@pytest.mark.asyncio
+async def test_ids_survive_being_read_back(memory):
+    """The id read off get_all() is the one aget_by_id() accepts."""
+    await memory.aput(ChatMessage(role="user", content="hello"))
+
+    stored = await memory.aget_all()
+    assert len(stored) == 1
+    assert stored[0].id_ is not None
+
+    found = await memory.aget_by_id(stored[0].id_)
+    assert found is not None
+    assert found.content == "hello"
