@@ -334,7 +334,7 @@ vector_store = ChromaVectorStore(
 
 ```python
 import clickhouse_connect
-from llama_index.vector_stores import ClickHouseVectorStore
+from llama_index.vector_stores.clickhouse import ClickHouseVectorStore
 
 # Creating a ClickHouse client
 client = clickhouse_connect.get_client(
