@@ -211,8 +211,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             split_len = len(self._tokenizer(split))
             if split_len > chunk_size:
                 _logger.warning(
-                    f"Got a split of size {split_len}, ",
-                    f"larger than chunk size {chunk_size}.",
+                    f"Got a split of size {split_len}, "
+                    f"larger than chunk size {chunk_size}."
                 )
 
             # if we exceed the chunk size after adding the new split, then
