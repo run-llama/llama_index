@@ -140,7 +140,7 @@ This attribute controls how each key/value pair in your metadata is formatted. T
 
 3. `Document.text_template` -> default = `{metadata_str}\n\n{content}`
 
-Once your metadata is converted into a string using `metadata_seperator` and `metadata_template`, this templates controls what that metadata looks like when joined with the text content of your document/node. The `metadata` and `content` string keys are required.
+Once your metadata is converted into a string using `metadata_seperator` and `metadata_template`, this template controls what that metadata looks like when joined with the text content of your document/node. The `metadata` and `content` string keys are required.
 
 ### Summary
 
