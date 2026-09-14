@@ -2,9 +2,10 @@
 
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Dict, cast
+from typing import Dict, List, cast
 
 import pytest
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
@@ -253,6 +254,102 @@ def test_embedding_recency_postprocessor() -> None:
     # assert cast(Dict, result_nodes[1].node.metadata)["date"] == "2020-01-03"
     # assert result_nodes[2].node.get_content() == "This is a test."
     # assert cast(Dict, result_nodes[2].node.metadata)["date"] == "2020-01-02"
+
+
+class _ContentEmbedding(BaseEmbedding):
+    """
+    Deterministic embedding keyed on text/query content (no network).
+
+    Unlike the shared ``MockEmbedding`` (whose query embedding is constant), the
+    query embedding here depends on the node content, so it exercises the
+    ``EmbeddingRecencyPostprocessor`` dedup loop the way a real embedder would.
+    """
+
+    _vectors: Dict[str, List[float]] = {
+        "old unique": [1.0, 0.0, 0.0, 0.0, 0.0],
+        "DUP_A": [0.0, 1.0, 0.0, 0.0, 0.0],
+        "middle unique": [0.0, 0.0, 1.0, 0.0, 0.0],
+        "DUP_B": [0.0, 1.0, 0.0, 0.0, 0.0],  # identical direction to DUP_A
+        "newest unique": [0.0, 0.0, 0.0, 0.0, 1.0],
+    }
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+        return self._vectors[query]
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        return self._vectors[query]
+
+    def _get_text_embedding(self, text: str) -> List[float]:
+        return self._vectors[text]
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return self._vectors[text]
+
+
+def test_embedding_recency_postprocessor_dedup_alignment() -> None:
+    """
+    Dedup must align embeddings with the date-sorted node order.
+
+    Regression test: ``_postprocess_nodes`` previously built ``text_embeddings``
+    from the original (un-sorted) ``nodes`` while the dedup loop indexed them by
+    position in the date-sorted ``sorted_nodes``. For any input not already
+    sorted by date this compared the query against the wrong node's embedding,
+    silently dropping genuinely-unique nodes. Here only the true duplicate
+    (``DUP_A``/``DUP_B``) should be removed and all unique nodes must survive.
+    """
+    nodes = [
+        TextNode(
+            text="old unique",
+            id_="1",
+            metadata={"date": "2020-01-01"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="DUP_A",
+            id_="2",
+            metadata={"date": "2020-01-02"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="middle unique",
+            id_="3",
+            metadata={"date": "2020-01-03"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="DUP_B",
+            id_="4",
+            metadata={"date": "2020-01-04"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+        TextNode(
+            text="newest unique",
+            id_="5",
+            metadata={"date": "2020-01-05"},
+            excluded_embed_metadata_keys=["date"],
+        ),
+    ]
+    nodes_with_scores = [NodeWithScore(node=node) for node in nodes]
+
+    postprocessor = EmbeddingRecencyPostprocessor(
+        embed_model=_ContentEmbedding(),
+        query_embedding_tmpl="{context_str}",
+        similarity_cutoff=0.5,
+    )
+    result = postprocessor.postprocess_nodes(
+        nodes_with_scores, query_bundle=QueryBundle(query_str="What is?")
+    )
+
+    ids = [n.node.node_id for n in result]
+    texts = [n.node.get_content() for n in result]
+    # every unique node survives
+    assert "old unique" in texts
+    assert "middle unique" in texts
+    assert "newest unique" in texts
+    # exactly one of the two identical nodes is dropped
+    assert texts.count("DUP_A") + texts.count("DUP_B") == 1
+    assert len(result) == 4
+    assert "1" in ids  # the oldest unique node is not wrongly skipped
 
 
 def test_time_weighted_postprocessor() -> None:
