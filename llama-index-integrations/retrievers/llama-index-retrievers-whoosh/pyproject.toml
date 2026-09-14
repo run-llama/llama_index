@@ -1,0 +1,61 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[project]
+name = "llama-index-retrievers-whoosh"
+version = "0.1.0"
+description = "llama-index retrievers whoosh integration -- a pure-Python BM25 (lexical) retriever powered by Whoosh"
+authors = [{name = "Priya Sundaram"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "BSD-2-Clause"
+keywords = ["bm25", "lexical", "rag", "retriever", "search", "whoosh"]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "whoosh3>=3.51",
+]
+
+[project.urls]
+Homepage = "https://github.com/priya-sundaram-dev/whoosh"
+Repository = "https://github.com/priya-sundaram-dev/whoosh"
+Issues = "https://github.com/priya-sundaram-dev/whoosh/issues"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest>=7",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-setuptools==67.1.0.0",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.retrievers.whoosh"
+
+[tool.llamahub.class_authors]
+WhooshRetriever = "priya-sundaram-dev"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
