@@ -254,6 +254,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
         Args:
             node_ids (List[str]): A list of node_ids from the nodes to delete
+            delete_from_docstore (bool): Whether to also remove the nodes, and any
+                documents left with no remaining nodes, from the docstore.
 
         """
         index_nodes = set(self._index_struct.node_id_to_summary_id.keys())
@@ -279,7 +281,14 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         ]
 
         for doc_id in remove_docs:
-            self.delete_ref_doc(doc_id)
+            self.delete_ref_doc(doc_id, delete_from_docstore=delete_from_docstore)
+
+        if delete_from_docstore:
+            # Documents left with no nodes are removed by `delete_ref_doc` above,
+            # along with their nodes. Anything still requested here belonged to a
+            # document that survives, so remove those nodes individually.
+            for node_id in valid_node_ids:
+                self.docstore.delete_document(node_id, raise_error=False)
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
