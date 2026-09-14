@@ -28,7 +28,7 @@ With LlamaIndex, there are a number of ways you can use MCP servers, which allow
 
 - **Use existing MCP servers tools with LlamaIndex workflows**: Get data from external resources that are served via existing MCP servers.
 - **Serve LlamaIndex workflows as MCP servers**: You can convert your own custom LlamaIndex workflows to MCP servers.
-- **Use LlamaCloud services within LlamaIndex workflows**: Run one of our MCP servers (both in Python and Typescript) that serve LlamaCloud functionality such as LlamaExtract or LlamaParse, within any other application that communicates with MCP servers, including LlamaIndex workflows
+- **Use LlamaCloud services within LlamaIndex workflows**: Run one of our MCP servers (both in Python and TypeScript) that serve LlamaCloud functionality such as LlamaExtract or LlamaParse, within any other application that communicates with MCP servers, including LlamaIndex workflows
 
 ## Next Steps
 

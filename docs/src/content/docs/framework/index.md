@@ -92,7 +92,7 @@ For more complex applications, our lower-level APIs allow advanced users to cust
 
 ## Getting Started
 
-LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/). If you're not sure where to start, we recommend reading [how to read these docs](/python/framework/getting_started/reading) which will point you to the right place based on your experience level.
+LlamaIndex is available in Python (these docs) and [TypeScript](https://ts.llamaindex.ai/). If you're not sure where to start, we recommend reading [how to read these docs](/python/framework/getting_started/reading) which will point you to the right place based on your experience level.
 
 ### 30 second quickstart
 
@@ -140,7 +140,7 @@ Need help? Have a feature suggestion? Join the LlamaIndex community:
   - [LlamaIndex Python Github](https://github.com/run-llama/llama_index)
   - [Python Docs](https://docs.llamaindex.ai/) (what you're reading now)
   - [LlamaIndex on PyPi](https://pypi.org/project/llama-index/)
-- LlamaIndex.TS (Typescript/Javascript package):
+- LlamaIndex.TS (TypeScript/JavaScript package):
   - [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS)
   - [TypeScript Docs](https://ts.llamaindex.ai/)
   - [LlamaIndex.TS on npm](https://www.npmjs.com/package/llamaindex)

@@ -280,7 +280,7 @@ Check out the complete `flask_demo.py` and `index_server.py` scripts in the [rep
 
 ## React Frontend
 
-Generally, React and Typescript are one of the most popular libraries and languages for writing webapps today. This guide will assume you are familiar with how these tools work, because otherwise this guide will triple in length :smile:.
+Generally, React and TypeScript are one of the most popular libraries and languages for writing webapps today. This guide will assume you are familiar with how these tools work, because otherwise this guide will triple in length :smile:.
 
 In the [repository](https://github.com/logan-markewich/llama_index_starter_pack/tree/main/flask_react), the frontend code is organized inside of the `react_frontend` folder.
 
