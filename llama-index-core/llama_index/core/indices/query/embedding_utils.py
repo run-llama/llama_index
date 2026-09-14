@@ -88,7 +88,10 @@ def get_top_k_embeddings_learner(
     clf.fit(dataset, y)  # train
 
     # infer on whatever data you wish, e.g. the original data
-    similarities = clf.decision_function(dataset[1:])
+    if query_mode == VectorStoreQueryMode.LINEAR_REGRESSION:
+        similarities = clf.predict(dataset[1:])
+    else:
+        similarities = clf.decision_function(dataset[1:])
     sorted_ix = np.argsort(-similarities)
     top_sorted_ix = sorted_ix[:similarity_top_k]
 
