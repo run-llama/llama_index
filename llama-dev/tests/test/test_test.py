@@ -1,9 +1,9 @@
+import concurrent.futures
 from pathlib import Path
 from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from llama_dev import test as llama_dev_test
 from llama_dev.cli import cli
 from llama_dev.test import ResultStatus, _pytest, _run_tests
 
@@ -56,6 +56,12 @@ def mocked_success(*args, **kwargs):
         "stderr": "",
         "time": "0.1s",
     }
+
+
+def setup_mock_process_pool(mock_pool, result):
+    future = concurrent.futures.Future()
+    future.set_result(result())
+    mock_pool.return_value.__enter__.return_value.submit.return_value = future
 
 
 @pytest.fixture
@@ -135,20 +141,20 @@ def test_workers_parameter(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
+@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor")
 def test_coverage_failures(
+    mock_pool,
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
     mock_find_all_packages,
-    monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    mock_find_all_packages.return_value = {data_path / "package1"}
+    mock_get_changed_files.return_value = {data_path / "package1/file.py"}
+    mock_get_changed_packages.return_value = {data_path / "package1"}
     mock_get_dependants.return_value = set()
-
-    monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_coverage_failed)
+    setup_mock_process_pool(mock_pool, mocked_coverage_failed)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -175,20 +181,20 @@ def test_coverage_failures(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
+@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor")
 def test_install_failures(
+    mock_pool,
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
     mock_find_all_packages,
-    monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    mock_find_all_packages.return_value = {data_path / "package1"}
+    mock_get_changed_files.return_value = {data_path / "package1/file.py"}
+    mock_get_changed_packages.return_value = {data_path / "package1"}
     mock_get_dependants.return_value = set()
-
-    monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_install_failed)
+    setup_mock_process_pool(mock_pool, mocked_install_failed)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -206,20 +212,20 @@ def test_install_failures(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
+@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor")
 def test_skip_failures_no_tests(
+    mock_pool,
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
     mock_find_all_packages,
-    monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    mock_find_all_packages.return_value = {data_path / "package1"}
+    mock_get_changed_files.return_value = {data_path / "package1/file.py"}
+    mock_get_changed_packages.return_value = {data_path / "package1"}
     mock_get_dependants.return_value = set()
-
-    monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_skip_failed_no_tests)
+    setup_mock_process_pool(mock_pool, mocked_skip_failed_no_tests)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -236,22 +242,20 @@ def test_skip_failures_no_tests(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
+@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor")
 def test_skip_failures_unsupported_python(
+    mock_pool,
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
     mock_find_all_packages,
-    monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    mock_find_all_packages.return_value = {data_path / "package1"}
+    mock_get_changed_files.return_value = {data_path / "package1/file.py"}
+    mock_get_changed_packages.return_value = {data_path / "package1"}
     mock_get_dependants.return_value = set()
-
-    monkeypatch.setattr(
-        llama_dev_test, "_run_tests", mocked_skip_failed_unsupported_python_version
-    )
+    setup_mock_process_pool(mock_pool, mocked_skip_failed_unsupported_python_version)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -270,20 +274,20 @@ def test_skip_failures_unsupported_python(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
+@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor")
 def test_success(
+    mock_pool,
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
     mock_find_all_packages,
-    monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    mock_find_all_packages.return_value = {data_path / "package1"}
+    mock_get_changed_files.return_value = {data_path / "package1/file.py"}
+    mock_get_changed_packages.return_value = {data_path / "package1"}
     mock_get_dependants.return_value = set()
-
-    monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_success)
+    setup_mock_process_pool(mock_pool, mocked_success)
 
     runner = CliRunner()
     result = runner.invoke(
