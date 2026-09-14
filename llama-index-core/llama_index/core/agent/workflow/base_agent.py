@@ -308,9 +308,6 @@ class BaseWorkflowAgent(
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
-        # always set to false initially
-        await ctx.store.set("formatted_input_with_state", False)
-
     async def _get_llm_response(
         self, ctx: Context, llm_input: List[ChatMessage], llm: Optional[LLM] = None
     ) -> ChatResponse:
@@ -446,16 +443,13 @@ class BaseWorkflowAgent(
             ]
 
         state = await ctx.store.get("state", default=None)
-        formatted_input_with_state = await ctx.store.get(
-            "formatted_input_with_state", default=False
-        )
-        if state and not formatted_input_with_state:
-            # update last message with current state
-            for block in llm_input[-1].blocks[::-1]:
-                if isinstance(block, TextBlock):
-                    block.text = self.state_prompt.format(state=state, msg=block.text)
-                    break
-            await ctx.store.set("formatted_input_with_state", True)
+        if state:
+            # Render the state into a copy of the last message rather than
+            # editing it in place: the messages come from memory, so editing
+            # them would rewrite the stored conversation. Copying also makes
+            # this safe to repeat, which is what keeps the state current after
+            # a tool has changed it.
+            llm_input = _apply_state_prompt(llm_input, state, self.state_prompt)
 
         return AgentSetup(
             input=llm_input,
@@ -824,3 +818,35 @@ def _get_waiting_for_event_exception() -> Optional[Type[Exception]]:
         return WaitingForEvent
     except ImportError:
         return None
+
+
+def _apply_state_prompt(
+    llm_input: List[ChatMessage],
+    state: Any,
+    state_prompt: Union[str, BasePromptTemplate],
+) -> List[ChatMessage]:
+    """
+    Render the current state into a copy of the last message.
+
+    The returned list shares every message with ``llm_input`` except the last
+    one, which is replaced by a copy carrying the formatted text. Nothing that
+    memory handed us is modified, so the stored conversation keeps the text the
+    user actually wrote and the prompt can safely be re-rendered on every step.
+    """
+    if not llm_input:
+        return llm_input
+
+    last_message = llm_input[-1]
+    blocks = list(last_message.blocks)
+    for idx in range(len(blocks) - 1, -1, -1):
+        block = blocks[idx]
+        if isinstance(block, TextBlock):
+            blocks[idx] = TextBlock(
+                text=state_prompt.format(state=state, msg=block.text)
+            )
+            return [
+                *llm_input[:-1],
+                last_message.model_copy(update={"blocks": blocks}),
+            ]
+
+    return llm_input
