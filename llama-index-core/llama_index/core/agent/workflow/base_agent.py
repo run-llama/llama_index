@@ -293,7 +293,7 @@ class BaseWorkflowAgent(
             await ctx.store.set("state", copy.deepcopy(self.initial_state))
 
         max_iterations = ev.get("max_iterations", default=None)
-        if max_iterations is not None:
+        if max_iterations:
             await ctx.store.set("max_iterations", max_iterations)
         elif not await ctx.store.get("max_iterations", default=None):
             await ctx.store.set("max_iterations", DEFAULT_MAX_ITERATIONS)

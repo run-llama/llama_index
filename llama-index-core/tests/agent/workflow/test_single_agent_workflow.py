@@ -353,6 +353,28 @@ async def test_max_iterations_applies_on_reused_context():
 
 
 @pytest.mark.asyncio
+async def test_max_iterations_zero_uses_default():
+    """max_iterations=0 is falsy and must keep resolving to the default, as on main."""
+    from llama_index.core.agent.workflow.base_agent import DEFAULT_MAX_ITERATIONS
+    from llama_index.core.workflow import Context
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [ChatMessage(role=MessageRole.ASSISTANT, content="done")]
+            )
+        ),
+    )
+
+    ctx = Context(agent)
+    await agent.run(user_msg="test", ctx=ctx, max_iterations=0)
+
+    assert await ctx.store.get("max_iterations") == DEFAULT_MAX_ITERATIONS
+
+
+@pytest.mark.asyncio
 async def test_early_stopping_method_generate():
     """Test early_stopping_method='generate' produces a final response instead of raising error."""
 
