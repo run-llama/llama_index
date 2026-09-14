@@ -292,18 +292,17 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.store.set(
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
             )
-        if not await ctx.store.get("max_iterations", default=None):
-            max_iterations = (
-                ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
-            )
+        max_iterations = ev.get("max_iterations", default=None)
+        if max_iterations is not None:
             await ctx.store.set("max_iterations", max_iterations)
+        elif not await ctx.store.get("max_iterations", default=None):
+            await ctx.store.set("max_iterations", DEFAULT_MAX_ITERATIONS)
 
-        if not await ctx.store.get("early_stopping_method", default=None):
-            early_stopping_method = (
-                ev.get("early_stopping_method", default=None)
-                or self.early_stopping_method
-            )
+        early_stopping_method = ev.get("early_stopping_method", default=None)
+        if early_stopping_method is not None:
             await ctx.store.set("early_stopping_method", early_stopping_method)
+        elif not await ctx.store.get("early_stopping_method", default=None):
+            await ctx.store.set("early_stopping_method", self.early_stopping_method)
 
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
