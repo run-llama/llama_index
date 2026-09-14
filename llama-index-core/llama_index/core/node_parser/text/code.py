@@ -106,6 +106,14 @@ class CodeSplitter(TextSplitter):
             id_func=id_func,
         )
 
+        if not 0 <= self.chunk_lines_overlap < self.chunk_lines:
+            raise ValueError(
+                "chunk_lines_overlap must satisfy "
+                f"0 <= chunk_lines_overlap < chunk_lines; got "
+                f"chunk_lines_overlap={self.chunk_lines_overlap}, "
+                f"chunk_lines={self.chunk_lines}."
+            )
+
         # Initialize tokenizer if using token mode
         self._tokenizer = tokenizer or get_tokenizer()
 
@@ -339,33 +347,35 @@ class CodeSplitter(TextSplitter):
             return [chunk.strip() for chunk, _ in chunks]
 
         overlapped_chunks = [chunks[0][0].strip()]
+        previous_raw_chunk = chunks[0][0]
         for raw_chunk, line_limited in chunks[1:]:
             chunk = raw_chunk.strip()
             if not line_limited:
                 overlapped_chunks.append(chunk)
+                previous_raw_chunk = raw_chunk
                 continue
 
             previous_lines = overlapped_chunks[-1].splitlines(keepends=True)
-            current_lines = chunk.splitlines(keepends=True)
-            max_overlap = min(
-                self.chunk_lines_overlap,
-                len(previous_lines),
-                max(0, self.chunk_lines - len(current_lines)),
-            )
+            previous_trailing = previous_raw_chunk[len(previous_raw_chunk.rstrip()) :]
+            current_leading = raw_chunk[: len(raw_chunk) - len(raw_chunk.lstrip())]
+            separator = previous_trailing + current_leading
 
-            while max_overlap > 0:
-                prefix = "".join(previous_lines[-max_overlap:])
-                if prefix and not prefix.endswith(("\n", "\r")):
-                    prefix += "\n"
-                candidate = prefix + chunk
-                if self._chunk_size(candidate) <= (
-                    self.max_chars if self.count_mode == "char" else self.max_tokens
+            max_overlap = min(self.chunk_lines_overlap, len(previous_lines))
+            max_size = self.max_chars if self.count_mode == "char" else self.max_tokens
+            for overlap in range(max_overlap, 0, -1):
+                if not separator:
+                    break
+                prefix = "".join(previous_lines[-overlap:])
+                candidate = prefix + separator + chunk
+                if (
+                    len(candidate.splitlines()) <= self.chunk_lines
+                    and self._chunk_size(candidate) <= max_size
                 ):
                     chunk = candidate
                     break
-                max_overlap -= 1
 
             overlapped_chunks.append(chunk)
+            previous_raw_chunk = raw_chunk
 
         return overlapped_chunks
 
