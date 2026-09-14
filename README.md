@@ -1,4 +1,4 @@
-# 🗂️ LlamaIndex 🦙
+# 🗂️ LlamaIndex (OSS Framework) 🦙
 
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)
 [![Build](https://github.com/run-llama/llama_index/actions/workflows/build_package.yml/badge.svg)](https://github.com/run-llama/llama_index/actions/workflows/build_package.yml)
@@ -7,7 +7,14 @@
 [![Twitter](https://img.shields.io/twitter/follow/llama_index)](https://x.com/llama_index)
 [![Reddit](https://img.shields.io/reddit/subreddit-subscribers/LlamaIndex?style=plastic&logo=reddit&label=r%2FLlamaIndex&labelColor=white)](https://www.reddit.com/r/LlamaIndex/)
 
-LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)) is an open-source framework to build agentic applications. **[Parse](https://cloud.llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)** is our enterprise platform for agentic OCR, parsing, extraction, indexing and more. You can use LlamaParse with this framework or on its own; see [LlamaParse](#llamacloud-document-agent-platform) below for signup and product links.
+> [!NOTE]
+> The current focus of LlamaIndex is to build the best AI-powered engine for document parsing and extraction. **[LlamaParse](https://cloud.llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)** is our enterprise platform for agentic OCR, parsing, extraction, indexing and more. [LiteParse](https://github.com/run-llama/liteparse) represents our efforts to build the best free, fast, cheap text parser in the market. [ParseBench](https://www.parsebench.ai/) and [ExtractBench](https://www.extractbench.ai/) represent our commitment towards open benchmarking for parsing and extraction.
+>
+> The company itself has undergone an evolution since when this OSS framework first launched 3 years ago in 2023. Since the early days, the framework has consisted of a broad set of orchestration tools enabling developers to build various RAG and agent applications.
+>
+> While we still have the OSS framework available as an open toolkit that you're welcome to use, our primary focus has shifted towards LlamaParse, along with liteparse and our benchmarking efforts. We have a strong belief that agents are the new consumers of documents, and they fundamentally need the right tools to unlock context from the world's hardest documents accurately/cheaply at scale. Whether you're an AI startup processing documents or an enterprise looking to automate document workflows, [come talk to us](https://www.llamaindex.ai/contact).
+
+LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)) is an open-source framework to build agentic applications. You can use LlamaParse with this framework or on its own; see [LlamaParse](#llamacloud-document-agent-platform) below for signup and product links.
 
 > ### 📚 **Documentation:**
 >
