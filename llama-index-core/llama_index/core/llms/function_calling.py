@@ -108,8 +108,27 @@ class FunctionCallingLLM(LLM):
             tool_required=tool_required,
             **kwargs,
         )
-        # TODO: no validation for streaming outputs
-        return self.stream_chat(**chat_kwargs)
+        response_gen = self.stream_chat(**chat_kwargs)
+
+        def gen() -> ChatResponseGen:
+            last_response: Optional[ChatResponse] = None
+            for last_response in response_gen:
+                yield last_response
+
+            # streamed responses accumulate, so once the stream is exhausted the
+            # last response carries the full message and can get the same
+            # validation as the non-streaming path. Validation is expected to
+            # mutate the response in place (e.g. force_single_tool_call), which
+            # consumers holding a reference to the final response will observe.
+            if last_response is not None:
+                self._validate_chat_with_tools_response(
+                    last_response,
+                    tools,
+                    allow_parallel_tool_calls=allow_parallel_tool_calls,
+                    **kwargs,
+                )
+
+        return gen()
 
     async def astream_chat_with_tools(
         self,
@@ -131,8 +150,24 @@ class FunctionCallingLLM(LLM):
             tool_required=tool_required,
             **kwargs,
         )
-        # TODO: no validation for streaming outputs
-        return await self.astream_chat(**chat_kwargs)
+        response_gen = await self.astream_chat(**chat_kwargs)
+
+        async def gen() -> ChatResponseAsyncGen:
+            last_response: Optional[ChatResponse] = None
+            async for last_response in response_gen:
+                yield last_response
+
+            # see stream_chat_with_tools: validate the fully accumulated
+            # response once the stream is exhausted
+            if last_response is not None:
+                self._validate_chat_with_tools_response(
+                    last_response,
+                    tools,
+                    allow_parallel_tool_calls=allow_parallel_tool_calls,
+                    **kwargs,
+                )
+
+        return gen()
 
     def _prepare_chat_with_tools_compat(
         self,
