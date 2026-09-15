@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pytest",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "types-requests==2.28.11.8",
+    "codespell[toml]>=v2.2.6",
+]
+
+[project]
+name = "llama-index-tools-unirate"
+version = "0.1.0"
+description = "llama-index tools UniRate currency exchange rates integration"
+authors = [{name = "UniRate-API", email = "199503049+rob-browncc@users.noreply.github.com"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "rob-browncc"}]
+keywords = ["currency", "exchange rate", "forex", "fx", "unirate", "vat", "conversion"]
+dependencies = [
+    "unirate-api>=1.0.0,<2",
+    "llama-index-core>=0.13.0,<0.15",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.unirate"
+
+[tool.llamahub.class_authors]
+UnirateToolSpec = "rob-browncc"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
