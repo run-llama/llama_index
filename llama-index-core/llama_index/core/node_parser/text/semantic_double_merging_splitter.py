@@ -231,6 +231,12 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             text = node.get_content()
             sentences = self.sentence_splitter(text)
             sentences = [s.strip() for s in sentences]
+            # Drop empty/whitespace-only sentences and skip documents that end up
+            # with no sentences; otherwise _create_initial_chunks raises
+            # IndexError on sentences[0] for an empty document (issue #17032).
+            sentences = [s for s in sentences if s]
+            if not sentences:
+                continue
             initial_chunks = self._create_initial_chunks(sentences)
             chunks = self._merge_initial_chunks(initial_chunks)
 
