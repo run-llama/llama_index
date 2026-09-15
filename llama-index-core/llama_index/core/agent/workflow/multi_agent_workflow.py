@@ -25,6 +25,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
     _get_waiting_for_event_exception,
+    _safe_model_dump,
 )
 from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
@@ -322,11 +323,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             response_stream = await agent.llm.astream_chat(llm_input)
             last_response = None
             async for last_response in response_stream:
-                raw = (
-                    last_response.raw.model_dump()
-                    if isinstance(last_response.raw, BaseModel)
-                    else last_response.raw
-                )
+                raw = _safe_model_dump(last_response.raw)
                 if ctx.is_running:
                     ctx.write_event_to_stream(
                         AgentStream(
