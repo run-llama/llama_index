@@ -95,6 +95,20 @@ def test_non_empty_payload_still_builds_request_body():
         embedding._get_provider()
 
 
+def test_cohere_request_body_includes_additional_kwargs():
+    """additional_kwargs (e.g. output_dimension) must reach the Cohere request body."""
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name="cohere.embed-v4:0",
+        client=bedrock_client,
+        additional_kwargs={"output_dimension": 256},
+    )
+
+    body = embedding._get_request_body("cohere", ["hello"], "text")
+    assert '"output_dimension": 256' in body
+    assert '"texts"' in body and '"input_type"' in body
+
+
 @pytest.mark.parametrize(
     ("model_name", "expected_provider"),
     [
