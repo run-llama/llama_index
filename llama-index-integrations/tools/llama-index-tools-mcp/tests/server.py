@@ -72,6 +72,11 @@ def add(a: float, b: float) -> float:
     return a + b
 
 
+@mcp.tool(description="Always fails, for exercising the error path")
+def always_fails() -> str:
+    raise ValueError("this tool always fails")
+
+
 @mcp.tool(description="Get current server time")
 def get_time() -> str:
     """Get the current server time to test tools without arguments."""
