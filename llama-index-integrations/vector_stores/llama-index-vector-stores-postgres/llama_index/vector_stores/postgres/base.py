@@ -2,16 +2,17 @@ import logging
 import re
 from typing import (
     Any,
+    Callable,
     Dict,
+    Iterator,
     List,
+    Literal,
     NamedTuple,
     Optional,
-    Type,
-    Union,
     Set,
     Tuple,
-    Literal,
-    Callable,
+    Type,
+    Union,
 )
 
 import asyncpg  # noqa
@@ -687,7 +688,19 @@ class PGVectorStore(BasePydanticVectorStore):
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
 
-    def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+    def _build_filter_clause(
+        self, filter_: MetadataFilter, key_param: Optional[str] = None
+    ) -> Any:
+        # Bind the metadata key as a SQL parameter so that keys coming from
+        # untrusted sources (e.g. an agent choosing which field to filter on)
+        # cannot alter the query. Parameter names use a deterministic counter
+        # scoped to the filter tree (or filter_key_0 when called standalone)
+        # so identical filter structures produce stable SQL text and hit
+        # SQLAlchemy's statement compilation cache while guaranteeing
+        # parameter name uniqueness across the query tree.
+        if key_param is None:
+            key_param = "filter_key_0"
+
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
 
@@ -696,10 +709,10 @@ class PGVectorStore(BasePydanticVectorStore):
             filter_value = ", ".join(f"'{e}'" for e in filter_.value)
 
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"metadata_->>:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
             # Expects a text array stored in the metadata, and a list of values to compare
             # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
@@ -707,55 +720,63 @@ class PGVectorStore(BasePydanticVectorStore):
             filter_value = ", ".join(f"'{e}'" for e in filter_.value)
 
             return text(
-                f"metadata_::jsonb->'{filter_.key}' "
+                f"metadata_::jsonb->:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"array[{filter_value}]"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
             return text(
-                f"metadata_::jsonb->'{filter_.key}' "
+                f"metadata_::jsonb->:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif (
             filter_.operator == FilterOperator.TEXT_MATCH
             or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
         ):
             # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"metadata_->>:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'%{filter_.value}%'"
-            )
+            ).bindparams(**{key_param: filter_.key})
         elif filter_.operator == FilterOperator.IS_EMPTY:
             # Where the operator is is_empty, we need to check if the metadata is null
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"metadata_->>:{key_param} "
                 f"{self._to_postgres_operator(filter_.operator)}"
-            )
+            ).bindparams(**{key_param: filter_.key})
         else:
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
                 return text(
-                    f"(metadata_->>'{filter_.key}')::float "
+                    f"(metadata_->>:{key_param})::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"{float(filter_.value)}"
-                )
+                ).bindparams(**{key_param: filter_.key})
             except ValueError:
                 # If not a number, then treat it as a string
                 return text(
-                    f"metadata_->>'{filter_.key}' "
+                    f"metadata_->>:{key_param} "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"'{filter_.value}'"
-                )
+                ).bindparams(**{key_param: filter_.key})
 
-    def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
+    def _recursively_apply_filters(
+        self,
+        filters: List[MetadataFilters],
+        param_counter: Optional[Iterator[int]] = None,
+    ) -> Any:
         """
         Returns a sqlalchemy where clause.
         """
+        import itertools
         import sqlalchemy
+
+        if param_counter is None:
+            param_counter = itertools.count()
 
         sqlalchemy_conditions = {
             "or": sqlalchemy.sql.or_,
@@ -771,9 +792,13 @@ class PGVectorStore(BasePydanticVectorStore):
         return sqlalchemy_conditions[filters.condition](
             *(
                 (
-                    self._build_filter_clause(filter_)
+                    self._build_filter_clause(
+                        filter_, key_param=f"filter_key_{next(param_counter)}"
+                    )
                     if not isinstance(filter_, MetadataFilters)
-                    else self._recursively_apply_filters(filter_)
+                    else self._recursively_apply_filters(
+                        filter_, param_counter=param_counter
+                    )
                 )
                 for filter_ in filters.filters
             )
