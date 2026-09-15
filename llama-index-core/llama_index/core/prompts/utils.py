@@ -13,7 +13,10 @@ class SafeFormatter:
         self.format_dict = format_dict or {}
 
     def format(self, format_string: str) -> str:
-        return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
+        # Handle "{{" and "}}" as escaped literal braces (like str.format) in the
+        # same pass as field substitution, so that escaped braces are not treated
+        # as field markers (e.g. "{{...}}" stays literal "{...}").
+        return re.sub(r"\{\{|\}\}|\{([^{}]+)\}", self._replace_match, format_string)
 
     def parse(self, format_string: str) -> List[str]:
         return re.findall(
@@ -21,8 +24,15 @@ class SafeFormatter:
         )
 
     def _replace_match(self, match: re.Match) -> str:
+        matched = match.group(0)
+        # Escaped literal braces: collapse "{{" -> "{" and "}}" -> "}".
+        if matched == "{{":
+            return "{"
+        if matched == "}}":
+            return "}"
+
         key = match.group(1)
-        value = self.format_dict.get(key, match.group(0))
+        value = self.format_dict.get(key, matched)
         if isinstance(value, bytes):
             return resolve_binary(value, as_base64=True).read().decode("utf-8")
 
