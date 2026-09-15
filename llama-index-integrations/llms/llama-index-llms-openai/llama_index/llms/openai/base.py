@@ -232,7 +232,12 @@ class OpenAI(FunctionCallingLLM):
 
     api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
     api_base: Optional[str] = Field(
-        default=None, description="The base URL for OpenAI API."
+        default=None,
+        description=(
+            "The base URL for OpenAI API. Falls back to the OPENAI_API_BASE environment "
+            "variable, then openai.base_url, then https://api.openai.com/v1. "
+            "OPENAI_BASE_URL is not consulted."
+        ),
     )
     api_version: Optional[str] = Field(
         default=None, description="The API version for OpenAI API."
