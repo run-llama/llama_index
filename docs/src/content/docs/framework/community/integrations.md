@@ -19,6 +19,7 @@ The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [GoodMem](/python/framework/community/integrations/goodmem) — scoped document search tools
 
 ## LLMs
 
@@ -45,6 +46,7 @@ for full tracing integrations.
 
 - [Vector Stores](/python/framework/community/integrations/vector_stores)
 - [Managed Indices](/python/framework/community/integrations/managed_indices)
+- [GoodMem](/python/framework/community/integrations/goodmem) — document ingestion and semantic retrieval
 
 ## Application Frameworks
 
