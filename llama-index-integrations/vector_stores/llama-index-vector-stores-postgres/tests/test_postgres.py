@@ -3220,3 +3220,39 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
     assert "e1" not in result.ids
     assert "v1" in result.ids
     assert "v2" in result.ids
+
+
+def test_build_filter_clause_numeric_vs_string():
+    store = PGVectorStore.__new__(PGVectorStore)
+
+    # 1. String that looks like a number with underscore (e.g. filename "2024_123")
+    f_str_underscore = MetadataFilter(
+        key="file_name", value="2024_123", operator=FilterOperator.EQ
+    )
+    clause = store._build_filter_clause(f_str_underscore)
+    sql_text = str(clause)
+    assert "(metadata_->>'file_name')::float" not in sql_text
+    assert "metadata_->>'file_name'" in sql_text
+    assert "'2024_123'" in sql_text
+
+    # 2. String of digits (e.g. code "007")
+    f_str_digits = MetadataFilter(key="code", value="007", operator=FilterOperator.EQ)
+    clause = store._build_filter_clause(f_str_digits)
+    sql_text = str(clause)
+    assert "(metadata_->>'code')::float" not in sql_text
+    assert "'007'" in sql_text
+
+    # 3. Actual integer (e.g. 42)
+    f_int = MetadataFilter(key="count", value=42, operator=FilterOperator.EQ)
+    clause = store._build_filter_clause(f_int)
+    sql_text = str(clause)
+    assert "(metadata_->>'count')::float" in sql_text
+    assert "42.0" in sql_text
+
+    # 4. Actual float (e.g. 3.14)
+    f_float = MetadataFilter(key="score", value=3.14, operator=FilterOperator.GT)
+    clause = store._build_filter_clause(f_float)
+    sql_text = str(clause)
+    assert "(metadata_->>'score')::float" in sql_text
+    assert "3.14" in sql_text
+
