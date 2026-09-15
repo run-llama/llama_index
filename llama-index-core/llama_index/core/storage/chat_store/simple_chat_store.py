@@ -87,7 +87,7 @@ class SimpleChatStore(BaseChatStore):
         """Persist the docstore to a file."""
         fs = fs or fsspec.filesystem("file")
         dirpath = os.path.dirname(persist_path)
-        if not fs.exists(dirpath):
+        if dirpath and not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w", encoding="utf-8") as f:

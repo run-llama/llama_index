@@ -91,3 +91,17 @@ def test_persist_non_ascii_unescaped(tmp_path: Path) -> None:
     assert SimpleChatStore.from_persist_path(persist_path).get_messages("user1") == [
         ChatMessage(role="user", content="ハロー héllo"),
     ]
+
+
+def test_persist_with_filename_only_path(tmp_path: Path, monkeypatch) -> None:
+    """Test that persist works when the path has no parent directory."""
+    monkeypatch.chdir(tmp_path)
+    chat_store = SimpleChatStore()
+
+    chat_store.add_message("user1", ChatMessage(role="user", content="سلام"))
+    chat_store.persist("chat_store.json")
+
+    assert (tmp_path / "chat_store.json").exists()
+    assert SimpleChatStore.from_persist_path("chat_store.json").get_messages("user1") == [
+        ChatMessage(role="user", content="سلام"),
+    ]
