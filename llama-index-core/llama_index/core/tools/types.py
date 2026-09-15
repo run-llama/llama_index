@@ -41,8 +41,28 @@ class ToolMetadata:
             parameters = {
                 k: v
                 for k, v in parameters.items()
-                if k in ["type", "properties", "required", "definitions", "$defs"]
+                if k
+                in [
+                    "type",
+                    "properties",
+                    "required",
+                    "definitions",
+                    "$defs",
+                    "$ref",
+                    "anyOf",
+                    "oneOf",
+                    "allOf",
+                    "items",
+                    "prefixItems",
+                    "additionalProperties",
+                    "enum",
+                    "default",
+                ]
             }
+            if parameters.get("type") == "object" or "properties" in parameters:
+                parameters.setdefault("type", "object")
+                parameters.setdefault("properties", {})
+                parameters.setdefault("required", [])
         return parameters
 
     @property
