@@ -532,6 +532,19 @@ class TestRefine:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
 
+    def test_synthesize__streaming_default_refine_program_streams_last_call(
+        self,
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=4)
+        synthesizer = Refine(llm=llm, streaming=True)
+
+        response = synthesizer.synthesize(
+            query="test", nodes=[NodeWithScore(node=TextNode(text="input"), score=1.0)]
+        )
+
+        assert isinstance(response, StreamingResponse)
+        assert list(response.response_gen) == ["text ", "text ", "text ", "text"]
+
     @pytest.mark.asyncio
     async def test_asynthesize__streaming_default_refine_program(
         self, llm_case: LLMCase, nodes: list[NodeWithScore]
@@ -552,6 +565,21 @@ class TestRefine:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_default_refine_program_streams_last_call(
+        self,
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=4)
+        synthesizer = Refine(llm=llm, streaming=True)
+
+        response = await synthesizer.asynthesize(
+            query="test", nodes=[NodeWithScore(node=TextNode(text="input"), score=1.0)]
+        )
+
+        assert isinstance(response, AsyncStreamingResponse)
+        chunks = [chunk async for chunk in response.response_gen]
+        assert chunks == ["text ", "text ", "text ", "text"]
 
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
