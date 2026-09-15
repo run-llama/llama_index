@@ -711,6 +711,53 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### Agent Action Capsule (capsule-emit)
+
+[capsule-emit](https://github.com/action-state-group/capsule-emit) records an
+auditable, offline-verifiable trail of what an agent's tools were asked to do and
+what came back. It seals two linked records per tool call — a *planned* record when
+the agent enters its tool step and a *confirmed* or *failed* record chained to it
+when the step returns — writing them to a local append-only ledger. Tool inputs and
+outputs are digested, never stored. Records are self-attested: an offline `verify()`
+proves each record's integrity and chain consistency — not that the events occurred,
+and not that a third party countersigned them.
+
+It is observation-only: it reads the instrumentation span surface and never modifies
+a tool call.
+
+#### Install
+
+```bash
+pip install "capsule-emit[llamaindex]"
+```
+
+#### Usage Pattern
+
+```python
+from capsule_emit.adapters.llamaindex_listener import LlamaIndexCapsuleListener
+
+listener = LlamaIndexCapsuleListener(
+    operator="acme-co",          # accountable tenant
+    developer="my-agent@v1",     # agent identity + version
+    ledger="ledger.jsonl",
+)
+listener.install()               # registers a span handler on the root dispatcher
+
+# ... run your agent as usual ...
+
+listener.uninstall()
+```
+
+`install()` adds a `BaseSpanHandler` to the dispatcher returned by
+`llama_index.core.instrumentation.get_dispatcher()`, so it needs no change to your
+agent, tools, or run loop. To scope it yourself, pass a dispatcher to `install()`,
+or register `listener.span_handler` directly.
+
+#### Example Guides
+
+- [LlamaIndex adapter documentation](https://github.com/action-state-group/capsule-emit/blob/main/docs/adapters/llamaindex.md)
+- [Runnable example](https://github.com/action-state-group/capsule-emit/blob/main/examples/llamaindex-listener/demo.py) — no API key required
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
