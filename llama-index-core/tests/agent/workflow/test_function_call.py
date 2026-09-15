@@ -1,13 +1,14 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from llama_index.core.agent.workflow import BaseWorkflowAgent
+from llama_index.core.agent.workflow import BaseWorkflowAgent, FunctionAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
     ToolCallResult,
 )
 from llama_index.core.llms import ChatMessage
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import FunctionTool, ToolOutput
 from llama_index.core.workflow.context import Context
@@ -62,6 +63,55 @@ def test_agent():
         tools=[],
         llm=None,  # Will use default
     )
+
+
+@pytest.mark.asyncio
+async def test_function_agent_records_all_parallel_results_before_return_direct(
+    mock_context, mock_memory
+):
+    """All parallel tool responses must be recorded before returning directly."""
+    agent = FunctionAgent(llm=MockFunctionCallingLLM())
+    mock_context.store.get.return_value = []
+
+    direct_result = ToolCallResult(
+        tool_name="direct_tool",
+        tool_kwargs={},
+        tool_id="direct-id",
+        tool_output=ToolOutput(
+            content="direct result",
+            tool_name="direct_tool",
+            raw_input={},
+            raw_output="direct result",
+            is_error=False,
+        ),
+        return_direct=True,
+    )
+    ordinary_result = ToolCallResult(
+        tool_name="ordinary_tool",
+        tool_kwargs={},
+        tool_id="ordinary-id",
+        tool_output=ToolOutput(
+            content="ordinary result",
+            tool_name="ordinary_tool",
+            raw_input={},
+            raw_output="ordinary result",
+            is_error=False,
+        ),
+        return_direct=False,
+    )
+
+    await agent.handle_tool_call_results(
+        mock_context, [direct_result, ordinary_result], mock_memory
+    )
+
+    scratchpad = mock_context.store.set.await_args.args[1]
+    recorded_tool_ids = [
+        message.additional_kwargs["tool_call_id"]
+        for message in scratchpad
+        if message.role == "tool"
+    ]
+    assert recorded_tool_ids == ["direct-id", "ordinary-id"]
+    assert [message.role for message in scratchpad] == ["tool", "tool", "assistant"]
 
 
 @pytest.mark.asyncio
