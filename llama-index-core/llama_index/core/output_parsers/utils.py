@@ -23,16 +23,69 @@ def _marshal_llm_to_json(output: str) -> str:
     """
     output = output.strip()
 
+    # We can't simply pick whichever opening delimiter comes first, because the
+    # surrounding prose may contain a stray bracket (e.g.
+    # "See [1] for details: {...}") that precedes the real payload. Instead we
+    # enumerate every balanced bracket region (tracking nesting and ignoring
+    # delimiters inside string literals) and prefer the largest region that is
+    # itself parseable as JSON. This skips prose brackets such as "[1]" or
+    # "[thinking]" in favor of the actual JSON value.
+    closing = {"{": "}", "[": "]"}
+    candidates = []
+    for left, char in enumerate(output):
+        if char not in closing:
+            continue
+
+        stack = [closing[char]]
+        in_string = False
+        escaped = False
+        for right in range(left + 1, len(output)):
+            cur = output[right]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif cur == "\\":
+                    escaped = True
+                elif cur == '"':
+                    in_string = False
+                continue
+
+            if cur == '"':
+                in_string = True
+            elif cur in closing:
+                stack.append(closing[cur])
+            elif cur in ("}", "]"):
+                if stack and cur == stack[-1]:
+                    stack.pop()
+                    if not stack:
+                        candidates.append((left, right))
+                        break
+                else:
+                    # Mismatched closer; this opener doesn't start valid JSON.
+                    break
+
+    if candidates:
+        # Prefer the largest region that parses as JSON; otherwise the largest.
+        def _parses(span: tuple) -> bool:
+            try:
+                json.loads(output[span[0] : span[1] + 1])
+                return True
+            except (json.JSONDecodeError, ValueError):
+                return False
+
+        best = max(candidates, key=lambda s: (_parses(s), s[1] - s[0]))
+        left, right = best
+        return output[left : right + 1]
+
+    # Fall back to the original heuristic if no balanced region was found.
     left_square = output.find("[")
     left_brace = output.find("{")
-
     if (left_square < left_brace and left_square != -1) or left_brace == -1:
         left = left_square
         right = output.rfind("]")
     else:
         left = left_brace
         right = output.rfind("}")
-
     return output[left : right + 1]
 
 
