@@ -151,7 +151,10 @@ class OpenAI(FunctionCallingLLM):
         timeout: How long to wait, in seconds, for an API call before failing.
         reuse_client: Reuse the OpenAI client between requests. When doing anything with large volumes of async API calls, setting this to false can improve stability.
         api_key: Your OpenAI api key
-        api_base: The base URL of the API to call
+        api_base: The base URL of the API to call. Falls back to the ``OPENAI_API_BASE``
+            environment variable, then to ``openai.base_url``, then to
+            ``https://api.openai.com/v1``. Note that ``OPENAI_BASE_URL`` -- the variable the
+            ``openai`` client itself reads -- is **not** consulted.
         api_version: the version of the API to call
         callback_manager: the callback manager is used for observability.
         default_headers: override the default headers for API requests.
