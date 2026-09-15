@@ -1,8 +1,10 @@
+import io
 import os
 import pypdf
 import pytest
 import tempfile
 from fpdf import FPDF
+from fsspec import AbstractFileSystem
 from llama_index.readers.file import PDFReader
 from pathlib import Path
 from typing import Dict
@@ -103,3 +105,30 @@ def test_pdfreader_loads_metadata_into_multiple_documents(
         assert docs[page].metadata == expected_metadata
 
     os.remove(temp_file.name)
+
+
+def test_pdfreader_preserves_remote_uri_for_non_default_filesystem(
+    multi_page_pdf: FPDF,
+) -> None:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+        multi_page_pdf.output(temp_file.name)
+        temp_file_path = Path(temp_file.name)
+    pdf_bytes = temp_file_path.read_bytes()
+    os.remove(temp_file.name)
+
+    remote_uri = "s3://bucket/path/to/test.pdf"
+
+    class RemoteFileSystem(AbstractFileSystem):
+        opened_path = ""
+
+        def open(self, path: str, mode: str) -> io.BytesIO:
+            self.opened_path = path
+            return io.BytesIO(pdf_bytes)
+
+    fs = RemoteFileSystem()
+    reader = PDFReader(return_full_document=True)
+
+    docs = reader.load_data(remote_uri, fs=fs)
+
+    assert fs.opened_path == remote_uri
+    assert docs[0].metadata["file_name"] == "test.pdf"
