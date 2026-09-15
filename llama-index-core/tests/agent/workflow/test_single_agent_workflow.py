@@ -12,6 +12,7 @@ from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow.errors import WorkflowRuntimeError
+from workflows import Context
 
 
 def _response_generator_from_list(responses: List[ChatMessage]):
@@ -300,6 +301,45 @@ async def test_max_iterations():
 
     # Set max iterations to 101 to avoid error
     _ = agent.run(user_msg="test", max_iterations=101)
+
+
+@pytest.mark.asyncio
+async def test_run_args_apply_on_reused_context():
+    """max_iterations and early_stopping_method from a later run on the same context apply."""
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(tool_id="one", tool_name="random_tool", tool_kwargs={})
+            ]
+        },
+    )
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=lambda messages, **kwargs: tool_call
+        ),
+    )
+    ctx = Context(agent)
+
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 2 reached"):
+        await agent.run(user_msg="test", ctx=ctx, max_iterations=2)
+
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 3 reached"):
+        await agent.run(user_msg="test", ctx=ctx, max_iterations=3)
+
+    # A run that passes no limit keeps the one already stored on the context.
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 3 reached"):
+        await agent.run(user_msg="test", ctx=ctx)
+
+    await agent.run(user_msg="test", ctx=ctx, early_stopping_method="generate")
 
 
 @pytest.mark.asyncio
