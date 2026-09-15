@@ -100,6 +100,19 @@ class GoogleSheetsReader(BasePydanticReader):
             results.extend(dataframes)
         return results
 
+    @staticmethod
+    def _sheet_range(title: str, rows: int, cols: int) -> str:
+        """
+        The whole grid of one sheet, addressed by title.
+
+        The title is quoted, since one with a space or one that reads as a cell reference
+        (``A1``) is only a sheet name inside quotes; an apostrophe in it doubles. Without a
+        title the Sheets API reads the range against the first sheet, whichever sheet was asked
+        for.
+        """
+        quoted = "'" + title.replace("'", "''") + "'"
+        return f"{quoted}!R1C1:R{rows}C{cols}"
+
     def _load_sheet(self, spreadsheet_id: str) -> str:
         """
         Load a sheet from Google Sheets.
@@ -126,7 +139,7 @@ class GoogleSheetsReader(BasePydanticReader):
             grid_props = properties.get("gridProperties")
             rows = grid_props.get("rowCount")
             cols = grid_props.get("columnCount")
-            range_pattern = f"R1C1:R{rows}C{cols}"
+            range_pattern = self._sheet_range(title, rows, cols)
             response = (
                 sheets_service.spreadsheets()
                 .values()
@@ -162,7 +175,7 @@ class GoogleSheetsReader(BasePydanticReader):
             grid_props = properties.get("gridProperties")
             rows = grid_props.get("rowCount")
             cols = grid_props.get("columnCount")
-            range_pattern = f"{title}!R1C1:R{rows}C{cols}"
+            range_pattern = self._sheet_range(title, rows, cols)
             response = (
                 sheets_service.spreadsheets()
                 .values()
