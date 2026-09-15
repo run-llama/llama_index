@@ -531,6 +531,7 @@ class BedrockEmbedding(BaseEmbedding):
                 {
                     "texts": payload,
                     "input_type": input_types[input_type],
+                    **self.additional_kwargs,
                 }
             )
         else:

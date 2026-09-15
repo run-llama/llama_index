@@ -88,6 +88,29 @@ def test_non_empty_payload_still_builds_request_body():
     body = embedding._get_request_body("cohere", ["hello", "world"], "text")
     assert '"hello"' in body and '"world"' in body
 
+
+def test_cohere_additional_kwargs_forwarded_to_request_body():
+    """
+    additional_kwargs (e.g. output_dimension) must reach the Cohere request body.
+
+    Regression for #22648: the Cohere branch in _get_request_body ignored
+    self.additional_kwargs, so output_dimension was silently dropped and Cohere
+    Embed v4 always returned its default dimension.
+    """
+    import json
+
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name="cohere.embed-v4:0",
+        additional_kwargs={"output_dimension": 256},
+        client=bedrock_client,
+    )
+
+    body = json.loads(embedding._get_request_body("cohere", ["hello"], "text"))
+    assert body.get("output_dimension") == 256, (
+        "additional_kwargs must be forwarded into the Cohere request body"
+    )
+
     embedding = BedrockEmbedding(
         model_name="too.many.parts.in.name", client=bedrock_client
     )
