@@ -1,8 +1,8 @@
-import asyncio
 import unicodedata
 from pathlib import Path
 from typing import Callable, Dict, List, Literal, Optional
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -16,8 +16,7 @@ def nfkc_normalize(text: str) -> str:
 
 
 def async_to_sync(awaitable):
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(awaitable)
+    return asyncio_run(awaitable)
 
 
 class ReadabilityWebPageReader(BaseReader):
