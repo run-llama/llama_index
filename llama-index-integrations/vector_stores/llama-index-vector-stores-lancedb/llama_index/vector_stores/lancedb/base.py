@@ -34,6 +34,7 @@ from pandas import DataFrame
 
 import lancedb
 import lancedb.remote.table  # type: ignore
+from lancedb.expr import col, lit
 
 _logger = logging.getLogger(__name__)
 
@@ -419,7 +420,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self.table.delete(f'{self.doc_id_key} = "' + ref_doc_id + '"')
+        self.table.delete(col(self.doc_id_key) == lit(ref_doc_id))
 
     def delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
         """
@@ -429,7 +430,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             node_ids (List[str]): The list of node_ids to delete.
 
         """
-        self.table.delete('id in ("' + '","'.join(node_ids) + '")')
+        self.table.delete(col("id").isin(node_ids))
 
     def get_nodes(
         self,
@@ -455,7 +456,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             where = kwargs.pop("where", None)
 
         if node_ids is not None:
-            where = f'id in ("' + '","'.join(node_ids) + '")'
+            where = col("id").isin(node_ids)
 
         results = self.table.search().where(where).to_pandas()
 
