@@ -76,6 +76,24 @@ WORKFLOW_KWARGS = (
 )
 
 
+def _safe_model_dump(raw: Any) -> Any:
+    """
+    Safely serialize a Pydantic model or return the raw object unchanged.
+
+    Guards against response objects whose custom __getattr__ raises KeyError or other
+    non-AttributeError exceptions during isinstance(raw, BaseModel) checks.
+    """
+    if raw is None:
+        return None
+    try:
+        if isinstance(raw, BaseModel):
+            return raw.model_dump()
+    except Exception:
+        pass
+    return raw
+
+
+
 def get_default_llm() -> LLM:
     return Settings.llm
 
@@ -321,11 +339,7 @@ class BaseWorkflowAgent(
             response_stream = await target_llm.astream_chat(llm_input)
             last_response = None
             async for last_response in response_stream:
-                raw = (
-                    last_response.raw.model_dump()
-                    if isinstance(last_response.raw, BaseModel)
-                    else last_response.raw
-                )
+                raw = _safe_model_dump(last_response.raw)
                 if ctx.is_running:
                     ctx.write_event_to_stream(
                         AgentStream(
