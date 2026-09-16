@@ -27,7 +27,7 @@ Python:
 
 1. **Starter**: [`llama-index`](https://pypi.org/project/llama-index/). A starter Python package that includes core LlamaIndex as well as a selection of integrations.
 
-2. **Customized**: [`llama-index-core`](https://pypi.org/project/llama-index-core/). Install core LlamaIndex and add your chosen LlamaIndex integration packages on [LlamaHub](https://llamahub.ai/)
+2. **Customized**: [`llama-index-core`](https://pypi.org/project/llama-index-core/). Install core LlamaIndex and add your chosen LlamaIndex integration packages from the [integrations page](https://developers.llamaindex.ai/python/framework/community/integrations)
    that are required for your application. There are over 300 LlamaIndex integration
    packages that work seamlessly with core, allowing you to build with your preferred
    LLM, embedding, and vector store providers.
