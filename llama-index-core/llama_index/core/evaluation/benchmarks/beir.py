@@ -23,8 +23,13 @@ class BeirEvaluator:
                 "Please install beir to use this feature: `pip install beir`",
             )
 
-    def _download_datasets(self, datasets: List[str] = ["nfcorpus"]) -> Dict[str, str]:
+    def _download_datasets(
+        self, datasets: Optional[List[str]] = None
+    ) -> Dict[str, str]:
         from beir import util
+
+        if datasets is None:
+            datasets = ["nfcorpus"]
 
         cache_dir = get_cache_dir()
 
@@ -50,12 +55,17 @@ class BeirEvaluator:
     def run(
         self,
         create_retriever: Callable[[List[Document]], BaseRetriever],
-        datasets: List[str] = ["nfcorpus"],
-        metrics_k_values: List[int] = [3, 10],
+        datasets: Optional[List[str]] = None,
+        metrics_k_values: Optional[List[int]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
     ) -> None:
         from beir.datasets.data_loader import GenericDataLoader
         from beir.retrieval.evaluation import EvaluateRetrieval
+
+        if datasets is None:
+            datasets = ["nfcorpus"]
+        if metrics_k_values is None:
+            metrics_k_values = [3, 10]
 
         dataset_paths = self._download_datasets(datasets)
         for dataset in datasets:
