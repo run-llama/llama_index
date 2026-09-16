@@ -112,7 +112,7 @@ response = query_engine.query(
 You can explicitly perform compare/contrast queries with a **query transformation** module within a ComposableGraph.
 
 ```python
-from llama_index.core.query.query_transform.base import DecomposeQueryTransform
+from llama_index.core.indices.query.query_transform.base import DecomposeQueryTransform
 
 decompose_transform = DecomposeQueryTransform(
     service_context.llm, verbose=True
