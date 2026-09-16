@@ -143,3 +143,32 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
         [NodeWithScore(node=orig_node)], query
     )[0]
     assert optimized_node.node.get_content() == "world foo bar"
+
+
+@patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
+@patch.object(
+    MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+def test_optimizer_preserves_original_sentence_order(
+    _mock_embeds: Any, _mock_embed: Any
+) -> None:
+    """
+    Selected sentences must be reassembled in their original document order,
+    not in similarity-rank order (get_top_k_embeddings returns indices sorted
+    by descending similarity).
+    """
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
+        tokenizer_fn=mock_tokenizer_fn,
+        percentile_cutoff=1.0,  # keep every sentence
+        context_before=0,
+        context_after=0,
+    )
+    # "foo" (idx 1) is the exact query match (highest similarity); "bar" (idx 0)
+    # is orthogonal (lowest similarity) but appears first in the source text.
+    query = QueryBundle(query_str="foo", embedding=[0, 0, 1, 0, 0])
+    orig_node = TextNode(text="bar foo")
+    optimized_node = optimizer.postprocess_nodes(
+        [NodeWithScore(node=orig_node)], query
+    )[0]
+    assert optimized_node.node.get_content() == "bar foo"
