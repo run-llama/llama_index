@@ -140,6 +140,11 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
             query=query,
             response=response,
             score=score,
+            # `score` is normalised above, so 1.0 means the raw score reached
+            # `score_threshold`. Left unset it defaults to None, and callers
+            # that gate on `passing` (EvalQueryEngineTool among them) read that
+            # as a failure for every response, however relevant.
+            passing=score >= 1.0 if score is not None else None,
             feedback=eval_response,
             invalid_result=invalid_result,
             invalid_reason=invalid_reason,
