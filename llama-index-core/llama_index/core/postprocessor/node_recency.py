@@ -129,7 +129,11 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
 
         # get embeddings for each node
-        texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
+        # NOTE: build in sorted_nodes order, since the dedup loop below indexes
+        # text_embeddings by position into sorted_nodes (idx2), not into nodes.
+        texts = [
+            node.get_content(metadata_mode=MetadataMode.EMBED) for node in sorted_nodes
+        ]
         text_embeddings = self.embed_model.get_text_embedding_batch(texts=texts)
 
         node_ids_to_skip: Set[str] = set()
