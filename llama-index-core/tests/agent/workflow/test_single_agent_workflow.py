@@ -354,6 +354,70 @@ async def test_early_stopping_method_generate():
 
 
 @pytest.mark.asyncio
+async def test_early_stopping_method_generate_includes_tool_results():
+    """The generated final response must see the observations gathered during the run."""
+    tool_output = "SECRET_TOOL_OUTPUT_12345"
+    llm_inputs: List[List[ChatMessage]] = []
+    num_calls = 0
+
+    def get_info() -> str:
+        """Get some info."""
+        return tool_output
+
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        nonlocal num_calls
+        num_calls += 1
+        llm_inputs.append(list(messages))
+        return ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="calling tool",
+            additional_kwargs={
+                "tool_calls": [
+                    ToolSelection(
+                        tool_id=f"call_{num_calls}",
+                        tool_name="get_info",
+                        tool_kwargs={},
+                    )
+                ]
+            },
+        )
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[get_info],
+        llm=MockFunctionCallingLLM(response_generator=generator),
+        early_stopping_method="generate",
+    )
+
+    _ = await agent.run(user_msg="please gather info", max_iterations=2)
+
+    early_stopping_input = llm_inputs[-1]
+    assert any(
+        message.role == MessageRole.SYSTEM
+        and "maximum number of iterations" in (message.content or "")
+        for message in early_stopping_input
+    ), "the last LLM call was not the early stopping one"
+    assert any(
+        tool_output in (message.content or "") for message in early_stopping_input
+    ), "the early stopping response was generated without the tool results"
+
+    answered = {
+        message.additional_kwargs.get("tool_call_id")
+        for message in early_stopping_input
+        if message.role == MessageRole.TOOL
+    }
+    requested = [
+        tool_call.tool_id
+        for message in early_stopping_input
+        for tool_call in message.additional_kwargs.get("tool_calls", [])
+    ]
+    assert set(requested) <= answered, (
+        "the early stopping response was generated with a tool call that has no result"
+    )
+
+
+@pytest.mark.asyncio
 async def test_early_stopping_method_force():
     """Test early_stopping_method='force' (default) raises error on max iterations."""
 
