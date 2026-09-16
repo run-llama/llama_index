@@ -116,6 +116,7 @@ class TypecastToolSpec(BaseToolSpec):
         audio_tempo: Optional[float] = 1.0,
         audio_format: Optional[str] = "wav",
         seed: Optional[int] = None,
+        remove_silence_ms: Optional[int] = None,
     ) -> str:
         """
         Convert text to speech using Typecast API.
@@ -133,6 +134,8 @@ class TypecastToolSpec(BaseToolSpec):
             audio_tempo (Optional[float]): Audio tempo (0.5 to 2.0, default: 1.0)
             audio_format (Optional[str]): Audio format (wav or mp3, default: wav)
             seed (Optional[int]): Random seed for reproducible results
+            remove_silence_ms (Optional[int]): Remaining detected silence in ms
+                (0 to 1000). Zero removes it; None disables this processing.
 
         Returns:
             str: Path to the generated audio file
@@ -176,6 +179,7 @@ class TypecastToolSpec(BaseToolSpec):
                 audio_pitch=audio_pitch,
                 audio_tempo=audio_tempo,
                 audio_format=audio_format,
+                remove_silence_ms=remove_silence_ms,
             ),
             seed=seed,
         )
