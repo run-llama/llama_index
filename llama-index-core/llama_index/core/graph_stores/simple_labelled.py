@@ -115,14 +115,16 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         seen_triplets = set()
 
         while len(graph_triplets) > 0 and cur_depth < depth:
+            # dedupe before collecting: on cyclic graphs (two-way relations,
+            # self-loops) an earlier depth's triplet resurfaces at later depths
+            graph_triplets = [t for t in graph_triplets if str(t) not in seen_triplets]
             triplets.extend(graph_triplets)
+            seen_triplets.update([str(t) for t in graph_triplets])
 
             # get next depth
             graph_triplets = self.get_triplets(
                 entity_names=[t[2].id for t in graph_triplets]
             )
-            graph_triplets = [t for t in graph_triplets if str(t) not in seen_triplets]
-            seen_triplets.update([str(t) for t in graph_triplets])
             cur_depth += 1
 
         ignore_rels = ignore_rels or []

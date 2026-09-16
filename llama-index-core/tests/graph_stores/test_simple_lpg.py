@@ -144,3 +144,34 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_get_rel_map_does_not_repeat_triplets_in_cyclic_graphs() -> None:
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2")
+    r1 = Relation(label="r1", source_id=e1.id, target_id=e2.id)
+    r2 = Relation(label="r2", source_id=e2.id, target_id=e1.id)
+
+    g.upsert_nodes([e1, e2])
+    g.upsert_relations([r1, r2])
+
+    triplets = g.get_rel_map([e1], depth=3)
+
+    assert len(triplets) == len({str(t) for t in triplets})
+    assert len(triplets) == 2
+
+
+def test_get_rel_map_skips_self_loop_duplicates() -> None:
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    r = Relation(label="r", source_id=e1.id, target_id=e1.id)
+
+    g.upsert_nodes([e1])
+    g.upsert_relations([r])
+
+    triplets = g.get_rel_map([e1], depth=2)
+
+    assert triplets == [(e1, r, e1)]
