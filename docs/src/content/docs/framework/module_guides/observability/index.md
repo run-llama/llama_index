@@ -593,35 +593,76 @@ Once this is set up, Agenta will automatically capture all execution steps. You 
 - [Documentation Observability for LlamaIndex with Agenta](https://docs.agenta.ai/observability/integrations/llamaindex)
 - [Notebook Observability for LlamaIndex with Agenta](https://github.com/agenta-ai/agenta/blob/main/examples/jupyter/integrations/observability-openinference-llamaindex.ipynb)
 
-### Deepeval
+### Confident AI
 
-[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://documentation.confident-ai.com/docs), that runs referenceless evaluations in production.
+[Confident AI](https://www.confident-ai.com/) is an LLM observability and evaluation platform. [`confident-trace`](https://github.com/confident-ai/confident-trace), its OpenTelemetry-native tracing SDK, subscribes to LlamaIndex's instrumentation dispatcher, so every agent run, workflow step, retrieval, and tool call shows up in the [Observatory](https://www.confident-ai.com/docs/llm-tracing/introduction) with its hierarchy intact.
 
 #### Usage Pattern
 
 ```bash
-pip install -U deepeval llama-index
+pip install confident-trace llama-index-core llama-index-llms-openai
 ```
+
+Get your project API key from [Confident AI](https://app.confident-ai.com) and set it alongside your model provider key. For users in the EU region, set `CONFIDENT_OTEL_ENDPOINT="https://eu.otel.confident-ai.com/v1/traces"`, otherwise your traces are forwarded to the US servers.
+
+```bash
+export CONFIDENT_API_KEY="<your-confident-api-key>"
+export OPENAI_API_KEY="<your-openai-key>"
+```
+
+Call `init()` once at startup, before defining or running agents. Keep your normal `agent.run` call. You don't have to configure any handler or dispatcher:
 
 ```python
-import deepeval
-from deepeval.integrations.llama_index import instrument_llama_index
+import asyncio
 
-import llama_index.core.instrumentation as instrument
+from confident_trace import init, shutdown
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
 
-# Login
-deepeval.login("<your-confident-api-key>")
 
-# Let DeepEval collect traces
-instrument_llama_index(instrument.get_dispatcher())
+def multiply(a: float, b: float) -> float:
+    """Useful for multiplying two numbers."""
+    return a * b
+
+
+async def main():
+    init()
+    try:
+        agent = FunctionAgent(
+            name="assistant",
+            llm=OpenAI(model="gpt-4o-mini"),
+            tools=[FunctionTool.from_defaults(multiply)],
+            system_prompt="You are a helpful assistant that can perform calculations.",
+        )
+        print(await agent.run("What is 3 * 12?"))
+    finally:
+        shutdown()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-![tracing](https://confident-bucket.s3.us-east-1.amazonaws.com/llama-index%3Atrace.gif)
+Agent runs, workflow steps, retrieval, tool calls, and model calls with [token usage](https://www.confident-ai.com/docs/llm-tracing/features/token-usage-cost) are captured automatically. Model spans require a supported provider SDK, so custom or local model wrappers show the agent structure without LLM spans, and embedding calls are not traced. In a long-running server, call `init()` at startup and `shutdown()` during graceful shutdown rather than per request.
 
-#### Guides
+Configure what happens to your incoming traces on Confident AI's [workflows page](https://www.confident-ai.com/docs/llm-tracing/workflows):
 
-- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
-- [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
+![Confident AI workflows page](https://confident-docs.s3.us-east-1.amazonaws.com/confident-trace-workflows.png)
+
+- **Evaluation rules**: Evaluate incoming traces against a [metric collection](https://www.confident-ai.com/docs/metrics/metric-collections).
+- **Classifiers**: Label your traces by issue, sentiment, or any dimension you define, so you can group or filter them later.
+- **Queue ingestion**: Route production traces into annotation queues for your internal review team.
+- **Dataset ingestion**: Collect production traces into datasets to reuse as test cases.
+
+Traces, spans, and threads each get their own workflows. To set a metric collection on a single trace from your code instead, pass it to `update_trace`.
+
+#### Example Guides
+
+- [LlamaIndex integration guide](https://www.confident-ai.com/docs/integrations/third-party/llama-index) - full setup, trace properties, and grouping runs into threads
+- [LLM tracing on Confident AI](https://www.confident-ai.com/docs/llm-tracing/introduction)
+- [Online evals](https://www.confident-ai.com/docs/llm-tracing/online-evals)
+- **Need help integrating?** [Talk to a human.](https://www.confident-ai.com/book-a-demo)
 
 ### Maxim AI
 
