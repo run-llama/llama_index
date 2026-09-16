@@ -1,4 +1,5 @@
 from inspect import Parameter, signature
+from copy import copy
 from typing import (
     Any,
     Awaitable,
@@ -17,6 +18,28 @@ import datetime
 import typing
 
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
+
+
+def _without_aliases(field_info: FieldInfo) -> FieldInfo:
+    """Copy a FieldInfo with any alias dropped, leaving every constraint intact."""
+    if (
+        field_info.alias is None
+        and field_info.validation_alias is None
+        and field_info.serialization_alias is None
+    ):
+        return field_info
+    stripped = copy(field_info)
+    stripped.alias = None
+    stripped.validation_alias = None
+    stripped.serialization_alias = None
+    # merge_field_infos replays only what a FieldInfo records as explicitly
+    # set, so the alias has to leave that set too or it comes straight back.
+    stripped._attributes_set = {
+        k: v
+        for k, v in field_info._attributes_set.items()
+        if k not in ("alias", "validation_alias", "serialization_alias")
+    }
+    return stripped
 
 
 def create_schema_from_function(
@@ -71,7 +94,15 @@ def create_schema_from_function(
                 # Keep the whole FieldInfo: it carries constraints
                 # (ge/le/pattern/min_length/...) that must survive into the
                 # generated schema, not just description and extras.
-                annotated_field_info = args[1]
+                #
+                # Everything except the aliases. FunctionTool.call forwards the
+                # model's arguments to the Python function as keywords under
+                # their REAL parameter names, so an alias would advertise a
+                # property name the call then rejects:
+                # `Annotated[int, Field(alias="x_alias")]` on a parameter named
+                # `xAlias` put "x_alias" in the schema, and a model that obeyed
+                # it got TypeError: got an unexpected keyword argument.
+                annotated_field_info = _without_aliases(args[1])
                 description = args[1].description
                 if args[1].json_schema_extra and isinstance(
                     args[1].json_schema_extra, dict

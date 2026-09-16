@@ -282,3 +282,29 @@ def test_annotated_string_description_unchanged() -> None:
 
     assert schema["properties"]["x"]["description"] == "plain description"
     assert schema_cls(x=123456).x == 123456
+
+
+def test_annotated_field_alias_does_not_rename_the_schema_property() -> None:
+    """Constraints must survive an Annotated Field; an alias must not.
+
+    FunctionTool.call forwards the model's arguments to the Python function as
+    keywords under its REAL parameter names, so advertising an alias tells the
+    model to emit a name the call will then reject with TypeError. Carrying the
+    whole FieldInfo through brought ge/le across correctly and the alias with
+    it.
+    """
+
+    def scale(
+        xAlias: Annotated[int, Field(alias="x_alias", ge=1, le=10)] = 1,
+    ) -> int:
+        return xAlias * 2
+
+    schema = create_schema_from_function("scale", scale).model_json_schema()
+    props = schema["properties"]
+
+    # the property is named for the parameter the function actually accepts
+    assert list(props) == ["xAlias"], props
+    # and the constraints the Annotated Field declared still reached the schema
+    assert props["xAlias"]["minimum"] == 1
+    assert props["xAlias"]["maximum"] == 10
+
