@@ -77,7 +77,7 @@ tool = QueryEngineTool.from_defaults(
 
 ## Tool Specs
 
-We also offer a rich set of Tools and Tool Specs through [LlamaHub](https://llamahub.ai/) 🦙.
+We also offer a rich set of Tools and Tool Specs as [separate integration packages](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools).
 
 You can think of tool specs like bundles of tools meant to be used together. Usually these cover useful tools across a single interface/service, like Gmail.
 
@@ -97,13 +97,13 @@ tool_spec = GmailToolSpec()
 agent = FunctionAgent(llm=llm, tools=tool_spec.to_tool_list())
 ```
 
-See [LlamaHub](https://llamahub.ai) for a full list of community contributed tool specs.
+See the [tools directory on GitHub](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) for a full list of community contributed tool specs.
 
 ## Utility Tools
 
 Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using).
 
-To tackle this, we’ve provided an initial set of “utility tools” in LlamaHub Tools - utility tools are not conceptually tied to a given service (e.g. Gmail, Notion), but rather can augment the capabilities of existing Tools. In this particular case, utility tools help to abstract away common patterns of needing to cache/index and query data that’s returned from any API request.
+To tackle this, we’ve provided an initial set of “utility tools” in our tool integrations - utility tools are not conceptually tied to a given service (e.g. Gmail, Notion), but rather can augment the capabilities of existing Tools. In this particular case, utility tools help to abstract away common patterns of needing to cache/index and query data that’s returned from any API request.
 
 Let’s walk through our two main utility tools below.
 
