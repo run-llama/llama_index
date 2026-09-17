@@ -184,15 +184,11 @@ class DefaultRefineProgram(BasePydanticProgram):
                         )
             else:
                 answer = ""
-                # Because structured stream_structured_predict does not yield partial json fields, answer is only available
-                # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
-                # cases
                 async for token in await self._llm.astream(
                     self._prompt,
                     **kwds,
                 ):
                     answer += token
-                if answer:
                     yield StructuredRefineResponse(
                         answer=answer.strip(), query_satisfied=True
                     )
@@ -294,8 +290,7 @@ class Refine(BaseSynthesizer):
         """
         async for obj in generator:
             structured_response = obj
-        yield getattr(structured_response, attribute)
-        return
+            yield getattr(structured_response, attribute)
 
     def _default_program_factory(
         self, prompt: BasePromptTemplate
