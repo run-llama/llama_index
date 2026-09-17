@@ -4,6 +4,8 @@ from typing import List, Tuple
 def default_parse_triplets_fn(
     response: str, max_length: int = 128
 ) -> List[Tuple[str, str, str]]:
+    if not isinstance(response, str) or not response.strip():
+        return []
     knowledge_strs = response.strip().split("\n")
     results = []
     for text in knowledge_strs:
