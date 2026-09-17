@@ -1,5 +1,8 @@
 from unittest.mock import Mock
 
+import pytest
+
+from llama_index.core import MockEmbedding
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.response.schema import Response, StreamingResponse
@@ -8,6 +11,19 @@ from llama_index.core.chat_engine.condense_question import (
 )
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.indices import VectorStoreIndex
+from llama_index.core.schema import Document
+
+
+@pytest.fixture()
+def retriever_chat_engine() -> CondenseQuestionChatEngine:
+    llm = MockLLM()
+    index = VectorStoreIndex.from_documents(
+        [Document.example()], embed_model=MockEmbedding(embed_dim=3)
+    )
+    return CondenseQuestionChatEngine.from_defaults(
+        query_engine=index.as_query_engine(llm=llm), llm=llm
+    )
 
 
 def test_condense_question_chat_engine(patch_llm_predictor) -> None:
@@ -71,3 +87,20 @@ def test_stream_chat_history_write_completes_on_early_exit() -> None:
     assert len(engine.chat_history) == 2
     assert engine.chat_history[0].role == MessageRole.USER
     assert engine.chat_history[1].role == MessageRole.ASSISTANT
+
+
+def test_stream_chat_yields_incremental_tokens(
+    retriever_chat_engine: CondenseQuestionChatEngine,
+) -> None:
+    response = retriever_chat_engine.stream_chat("Hello!")
+
+    assert sum(1 for _ in response.response_gen) > 1
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_yields_incremental_tokens(
+    retriever_chat_engine: CondenseQuestionChatEngine,
+) -> None:
+    response = await retriever_chat_engine.astream_chat("Hello!")
+
+    assert sum([1 async for _ in response.async_response_gen()]) > 1

@@ -158,6 +158,10 @@ class DefaultRefineProgram(BasePydanticProgram):
                 answer += token
             yield StructuredRefineResponse(answer=answer.strip(), query_satisfied=True)
 
+    def _stream_answer(self, *args: Any, **kwds: Any) -> Generator[str, None, None]:
+        """Stream the unstructured answer without buffering it first."""
+        return self._llm.stream(self._prompt, **kwds)
+
     async def astream_call(
         self, *args: Any, **kwds: Any
     ) -> AsyncGenerator[StructuredRefineResponse, None]:
@@ -198,6 +202,12 @@ class DefaultRefineProgram(BasePydanticProgram):
                     )
 
         return gen()
+
+    async def _astream_answer(
+        self, *args: Any, **kwds: Any
+    ) -> AsyncGenerator[str, None]:
+        """Stream the unstructured answer without buffering it first."""
+        return await self._llm.astream(self._prompt, **kwds)
 
 
 class Refine(BaseSynthesizer):
@@ -345,6 +355,15 @@ class Refine(BaseSynthesizer):
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
             try:
+                if (
+                    not self._structured_answer_filtering
+                    and isinstance(program, DefaultRefineProgram)
+                    and program._output_cls is None
+                ):
+                    return program._stream_answer(
+                        **program_kwargs,
+                        **response_kwargs,
+                    )
                 structured_response_gen = program.stream_call(
                     **program_kwargs,
                     **response_kwargs,
@@ -395,6 +414,15 @@ class Refine(BaseSynthesizer):
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
             try:
+                if (
+                    not self._structured_answer_filtering
+                    and isinstance(program, DefaultRefineProgram)
+                    and program._output_cls is None
+                ):
+                    return await program._astream_answer(
+                        **program_kwargs,
+                        **response_kwargs,
+                    )
                 structured_response_gen = await program.astream_call(
                     **program_kwargs,
                     **response_kwargs,
