@@ -344,6 +344,16 @@ class Refine(BaseSynthesizer):
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
+            if (
+                isinstance(program, DefaultRefineProgram)
+                and program._output_cls is None
+            ):
+                # Plain-text streaming has no fields to disambiguate, so stream
+                # tokens directly instead of buffering behind the "wait for the
+                # full structured object" machinery below.
+                return program._llm.stream(
+                    program._prompt, **program_kwargs, **response_kwargs
+                )
             try:
                 structured_response_gen = program.stream_call(
                     **program_kwargs,
@@ -394,6 +404,16 @@ class Refine(BaseSynthesizer):
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
         elif self._streaming:
+            if (
+                isinstance(program, DefaultRefineProgram)
+                and program._output_cls is None
+            ):
+                # Plain-text streaming has no fields to disambiguate, so stream
+                # tokens directly instead of buffering behind the "wait for the
+                # full structured object" machinery below.
+                return await program._llm.astream(
+                    program._prompt, **program_kwargs, **response_kwargs
+                )
             try:
                 structured_response_gen = await program.astream_call(
                     **program_kwargs,

@@ -553,6 +553,38 @@ class TestRefine:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
 
+    def test_synthesize__streaming_default_refine_program_yields_incrementally(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        """
+        Regression test for https://github.com/run-llama/llama_index/issues/22749:
+        the default (non-structured, non-filtering) refine program must stream
+        tokens as they arrive instead of buffering the whole answer behind a
+        single chunk.
+        """
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = synthesizer.synthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, StreamingResponse)
+        chunks = list(response.response_gen)
+        assert len(chunks) > 1
+        assert "".join(chunks) == " ".join(["text"] * 10)
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_default_refine_program_yields_incrementally(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        """Async counterpart of the regression test above."""
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = await synthesizer.asynthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, AsyncStreamingResponse)
+        chunks = [chunk async for chunk in response.async_response_gen()]
+        assert len(chunks) > 1
+        assert "".join(chunks) == " ".join(["text"] * 10)
+
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
         llm_case: LLMCase,
