@@ -14,6 +14,7 @@ from llama_index.core.schema import (
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 
@@ -115,3 +116,24 @@ def test_flat_metadata_serdes(text_node: TextNode):
     text_node.metadata = {"key": {"subkey": "value"}}
     with pytest.raises(ValueError):
         node_to_metadata_dict(text_node, flat_metadata=True)
+
+
+def test_legacy_metadata_accepts_dict_payloads() -> None:
+    metadata, node_info, relationships = legacy_metadata_dict_to_node(
+        {
+            "node_info": {"start": 0, "end": 4},
+            "relationships": {NodeRelationship.SOURCE.value: "doc-1"},
+            "custom": "ok",
+        }
+    )
+    assert node_info == {"start": 0, "end": 4}
+    assert relationships[NodeRelationship.SOURCE].node_id == "doc-1"
+    assert metadata["custom"] == "ok"
+
+
+def test_legacy_metadata_accepts_null_node_info() -> None:
+    metadata, node_info, relationships = legacy_metadata_dict_to_node(
+        {"node_info": None, "relationships": None}
+    )
+    assert node_info == {}
+    assert relationships == {}
