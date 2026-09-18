@@ -245,3 +245,51 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         ndcg = NDCG()
         ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+
+def _granular_hit_rate() -> HitRate:
+    hit_rate = HitRate()
+    hit_rate.use_granular_hit_rate = True
+    return hit_rate
+
+
+def _granular_mrr() -> MRR:
+    mrr = MRR()
+    mrr.use_granular_mrr = True
+    return mrr
+
+
+# A document retrieved twice is still one retrieved document, so repeating an id
+# must not move a bounded metric past 1.0.
+@pytest.mark.parametrize(
+    ("metric", "expected_result"),
+    [
+        (_granular_hit_rate(), 2 / 2),
+        (_granular_mrr(), (1 / 1 + 1 / 2) / 2),
+        (Precision(), 2 / 2),
+        (Recall(), 2 / 2),
+        (AveragePrecision(), (1 / 1 + 2 / 2) / 2),
+        (NDCG(), 1.0),
+    ],
+)
+def test_repeated_retrieved_id_does_not_inflate_score(metric, expected_result):
+    expected_ids = ["id1", "id2"]
+    result = metric.compute(
+        expected_ids=expected_ids, retrieved_ids=["id1", "id1", "id2"]
+    )
+
+    assert result.score == pytest.approx(expected_result)
+    assert result.score <= 1.0
+
+    deduplicated = metric.compute(
+        expected_ids=expected_ids, retrieved_ids=["id1", "id2"]
+    )
+    assert result.score == pytest.approx(deduplicated.score)
+
+
+# The DCG side of NDCG compares ids through a set, so the ideal DCG has to be
+# built from the same de-duplicated ground truth.
+def test_ndcg_perfect_retrieval_with_repeated_expected_id():
+    result = NDCG().compute(expected_ids=["id1", "id1"], retrieved_ids=["id1"])
+
+    assert result.score == pytest.approx(1.0)
