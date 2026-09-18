@@ -44,6 +44,18 @@ class TableNotFoundError(Exception):
     """Raised when the specified table does not exist."""
 
 
+def _sql_literal(value: str) -> str:
+    """Quote a string literal for LanceDB's SQL predicates."""
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _node_ids_filter(node_ids: List[str]) -> str:
+    # An empty IN clause is invalid SQL; an empty ID list matches no rows.
+    if not node_ids:
+        return "false"
+    return "id IN (" + ",".join(_sql_literal(node_id) for node_id in node_ids) + ")"
+
+
 def _to_lance_filter(
     standard_filters: MetadataFilters,
     metadata_keys: Optional[list],
@@ -419,7 +431,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self.table.delete(f'{self.doc_id_key} = "' + ref_doc_id + '"')
+        self.table.delete(f"{self.doc_id_key} = {_sql_literal(ref_doc_id)}")
 
     def delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
         """
@@ -429,7 +441,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             node_ids (List[str]): The list of node_ids to delete.
 
         """
-        self.table.delete('id in ("' + '","'.join(node_ids) + '")')
+        self.table.delete(_node_ids_filter(node_ids))
 
     def get_nodes(
         self,
@@ -455,7 +467,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             where = kwargs.pop("where", None)
 
         if node_ids is not None:
-            where = f'id in ("' + '","'.join(node_ids) + '")'
+            where = _node_ids_filter(node_ids)
 
         results = self.table.search().where(where).to_pandas()
 
