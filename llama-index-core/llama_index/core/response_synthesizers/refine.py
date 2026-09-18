@@ -349,7 +349,10 @@ class Refine(BaseSynthesizer):
                     # Each yielded answer is a token delta, not a progressively-complete
                     # object: forward chunks as they arrive instead of draining to a
                     # single value.
-                    return (sr.answer for sr in structured_response_gen)
+                    return (
+                        cast(StructuredRefineResponse, sr).answer
+                        for sr in structured_response_gen
+                    )
                 structured_response = None
                 for sr in structured_response_gen:
                     assert not isinstance(sr, list)
@@ -407,7 +410,10 @@ class Refine(BaseSynthesizer):
                     # Each yielded answer is a token delta, not a progressively-complete
                     # object: forward chunks as they arrive instead of draining to a
                     # single value.
-                    return (sr.answer async for sr in structured_response_gen)
+                    return (
+                        cast(StructuredRefineResponse, sr).answer
+                        async for sr in structured_response_gen
+                    )
                 structured_response = None
                 async for sr in structured_response_gen:
                     assert not isinstance(sr, list)
