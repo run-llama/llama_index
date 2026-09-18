@@ -2,7 +2,7 @@
 
 import heapq
 import math
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from llama_index.core.base.embeddings.base import similarity as default_similarity_fn
@@ -134,6 +134,8 @@ def get_top_k_mmr_embeddings(
             score = similarity * threshold
 
     results: List[Tuple[Any, Any]] = []
+    # Largest similarity between a candidate and any result already selected.
+    max_overlap_with_results: Dict[Any, float] = {}
 
     embedding_length = len(embeddings or [])
     similarity_top_k_count = similarity_top_k or embedding_length
@@ -152,14 +154,19 @@ def get_top_k_mmr_embeddings(
                 embeddings[embed_map[embed_id]],
                 embeddings[full_embed_map[recent_embedding_id]],
             )
-            if (
-                threshold * embed_similarity[embed_id]
-                - ((1 - threshold) * overlap_with_recent)
-                > score
-            ):
-                score = threshold * embed_similarity[embed_id] - (
-                    (1 - threshold) * overlap_with_recent
-                )
+            # A candidate is redundant if it repeats any result already selected,
+            # not only the one selected last, so carry the largest overlap seen.
+            overlap_with_results = max(
+                overlap_with_recent,
+                max_overlap_with_results.get(embed_id, -math.inf),
+            )
+            max_overlap_with_results[embed_id] = overlap_with_results
+
+            candidate_score = threshold * embed_similarity[embed_id] - (
+                (1 - threshold) * overlap_with_results
+            )
+            if candidate_score > score:
+                score = candidate_score
                 high_score_id = embed_id
 
     result_similarities = [s for s, _ in results]
