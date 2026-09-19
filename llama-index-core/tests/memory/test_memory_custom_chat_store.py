@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.memory.memory import Memory
 from llama_index.core.storage.chat_store.base_db import (
@@ -91,9 +91,19 @@ class InMemoryChatStore(AsyncDBChatStore):
         return oldest
 
     async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
-        oldest = await self.delete_oldest_messages(key, n)
-        self._bucket(key, MessageStatus.ARCHIVED).extend(oldest)
-        return oldest
+        # Per the AsyncDBChatStore contract, system messages are never part
+        # of the oldest-n selection, regardless of their position.
+        messages = self._bucket(key, MessageStatus.ACTIVE)
+        indices = [
+            i
+            for i, message in enumerate(messages)
+            if message.role != MessageRole.SYSTEM
+        ][:n]
+        archived = [messages[i] for i in indices]
+        for i in reversed(indices):
+            del messages[i]
+        self._bucket(key, MessageStatus.ARCHIVED).extend(archived)
+        return archived
 
     async def get_keys(self) -> List[str]:
         return list({*self.active, *self.archived})
@@ -170,3 +180,35 @@ async def test_waterfall_archives_into_custom_chat_store(chat_store):
     assert len(messages) == 1
     assert "z " in messages[0].content
     assert len(chat_store.archived["test_user"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_waterfall_preserves_system_message_in_custom_chat_store(chat_store):
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/23144:
+
+    the waterfall must not silently evict a leading system message, and this
+    must hold for any AsyncDBChatStore implementation, not just the built-in
+    SQLAlchemyChatStore.
+    """
+    memory = Memory(
+        token_limit=200, session_id="test_preserve_system", sql_store=chat_store
+    )
+
+    await memory.aput(ChatMessage(role="system", content="You are ACME support."))
+
+    for i in range(10):
+        await memory.aput(
+            ChatMessage(role="user", content=f"question {i} " + "pad " * 20)
+        )
+        await memory.aput(
+            ChatMessage(role="assistant", content=f"answer {i} " + "pad " * 20)
+        )
+
+    cur_messages = await memory.aget()
+    roles = [m.role for m in cur_messages]
+
+    assert "system" in roles, "System message was silently evicted"
+    assert cur_messages[0].role == "system", (
+        "System message should remain at the head of the queue"
+    )

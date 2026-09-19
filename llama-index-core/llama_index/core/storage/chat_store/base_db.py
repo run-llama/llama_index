@@ -89,7 +89,16 @@ class AsyncDBChatStore(BaseModel):
 
     @abstractmethod
     async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
-        """Archive the oldest n messages for a key and return them (async)."""
+        """
+        Archive the oldest n messages for a key and return them (async).
+
+        Implementations must select the oldest n messages from the ACTIVE
+        messages whose role is not ``system``, leaving any system message(s)
+        untouched regardless of their position. ``Memory``'s FIFO waterfall
+        relies on this to keep the leading system message active for the
+        lifetime of a session; a purely positional "oldest n" selection would
+        archive it once every other message has been evicted.
+        """
 
     @abstractmethod
     async def get_keys(self) -> List[str]:
