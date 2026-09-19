@@ -3,7 +3,6 @@ import logging
 import io
 
 from contextlib import asynccontextmanager
-from datetime import timedelta
 from typing import (
     Optional,
     List,
@@ -15,10 +14,10 @@ from typing import (
     Any,
 )
 from urllib.parse import urlparse, parse_qs
-from httpx import AsyncClient, Timeout
+from httpx2 import AsyncClient, Timeout
 from mcp.client.session import ClientSession
 from mcp.shared._httpx_utils import create_mcp_http_client
-from mcp.shared.session import ProgressFnT
+from mcp.shared.dispatcher import ProgressFnT
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
 from mcp.client.streamable_http import streamable_http_client
@@ -112,7 +111,7 @@ class BasicMCPClient(ClientSession):
         sampling_callback: Optional callback for handling sampling messages.
         headers: Optional headers to pass by sse client or streamable http client
         tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
-        http_client: Optional httpx AsyncClient to use for Streamable transport. Will ignore timeout and headers parameters if provided.
+        http_client: Optional httpx2 AsyncClient to use for Streamable transport. Will ignore timeout and headers parameters if provided.
 
     """
 
@@ -185,7 +184,7 @@ class BasicMCPClient(ClientSession):
             timeout: The timeout for HTTP operations in seconds. Default is 30.
             sse_read_timeout: The timeout for SSE read operations in seconds. Default is 300.
             tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
-            http_client: Optional httpx AsyncClient to use for Streamable transport. Will ignore timeout and headers parameters if provided.
+            http_client: Optional httpx2 AsyncClient to use for Streamable transport. Will ignore timeout and headers parameters if provided.
 
         Returns:
             An authenticated MCP client
@@ -242,7 +241,7 @@ class BasicMCPClient(ClientSession):
                 ) as streams:
                     async with ClientSession(
                         *streams,
-                        read_timeout_seconds=timedelta(seconds=self.timeout),
+                        read_timeout_seconds=float(self.timeout),
                         sampling_callback=self.sampling_callback,
                     ) as session:
                         await session.initialize()
@@ -252,11 +251,11 @@ class BasicMCPClient(ClientSession):
                 async with streamable_http_client(
                     url=self.command_or_url,
                     http_client=self.http_client,
-                ) as (read, write, _):
+                ) as (read, write):
                     async with ClientSession(
                         read,
                         write,
-                        read_timeout_seconds=timedelta(seconds=self.timeout),
+                        read_timeout_seconds=float(self.timeout),
                         sampling_callback=self.sampling_callback,
                     ) as session:
                         await session.initialize()
@@ -269,7 +268,7 @@ class BasicMCPClient(ClientSession):
             async with stdio_client(server_parameters) as streams:
                 async with ClientSession(
                     *streams,
-                    read_timeout_seconds=timedelta(seconds=self.timeout),
+                    read_timeout_seconds=float(self.timeout),
                     sampling_callback=self.sampling_callback,
                 ) as session:
                     await session.initialize()
@@ -287,9 +286,9 @@ class BasicMCPClient(ClientSession):
                 stream_handler,
             ],
         )
-        # Also enable logging for specific FastMCP components
-        fastmcp_logger = logging.getLogger("fastmcp")
-        fastmcp_logger.setLevel(logging.DEBUG)
+        # Also enable logging for specific MCP components
+        mcp_logger = logging.getLogger("mcp")
+        mcp_logger.setLevel(logging.DEBUG)
 
         # Enable HTTP transport logging to see network details
         http_logger = logging.getLogger("httpx")
@@ -393,7 +392,7 @@ class BasicMCPClient(ClientSession):
                             blocks=[
                                 ImageBlock(
                                     image=message.content.data,
-                                    image_mimetype=message.content.mimeType,
+                                    image_mimetype=message.content.mime_type,
                                 )
                             ],
                         )

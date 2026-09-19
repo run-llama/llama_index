@@ -15,21 +15,21 @@ a retrieval service.
 
 LlamaIndex provides a variety of integrations with the ChatGPT Retrieval Plugin.
 
-### Loading Data from LlamaHub into the ChatGPT Retrieval Plugin
+### Loading Data from LlamaIndex Readers into the ChatGPT Retrieval Plugin
 
 The ChatGPT Retrieval Plugin defines an `/upsert` endpoint for users to load
-documents. This offers a natural integration point with LlamaHub, which offers
-over 65 data loaders from various API's and document formats.
+documents. This offers a natural integration point with LlamaIndex readers, which offer
+hundreds of data loaders for various API's and document formats.
 
-Here is a sample code snippet of showing how to load a document from LlamaHub
+Here is a sample code snippet of showing how to load a document with a LlamaIndex reader
 into the JSON format that `/upsert` expects:
 
 ```python
-from llama_index.core import download_loader, Document
+from llama_index.core import Document
 from typing import Dict, List
 import json
 
-# download loader, load documents
+# load documents
 from llama_index.readers.web import SimpleWebPageReader
 
 loader = SimpleWebPageReader(html_to_text=True)
@@ -62,7 +62,7 @@ For more details, check out the [full example notebook](https://github.com/jerry
 
 ### ChatGPT Retrieval Plugin Data Loader
 
-The ChatGPT Retrieval Plugin data loader [can be accessed on LlamaHub](https://llamahub.ai/l/chatgpt_plugin).
+The ChatGPT Retrieval Plugin data loader [is available as a separate package](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-chatgpt-plugin).
 
 It allows you to easily load data from any docstore that implements the plugin API, into a LlamaIndex data structure.
 
