@@ -36,6 +36,13 @@ MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
 
 logger = logging.getLogger(__name__)
 
+# asyncio.create_task() only holds a weak reference to the returned Task, so
+# a task with no other strong reference (as in close(), called from __del__
+# with the client itself already being torn down) can be garbage-collected
+# before it runs. Keeping tasks here until they finish (removed via the done
+# callback) keeps them alive long enough to actually close the connection.
+_background_close_tasks: set = set()
+
 
 class OpensearchVectorClient:
     """
@@ -887,7 +894,9 @@ class OpensearchVectorClient:
             except RuntimeError:
                 asyncio.run(self._os_async_client.close())
             else:
-                loop.create_task(self._os_async_client.close())
+                task = loop.create_task(self._os_async_client.close())
+                _background_close_tasks.add(task)
+                task.add_done_callback(_background_close_tasks.discard)
 
     async def aclose(self) -> None:
         """
