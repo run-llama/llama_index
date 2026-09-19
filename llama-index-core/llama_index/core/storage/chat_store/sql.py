@@ -24,7 +24,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_serializer
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore, MessageStatus
 
 
@@ -370,16 +370,22 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         return oldest_messages
 
     async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
-        """Archive the oldest n messages for a key and return them (async)."""
+        """
+        Archive the oldest n messages for a key and return them (async).
+
+        System messages are never archived by this method, since callers rely
+        on them staying active (e.g. Memory's FIFO waterfall eviction).
+        """
         session_factory, table = await self._initialize()
 
         async with session_factory() as session:
-            # First get the oldest n messages
+            # First get the oldest n messages, excluding system messages
             result = await session.execute(
                 select(table)
                 .where(
                     table.c.key == key,
                     table.c.status == MessageStatus.ACTIVE.value,
+                    table.c.role != MessageRole.SYSTEM.value,
                 )
                 .order_by(table.c.timestamp, table.c.id)
                 .limit(n)

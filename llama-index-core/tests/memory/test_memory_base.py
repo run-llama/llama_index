@@ -226,6 +226,36 @@ async def test_manage_queue_first_message_must_be_user():
 
 
 @pytest.mark.asyncio
+async def test_manage_queue_preserves_system_message():
+    """
+    Test that a system message at the head of the queue is never flushed.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/23144:
+    the waterfall eviction treated the system message like any other stale
+    turn, so it was silently archived once the token limit was reached.
+    """
+    memory = Memory.from_defaults(session_id="test_preserve_system", token_limit=200)
+
+    await memory.aput(ChatMessage(role="system", content="You are ACME support."))
+
+    for i in range(10):
+        await memory.aput(
+            ChatMessage(role="user", content=f"question {i} " + "pad " * 20)
+        )
+        await memory.aput(
+            ChatMessage(role="assistant", content=f"answer {i} " + "pad " * 20)
+        )
+
+    cur_messages = await memory.aget()
+    roles = [m.role for m in cur_messages]
+
+    assert "system" in roles, "System message was silently evicted"
+    assert cur_messages[0].role == "system", (
+        "System message should remain at the head of the queue"
+    )
+
+
+@pytest.mark.asyncio
 async def test_manage_queue_preserves_conversation_turn():
     """Test that flushing preserves at least one complete conversation turn."""
     memory = Memory(

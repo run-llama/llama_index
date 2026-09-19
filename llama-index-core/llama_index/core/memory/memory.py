@@ -678,6 +678,7 @@ class Memory(BaseMemory):
         2. Removed messages are archived and passed to memory blocks
         3. It ensures conversation integrity by keeping related messages together
         4. It maintains at least one complete conversation turn
+        5. System messages are never flushed
         """
         # Calculate if we need to waterfall
         current_queue = await self.sql_store.get_messages(
@@ -695,8 +696,20 @@ class Memory(BaseMemory):
         # If we're over the token limit, initiate waterfall
         token_limit = self.token_limit * self.chat_history_token_ratio
         if tokens_in_current_queue > token_limit:
+            # System messages are never flushed by the waterfall - they stay
+            # active for the lifetime of the session - so they're excluded
+            # from the pool of messages that are eligible to be flushed.
+            system_tokens = sum(
+                self._estimate_token_count(message)
+                for message in current_queue
+                if message.role == "system"
+            )
+            flushable_queue = [
+                message for message in current_queue if message.role != "system"
+            ]
+
             # Process from oldest to newest, but efficiently with pop() operations
-            reversed_queue = current_queue[::-1]  # newest first, oldest last
+            reversed_queue = flushable_queue[::-1]  # newest first, oldest last
 
             # Calculate approximate number of messages to remove
             tokens_to_remove = tokens_in_current_queue - token_limit
@@ -798,7 +811,7 @@ class Memory(BaseMemory):
 
                 # Recalculate remaining tokens
                 chronological_view = reversed_queue[::-1]
-                tokens_in_current_queue = sum(
+                tokens_in_current_queue = system_tokens + sum(
                     self._estimate_token_count(message)
                     for message in chronological_view
                 )
