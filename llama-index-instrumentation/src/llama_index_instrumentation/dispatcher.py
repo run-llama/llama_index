@@ -17,7 +17,6 @@ from .events.span import SpanDropEvent
 from .span import active_span_id
 from .span_handlers import (
     BaseSpanHandler,
-    NullSpanHandler,
 )
 
 DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
@@ -66,10 +65,10 @@ class Dispatcher(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str = Field(default_factory=str, description="Name of dispatcher")
     event_handlers: List[BaseEventHandler] = Field(
-        default=[], description="List of attached handlers"
+        default_factory=list, description="List of attached handlers"
     )
     span_handlers: List[BaseSpanHandler] = Field(
-        default=[NullSpanHandler()], description="Span handler."
+        default_factory=list, description="Span handler."
     )
     parent_name: str = Field(
         default_factory=str, description="Name of parent Dispatcher."
@@ -90,13 +89,17 @@ class Dispatcher(BaseModel):
     def __init__(
         self,
         name: str = "",
-        event_handlers: List[BaseEventHandler] = [],
-        span_handlers: List[BaseSpanHandler] = [],
+        event_handlers: Optional[List[BaseEventHandler]] = None,
+        span_handlers: Optional[List[BaseSpanHandler]] = None,
         parent_name: str = "",
         manager: Optional["Manager"] = None,
         root_name: str = "root",
         propagate: bool = True,
     ):
+        if event_handlers is None:
+            event_handlers = []
+        if span_handlers is None:
+            span_handlers = []
         super().__init__(
             name=name,
             event_handlers=event_handlers,
