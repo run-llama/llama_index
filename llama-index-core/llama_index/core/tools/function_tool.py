@@ -346,16 +346,26 @@ class FunctionTool(AsyncBaseTool):
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
+        if isinstance(raw_output, ToolOutput):
+            default_output = raw_output
+            if not default_output.tool_name:
+                default_output.tool_name = self.metadata.get_name()
+            if not default_output.raw_input:
+                default_output.raw_input = {
+                    "args": args,
+                    "kwargs": tool_output_kwargs,
+                }
+        else:
+            # Parse tool output into content blocks
+            output_blocks = self._parse_tool_output(raw_output)
 
-        # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
+            # Default ToolOutput based on the raw output
+            default_output = ToolOutput(
+                blocks=output_blocks,
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=raw_output,
+            )
         # Check for a sync callback override
         callback_result = self._run_sync_callback(raw_output)
         if callback_result is not None:
@@ -368,6 +378,8 @@ class FunctionTool(AsyncBaseTool):
                     tool_name=self.metadata.get_name(),
                     raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
+                    is_error=default_output.is_error,
+                    exception=default_output.exception,
                 )
         return default_output
 
@@ -385,16 +397,26 @@ class FunctionTool(AsyncBaseTool):
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
+        if isinstance(raw_output, ToolOutput):
+            default_output = raw_output
+            if not default_output.tool_name:
+                default_output.tool_name = self.metadata.get_name()
+            if not default_output.raw_input:
+                default_output.raw_input = {
+                    "args": args,
+                    "kwargs": tool_output_kwargs,
+                }
+        else:
+            # Parse tool output into content blocks
+            output_blocks = self._parse_tool_output(raw_output)
 
-        # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
+            # Default ToolOutput based on the raw output
+            default_output = ToolOutput(
+                blocks=output_blocks,
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=raw_output,
+            )
         # Check for an async callback override
         callback_result = await self._run_async_callback(raw_output)
         if callback_result is not None:
@@ -407,6 +429,8 @@ class FunctionTool(AsyncBaseTool):
                     tool_name=self.metadata.get_name(),
                     raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
+                    is_error=default_output.is_error,
+                    exception=default_output.exception,
                 )
         return default_output
 

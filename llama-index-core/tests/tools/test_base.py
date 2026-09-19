@@ -8,9 +8,9 @@ import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.types import ToolOutput
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
-from llama_index.core.workflow import Context
 
 try:
     import langchain  # pants: no-infer-dep
@@ -603,3 +603,66 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_function_tool_returns_tool_output_preserves_is_error() -> None:
+    """Test that when the wrapped function returns a ToolOutput, is_error, content, and metadata are preserved."""
+    custom_exc = ValueError("index down")
+
+    def lookup() -> ToolOutput:
+        return ToolOutput(
+            content="The lookup failed: index down",
+            tool_name="lookup",
+            raw_input={"id": 123},
+            raw_output={"error": "details"},
+            is_error=True,
+            exception=custom_exc,
+        )
+
+    tool = FunctionTool.from_defaults(fn=lookup, name="lookup")
+    out = tool.call()
+
+    assert out.is_error is True
+    assert out.content == "The lookup failed: index down"
+    assert out.tool_name == "lookup"
+    assert out.raw_input == {"id": 123}
+    assert out.raw_output == {"error": "details"}
+    assert out.exception is custom_exc
+
+
+def test_function_tool_returns_tool_output_fills_missing_metadata() -> None:
+    """Test that missing tool_name or raw_input on returned ToolOutput are populated."""
+
+    def failure_fn(x: int) -> ToolOutput:
+        return ToolOutput(
+            content="Failed to process",
+            tool_name="",
+            raw_input=None,
+            is_error=True,
+        )
+
+    tool = FunctionTool.from_defaults(fn=failure_fn, name="my_tool")
+    out = tool.call(x=42)
+
+    assert out.is_error is True
+    assert out.content == "Failed to process"
+    assert out.tool_name == "my_tool"
+    assert out.raw_input == {"args": (), "kwargs": {"x": 42}}
+
+
+@pytest.mark.asyncio
+async def test_async_function_tool_returns_tool_output_preserves_is_error() -> None:
+    """Test that when the wrapped async function returns a ToolOutput, is_error is preserved."""
+
+    async def async_lookup() -> ToolOutput:
+        return ToolOutput(
+            content="Async lookup failed",
+            tool_name="async_lookup",
+            is_error=True,
+        )
+
+    tool = FunctionTool.from_defaults(async_fn=async_lookup, name="async_lookup")
+    out = await tool.acall()
+
+    assert out.is_error is True
+    assert out.content == "Async lookup failed"

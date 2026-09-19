@@ -11,7 +11,7 @@ from llama_index.core.instrumentation import DispatcherSpanMixin
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
-from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr, Field
 
 
 class DefaultToolFnSchema(BaseModel):
@@ -106,17 +106,17 @@ class ToolMetadata:
 class ToolOutput(BaseModel):
     """Tool output."""
 
-    blocks: List[ContentBlock]
-    tool_name: str
-    raw_input: Dict[str, Any]
-    raw_output: Any
+    blocks: List[ContentBlock] = Field(default_factory=list)
+    tool_name: str = ""
+    raw_input: Dict[str, Any] = Field(default_factory=dict)
+    raw_output: Any = None
     is_error: bool = False
 
     _exception: Optional[Exception] = PrivateAttr(default=None)
 
     def __init__(
         self,
-        tool_name: str,
+        tool_name: str = "",
         content: Optional[str] = None,
         blocks: Optional[List[ContentBlock]] = None,
         raw_input: Optional[Dict[str, Any]] = None,
@@ -136,7 +136,7 @@ class ToolOutput(BaseModel):
         super().__init__(
             tool_name=tool_name,
             blocks=blocks,
-            raw_input=raw_input,
+            raw_input=raw_input if raw_input is not None else {},
             raw_output=raw_output,
             is_error=is_error,
         )
