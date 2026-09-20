@@ -36,3 +36,23 @@ def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     # Test LCEmbeddings
     embed_model = resolve_embed_model(HuggingFaceEmbedding())
     assert isinstance(embed_model, HuggingFaceEmbedding)
+
+
+def test_get_pooling_mode_sets_request_timeout(monkeypatch: MonkeyPatch) -> None:
+    import requests
+    from llama_index.embeddings.huggingface.utils import get_pooling_mode
+
+    calls: list = []
+
+    class _Response:
+        def json(self) -> Dict[str, Any]:
+            return {"pooling_mode_mean_tokens": True}
+
+    def fake_get(url: str, **kwargs: Any) -> _Response:
+        calls.append(kwargs)
+        return _Response()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    assert get_pooling_mode("some/model") == "mean"
+    assert calls[0].get("timeout")
