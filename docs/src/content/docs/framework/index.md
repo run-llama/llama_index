@@ -32,7 +32,7 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 - <span style="font-size: 200%">[Related projects](#related-projects)</span>
 
-  Check out our library of connectors, readers, and other integrations at [LlamaHub](https://llamahub.ai) as well as demos and starter apps like [create-llama](https://www.npmjs.com/package/create-llama).
+  Check out our library of connectors, readers, and other integrations on the [integrations page](/python/framework/community/integrations) as well as demos and starter apps like [create-llama](https://www.npmjs.com/package/create-llama).
 
 </div>
 
@@ -154,6 +154,6 @@ We are open-source and always welcome contributions to the project! Check out ou
 There's more to the LlamaIndex universe! Check out some of our other projects:
 
 - [llama_deploy](https://github.com/run-llama/llama_deploy) | Deploy your agentic workflows as production microservices
-- [LlamaHub](https://llamahub.ai) | A large (and growing!) collection of custom data connectors
+- [Integrations](/python/framework/community/integrations) | A large (and growing!) collection of data connectors, agent tools, LLMs, vector stores and more
 - [SEC Insights](https://secinsights.ai) | A LlamaIndex-powered application for financial research
 - [create-llama](https://www.npmjs.com/package/create-llama) | A CLI tool to quickly scaffold LlamaIndex projects
