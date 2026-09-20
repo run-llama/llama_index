@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    ContentBlock,
     TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
@@ -44,8 +45,19 @@ def is_function(message: ChatMessage) -> bool:
 
 
 def _set_message_content(message: ChatMessage, content: str) -> None:
-    """Update streamed message text without using the legacy content setter."""
-    message.blocks = [TextBlock(text=content)]
+    """Update streamed message text without discarding non-text content blocks."""
+    new_blocks: List[ContentBlock] = []
+    text_updated = False
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            if not text_updated:
+                new_blocks.append(TextBlock(text=content))
+                text_updated = True
+        else:
+            new_blocks.append(block)
+    if not text_updated and (content or not new_blocks):
+        new_blocks.append(TextBlock(text=content))
+    message.blocks = new_blocks
 
 
 class ChatResponseMode(str, Enum):
