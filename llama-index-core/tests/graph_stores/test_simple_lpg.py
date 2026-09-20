@@ -144,3 +144,39 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_get_rel_map_deduplicates_cycles() -> None:
+    g = SimplePropertyGraphStore()
+
+    a = EntityNode(name="a")
+    b = EntityNode(name="b")
+    c = EntityNode(name="c")
+
+    knows_ab = Relation(
+        label="knows",
+        source_id=a.id,
+        target_id=b.id,
+    )
+    knows_ba = Relation(
+        label="knows",
+        source_id=b.id,
+        target_id=a.id,
+    )
+    likes_bc = Relation(
+        label="likes",
+        source_id=b.id,
+        target_id=c.id,
+    )
+
+    g.upsert_nodes([a, b, c])
+    g.upsert_relations([knows_ab, knows_ba, likes_bc])
+
+    rel_map = g.get_rel_map([a], depth=2)
+
+    assert len(rel_map) == 3
+    assert set(map(str, rel_map)) == {
+        str((a, knows_ab, b)),
+        str((b, knows_ba, a)),
+        str((b, likes_bc, c)),
+    }
