@@ -31,7 +31,7 @@ from llama_index.core.base.response.schema import (
     Response,
     StreamingResponse,
 )
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.core.llms import CustomLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.mock import (
@@ -1003,3 +1003,81 @@ class TestRefine:
         )
         assert str(synthesizer.synthesize("question", nodes)) == "Empty Response"
         assert str(await synthesizer.asynthesize("question", nodes)) == "Empty Response"
+
+
+class RecordingRefineLLM(CustomLLM):
+    """LLM that records prompts and returns a long fixed answer."""
+
+    _recorded_prompts: list = PrivateAttr(default_factory=list)
+
+    @property
+    def prompts(self) -> list:
+        return self._recorded_prompts
+
+    @property
+    def metadata(self):
+        from llama_index.core.base.llms.types import LLMMetadata
+
+        return LLMMetadata(context_window=1024, num_output=0, is_chat_model=False)
+
+    def complete(self, prompt, formatted=False, **kwargs):
+        self._recorded_prompts.append(prompt)
+        return CompletionResponse(text="answer tokens " * 300)
+
+    async def acomplete(self, prompt, formatted=False, **kwargs):
+        self._recorded_prompts.append(prompt)
+        return CompletionResponse(text="answer tokens " * 300)
+
+    def stream_complete(self, prompt, formatted=False, **kwargs):
+        raise NotImplementedError
+
+
+def _refine_split_call_order(llm_prompts):
+    import re as _re
+
+    refine_prompts = llm_prompts[1:]
+    return [
+        (_re.findall(r"w\d{3}", p)[0], _re.findall(r"w\d{3}", p)[-1])
+        for p in refine_prompts
+    ]
+
+
+def test_refine_repacked_chunks_keep_original_order() -> None:
+    """Sub-chunks split by the refine-loop repack must stay in document order."""
+    from llama_index.core.indices.prompt_helper import PromptHelper
+
+    llm = RecordingRefineLLM()
+    prompt_helper = PromptHelper(
+        context_window=1024, num_output=64, chunk_overlap_ratio=0.0
+    )
+    refine = Refine(llm=llm, prompt_helper=prompt_helper, streaming=False)
+
+    chunk2 = " ".join("w%03d" % i for i in range(150))
+    refine.get_response("what is in the docs?", ["first context about apples", chunk2])
+
+    spans = _refine_split_call_order(llm.prompts)
+    assert len(spans) == 2
+    assert spans[0][0] == "w000"
+    assert spans[1][1] == "w149"
+
+
+@pytest.mark.asyncio
+async def test_arefine_repacked_chunks_keep_original_order() -> None:
+    """Async refine loop keeps repacked sub-chunks in document order."""
+    from llama_index.core.indices.prompt_helper import PromptHelper
+
+    llm = RecordingRefineLLM()
+    prompt_helper = PromptHelper(
+        context_window=1024, num_output=64, chunk_overlap_ratio=0.0
+    )
+    refine = Refine(llm=llm, prompt_helper=prompt_helper, streaming=False)
+
+    chunk2 = " ".join("w%03d" % i for i in range(150))
+    await refine.aget_response(
+        "what is in the docs?", ["first context about apples", chunk2]
+    )
+
+    spans = _refine_split_call_order(llm.prompts)
+    assert len(spans) == 2
+    assert spans[0][0] == "w000"
+    assert spans[1][1] == "w149"
