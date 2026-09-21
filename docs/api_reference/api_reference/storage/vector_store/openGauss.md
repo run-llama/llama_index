@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.openGauss
-    options:
-      members:
-        - OpenGaussStore
+options:
+members: - OpenGaussStore

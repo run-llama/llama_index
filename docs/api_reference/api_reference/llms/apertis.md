@@ -1,4 +1,3 @@
 ::: llama_index.llms.apertis
-    options:
-      members:
-        - Apertis
+options:
+members: - Apertis

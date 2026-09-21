@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.oci_genai
-    options:
-      members:
-        - OCIGenAIEmbeddings
+options:
+members: - OCIGenAIEmbeddings

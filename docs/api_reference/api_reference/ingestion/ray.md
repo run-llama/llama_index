@@ -1,4 +1,3 @@
 ::: llama_index.ingestion.ray
-    options:
-      members:
-        - RayIngestionPipeline
+options:
+members: - RayIngestionPipeline

@@ -1,4 +1,3 @@
 ::: llama_index.llms.litellm
-    options:
-      members:
-        - LiteLLM
+options:
+members: - LiteLLM

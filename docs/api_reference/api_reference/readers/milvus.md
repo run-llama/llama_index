@@ -1,4 +1,3 @@
 ::: llama_index.readers.milvus
-    options:
-      members:
-        - MilvusReader
+options:
+members: - MilvusReader

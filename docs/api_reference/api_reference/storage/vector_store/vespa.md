@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.vespa
-    options:
-      members:
-        - VespaVectorStore
+options:
+members: - VespaVectorStore

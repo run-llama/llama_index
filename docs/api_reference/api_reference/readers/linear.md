@@ -1,4 +1,3 @@
 ::: llama_index.readers.linear
-    options:
-      members:
-        - LinearReader
+options:
+members: - LinearReader

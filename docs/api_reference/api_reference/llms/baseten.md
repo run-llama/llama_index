@@ -1,4 +1,3 @@
 ::: llama_index.llms.baseten
-    options:
-      members:
-        - Baseten
+options:
+members: - Baseten

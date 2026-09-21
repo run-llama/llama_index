@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.nebius
-    options:
-      members:
-        - NebiusEmbedding
+options:
+members: - NebiusEmbedding

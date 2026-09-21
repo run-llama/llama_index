@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.bigquery
-    options:
-      members:
-        - BigQueryVectorStore
+options:
+members: - BigQueryVectorStore
