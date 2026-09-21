@@ -76,6 +76,21 @@ class _TestAsyncEventHandler(BaseEventHandler):
         return None
 
 
+class _TestSpanHandler(BaseSpanHandler):
+    @classmethod
+    def class_name(cls):
+        return "_TestSpanHandler"
+
+    def new_span(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+    def prepare_to_drop_span(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+    def prepare_to_exit_span(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
 @dispatcher.span
 def func(a, b=3, **kwargs):
     return a + b
@@ -1220,3 +1235,26 @@ async def test_aevent_no_propagation():
     assert len(parent_handler.events) == 0
     assert child_handler.async_calls == 1
     assert parent_handler.async_calls == 0
+
+
+def test_dispatcher_default_handler_lists_are_not_shared():
+    """Regression test for #22705: default handler lists must be per-instance."""
+    dispatcher_a = Dispatcher()
+    dispatcher_b = Dispatcher()
+
+    assert dispatcher_a.event_handlers == []
+    assert dispatcher_b.event_handlers == []
+    assert dispatcher_a.span_handlers == []
+    assert dispatcher_b.span_handlers == []
+    assert dispatcher_a.event_handlers is not dispatcher_b.event_handlers
+    assert dispatcher_a.span_handlers is not dispatcher_b.span_handlers
+
+    event_handler = _TestEventHandler()
+    span_handler = _TestSpanHandler()
+    dispatcher_a.add_event_handler(event_handler)
+    dispatcher_a.add_span_handler(span_handler)
+
+    assert dispatcher_a.event_handlers == [event_handler]
+    assert dispatcher_a.span_handlers == [span_handler]
+    assert dispatcher_b.event_handlers == []
+    assert dispatcher_b.span_handlers == []
