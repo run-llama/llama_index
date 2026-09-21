@@ -64,13 +64,13 @@ def _to_lance_filter(
             filter.operator == FilterOperator.TEXT_MATCH
             or filter.operator == FilterOperator.NE
         ):
-            filters.append(f"{key}{operator}'%{filter.value}%'")
+            pattern = _quote_lance_string(f"%{filter.value!s}%")
+            filters.append(f"{key}{operator}{pattern}")
         elif isinstance(filter.value, list):
             processed_values = []
             for v in filter.value:
                 if isinstance(v, str):
-                    safe_v = v.replace("'", "''")
-                    processed_values.append(f"'{safe_v}'")
+                    processed_values.append(_quote_lance_string(v))
                 else:
                     processed_values.append(str(v))
             val = ",".join(processed_values)
@@ -78,7 +78,7 @@ def _to_lance_filter(
         elif isinstance(filter.value, (int, float)):
             filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(f"{key}{operator}'{filter.value!s}'")
+            filters.append(f"{key}{operator}{_quote_lance_string(str(filter.value))}")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:
