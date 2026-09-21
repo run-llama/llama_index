@@ -165,12 +165,15 @@ class FunctionAgent(BaseWorkflowAgent):
 
             if (
                 tool_call_result.return_direct
-                and tool_call_result.tool_name != "handoff"
+                and not tool_call_result.tool_output.is_error
                 and return_direct_result is None
             ):
                 return_direct_result = tool_call_result
 
-        if return_direct_result is not None:
+        if (
+            return_direct_result is not None
+            and return_direct_result.tool_name != "handoff"
+        ):
             scratchpad.append(
                 ChatMessage(
                     role="assistant",
