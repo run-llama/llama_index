@@ -401,3 +401,42 @@ async def test_insert_method_setting():
 
     assert len(user_msgs) == 0
     assert len(system_msgs) > 0
+
+
+@pytest.mark.asyncio
+async def test_memory_blocks_truncation_priority_order():
+    """Test that lower priority (higher numerical value) memory blocks are truncated first, and priority 0 is never truncated."""
+    p0_block = TextMemoryBlock(name="never_truncate", priority=0)
+    p1_block = TextMemoryBlock(name="high_priority", priority=1)
+    p2_block = TextMemoryBlock(name="low_priority", priority=2)
+
+    # Initial content: 3 blocks each having a distinct string
+    content_per_block = {
+        "never_truncate": "important permanent facts",
+        "high_priority": "high priority extracted facts",
+        "low_priority": "low priority raw retrieval results",
+    }
+
+    memory = Memory(
+        token_limit=10,  # Tight token limit forcing truncation
+        token_flush_size=5,
+        chat_history_token_ratio=0.5,
+        session_id="test_priority_truncation",
+        memory_blocks=[p0_block, p1_block, p2_block],
+    )
+
+    total_tokens = sum(
+        memory._estimate_token_count(c) for c in content_per_block.values()
+    )
+
+    # Truncate content
+    truncated = await memory._truncate_memory_blocks(
+        content_per_block, memory_blocks_tokens=total_tokens, chat_history_tokens=0
+    )
+
+    # low_priority (priority=2) must be truncated first
+    assert truncated["low_priority"] == [] or "low_priority" not in truncated
+    # high_priority (priority=1) should be retained
+    assert truncated["high_priority"] == "high priority extracted facts"
+    # never_truncate (priority=0) must never be truncated
+    assert truncated["never_truncate"] == "important permanent facts"
