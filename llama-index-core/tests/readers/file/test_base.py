@@ -82,6 +82,54 @@ def test_SimpleDirectoryReader_recursive(data_path):
     ]
 
 
+def test_SimpleDirectoryReader_required_exts_case_insensitive(data_path):
+    # stored extensions are lower-cased
+    r = SimpleDirectoryReader(input_dir=data_path, required_exts=[".MD", ".TXT"])
+    assert r.required_exts == [".md", ".txt"]
+    # only .md / .txt files (non-recursive) are kept
+    assert [f.name for f in r.input_files] == ["excluded_0.txt", "file_0.md"]
+
+    # uppercase required_exts still match lowercase file suffixes
+    r = SimpleDirectoryReader(
+        input_dir=data_path, recursive=True, required_exts=[".MD"]
+    )
+    assert [f.name for f in r.input_files] == ["file_0.md"]
+
+
+def test_SimpleDirectoryReader_required_exts_uppercase_file_suffix(data_path):
+    """Lowercase required_exts must match files with uppercase on-disk suffixes."""
+    # mock the filesystem so the walk reports a file named "file_0.MD"
+    # (uppercase suffix), while is_default_fs keeps the Path-based suffix logic.
+    fake_fs = mock.MagicMock()
+    # isdir distinguishes the (existing) input dir from files inside it
+    fake_fs.isdir = lambda p: str(p) == str(data_path)
+    fake_fs.is_dir = lambda p: False
+    fake_fs.walk.return_value = [(str(data_path), [], ["file_0.MD"])]
+    fake_fs.glob.return_value = []
+    fake_fs.info.return_value = {"size": 16, "type": "file"}
+    fake_fs._parent.return_value = str(data_path)
+    fake_fs.isfile.return_value = True
+
+    r = SimpleDirectoryReader(input_dir=data_path, required_exts=[".md"], fs=fake_fs)
+    # the file with uppercase suffix is still picked up
+    assert [f.name for f in r.input_files] == ["file_0.MD"]
+
+
+def test_SimpleDirectoryReader_required_exts_empty_list(data_path):
+    """An empty required_exts list selects nothing (preserves prior behavior)."""
+    # constructing with an empty list filters out every file and raises,
+    # rather than treating [] as "no filter" (which would ingest the whole tree)
+    with pytest.raises(ValueError, match="No files found in"):
+        SimpleDirectoryReader(input_dir=data_path, required_exts=[])
+
+
+def test__get_norm_exts():
+    assert SimpleDirectoryReader._get_norm_exts(None) is None
+    # empty list stays an empty list, not None (so [] still filters out all files)
+    assert SimpleDirectoryReader._get_norm_exts([]) == []
+    assert SimpleDirectoryReader._get_norm_exts([".MD", ".Txt"]) == [".md", ".txt"]
+
+
 def test_SimpleDirectoryReader_excluded(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, exclude=["excluded*"])
     assert [f.name for f in r.input_files] == ["file_0.md", "file_0.xyz"]
