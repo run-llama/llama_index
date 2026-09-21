@@ -1,3 +1,4 @@
 ::: llama_index.llms.huggingface
-options:
-members: - HuggingFaceLLM
+    options:
+      members:
+        - HuggingFaceLLM

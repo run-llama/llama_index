@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.isaacus
-options:
-members: - IsaacusEmbedding
+    options:
+      members:
+        - IsaacusEmbedding

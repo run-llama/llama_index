@@ -1,3 +1,4 @@
 ::: llama_index.storage.docstore.duckdb
-options:
-members: - DuckDBDocumentStore
+    options:
+      members:
+        - DuckDBDocumentStore

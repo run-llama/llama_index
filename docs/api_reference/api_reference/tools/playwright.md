@@ -1,3 +1,4 @@
 ::: llama_index.tools.playwright
-options:
-members: - PlaywrightToolSpec
+    options:
+      members:
+        - PlaywrightToolSpec

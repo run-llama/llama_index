@@ -1,3 +1,4 @@
 ::: llama_index.llms.gaudi
-options:
-members: - GaudiLLM
+    options:
+      members:
+        - GaudiLLM

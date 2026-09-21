@@ -1,3 +1,4 @@
 ::: llama_index.llms.upstage
-options:
-members: - Upstage
+    options:
+      members:
+        - Upstage

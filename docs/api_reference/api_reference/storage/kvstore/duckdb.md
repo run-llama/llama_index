@@ -1,3 +1,4 @@
 ::: llama_index.storage.kvstore.duckdb
-options:
-members: - DuckDBKVStore
+    options:
+      members:
+        - DuckDBKVStore

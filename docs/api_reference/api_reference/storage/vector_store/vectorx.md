@@ -1,3 +1,4 @@
 ::: llama_index.vector_stores.vectorx
-options:
-members: - VectorXVectorStore
+    options:
+      members:
+        - VectorXVectorStore

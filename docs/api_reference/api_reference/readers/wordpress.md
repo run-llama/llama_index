@@ -1,3 +1,4 @@
 ::: llama_index.readers.wordpress
-options:
-members: - WordpressReader
+    options:
+      members:
+        - WordpressReader

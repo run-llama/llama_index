@@ -1,3 +1,4 @@
 ::: llama_index.llms.you
-options:
-members: - You
+    options:
+      members:
+        - You

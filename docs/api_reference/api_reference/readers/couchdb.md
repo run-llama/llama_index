@@ -1,3 +1,4 @@
 ::: llama_index.readers.couchdb
-options:
-members: - SimpleCouchDBReader
+    options:
+      members:
+        - SimpleCouchDBReader

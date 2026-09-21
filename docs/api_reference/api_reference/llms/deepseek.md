@@ -1,3 +1,4 @@
 ::: llama_index.llms.deepseek
-options:
-members: - DeepSeek
+    options:
+      members:
+        - DeepSeek

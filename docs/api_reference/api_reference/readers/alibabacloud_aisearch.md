@@ -1,3 +1,5 @@
 ::: llama_index.readers.alibabacloud_aisearch
-options:
-members: - AlibabaCloudAISearchDocumentReader - AlibabaCloudAISearchImageReader
+    options:
+      members:
+        - AlibabaCloudAISearchDocumentReader
+        - AlibabaCloudAISearchImageReader

@@ -1,3 +1,4 @@
 ::: llama_index.llms.deepinfra
-options:
-members: - DeepInfraLLM
+    options:
+      members:
+        - DeepInfraLLM

@@ -1,3 +1,4 @@
 ::: llama_index.llms.netmind
-options:
-members: - NetmindLLM
+    options:
+      members:
+        - NetmindLLM

@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.gaudi
-options:
-members: - GaudiEmbedding
+    options:
+      members:
+        - GaudiEmbedding
