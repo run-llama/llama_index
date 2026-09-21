@@ -624,7 +624,7 @@ class MediaResource(BaseModel):
             bits.append(str(sha256(self.data).hexdigest()))
         if self.path is not None:
             # Hash the file path if provided
-            bits.append(str(sha256(str(self.path).encode("utf-8")).hexdigest()))
+            bits.append(str(sha256(self.path.as_posix().encode("utf-8")).hexdigest()))
         if self.url is not None:
             # Use the URL string as basis for hash
             bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
