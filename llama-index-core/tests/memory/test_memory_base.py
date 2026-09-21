@@ -337,3 +337,29 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+async def test_truncate_memory_blocks_truncates_lowest_priority_first():
+    """Blocks with a higher priority number are truncated before lower ones."""
+    from llama_index.core.memory.memory_blocks.static import StaticMemoryBlock
+
+    pinned = StaticMemoryBlock(name="pinned", static_content="always kept", priority=0)
+    facts = StaticMemoryBlock(
+        name="facts", static_content="important fact " * 20, priority=1
+    )
+    vector = StaticMemoryBlock(
+        name="vector", static_content="retrieved chunk " * 20, priority=2
+    )
+
+    memory = Memory.from_defaults(
+        token_limit=60,
+        memory_blocks=[pinned, facts, vector],
+        session_id="test_truncate_priority",
+    )
+    messages = await memory.aget()
+    text = str(messages)
+
+    assert "always kept" in text
+    assert "important fact" in text
+    assert "retrieved chunk" not in text

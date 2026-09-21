@@ -495,8 +495,8 @@ class Memory(BaseMemory):
 
         # Truncate memory blocks based on priority
         for memory_block in sorted(
-            self.memory_blocks, key=lambda x: x.priority
-        ):  # Lower priority first
+            self.memory_blocks, key=lambda x: x.priority, reverse=True
+        ):  # Lower priority (higher number) first
             # Skip memory blocks with priority 0, they should never be truncated
             if memory_block.priority == 0:
                 continue
@@ -530,7 +530,9 @@ class Memory(BaseMemory):
 
         # handle case where we still have tokens to truncate
         # just remove the blocks starting from the least priority
-        for memory_block in sorted(self.memory_blocks, key=lambda x: x.priority):
+        for memory_block in sorted(
+            self.memory_blocks, key=lambda x: x.priority, reverse=True
+        ):
             if memory_block.priority == 0:
                 continue
 
