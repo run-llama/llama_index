@@ -207,7 +207,12 @@ class DirectLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         prev_response: Optional[str] = None,
     ) -> str:
         """Insert answers into response."""
-        for query_task, answer in zip(query_tasks, answers):
+        # Offsets were measured on the original response, so apply insertions
+        # last tag first: earlier offsets stay valid as the string changes.
+        pairs = sorted(
+            zip(query_tasks, answers), key=lambda pair: pair[0].start_idx, reverse=True
+        )
+        for query_task, answer in pairs:
             response = (
                 response[: query_task.start_idx]
                 + answer
