@@ -109,7 +109,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
         # Use the last message or a context window of messages for the query
         if (
-            self.retrieval_context_window > 1
+            self.retrieval_context_window > 0
             and len(messages) >= self.retrieval_context_window
         ):
             context = messages[-self.retrieval_context_window :]
