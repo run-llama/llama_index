@@ -12,7 +12,7 @@ from llama_index.core.utils import get_tqdm_iterable
 if TYPE_CHECKING:
     from bs4 import Tag, PageElement, NavigableString
 
-DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "section"]
+DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "section"]
 
 
 class HTMLNodeParser(NodeParser):
