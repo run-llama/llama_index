@@ -195,6 +195,36 @@ def test_inline_tags_flattened_by_default() -> None:
     reason="Requires beautifulsoup4.",
     condition=importlib.util.find_spec("bs4") is None,
 )
+def test_bare_inline_tags_still_emit_a_node() -> None:
+    # A b/i/u tag that is NOT nested inside any tag in `tags` (e.g. p) has no
+    # ancestor to flatten its text into, so it must still be emitted as its
+    # own node instead of silently dropping the text.
+    html_parser = HTMLNodeParser()
+
+    splits = html_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="<html><body><div><b>Just bold text, no p wrapper</b></div></body></html>"
+            )
+        ]
+    )
+    assert len(splits) == 1
+    assert splits[0].text == "Just bold text, no p wrapper"
+    assert splits[0].metadata["tag"] == "b"
+
+    splits = html_parser.get_nodes_from_documents(
+        [Document(text="<html><body><b>Top level bold only</b></body></html>")]
+    )
+    assert len(splits) == 1
+    assert splits[0].text == "Top level bold only"
+    assert splits[0].metadata["tag"] == "b"
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
 def test_no_empty_nodes_for_container_tags() -> None:
     # A container tag whose only children are themselves extracted tags yields
     # no text of its own; it previously produced a spurious empty node.

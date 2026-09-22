@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from bs4 import Tag, PageElement, NavigableString
 
 DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "section"]
+# Inline formatting tags: flattened into the enclosing split's text when nested
+# inside another matched tag, but still emitted as their own node when they
+# appear outside of any tag in `self.tags` (e.g. a bare `<b>` inside a `<div>`).
+INLINE_TAGS = ["b", "i", "u"]
 
 
 class HTMLNodeParser(NodeParser):
@@ -81,7 +85,22 @@ class HTMLNodeParser(NodeParser):
         last_tag = None
         current_section = ""
 
-        tags = soup.find_all(self.tags)
+        # Inline tags (b/i/u) not already in self.tags should still produce
+        # their own node when they aren't nested inside another matched tag,
+        # otherwise their text would be silently dropped (they're only kept
+        # in the surrounding text via _extract_text_from_tag's flattening
+        # when a matched ancestor exists to emit that text).
+        bare_inline_tags = [t for t in INLINE_TAGS if t not in self.tags]
+        if bare_inline_tags:
+            search_tags = self.tags + bare_inline_tags
+            tags = [
+                tag
+                for tag in soup.find_all(search_tags)
+                if tag.name not in bare_inline_tags
+                or tag.find_parent(search_tags) is None
+            ]
+        else:
+            tags = soup.find_all(self.tags)
         for tag in tags:
             tag_text = self._extract_text_from_tag(tag)
             if isinstance(tag, Tag) and (tag.name == last_tag or last_tag is None):
