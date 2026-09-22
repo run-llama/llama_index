@@ -5,6 +5,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document, ImageDocument
 from llama_index.core.utils import infer_torch_device
 
+
 class ImageTabularChartReader(BaseReader):
     """
     Image parser.
