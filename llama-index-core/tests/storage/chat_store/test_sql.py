@@ -56,6 +56,40 @@ async def test_add_messages_batch(chat_store: SQLAlchemyChatStore):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("status", list(MessageStatus))
+async def test_add_empty_messages_to_new_store(
+    chat_store: SQLAlchemyChatStore, status: MessageStatus
+):
+    """An empty batch creates no records and allows later nonempty writes."""
+    await chat_store.add_messages("empty_user", [], status=status)
+    assert await chat_store.get_keys() == []
+
+    message = ChatMessage(role="user", content="hello")
+    await chat_store.add_messages("batch_user", [message], status=status)
+    assert await chat_store.get_messages("batch_user", status=status) == [message]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", list(MessageStatus))
+async def test_add_empty_messages_preserves_existing_history(
+    chat_store: SQLAlchemyChatStore, status: MessageStatus
+):
+    """Empty batches preserve active and archived messages across sessions."""
+    await chat_store.add_message("user1", ChatMessage(role="user", content="active"))
+    await chat_store.add_message(
+        "user1",
+        ChatMessage(role="assistant", content="archived"),
+        status=MessageStatus.ARCHIVED,
+    )
+    await chat_store.add_message("user2", ChatMessage(role="user", content="other"))
+    before = await chat_store._dump_db_data()
+
+    await chat_store.add_messages("user1", [], status=status)
+
+    assert await chat_store._dump_db_data() == before
+
+
+@pytest.mark.asyncio
 async def test_count_messages(chat_store: SQLAlchemyChatStore):
     """Test counting messages."""
     batch_messages = [
