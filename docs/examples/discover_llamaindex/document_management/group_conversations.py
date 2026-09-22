@@ -78,3 +78,5 @@ with open("conversation_docs.json", "w") as f:
     json.dump(convo_docs, f)
 
 print("Done! Written to conversation_docs.json")
+
+// Fix for issue #22947
