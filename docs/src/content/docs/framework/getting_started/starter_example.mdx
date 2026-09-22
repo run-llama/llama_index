@@ -36,6 +36,13 @@ set OPENAI_API_KEY=XXXXX
   integration and [OpenAILike
   Embeddings](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/openai_like/)
   integration.
+
+  For example, TrustedRouter (an attested OpenAI-compatible router with zero
+  prompt and output logging by default) ships a ready-made integration:
+  `pip install llama-index-llms-trustedrouter`, then
+  `from llama_index.llms.trustedrouter import TrustedRouter` with a model such
+  as `trustedrouter/auto`, `trustedrouter/zdr`, or `trustedrouter/e2e` and a
+  `TRUSTEDROUTER_API_KEY`.
 </Aside>
 
 ## Basic Agent Example
