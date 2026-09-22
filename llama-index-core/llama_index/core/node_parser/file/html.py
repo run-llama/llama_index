@@ -14,6 +14,13 @@ if TYPE_CHECKING:
 
 DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "section"]
 
+# Tags that appear inside a sentence rather than wrapping a block of content.
+# When one of these is nested inside another extracted tag, its text belongs to
+# the surrounding text instead of becoming a node of its own.
+INLINE_TAGS = frozenset(
+    {"a", "b", "code", "em", "i", "small", "span", "strong", "sub", "sup", "u"}
+)
+
 
 class HTMLNodeParser(NodeParser):
     """
@@ -83,6 +90,12 @@ class HTMLNodeParser(NodeParser):
 
         tags = soup.find_all(self.tags)
         for tag in tags:
+            if tag.name in INLINE_TAGS and any(
+                parent.name in self.tags for parent in tag.parents
+            ):
+                # Inline tag nested inside another extracted tag: its text is
+                # already part of the ancestor's text, so do not emit it again.
+                continue
             tag_text = self._extract_text_from_tag(tag)
             if isinstance(tag, Tag) and (tag.name == last_tag or last_tag is None):
                 last_tag = tag.name
@@ -121,7 +134,7 @@ class HTMLNodeParser(NodeParser):
                     if elem.strip():
                         texts.append(elem.strip())
                 elif isinstance(elem, Tag):
-                    if elem.name in self.tags:
+                    if elem.name in self.tags and elem.name not in INLINE_TAGS:
                         continue
                     else:
                         texts.append(elem.get_text().strip())

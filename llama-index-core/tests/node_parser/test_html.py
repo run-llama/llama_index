@@ -135,11 +135,10 @@ def test_nesting_tags_splits() -> None:
             )
         ]
     )
-    assert len(splits) == 2
-    assert splits[0].text == "Section 1"
-    assert splits[1].text == "bold"
+    # The inline <b> is part of the heading text, not a section of its own.
+    assert len(splits) == 1
+    assert splits[0].text == "Section 1\nbold"
     assert splits[0].metadata["tag"] == "h2"
-    assert splits[1].metadata["tag"] == "b"
 
 
 @pytest.mark.xfail(
@@ -206,3 +205,58 @@ def test_no_empty_nodes_for_container_tags() -> None:
         "First paragraph.",
         "Second paragraph.",
     ]
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
+def test_inline_tag_text_stays_in_paragraph() -> None:
+    html_parser = HTMLNodeParser()
+
+    splits = html_parser.get_nodes_from_documents(
+        [Document(text="<html><body><p>Hello <b>world</b> again</p></body></html>")]
+    )
+
+    assert len(splits) == 1
+    assert splits[0].metadata["tag"] == "p"
+    text = splits[0].text
+    assert "Hello" in text
+    assert "world" in text
+    assert "again" in text
+    assert text.index("Hello") < text.index("world") < text.index("again")
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
+def test_top_level_inline_tag_still_emits_node() -> None:
+    html_parser = HTMLNodeParser()
+
+    splits = html_parser.get_nodes_from_documents(
+        [Document(text="<html><body><b>standalone</b></body></html>")]
+    )
+
+    assert len(splits) == 1
+    assert splits[0].metadata["tag"] == "b"
+    assert splits[0].text == "standalone"
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
+def test_nested_block_tags_still_deduplicated() -> None:
+    html_parser = HTMLNodeParser()
+
+    splits = html_parser.get_nodes_from_documents(
+        [Document(text="<html><body><section><p>a</p><p>b</p></section></body></html>")]
+    )
+
+    assert len(splits) == 1
+    assert splits[0].metadata["tag"] == "p"
+    assert splits[0].text == "a\nb"
