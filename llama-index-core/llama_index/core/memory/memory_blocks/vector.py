@@ -151,8 +151,15 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
         results = await self.vector_store.aquery(query)
         nodes_with_scores = [
-            NodeWithScore(node=node, score=score)
-            for node, score in zip(results.nodes or [], results.similarities or [])
+            NodeWithScore(
+                node=node,
+                score=(
+                    results.similarities[i]
+                    if results.similarities is not None
+                    else None
+                ),
+            )
+            for i, node in enumerate(results.nodes or [])
         ]
         if not nodes_with_scores:
             return ""
