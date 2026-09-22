@@ -266,7 +266,7 @@ class BaseIndex(Generic[IS], ABC):
         Delete a list of nodes from the index.
 
         Args:
-            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+            node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
         for node_id in node_ids:
@@ -286,7 +286,7 @@ class BaseIndex(Generic[IS], ABC):
         Asynchronously delete a list of nodes from the index.
 
         Args:
-            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+            node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
         for node_id in node_ids:
