@@ -1,5 +1,6 @@
 import pytest
 from typing import List, Any, Optional, Union
+from unittest.mock import AsyncMock
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -7,6 +8,7 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
     VideoBlock,
     DocumentBlock,
+    ImageBlock,
 )
 from llama_index.core.memory.memory import Memory, BaseMemoryBlock, InsertMethod
 
@@ -156,6 +158,69 @@ async def test_text_memory_block(memory_with_blocks):
     assert block_name == "text_block"
     assert len(content) == 1
     assert content[0].text == "Simple text content from TextMemoryBlock"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("with_history", [False, True])
+@pytest.mark.parametrize("input_type", ["string", "message", "multimodal", "none"])
+async def test_memory_blocks_receive_current_input(
+    monkeypatch, with_history, input_type
+):
+    block = TextMemoryBlock(name="text_block")
+    get_block = AsyncMock(return_value="Retrieved context")
+    monkeypatch.setattr(TextMemoryBlock, "_aget", get_block)
+    memory = Memory.from_defaults(memory_blocks=[block])
+    history = (
+        [ChatMessage(role="user", content="Earlier question")] if with_history else []
+    )
+    await memory.aset(history)
+
+    if input_type == "string":
+        current_input = "Current question"
+        expected_message = ChatMessage(role="user", content=current_input)
+    elif input_type == "message":
+        current_input = ChatMessage(
+            role="user",
+            content="Current question",
+            additional_kwargs={"request_id": "123"},
+        )
+        expected_message = current_input
+    elif input_type == "multimodal":
+        current_input = ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text="Describe this image"),
+                ImageBlock(url="https://example.com/image.png"),
+            ],
+        )
+        expected_message = current_input
+    else:
+        current_input = None
+        expected_message = None
+
+    messages = await memory.aget(input=current_input, test_parameter="value")
+
+    expected_input = (
+        [*history, expected_message] if expected_message is not None else history
+    )
+    get_block.assert_awaited_once_with(
+        expected_input, session_id=memory.session_id, test_parameter="value"
+    )
+    assert "Retrieved context" in messages[0].content
+    assert await memory.aget_all() == history
+
+
+def test_memory_get_passes_chat_message_input(monkeypatch):
+    get_block = AsyncMock(return_value="Retrieved context")
+    monkeypatch.setattr(TextMemoryBlock, "_aget", get_block)
+    memory = Memory.from_defaults(memory_blocks=[TextMemoryBlock(name="text_block")])
+    message = ChatMessage(role="user", content="Current question")
+
+    result = memory.get(input=message)
+
+    get_block.assert_awaited_once_with([message], session_id=memory.session_id)
+    assert "Retrieved context" in result[0].content
+    assert memory.get_all() == []
 
 
 @pytest.mark.asyncio
