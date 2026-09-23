@@ -1075,7 +1075,6 @@ class Anthropic(FunctionCallingLLM):
 
         return tool_selections
 
-    @dispatcher.span
     def _structured_llm_kwargs(
         self, llm_kwargs: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
@@ -1094,6 +1093,7 @@ class Anthropic(FunctionCallingLLM):
         kwargs.update(llm_kwargs or {})
         return kwargs
 
+    @dispatcher.span
     def structured_predict(
         self,
         output_cls: Type[Model],
