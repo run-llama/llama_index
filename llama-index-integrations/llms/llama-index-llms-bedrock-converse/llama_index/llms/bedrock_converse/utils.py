@@ -77,6 +77,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-opus-4-8": 1000000,
     "anthropic.claude-opus-5": 1000000,
+    "anthropic.claude-opus-5-5": 1000000,
     "anthropic.claude-fable-5": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
@@ -140,6 +141,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "anthropic.claude-opus-5",
+    "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -184,6 +186,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "anthropic.claude-opus-5",
+    "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -212,6 +215,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "anthropic.claude-opus-5",
+    "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -235,6 +239,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "anthropic.claude-opus-5",
+    "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -251,6 +256,7 @@ BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "anthropic.claude-opus-5",
+    "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
@@ -260,9 +266,12 @@ BEDROCK_NO_TEMP_MODELS = (
     "anthropic.claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "anthropic.claude-opus-5",
+    "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-5",
 )
+
+BEDROCK_NO_FORCED_TOOL_CALL_MODELS = ("anthropic.claude-opus-5-5",)
 
 
 def is_reasoning(model_name: str) -> bool:
