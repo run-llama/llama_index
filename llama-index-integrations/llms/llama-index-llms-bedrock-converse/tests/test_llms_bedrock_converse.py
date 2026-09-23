@@ -277,11 +277,13 @@ def test_init_adaptive_thinking_opus_46(mock_boto3_session):
         ("global.openai.gpt-6-sol", False),
         ("us.openai.gpt-6-luna", False),
         ("global.openai.gpt-6-luna", False),
+        ("us.openai.gpt-6-astra", False),
+        ("global.openai.gpt-6-astra", False),
         ("openai.gpt-oss-120b-1:0", True),
     ],
 )
 def test_init_openai_models(mock_boto3_session, model, sends_temperature):
-    """GPT-6 Sol/Luna are inference-profile only and reject the temperature field."""
+    """GPT-6 Sol/Luna/Astra are inference-profile only and reject the temperature field."""
     llm = BedrockConverse(model=model, temperature=0.5)
 
     assert llm.metadata.context_window == 128000

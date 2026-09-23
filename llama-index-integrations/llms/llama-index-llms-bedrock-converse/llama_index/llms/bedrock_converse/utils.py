@@ -114,6 +114,7 @@ BEDROCK_MODELS = {
     "openai.gpt-oss-20b-1:0": 128000,
     "openai.gpt-6-sol": 128000,
     "openai.gpt-6-luna": 128000,
+    "openai.gpt-6-astra": 128000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
@@ -163,6 +164,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "openai.gpt-oss-20b-1:0",
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
+    "openai.gpt-6-astra",
     "deepseek.v3-v1:0",
     "deepseek.v3.2",
 )
@@ -205,6 +207,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "meta.llama4-scout-17b-instruct-v1:0",
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
+    "openai.gpt-6-astra",
     "deepseek.r1-v1:0",
 )
 BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
@@ -270,6 +273,7 @@ BEDROCK_NO_TEMP_MODELS = (
     "anthropic.claude-sonnet-5",
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
+    "openai.gpt-6-astra",
 )
 
 
