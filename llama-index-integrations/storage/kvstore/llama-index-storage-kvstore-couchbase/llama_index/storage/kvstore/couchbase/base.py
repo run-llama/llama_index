@@ -8,6 +8,7 @@ from llama_index.core.storage.kvstore.types import (
 from typing import Any, Dict, List, Optional, Tuple
 from couchbase.cluster import Cluster
 from couchbase.exceptions import (
+    BucketDoesNotExistException,
     DocumentNotFoundException,
 )
 from couchbase.kv_range_scan import RangeScan
@@ -86,7 +87,7 @@ class CouchbaseKVStore(BaseKVStore):
         try:
             bucket_manager.get_bucket(bucket_name)
             return True
-        except Exception:
+        except BucketDoesNotExistException:
             return False
 
     def _validate_collection_name(self, collection_name: str) -> bool:

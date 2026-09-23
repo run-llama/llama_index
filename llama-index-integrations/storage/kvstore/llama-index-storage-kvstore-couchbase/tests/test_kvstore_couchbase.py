@@ -177,3 +177,23 @@ class TestCouchbaseKVStore:
         assert is_deleted
         doc = self.kvstore.get(key, collection=collection)
         assert doc is None
+
+
+def test_bucket_check_propagates_other_cluster_errors():
+    """A failed bucket check must not be reported as a missing bucket.
+
+    _check_bucket_exists reaches the cluster to answer "does this bucket exist". When that call
+    fails for any other reason - a timeout, an authentication failure, an unreachable node - the
+    constructor previously raised "Bucket ... does not exist. Please create the bucket before
+    using.", which sends the user to create a bucket that is already there.
+    """
+    from unittest.mock import MagicMock
+
+    class ClusterUnavailable(Exception):
+        pass
+
+    cluster = MagicMock(spec=Cluster)
+    cluster.buckets.return_value.get_bucket.side_effect = ClusterUnavailable("timeout")
+
+    with pytest.raises(ClusterUnavailable):
+        CouchbaseKVStore(cluster, "some_bucket", "some_scope")
