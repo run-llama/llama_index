@@ -3,12 +3,13 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 import builtins
+import sys
 
 import pytest
 from unittest import mock
 
 from typing import Dict, List
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 try:
     import torch
@@ -19,6 +20,8 @@ except ImportError:
     np = None
     Image = None
 
+from llama_index.readers.file.image_caption.base import ImageCaptionReader
+from llama_index.readers.file.image_deplot.base import ImageTabularChartReader
 from llama_index.readers.file.image_vision_llm.base import ImageVisionLLMReader
 
 
@@ -127,6 +130,74 @@ class ModelFake:
         This is just a dummy method for the purposes of the test (it
         needs to be defined, but is not used). Hence, we return nothing.
         """
+
+
+@pytest.mark.parametrize(
+    ("reader_cls", "module_path", "processor_name", "model_name"),
+    [
+        (
+            ImageCaptionReader,
+            "llama_index.readers.file.image_caption.base",
+            "BlipProcessor",
+            "BlipForConditionalGeneration",
+        ),
+        (
+            ImageTabularChartReader,
+            "llama_index.readers.file.image_deplot.base",
+            "Pix2StructProcessor",
+            "Pix2StructForConditionalGeneration",
+        ),
+        (
+            ImageVisionLLMReader,
+            "llama_index.readers.file.image_vision_llm.base",
+            "Blip2Processor",
+            "Blip2ForConditionalGeneration",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    ("device", "expected_dtype_name"),
+    [("cpu", "float32"), ("xpu", "float16")],
+)
+def test_image_reader_uses_inferred_device_and_dtype(
+    reader_cls,
+    module_path,
+    processor_name,
+    model_name,
+    device,
+    expected_dtype_name,
+    monkeypatch,
+):
+    fake_torch = ModuleType("torch")
+    fake_torch.float16 = object()
+    fake_torch.float32 = object()
+    fake_transformers = ModuleType("transformers")
+    model_loader = mock.Mock(return_value=ModelFake())
+    setattr(
+        fake_transformers,
+        processor_name,
+        SimpleNamespace(from_pretrained=mock.Mock(return_value=TokenizerFake())),
+    )
+    setattr(
+        fake_transformers,
+        model_name,
+        SimpleNamespace(from_pretrained=model_loader),
+    )
+    fake_pil = ModuleType("PIL")
+    fake_pil.Image = object()
+
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+    monkeypatch.setitem(sys.modules, "sentencepiece", ModuleType("sentencepiece"))
+    monkeypatch.setitem(sys.modules, "PIL", fake_pil)
+
+    with mock.patch(f"{module_path}.infer_torch_device", return_value=device):
+        reader = reader_cls()
+
+    expected_dtype = getattr(fake_torch, expected_dtype_name)
+    assert reader._parser_config["device"] == device
+    assert reader._parser_config["dtype"] is expected_dtype
+    assert model_loader.call_args.kwargs["torch_dtype"] is expected_dtype
 
 
 @contextmanager
