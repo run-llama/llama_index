@@ -14,7 +14,7 @@ The api will provide you with all the **nodes, relations, and ways** for the par
 
 ## **Steps to find the suitable tag and values**
 
-1. Visit [Taginfo](taginfo.openstreetmap.org/tags). In essence, this website has all conceivable tags and values.
+1. Visit [Taginfo](https://taginfo.openstreetmap.org/tags). In essence, this website has all conceivable tags and values.
 2. Perform a search for the feature you're looking for, for instance, "hospital" will return three results: "hospital" as an amenity, "hospital" as a structure, and "hospital" as a healthcare facility.
 3. We may infer from the outcome that tag=amenity and value=hospital.
 4. Leave the values parameter to their default value if you do not need to filter.
