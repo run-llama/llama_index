@@ -147,7 +147,16 @@ def get_multimodal_embedding(
         model=model, input=input, api_key=api_key, kwargs=kwargs
     )
     if response.status_code == HTTPStatus.OK:
-        return response.output["embedding"]
+        output = response.output
+        if "embeddings" in output:
+            # Newer DashScope API versions return a list of embedding
+            # objects (each with "embedding", "index", "type") instead of a
+            # single "embedding" key. get_multimodal_embedding always sends
+            # a single fused/weighted input, so exactly one result comes
+            # back; take it, falling back to the older shape below for
+            # accounts/regions still on the previous response format.
+            return output["embeddings"][0]["embedding"]
+        return output["embedding"]
     else:
         logger.error("Calling MultiModalEmbedding failed, details: %s" % response)
         return []
