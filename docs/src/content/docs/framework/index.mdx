@@ -1,0 +1,201 @@
+---
+title: LlamaIndex Framework
+description: Open-source Python framework for building agents and retrieval-augmented generation (RAG) over your own data. Five lines to a first answer, event-driven workflows for production.
+sidebar:
+  order: 1
+  label: Overview
+tableOfContents: false
+---
+
+LlamaIndex gives you data connectors for hundreds of sources, indexes and query engines for retrieval, agents that call tools and keep state, and event-driven workflows that tie it all together in production. It is MIT-licensed, and also available in [TypeScript](/typescript/framework/).
+
+<LinkButton
+  href="/python/framework/getting_started/starter_example/"
+  variant="secondary"
+  icon="right-arrow"
+>
+  Start the tutorial
+</LinkButton>
+<LinkButton
+  href="/python/framework/getting_started/installation/"
+  variant="secondary"
+>
+  Installation
+</LinkButton>
+<LinkButton
+  href="https://github.com/run-llama/llama_index"
+  variant="minimal"
+  icon="github"
+>
+  GitHub
+</LinkButton>
+
+## Five lines to your first answer
+
+Put a few files in a folder called `data`, then run one of these. The hosted route needs an [OpenAI API key](https://platform.openai.com/api-keys); the local route needs [Ollama](https://ollama.com/) and no key at all.
+
+<Tabs syncKey="framework-llm">
+  <TabItem label="OpenAI">
+    ```bash
+    pip install llama-index
+    export OPENAI_API_KEY=sk-...
+    ```
+
+    ```python
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+
+    documents = SimpleDirectoryReader("data").load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What does this document say about pricing?")
+    print(response)
+    ```
+
+  </TabItem>
+  <TabItem label="Local models">
+    ```bash
+    pip install llama-index llama-index-llms-ollama llama-index-embeddings-huggingface
+    ollama pull llama3.1
+    ```
+
+    ```python
+    from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
+    from llama_index.llms.ollama import Ollama
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+    Settings.llm = Ollama(model="llama3.1", request_timeout=360.0)
+    Settings.embed_model = HuggingFaceEmbedding(
+        model_name="BAAI/bge-base-en-v1.5"
+    )
+
+    documents = SimpleDirectoryReader("data").load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What does this document say about pricing?")
+    print(response)
+    ```
+
+  </TabItem>
+</Tabs>
+
+Every line above has a longer version: the [starter tutorial](/python/framework/getting_started/starter_example/) builds an agent around this index, the [local-models tutorial](/python/framework/getting_started/starter_example_local/) does the same without any hosted API, and [how to read these docs](/python/framework/getting_started/reading/) points you to the right section for your experience level.
+
+## What you can build
+
+<CardGrid>
+  <LinkCard
+    title="Agents"
+    description="LLM-powered assistants that call tools, keep state across turns and stream their progress."
+    href="/python/framework/use_cases/agents/"
+  />
+  <LinkCard
+    title="Workflows"
+    description="Event-driven, multi-step orchestration with branching, parallelism, retries and human-in-the-loop review."
+    href="/python/llamaagents/workflows/"
+  />
+  <LinkCard
+    title="Question answering (RAG)"
+    description="Retrieve the right passages from your documents and answer with citations."
+    href="/python/framework/use_cases/q_and_a/"
+  />
+  <LinkCard
+    title="Chatbots"
+    description="Conversational interfaces over your data with memory and follow-up questions."
+    href="/python/framework/use_cases/chatbots/"
+  />
+  <LinkCard
+    title="Structured extraction"
+    description="Pull typed fields out of unstructured text and documents with Pydantic schemas."
+    href="/python/framework/use_cases/extraction/"
+  />
+  <LinkCard
+    title="Multi-modal"
+    description="Combine text, images, tables and charts in retrieval and generation."
+    href="/python/framework/use_cases/multimodal/"
+  />
+</CardGrid>
+
+More on the [use cases page](/python/framework/use_cases/): text-to-SQL, querying CSVs, prompting techniques and fine-tuning.
+
+## How the pieces fit together
+
+LLMs are trained on public data, not yours. LlamaIndex makes your data available to the model at the moment it answers, a pattern called context augmentation, of which [RAG](/python/framework/getting_started/concepts/) is the best-known form. The framework is a set of composable building blocks for that job:
+
+- **[Data connectors](/python/framework/module_guides/loading/)** load documents from files, APIs, databases and SaaS tools, in their native formats.
+- **[Indexes](/python/framework/module_guides/indexing/)** structure that data so an LLM can retrieve from it efficiently, with pluggable [vector stores](/python/framework/module_guides/storing/).
+- **[Query and chat engines](/python/framework/module_guides/querying/)** turn a question or a conversation into retrieval plus generation.
+- **[Agents](/python/framework/module_guides/deploying/agents/)** decide which tools to call, from a retriever over your index to any function or API.
+- **[Workflows](/python/llamaagents/workflows/)** connect agents, connectors and tools into event-driven applications that you can deploy as services.
+- **[Models](/python/framework/module_guides/models/)**, **[evaluation](/python/framework/module_guides/evaluating/)** and **[observability](/python/framework/module_guides/observability/)** integrations let you swap providers and measure quality as you iterate.
+
+The high-level API gets you from documents to answers in five lines. The lower-level API lets you replace any of these modules, from the chunking strategy to the reranker, when the defaults stop being enough. The [Learn](/python/framework/understanding/) section walks through building a complete application step by step.
+
+## Production document data with LlamaParse
+
+The team behind LlamaIndex also runs [LlamaParse](/llamaparse/), a hosted document platform: [Parse](/llamaparse/parse/) (agentic OCR for scans, tables and charts), [Extract](/llamaparse/extract/) (JSON in your schema), [Classify](/llamaparse/classify/), [Split](/llamaparse/split/) and [Index](/llamaparse/cloud-index-v2/getting_started/) (managed ingestion and retrieval). The framework's built-in readers are fine for clean text. For scanned PDFs, forms, spreadsheets and slide decks, the quality of what goes into your index decides the quality of every answer, and that is what LlamaParse is for.
+
+<HeroBanner
+  title="Hard documents in, clean Markdown out"
+  subtitle="Agentic OCR and structured extraction as an API, with SDKs for Python, TypeScript, Go and Java. Free to start."
+  primary={{ label: "Get an API key", href: "https://cloud.llamaindex.ai" }}
+  secondary={{ label: "LlamaParse docs", href: "/llamaparse/" }}
+/>
+
+Parsed pages drop straight into a LlamaIndex index:
+
+```bash
+pip install "llama-cloud>=2.8"
+export LLAMA_CLOUD_API_KEY=llx-...
+```
+
+```python
+from llama_cloud import LlamaCloud
+from llama_index.core import Document, VectorStoreIndex
+
+client = LlamaCloud()  # reads LLAMA_CLOUD_API_KEY
+
+file = client.files.create(file="report.pdf", purpose="parse")
+result = client.parsing.parse(
+    file_id=file.id, tier="agentic", version="latest", expand=["markdown"]
+)
+
+documents = [Document(text=page.markdown) for page in result.markdown.pages]
+index = VectorStoreIndex.from_documents(documents)
+```
+
+For fully managed retrieval, [`LlamaCloudIndex`](/python/framework/module_guides/indexing/llama_cloud_index/) connects a LlamaIndex query engine or agent to an index that LlamaParse keeps in sync with your data sources.
+
+<Aside type="note" title="LlamaCloud is now LlamaParse">
+  The hosted platform formerly called LlamaCloud has been renamed LlamaParse,
+  and its documentation now lives at
+  [developers.llamaindex.ai/llamaparse](/llamaparse/). Package and class names
+  are unchanged, so existing code keeps working: `llama-cloud` on PyPI, the
+  `LlamaCloud` client, the `LLAMA_CLOUD_API_KEY` variable and the
+  `LlamaCloudIndex` integration in this framework.
+</Aside>
+
+## Community and ecosystem
+
+<CardGrid>
+  <Card title="Get help" icon="comment">
+    - [Discord](https://discord.gg/dGcwcsnxhU), the fastest way to get an answer
+    - [GitHub issues](https://github.com/run-llama/llama_index/issues) for bugs and feature requests
+    - [X](https://twitter.com/llama_index) and [LinkedIn](https://www.linkedin.com/company/llamaindex/) for releases and news
+    - [FAQ](/python/framework/getting_started/faq/) for the questions everyone asks first
+  </Card>
+  <Card title="Contribute" icon="github">
+    LlamaIndex is MIT-licensed and built with its community. The [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md) covers everything from a documentation fix to a new integration for an LLM, a vector store or an agent tool.
+
+    - [llama_index on GitHub](https://github.com/run-llama/llama_index) · [on PyPI](https://pypi.org/project/llama-index/)
+    - [LlamaIndex.TS on GitHub](https://github.com/run-llama/LlamaIndexTS) · [on npm](https://www.npmjs.com/package/llamaindex)
+
+  </Card>
+</CardGrid>
+
+### More from LlamaIndex
+
+- **[Integrations](/python/framework/community/integrations/)**: a large and growing catalogue of data connectors, LLMs, embedding models, vector stores and agent tools.
+- **[LlamaAgents](/python/llamaagents/overview/)**: author document agents with workflows and deploy them to LlamaParse or your own infrastructure.
+- **[LlamaIndex.TS](/typescript/framework/)**: the same ideas in idiomatic TypeScript, for Node.js, Deno, Bun and edge runtimes.
+- **[create-llama](https://www.npmjs.com/package/create-llama)**: scaffold a full-stack LlamaIndex application from the command line.
+- **[Full-stack projects](/python/framework/community/full_stack_projects/)** and the [Discover LlamaIndex video series](/python/framework/getting_started/discover_llamaindex/).

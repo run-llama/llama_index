@@ -114,7 +114,7 @@ We also have a [demo repository](https://github.com/run-llama/agents-observabili
 
 ### LlamaTrace (Hosted Arize Phoenix)
 
-We've partnered with [Arize AI](https://arize.com/?utm_source=llamaindex-docs&utm_medium=partner&utm_campaign=partner-docs&utm_content=observability-arize-phoenix) on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaCloud.
+We've partnered with [Arize AI](https://arize.com/?utm_source=llamaindex-docs&utm_medium=partner&utm_campaign=partner-docs&utm_content=observability-arize-phoenix) on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaParse (formerly LlamaCloud).
 
 This is built upon the open-source [Arize Phoenix](https://arize.com/phoenix/) project. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
 

@@ -35,7 +35,7 @@ If this is your first time using LlamaIndex, let’s get our dependencies:
 - `pip install llama-index-core llama-index-llms-openai` to get the LLM (we’ll be using OpenAI for simplicity, but you can always use another one)
 - Get an OpenAI API key and set it as an environment variable called `OPENAI_API_KEY`
 - `pip install llama-index-readers-file` to get the PDFReader
-  - Note: for better parsing of PDFs, we recommend [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/getting_started)
+  - Note: for better parsing of PDFs, we recommend [LlamaParse](/llamaparse/parse/getting_started/)
 
 Now let’s load in the text of an actual invoice:
 

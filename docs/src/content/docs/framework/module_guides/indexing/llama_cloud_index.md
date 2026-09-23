@@ -2,20 +2,18 @@
 title: LlamaCloudIndex + LlamaCloudRetriever
 ---
 
-LlamaCloud is a new generation of managed parsing, ingestion, and retrieval services, designed to bring production-grade context-augmentation to your LLM and RAG applications.
+`LlamaCloudIndex` connects this framework to Index, the managed ingestion and retrieval service in [LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team. LlamaParse was previously called LlamaCloud; the class and package names below kept the old name, so existing code keeps working.
 
-Currently, LlamaCloud supports
+Index gives you
 
-- Managed Ingestion API, handling parsing and document management
-- Managed Retrieval API, configuring optimal retrieval for your RAG system
+- Managed ingestion: parsing, chunking, embedding and document management, kept in sync with your data sources
+- Managed retrieval: a retrieval endpoint tuned for your RAG system, used here as a LlamaIndex retriever or query engine
 
-For additional documentation on LlamaCloud and this integration in particular, please reference our [official LlamaCloud docs](https://docs.cloud.llamaindex.ai/llamacloud/guides/framework_integration).
+For the service itself, see the [Index documentation](/llamaparse/cloud-index-v2/getting_started/).
 
 ## Access
 
-We are opening up a private beta to a limited set of enterprise partners for the managed ingestion and retrieval API. If you’re interested in centralizing your data pipelines and spending more time working on your actual RAG use cases, come [talk to us.](https://www.llamaindex.ai/contact)
-
-If you have access to LlamaCloud, you can visit [LlamaCloud](https://cloud.llamaindex.ai) to sign in and get an API key.
+[Sign up for LlamaParse](https://cloud.llamaindex.ai) to get an API key, then create an index from the dashboard or with the code below. Talk to us about [enterprise plans](https://www.llamaindex.ai/contact) if you need self-hosting or a dedicated region.
 
 ## Setup
 
