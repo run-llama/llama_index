@@ -23,6 +23,16 @@ def _marshal_llm_to_json(output: str) -> str:
     """
     output = output.strip()
 
+    # Security: find ALL balanced JSON objects/arrays and return the LAST one.
+    # The LLM's own authoritative output appears last; earlier JSON may have
+    # originated from model-under-test output referenced in the LLM's reasoning
+    # (verdict injection). Using find("{")..rfind("}") spans both, allowing
+    # injected JSON to be parsed instead of the real output.
+    all_json = _find_all_balanced_json(output)
+    if all_json:
+        return all_json[-1]
+
+    # Fallback: original behavior for backward compatibility (incomplete JSON)
     left_square = output.find("[")
     left_brace = output.find("{")
 
@@ -34,6 +44,50 @@ def _marshal_llm_to_json(output: str) -> str:
         right = output.rfind("}")
 
     return output[left : right + 1]
+
+
+def _find_all_balanced_json(text: str) -> list[str]:
+    """Find all complete balanced JSON objects or arrays in text."""
+    results: list[str] = []
+    i = 0
+    while i < len(text):
+        if text[i] in "{[":
+            open_char = text[i]
+            close_char = "]" if open_char == "[" else "}"
+            depth = 0
+            in_string = False
+            escape = False
+            for j in range(i, len(text)):
+                ch = text[j]
+                if escape:
+                    escape = False
+                    continue
+                if ch == "\\":
+                    escape = True
+                    continue
+                if ch == '"':
+                    in_string = not in_string
+                    continue
+                if in_string:
+                    continue
+                if ch == open_char:
+                    depth += 1
+                elif ch == close_char:
+                    depth -= 1
+                    if depth == 0:
+                        candidate = text[i : j + 1]
+                        try:
+                            json.loads(candidate)
+                            results.append(candidate)
+                        except json.JSONDecodeError:
+                            pass
+                        i = j + 1
+                        break
+            else:
+                break
+        else:
+            i += 1
+    return results
 
 
 def parse_json_markdown(text: str) -> Any:
