@@ -108,3 +108,47 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_top_k_zero() -> None:
+    """
+    An explicit ``similarity_top_k=0`` must return no results.
+
+    ``similarity_top_k=None`` means "no limit", but because 0 is falsy the
+    guard ``if similarity_top_k and ...`` treated an explicit 0 the same as
+    None, so asking for zero results returned *every* embedding.
+    """
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    result_similarities, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert result_similarities == []
+    assert result_ids == []
+
+    # None still means "no limit" and returns everything.
+    _, all_ids = get_top_k_embeddings(query_embedding, embeddings, similarity_top_k=None)
+    assert len(all_ids) == 3
+
+
+def test_get_top_k_mmr_embeddings_top_k_zero() -> None:
+    """
+    An explicit ``similarity_top_k=0`` must return no results for the MMR path
+    too. ``similarity_top_k or embedding_length`` previously discarded the
+    explicit 0 and fell back to returning every embedding.
+    """
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    result_similarities, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert result_similarities == []
+    assert result_ids == []
+
+    # None still means "no limit" and returns everything.
+    _, all_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=None
+    )
+    assert len(all_ids) == 3
