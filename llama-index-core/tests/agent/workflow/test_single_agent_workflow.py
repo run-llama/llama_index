@@ -341,6 +341,10 @@ async def test_run_args_apply_on_reused_context():
 
     await agent.run(user_msg="test", ctx=ctx, early_stopping_method="generate")
 
+    # max_iterations=0 still means "use the default", as before.
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 20 reached"):
+        await agent.run(user_msg="test", ctx=Context(agent), max_iterations=0)
+
 
 @pytest.mark.asyncio
 async def test_early_stopping_method_generate():
