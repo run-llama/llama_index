@@ -6,7 +6,7 @@ title: Defining and Customizing Documents
 
 Documents can either be created automatically via data loaders, or constructed manually.
 
-By default, all of our [data loaders](/python/framework/module_guides/loading/connector) (including those offered on LlamaHub) return `Document` objects through the `load_data` function.
+By default, all of our [data loaders](/python/framework/module_guides/loading/connector) return `Document` objects through the `load_data` function.
 
 ```python
 from llama_index.core import SimpleDirectoryReader

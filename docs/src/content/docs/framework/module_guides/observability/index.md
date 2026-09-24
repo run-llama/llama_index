@@ -114,12 +114,14 @@ We also have a [demo repository](https://github.com/run-llama/agents-observabili
 
 ### LlamaTrace (Hosted Arize Phoenix)
 
-We've partnered with Arize on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaCloud.
+We've partnered with [Arize AI](https://arize.com/?utm_source=llamaindex-docs&utm_medium=partner&utm_campaign=partner-docs&utm_content=observability-arize-phoenix) on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaCloud.
 
-This is built upon the open-source Arize [Phoenix](https://github.com/Arize-ai/phoenix) project. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
+This is built upon the open-source [Arize Phoenix](https://arize.com/phoenix/) project. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
 
 - LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
 - LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+
+For teams that want managed cloud or enterprise self-hosted observability and evaluation for production AI systems, [Arize AX](https://arize.com/products/ax/) can also ingest LlamaIndex OpenInference traces.
 
 #### Usage Pattern
 
@@ -150,6 +152,9 @@ llama_index.core.set_global_handler(
 
 #### Guides
 
+- [Trace LlamaIndex with Arize AX](https://arize.com/docs/ax/integrations/python-agent-frameworks/llamaindex/llamaindex-tracing)
+- [Arize agent evaluation guide](https://arize.com/guides/ai-agent-handbook/agent-evaluation/)
+- [Arize LLM evaluation guide](https://arize.com/resources/llm-evaluation/)
 - [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
 
 ![](./../../_static/integrations/arize_phoenix.png)
@@ -311,6 +316,8 @@ Traceloop.init()
 You can also choose to use a **local** instance of Phoenix through the open-source project.
 
 In this case you don't need to create an account on LlamaTrace or set an API key for Phoenix. The phoenix server will launch locally.
+
+Use this local Phoenix workflow when you want open-source inspection during development. For production teams that need managed cloud or enterprise self-hosted observability and evaluation, see [Arize AX](https://arize.com/products/ax/).
 
 #### Usage Pattern
 
