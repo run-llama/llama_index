@@ -152,3 +152,49 @@ def test_docstore_delete_all_ref_doc_nodes() -> None:
     assert docstore._kvstore.get("d1", docstore._node_collection) is None
     assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
     assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
+
+
+def _ref_doc_nodes() -> tuple[Document, TextNode, TextNode]:
+    ref_doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    doc = TextNode(text="first chunk", id_="d2", metadata={"node": "info"})
+    doc.relationships[NodeRelationship.SOURCE] = ref_doc.as_related_node_info()
+    node = TextNode(text="second chunk", id_="d3", metadata={"node": "info"})
+    node.relationships[NodeRelationship.SOURCE] = ref_doc.as_related_node_info()
+    return ref_doc, doc, node
+
+
+@pytest.mark.asyncio
+async def test_adocstore_delete_document_updates_ref_doc_info() -> None:
+    """Deleting a node via the async API keeps ref-doc bookkeeping in sync with the sync API."""
+    ref_doc, doc, node = _ref_doc_nodes()
+
+    docstore = SimpleDocumentStore()
+    docstore.add_documents([ref_doc, doc, node])
+
+    await docstore.adelete_document("d2")
+
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection)["node_ids"] == [
+        "d3"
+    ]
+    assert docstore._kvstore.get("d2", docstore._node_collection) is None
+    assert docstore._kvstore.get("d2", docstore._metadata_collection) is None
+
+
+@pytest.mark.asyncio
+async def test_adocstore_delete_all_ref_doc_nodes() -> None:
+    """Deleting the last node of a ref doc removes the ref-doc entry (sync parity)."""
+    ref_doc, doc, node = _ref_doc_nodes()
+
+    docstore = SimpleDocumentStore()
+    docstore.add_documents([ref_doc, doc, node])
+
+    await docstore.adelete_document("d2")
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection)["node_ids"] == [
+        "d3"
+    ]
+
+    await docstore.adelete_document("d3")
+    assert docstore._kvstore.get("d1", docstore._node_collection) is None
+    assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
+    assert not await docstore.aref_doc_exists("d1")
