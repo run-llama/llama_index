@@ -488,7 +488,7 @@ class Refine(BaseSynthesizer):
                 )
                 # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
                 if len(repacked) > 1:
-                    chunks_deque.extendleft(repacked)
+                    chunks_deque.extendleft(reversed(repacked))
                     continue
                 chunk = repacked[0]
                 prompt_kwargs = make_refine_prompt_kwargs(chunk)
@@ -568,7 +568,7 @@ class Refine(BaseSynthesizer):
                 )
                 # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
                 if len(repacked) > 1:
-                    chunks_deque.extendleft(repacked)
+                    chunks_deque.extendleft(reversed(repacked))
                     continue
                 chunk = repacked[0]
                 prompt_kwargs = make_refine_prompt_kwargs(chunk)
