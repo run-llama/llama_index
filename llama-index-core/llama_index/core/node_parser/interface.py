@@ -84,69 +84,62 @@ class NodeParser(TransformComponent, ABC):
     def _postprocess_parsed_nodes(
         self, nodes: List[BaseNode], parent_doc_map: Dict[str, Document]
     ) -> List[BaseNode]:
-        # Track search position per document to handle duplicate text correctly
-        # Nodes are assumed to be in document order from _parse_nodes
-        # We track the START position (not end) to allow for overlapping chunks
-        doc_search_positions: Dict[str, int] = {}
+        # Track search positions per parent node to disambiguate repeated text
+        # across chunks while preserving support for overlapping chunks.
+        parent_search_positions: Dict[str, int] = {}
+        parent_offsets: Dict[str, int] = {}
+        # Capture parent ids before SOURCE is rewritten to the original document.
+        parent_node_ids = [
+            node.source_node.node_id if node.source_node is not None else None
+            for node in nodes
+        ]
 
-        for i, node in enumerate(nodes):
+        for node in nodes:
             parent_doc = parent_doc_map.get(node.ref_doc_id or "", None)
             parent_node = node.source_node
 
             if parent_doc is not None:
-                if parent_doc.source_node is not None:
-                    node.relationships.update(
-                        {
-                            NodeRelationship.SOURCE: parent_doc.source_node,
-                        }
-                    )
-
-                # Get or initialize search position for this document
-                doc_id = node.ref_doc_id or ""
-                search_start = doc_search_positions.get(doc_id, 0)
-
-                # Search for node content starting from the last found position
+                parent_id = parent_node.node_id if parent_node is not None else parent_doc.id_
+                parent_start = parent_offsets.get(parent_id)
+                if parent_start is None:
+                    parent_start = getattr(parent_doc, "start_char_idx", None) or 0
+                    parent_offsets[parent_id] = parent_start
+                search_start = parent_search_positions.get(parent_id, 0)
                 node_content = node.get_content(metadata_mode=MetadataMode.NONE)
-                start_char_idx = parent_doc.text.find(node_content, search_start)
+                local_start = parent_doc.text.find(node_content, search_start)
 
-                # update start/end char idx
-                if start_char_idx >= 0 and isinstance(node, TextNode):
-                    node.start_char_idx = start_char_idx
-                    node.end_char_idx = start_char_idx + len(node_content)
-                    # Update search position to start from next character after this node's START
-                    # This allows overlapping chunks to be found correctly
-                    doc_search_positions[doc_id] = start_char_idx + 1
+                if local_start >= 0 and isinstance(node, TextNode):
+                    node.start_char_idx = parent_start + local_start
+                    node.end_char_idx = node.start_char_idx + len(node_content)
+                    parent_search_positions[parent_id] = local_start + 1
 
-                # update metadata
                 if self.include_metadata:
-                    # Merge parent_doc.metadata into nodes.metadata, giving preference to node's values
                     node.metadata = {**parent_doc.metadata, **node.metadata}
 
-            if parent_node is not None:
-                if self.include_metadata:
-                    parent_metadata = parent_node.metadata
+            if parent_node is not None and self.include_metadata:
+                node.metadata.update({**parent_node.metadata, **node.metadata})
 
-                    combined_metadata = {**parent_metadata, **node.metadata}
+        # Preserve the original document as SOURCE for downstream consumers, but
+        # only after positions and sibling relationships use the immediate parent.
+        for node in nodes:
+            parent_doc = parent_doc_map.get(node.ref_doc_id or "", None)
+            if parent_doc is not None and parent_doc.source_node is not None:
+                node.relationships[NodeRelationship.SOURCE] = parent_doc.source_node
 
-                    # Merge parent_node.metadata into nodes.metadata, giving preference to node's values
-                    node.metadata.update(combined_metadata)
-
-            if self.include_prev_next_rel:
-                # establish prev/next relationships if nodes share the same source_node
+        if self.include_prev_next_rel:
+            for i, node in enumerate(nodes):
                 if (
                     i > 0
-                    and node.source_node
-                    and nodes[i - 1].source_node
-                    and nodes[i - 1].source_node.node_id == node.source_node.node_id  # type: ignore
+                    and parent_node_ids[i] is not None
+                    and parent_node_ids[i - 1] == parent_node_ids[i]
                 ):
                     node.relationships[NodeRelationship.PREVIOUS] = nodes[
                         i - 1
                     ].as_related_node_info()
                 if (
                     i < len(nodes) - 1
-                    and node.source_node
-                    and nodes[i + 1].source_node
-                    and nodes[i + 1].source_node.node_id == node.source_node.node_id  # type: ignore
+                    and parent_node_ids[i] is not None
+                    and parent_node_ids[i + 1] == parent_node_ids[i]
                 ):
                     node.relationships[NodeRelationship.NEXT] = nodes[
                         i + 1
