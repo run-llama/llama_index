@@ -41,8 +41,16 @@ def get_tokens_from_response(
 ) -> Tuple[int, int]:
     """Get the token counts from a raw response."""
     raw_response = response.raw
-    if not isinstance(raw_response, dict):
-        raw_response = dict(raw_response or {})
+    if raw_response is None:
+        raw_response = {}
+    elif not isinstance(raw_response, dict):
+        if hasattr(raw_response, "model_dump"):
+            raw_response = raw_response.model_dump()
+        else:
+            try:
+                raw_response = dict(raw_response)
+            except (TypeError, ValueError):
+                raw_response = {}
 
     usage = raw_response.get("usage", raw_response.get("usage_metadata", {}))
     if usage is None:
