@@ -255,7 +255,7 @@ def query_text(table: Table, query: str, **kwargs: Any) -> List[NodeWithScore]:
         else:
             documents.append(
                 NodeWithScore(
-                    ImageDocument(
+                    node=ImageDocument(
                         image_url=d["image_uri"],
                         image=d["image_bytes"],
                         id_=d["id"],
@@ -294,7 +294,7 @@ def query_multimodal(
     for d in data:
         documents.append(
             NodeWithScore(
-                ImageDocument(
+                node=ImageDocument(
                     image_url=d["image_uri"],
                     image=d["image_bytes"],
                     id_=d["id"],
@@ -329,7 +329,7 @@ async def aquery_text(
         else:
             documents.append(
                 NodeWithScore(
-                    ImageDocument(
+                    node=ImageDocument(
                         image_url=d["image_uri"],
                         image=d["image_bytes"],
                         id_=d["id"],
@@ -369,7 +369,7 @@ async def aquery_multimodal(
     for d in data:
         documents.append(
             NodeWithScore(
-                ImageDocument(
+                node=ImageDocument(
                     image_url=d["image_uri"],
                     image=d["image_bytes"],
                     id_=d["id"],
