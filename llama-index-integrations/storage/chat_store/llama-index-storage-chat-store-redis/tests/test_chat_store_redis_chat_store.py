@@ -272,3 +272,17 @@ def test_get_keys(redis_chat_store: RedisChatStore):
 
     assert len(keys) == 1
     assert keys[0] == REDIS_KEY
+
+
+def test_check_for_cluster_returns_false_on_redis_error():
+    # Regression test for #22956: _check_for_cluster must catch RedisError
+    # instead of raising NameError when redis is unreachable.
+    from unittest.mock import MagicMock
+
+    from redis.exceptions import ConnectionError as RedisConnectionError
+
+    store = RedisChatStore.__new__(RedisChatStore)
+    mock_client = MagicMock()
+    mock_client.info.side_effect = RedisConnectionError("Connection refused")
+
+    assert store._check_for_cluster(mock_client) is False
