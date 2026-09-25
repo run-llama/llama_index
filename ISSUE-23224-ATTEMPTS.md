@@ -21,3 +21,10 @@ Environment: Windows, Python 3.13.14; editable `llama-index-core` installed.
 - Resolution: base a clean feature branch on the fork's current `main`, cherry-pick only the issue fix, resolve the changelog conflict using the fork's version plus the single issue entry, and inspect the fork-to-branch diff before pushing.
 - Successful branch: `fix/issue-23224-clean`. Only the changelog, issue-specific attempt log, parser implementation, and regression test are changed. Push succeeded without changing token scopes.
 - Also encountered a stale `.git/shallow.lock` with no active Git process; removing that specific stale lock allowed the fetch to proceed.
+
+## PR #23226 CI failure and correction
+
+- CI check: `lint` failed because the repository's `ruff-format` pre-commit hook reformatted `llama-index-core/llama_index/core/node_parser/interface.py` (one conditional expression needed a multiline wrap). Ruff lint and mypy passed in that run.
+- Reproduction: `python -m ruff format --check llama-index-core/llama_index/core/node_parser/interface.py llama-index-core/tests/node_parser/test_hierarchical.py` reported the interface file would be reformatted.
+- Correction: applied `python -m ruff format` to that file. Recheck: Ruff format check and Ruff lint both pass.
+- The other completed CI checks passed; Python 3.10/3.11/3.12 tests were still running at the time of this note.

@@ -99,7 +99,9 @@ class NodeParser(TransformComponent, ABC):
             parent_node = node.source_node
 
             if parent_doc is not None:
-                parent_id = parent_node.node_id if parent_node is not None else parent_doc.id_
+                parent_id = (
+                    parent_node.node_id if parent_node is not None else parent_doc.id_
+                )
                 parent_start = parent_offsets.get(parent_id)
                 if parent_start is None:
                     parent_start = getattr(parent_doc, "start_char_idx", None) or 0
