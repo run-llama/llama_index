@@ -318,6 +318,60 @@ def test_get_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
+@pytest.mark.parametrize("method", ["delete", "delete_nodes", "get_nodes"])
+@pytest.mark.parametrize("identifier", ["plain", "o'brien", 'a"b', "x' OR '1'='1", ""])
+def test_id_predicates(
+    tmp_path: Path, embed_model: BaseEmbedding, method: str, identifier: str
+) -> None:
+    nodes = [
+        TextNode(
+            text="target",
+            id_=identifier or "target-node",
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id=identifier)
+            },
+        ),
+        TextNode(
+            text="untouched",
+            id_="untouched-node",
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="untouched-doc")
+            },
+        ),
+    ]
+    for node in nodes:
+        node.embedding = embed_model.get_text_embedding(node.text)
+    store = LanceDBVectorStore(uri=str(tmp_path / "ids"), mode="overwrite")
+    store.add(nodes)
+    if method == "delete":
+        store.delete(ref_doc_id=identifier)
+    elif method == "delete_nodes":
+        store.delete_nodes(node_ids=[nodes[0].id_])
+    else:
+        assert [node.id_ for node in store.get_nodes(node_ids=[nodes[0].id_])] == [
+            nodes[0].id_
+        ]
+        assert store.table.count_rows() == 2
+        return
+    assert store.table.to_pandas()["id"].tolist() == ["untouched-node"]
+
+
+@pytest.mark.parametrize("node_ids", [[], ["missing' OR '1'='1"]])
+def test_unmatched_node_ids(
+    tmp_path: Path, text_node_list: list[TextNode], node_ids: list[str]
+) -> None:
+    store = LanceDBVectorStore(uri=str(tmp_path / "ids"), mode="overwrite")
+    store.add(text_node_list)
+    assert store.get_nodes(node_ids=node_ids) == []
+    store.delete_nodes(node_ids=node_ids)
+    store.delete(ref_doc_id="missing' OR '1'='1")
+    assert store.table.count_rows() == len(text_node_list)
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
 def test_vector_query(
     tmp_path: Path, text_node_list: list[TextNode], embed_model
 ) -> None:
