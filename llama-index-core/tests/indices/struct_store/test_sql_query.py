@@ -92,6 +92,8 @@ def test_sql_index_query(
     nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
+    assert response.metadata["sql_query"] == sql_to_test
+    assert response.metadata["result"] == sql_to_test
 
     # query with markdown return
     nl_table_engine = NLSQLTableQueryEngine(
@@ -171,6 +173,8 @@ def test_sql_index_async_query(
     task = nl_table_engine.aquery("test_table:user_id,foo")
     response = asyncio_run(task)
     assert str(response) == sql_to_test
+    assert response.metadata["sql_query"] == sql_to_test
+    assert response.metadata["result"] == sql_to_test
 
 
 def test_default_output_parser() -> None:
