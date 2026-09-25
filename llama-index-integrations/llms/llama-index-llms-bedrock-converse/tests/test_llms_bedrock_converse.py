@@ -856,6 +856,24 @@ def test_prepare_chat_with_tools_tool_not_required(bedrock_converse):
     assert result["tools"]["toolChoice"] == {"auto": {}}
 
 
+@pytest.mark.parametrize(
+    ("model", "expected_tool_choice"),
+    [
+        ("us.anthropic.claude-opus-5-5", {"auto": {}}),
+        ("global.anthropic.claude-opus-5-5", {"auto": {}}),
+        ("us.anthropic.claude-opus-5", {"any": {}}),
+    ],
+)
+def test_prepare_chat_with_tools_tool_required_forced_tool_support(
+    mock_boto3_session, model, expected_tool_choice
+):
+    """Opus 5.5 rejects a forced toolChoice, so tool_required falls back to auto."""
+    llm = BedrockConverse(model=model)
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tools"]["toolChoice"] == expected_tool_choice
+
+
 def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
     """Test that custom tool_choice overrides tool_required."""
     custom_tool_choice = {"specific": {"name": "search_tool"}}
