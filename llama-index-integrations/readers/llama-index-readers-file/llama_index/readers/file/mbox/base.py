@@ -83,21 +83,14 @@ class MboxReader(BaseReader):
         for _, _msg in enumerate(mbox):
             try:
                 msg: mailbox.mboxMessage = _msg
-                # Parse multipart messages
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        ctype = part.get_content_type()
-                        cdispo = str(part.get("Content-Disposition"))
-                        if ctype == "text/plain" and "attachment" not in cdispo:
-                            content = part.get_payload(decode=True)  # decode
-                            break
-                # Get plain message payload for non-multipart messages
-                else:
-                    content = msg.get_payload(decode=True)
-
-                # Parse message HTML content and remove unneeded whitespace
-                soup = BeautifulSoup(content)
-                stripped_content = " ".join(soup.get_text().split())
+                # The body is the plain text part, or else the HTML one, such
+                # as the only text of an HTML message with an attachment.
+                body = msg.get_body(preferencelist=("plain", "html"))
+                content = "" if body is None else self._body_text(body)
+                if body is not None and body.get_content_type() == "text/html":
+                    content = BeautifulSoup(content, "html.parser").get_text()
+                # Remove unneeded whitespace
+                stripped_content = " ".join(content.split())
                 # Format message to include date, sender, receiver and subject
                 msg_string = self.message_format.format(
                     _date=msg["date"],
@@ -117,3 +110,11 @@ class MboxReader(BaseReader):
                 break
 
         return [Document(text=result, metadata=extra_info or {}) for result in results]
+
+    @staticmethod
+    def _body_text(body: Any) -> str:
+        """Decode a body part, as UTF-8 when its charset is not one Python knows."""
+        try:
+            return body.get_content()
+        except LookupError:
+            return body.get_payload(decode=True).decode("utf-8", errors="replace")
