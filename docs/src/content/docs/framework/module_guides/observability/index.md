@@ -929,6 +929,22 @@ from llama_index.core import set_global_handler
 set_global_handler("agentops")
 ```
 
+### Noveum
+
+[Noveum](https://noveum.ai) provides tracing and evaluation for AI applications.
+Its independently maintained [`noveum-trace`](https://pypi.org/project/noveum-trace/)
+package integrates with LlamaIndex's instrumentation dispatcher using span and
+event handlers. It captures query, retrieval, synthesis, LLM, and embedding calls.
+
+Install `noveum-trace[llamaindex]`, initialize the Noveum SDK, then call
+`setup_llamaindex_tracing()` before running your application. A Noveum account
+and API key are required. The integration requires Python 3.10 or later.
+
+See the [setup guide](https://github.com/Noveum/noveum-trace/blob/main/docs/integrations/upstream.md#llamaindex--setup_llamaindex_tracing)
+for initialization, flushing, and capture settings. Inputs, outputs, and LLM
+messages are captured by default; review the capture settings before tracing
+sensitive data.
+
 ### Simple (LLM Inputs/Outputs)
 
 This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
