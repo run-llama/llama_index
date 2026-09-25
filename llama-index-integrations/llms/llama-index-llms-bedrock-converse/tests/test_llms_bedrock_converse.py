@@ -270,6 +270,27 @@ def test_init_adaptive_thinking_opus_46(mock_boto3_session):
     assert llm.thinking == {"type": "adaptive"}
 
 
+@pytest.mark.parametrize(
+    ("model", "sends_temperature"),
+    [
+        ("us.openai.gpt-6-sol", False),
+        ("global.openai.gpt-6-sol", False),
+        ("us.openai.gpt-6-luna", False),
+        ("global.openai.gpt-6-luna", False),
+        ("us.openai.gpt-6-astra", False),
+        ("global.openai.gpt-6-astra", False),
+        ("openai.gpt-oss-120b-1:0", True),
+    ],
+)
+def test_init_openai_models(mock_boto3_session, model, sends_temperature):
+    """GPT-6 Sol/Luna/Astra are inference-profile only and reject the temperature field."""
+    llm = BedrockConverse(model=model, temperature=0.5)
+
+    assert llm.metadata.context_window == 128000
+    assert llm.metadata.is_function_calling_model is True
+    assert ("temperature" in llm._model_kwargs) is sends_temperature
+
+
 def test_chat(bedrock_converse):
     response = bedrock_converse.chat(messages)
 
