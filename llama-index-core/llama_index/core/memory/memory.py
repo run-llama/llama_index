@@ -349,6 +349,33 @@ class Memory(BaseMemory):
         """Estimate token count for a message."""
         token_count = 0
 
+        def _count_block(block: ContentBlock) -> int:
+            """Estimate the token count of a single content block."""
+            if isinstance(block, TextBlock):
+                return len(self.tokenizer_fn(block.text))
+            elif isinstance(block, ImageBlock):
+                return self.image_token_size_estimate
+            elif isinstance(block, VideoBlock):
+                return self.video_token_size_estimate
+            elif isinstance(block, AudioBlock):
+                return self.audio_token_size_estimate
+            elif isinstance(block, DocumentBlock):
+                return self.document_token_size_estimate
+            elif isinstance(block, ToolCallBlock):
+                # Tool call arguments are serialized into the prompt payload.
+                return len(self.tokenizer_fn(block.model_dump_json()))
+            elif isinstance(block, ThinkingBlock):
+                return block.num_tokens or len(self.tokenizer_fn(block.content or ""))
+            elif isinstance(block, CitableBlock):
+                return len(self.tokenizer_fn(f"{block.title} {block.source}")) + sum(
+                    _count_block(b) for b in block.content
+                )
+            elif isinstance(block, CitationBlock):
+                return len(self.tokenizer_fn(f"{block.title} {block.source}")) + (
+                    _count_block(block.cited_content)
+                )
+            return 0
+
         # Normalize the input to a list of ContentBlocks
         if isinstance(message_or_blocks, ChatMessage):
             blocks: List[
@@ -361,11 +388,12 @@ class Memory(BaseMemory):
                     CitableBlock,
                     CitationBlock,
                     ThinkingBlock,
+                    ToolCallBlock,
                 ]
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -383,7 +411,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -401,6 +429,10 @@ class Memory(BaseMemory):
                         AudioBlock,
                         VideoBlock,
                         DocumentBlock,
+                        ToolCallBlock,
+                        ThinkingBlock,
+                        CitableBlock,
+                        CitationBlock,
                         CachePoint,
                     ),
                 )
@@ -417,6 +449,10 @@ class Memory(BaseMemory):
                                     AudioBlock,
                                     VideoBlock,
                                     DocumentBlock,
+                                    ToolCallBlock,
+                                    ThinkingBlock,
+                                    CitableBlock,
+                                    CitationBlock,
                                 ],
                                 item,
                             )
@@ -430,16 +466,7 @@ class Memory(BaseMemory):
 
         # Estimate the token count for each block
         for block in blocks:
-            if isinstance(block, TextBlock):
-                token_count += len(self.tokenizer_fn(block.text))
-            elif isinstance(block, ImageBlock):
-                token_count += self.image_token_size_estimate
-            elif isinstance(block, VideoBlock):
-                token_count += self.video_token_size_estimate
-            elif isinstance(block, AudioBlock):
-                token_count += self.audio_token_size_estimate
-            elif isinstance(block, DocumentBlock):
-                token_count += self.document_token_size_estimate
+            token_count += _count_block(block)
 
         return token_count
 
