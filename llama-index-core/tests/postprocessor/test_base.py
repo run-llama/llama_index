@@ -155,6 +155,166 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         PrevNextNodePostprocessor(docstore=docstore, num_nodes=4, mode="asdfasdf")
 
 
+def _linked_text_nodes(node_ids: list[str]) -> list[TextNode]:
+    nodes = [
+        TextNode(text=f"Section {i}", id_=node_id) for i, node_id in enumerate(node_ids)
+    ]
+    for i, node in enumerate(nodes):
+        if i > 0:
+            node.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(
+                node_id=nodes[i - 1].node_id
+            )
+        if i + 1 < len(nodes):
+            node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(
+                node_id=nodes[i + 1].node_id
+            )
+    return nodes
+
+
+@pytest.mark.parametrize(
+    ("mode", "retrieved_indices", "expected_indices"),
+    [
+        ("both", [3, 0], [0, 1, 2, 3, 4]),
+        ("both", [0, 3], [0, 1, 2, 3, 4]),
+        ("next", [2, 0], [0, 1, 2, 3]),
+        ("previous", [3, 0, 2], [0, 1, 2, 3]),
+        ("both", [3, 1, 3], [0, 1, 2, 3, 4]),
+        ("both", [], []),
+    ],
+)
+def test_prev_next_orders_joined_windows(
+    mode: str, retrieved_indices: list[int], expected_indices: list[int]
+) -> None:
+    nodes = _linked_text_nodes(["z", "a", "x", "b", "y"])
+    docstore = SimpleDocumentStore()
+    docstore.add_documents(nodes)
+    postprocessor = PrevNextNodePostprocessor(docstore=docstore, num_nodes=1, mode=mode)
+
+    processed = postprocessor.postprocess_nodes(
+        [NodeWithScore(node=nodes[i], score=1.0) for i in retrieved_indices]
+    )
+
+    assert [node.node_id for node in processed] == [
+        nodes[i].node_id for i in expected_indices
+    ]
+
+
+@pytest.mark.parametrize(
+    "relationship", [NodeRelationship.PREVIOUS, NodeRelationship.NEXT]
+)
+def test_prev_next_orders_one_sided_relationships(
+    relationship: NodeRelationship,
+) -> None:
+    nodes = _linked_text_nodes(["z", "a", "x", "b"])
+    for node in nodes:
+        node.relationships = {
+            key: value
+            for key, value in node.relationships.items()
+            if key == relationship
+        }
+    postprocessor = PrevNextNodePostprocessor(
+        docstore=SimpleDocumentStore(), num_nodes=0
+    )
+
+    processed = postprocessor.postprocess_nodes(
+        [NodeWithScore(node=nodes[i]) for i in [3, 0, 1, 2]]
+    )
+
+    assert [node.node_id for node in processed] == [node.node_id for node in nodes]
+
+
+def test_prev_next_reordering_preserves_scored_nodes() -> None:
+    nodes = _linked_text_nodes(["z", "a", "x", "b"])
+    scored_nodes = [
+        NodeWithScore(node=node, score=score)
+        for node, score in zip(nodes, [0.8, None, 0.0, 0.9])
+    ]
+    postprocessor = PrevNextNodePostprocessor(
+        docstore=SimpleDocumentStore(), num_nodes=0
+    )
+
+    processed = postprocessor.postprocess_nodes([scored_nodes[i] for i in [3, 0, 1, 2]])
+
+    assert [node.score for node in processed] == [0.8, None, 0.0, 0.9]
+    assert all(actual is original for actual, original in zip(processed, scored_nodes))
+
+
+def test_prev_next_preserves_disconnected_chain_order() -> None:
+    nodes = _linked_text_nodes(list("ABCDEF"))
+    other_nodes = _linked_text_nodes(["other-2", "other-1"])
+    postprocessor = PrevNextNodePostprocessor(
+        docstore=SimpleDocumentStore(), num_nodes=0
+    )
+    retrieved = [
+        nodes[4],
+        other_nodes[1],
+        nodes[0],
+        nodes[5],
+        other_nodes[0],
+        nodes[1],
+    ]
+
+    processed = postprocessor.postprocess_nodes(
+        [NodeWithScore(node=node) for node in retrieved]
+    )
+
+    assert [node.node_id for node in processed] == [
+        "E",
+        "F",
+        "other-2",
+        "other-1",
+        "A",
+        "B",
+    ]
+
+
+@pytest.mark.parametrize("node_ids", [["self"], ["A", "B", "C"]])
+def test_prev_next_cyclic_relationships_keep_each_node_once(
+    node_ids: list[str],
+) -> None:
+    nodes = _linked_text_nodes(node_ids)
+    nodes[0].relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(
+        node_id=nodes[-1].node_id
+    )
+    nodes[-1].relationships[NodeRelationship.NEXT] = RelatedNodeInfo(
+        node_id=nodes[0].node_id
+    )
+    postprocessor = PrevNextNodePostprocessor(
+        docstore=SimpleDocumentStore(), num_nodes=0
+    )
+
+    processed = postprocessor.postprocess_nodes(
+        [NodeWithScore(node=node) for node in nodes]
+    )
+
+    assert len(processed) == len(nodes)
+    assert {node.node_id for node in processed} == set(node_ids)
+
+
+@pytest.mark.parametrize("indices", [[0, 1, 2, 3], [3, 0, 1, 2]])
+def test_prev_next_conflicting_relationships_keep_each_node_once(
+    indices: list[int],
+) -> None:
+    nodes = _linked_text_nodes(list("ABC"))
+    nodes.append(
+        TextNode(
+            id_="D",
+            text="Conflicting neighbor",
+            relationships={NodeRelationship.PREVIOUS: RelatedNodeInfo(node_id="B")},
+        )
+    )
+    postprocessor = PrevNextNodePostprocessor(
+        docstore=SimpleDocumentStore(), num_nodes=0
+    )
+
+    processed = postprocessor.postprocess_nodes(
+        [NodeWithScore(node=nodes[i]) for i in indices]
+    )
+
+    assert len(processed) == len(nodes)
+    assert {node.node_id for node in processed} == set("ABCD")
+
+
 def test_fixed_recency_postprocessor() -> None:
     """Test fixed recency processor."""
     # try in metadata
