@@ -137,6 +137,13 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             if len(top_idxs) == 0:
                 raise ValueError("Optimizer returned zero sentences.")
 
+            # The retriever hands back indices ordered by similarity. Reading them
+            # back in that order rearranges the node text, so put the selection
+            # back into the order the sentences appear in the document.
+            top_idxs, top_similarities = (
+                list(t) for t in zip(*sorted(zip(top_idxs, top_similarities)))
+            )
+
             rangeMin, rangeMax = 0, len(split_text)
 
             if self.context_before is None:
