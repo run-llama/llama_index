@@ -437,7 +437,7 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
 
     def __init__(
         self,
-        model: str = "rerank-english-v2.0",
+        model: str = "rerank-english-v3.0",
         api_key: Optional[str] = None,
     ):
         try:

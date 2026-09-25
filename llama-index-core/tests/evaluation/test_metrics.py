@@ -1,8 +1,10 @@
+import inspect
 from math import log2
 
 import pytest
 from llama_index.core.evaluation.retrieval.metrics import (
     AveragePrecision,
+    CohereRerankRelevancyMetric,
     HitRate,
     MRR,
     NDCG,
@@ -245,3 +247,14 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         ndcg = NDCG()
         ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+
+def test_cohere_rerank_metric_default_model_not_retired():
+    """Default model must not be the retired rerank-english-v2.0 (Cohere EOL April 2025)."""
+    sig = inspect.signature(CohereRerankRelevancyMetric.__init__)
+    default_model = sig.parameters["model"].default
+    assert default_model != "rerank-english-v2.0", (
+        "rerank-english-v2.0 was retired by Cohere in April 2025 and returns HTTP 404; "
+        "the default must be updated to an active model such as rerank-english-v3.0."
+    )
+    assert default_model == "rerank-english-v3.0"
