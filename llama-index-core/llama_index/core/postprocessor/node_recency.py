@@ -1,7 +1,7 @@
 """Node recency post-processor."""
 
 from datetime import datetime
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple
 
 import numpy as np
 
@@ -105,12 +105,12 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "EmbeddingRecencyPostprocessor"
 
-    def _postprocess_nodes(
+    def _sort_nodes_by_date(
         self,
         nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
-    ) -> List[NodeWithScore]:
-        """Postprocess nodes."""
+        query_bundle: Optional[QueryBundle],
+    ) -> Tuple[List[NodeWithScore], List[str]]:
+        """Validate the query bundle and order nodes newest-first."""
         try:
             import pandas as pd
         except ImportError:
@@ -128,32 +128,92 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
 
-        # get embeddings for each node
         texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
+        return sorted_nodes, texts
+
+    def _get_query_text(self, node: NodeWithScore) -> str:
+        """
+        Build the "query" text for a node.
+
+        NOTE: not the same as the text embedding because
+        we want to optimize for retrieval results
+        """
+        return self.query_embedding_tmpl.format(
+            context_str=node.node.get_content(metadata_mode=MetadataMode.EMBED),
+        )
+
+    def _mark_duplicates(
+        self,
+        sorted_nodes: List[NodeWithScore],
+        text_embeddings: List[List[float]],
+        idx: int,
+        query_embedding: List[float],
+        node_ids_to_skip: Set[str],
+    ) -> None:
+        """Mark later nodes that are too similar to the node at ``idx``."""
+        for idx2 in range(idx + 1, len(sorted_nodes)):
+            if sorted_nodes[idx2].node.node_id in node_ids_to_skip:
+                continue
+            node2 = sorted_nodes[idx2]
+            if np.dot(query_embedding, text_embeddings[idx2]) > self.similarity_cutoff:
+                node_ids_to_skip.add(node2.node.node_id)
+
+    def _postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes."""
+        sorted_nodes, texts = self._sort_nodes_by_date(nodes, query_bundle)
+
+        # get embeddings for each node
         text_embeddings = self.embed_model.get_text_embedding_batch(texts=texts)
 
         node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
             if node.node.node_id in node_ids_to_skip:
                 continue
-            # get query embedding for the "query" node
-            # NOTE: not the same as the text embedding because
-            # we want to optimize for retrieval results
-
-            query_text = self.query_embedding_tmpl.format(
-                context_str=node.node.get_content(metadata_mode=MetadataMode.EMBED),
+            query_embedding = self.embed_model.get_query_embedding(
+                self._get_query_text(node)
             )
-            query_embedding = self.embed_model.get_query_embedding(query_text)
+            self._mark_duplicates(
+                sorted_nodes, text_embeddings, idx, query_embedding, node_ids_to_skip
+            )
 
-            for idx2 in range(idx + 1, len(sorted_nodes)):
-                if sorted_nodes[idx2].node.node_id in node_ids_to_skip:
-                    continue
-                node2 = sorted_nodes[idx2]
-                if (
-                    np.dot(query_embedding, text_embeddings[idx2])
-                    > self.similarity_cutoff
-                ):
-                    node_ids_to_skip.add(node2.node.node_id)
+        return [
+            node for node in sorted_nodes if node.node.node_id not in node_ids_to_skip
+        ]
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """
+        Postprocess nodes (async).
+
+        NOTE: the de-duplication loop is inherently sequential. ``node_ids_to_skip``
+        grows as it runs and decides whether the next node needs a query embedding
+        at all, so dispatching those embeddings concurrently would return the same
+        nodes while issuing embedding requests for nodes the sync path never embeds.
+        They are awaited in order instead: this frees the event loop and the default
+        thread pool without changing the number of requests made.
+        """
+        sorted_nodes, texts = self._sort_nodes_by_date(nodes, query_bundle)
+
+        # get embeddings for each node
+        text_embeddings = await self.embed_model.aget_text_embedding_batch(texts=texts)
+
+        node_ids_to_skip: Set[str] = set()
+        for idx, node in enumerate(sorted_nodes):
+            if node.node.node_id in node_ids_to_skip:
+                continue
+            query_embedding = await self.embed_model.aget_query_embedding(
+                self._get_query_text(node)
+            )
+            self._mark_duplicates(
+                sorted_nodes, text_embeddings, idx, query_embedding, node_ids_to_skip
+            )
 
         return [
             node for node in sorted_nodes if node.node.node_id not in node_ids_to_skip
