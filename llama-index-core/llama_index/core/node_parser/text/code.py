@@ -38,7 +38,7 @@ class CodeSplitter(TextSplitter):
     chunk_lines_overlap: int = Field(
         default=DEFAULT_LINES_OVERLAP,
         description="How many lines of code each chunk overlaps with.",
-        gt=0,
+        ge=0,
     )
     max_chars: int = Field(
         default=DEFAULT_MAX_CHARS,
@@ -168,7 +168,12 @@ class CodeSplitter(TextSplitter):
 
     def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
         """
-        Recursively chunk a node into smaller pieces based on character or token limits.
+        Recursively chunk a node into smaller pieces based on line and size limits.
+
+        Chunks are broken when adding the next AST child would exceed either
+        ``max_chars``/``max_tokens`` or ``chunk_lines``, whichever comes first.
+        When a chunk is closed because of either limit, the last
+        ``chunk_lines_overlap`` lines are carried into the next chunk.
 
         Args:
             node (Any): The AST node to chunk.
@@ -176,9 +181,18 @@ class CodeSplitter(TextSplitter):
             last_end (int, optional): The ending position of the last processed chunk. Defaults to 0.
 
         Returns:
-            List[str]: A list of code chunks that respect the size limits.
+            List[str]: A list of code chunks that respect the size and line limits.
 
         """
+
+        def _chunk_size(chunk: str) -> int:
+            return (
+                len(chunk) if self.count_mode == "char" else len(self._tokenizer(chunk))
+            )
+
+        def _chunk_lines(chunk: str) -> int:
+            return chunk.count("\n") + 1 if chunk else 0
+
         new_chunks = []
         current_chunk = ""
         max_size = self.max_chars if self.count_mode == "char" else self.max_tokens
@@ -191,7 +205,7 @@ class CodeSplitter(TextSplitter):
                 else len(self._tokenizer(child_text))
             )
 
-            if child_size > max_size:
+            if child_size > max_size or _chunk_lines(child_text) > self.chunk_lines:
                 # Child is too big, recursively chunk the child
                 if len(current_chunk) > 0:
                     new_chunks.append(current_chunk)
@@ -210,16 +224,24 @@ class CodeSplitter(TextSplitter):
                 new_chunk_text = current_chunk + text_bytes[
                     last_end : child.end_byte
                 ].decode("utf-8")
-                new_chunk_size = (
-                    len(new_chunk_text)
-                    if self.count_mode == "char"
-                    else len(self._tokenizer(new_chunk_text))
-                )
+                new_chunk_size = _chunk_size(new_chunk_text)
+                new_chunk_lines = _chunk_lines(new_chunk_text)
 
-                if new_chunk_size > max_size:
-                    # Child would make the current chunk too big, so start a new chunk
+                if new_chunk_size > max_size or new_chunk_lines > self.chunk_lines:
+                    # Child would make the current chunk too big, so close it and
+                    # start the next chunk chunk_lines_overlap lines earlier, so
+                    # the trailing lines of the closed chunk are re-included as
+                    # overlap. Because chunk text is always a verbatim slice of
+                    # the source, rewinding last_end keeps every chunk contiguous
+                    # with the source (and char indices valid).
                     if len(current_chunk) > 0:
                         new_chunks.append(current_chunk)
+                        lines = current_chunk.split("\n")
+                        if 0 < self.chunk_lines_overlap < len(lines):
+                            overlap_text = "\n".join(
+                                lines[-self.chunk_lines_overlap :]
+                            )
+                            last_end -= len(("\n" + overlap_text).encode("utf-8"))
                     current_chunk = text_bytes[last_end : child.end_byte].decode(
                         "utf-8"
                     )
