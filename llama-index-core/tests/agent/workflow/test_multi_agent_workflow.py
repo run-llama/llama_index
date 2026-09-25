@@ -470,6 +470,42 @@ async def test_max_iterations():
 
 
 @pytest.mark.asyncio
+async def test_run_args_apply_on_reused_context():
+    """max_iterations and early_stopping_method from a later run on the same context apply."""
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(tool_id="one", tool_name="random_tool", tool_kwargs={})
+            ]
+        },
+    )
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=lambda messages, **kwargs: tool_call
+        ),
+    )
+    workflow = AgentWorkflow(agents=[agent])
+    ctx = Context(workflow)
+
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 2 reached"):
+        await workflow.run(user_msg="test", ctx=ctx, max_iterations=2)
+
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 3 reached"):
+        await workflow.run(user_msg="test", ctx=ctx, max_iterations=3)
+
+    await workflow.run(user_msg="test", ctx=ctx, early_stopping_method="generate")
+
+
+@pytest.mark.asyncio
 async def test_early_stopping_method_generate_multi_agent():
     """Test early_stopping_method='generate' in AgentWorkflow produces a final response."""
 
