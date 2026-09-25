@@ -1159,6 +1159,10 @@ ContentBlock = Annotated[
 class ChatMessage(BaseRecursiveContentBlock):
     """Chat message."""
 
+    id_: Optional[str] = Field(
+        default=None,
+        description="Optional unique ID of the message.",
+    )
     role: MessageRole = MessageRole.USER
     additional_kwargs: dict[str, Any] = Field(default_factory=dict)
     blocks: list[ContentBlock] = Field(default_factory=list)
