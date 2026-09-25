@@ -5,6 +5,7 @@ import base64
 import inspect
 import os
 import random
+import shutil
 import sys
 import time
 import traceback
@@ -52,26 +53,28 @@ class GlobalsHelper:
         """Initialize NLTK data download."""
         from nltk.data import path as nltk_path
 
-        # Set up NLTK data directory
-        if "NLTK_DATA" in os.environ:
-            self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
-        else:
-            # 1. Check for bundled static cache first
-            bundled_path = (
-                Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
-            )
-
-            # Use bundled cache ONLY if it exists and is not empty
-            if bundled_path.exists() and any(bundled_path.iterdir()):
-                self._nltk_data_dir = str(bundled_path)
+        if self._nltk_data_dir is None:
+            # Set up NLTK data directory
+            if "NLTK_DATA" in os.environ:
+                self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
             else:
-                # 2. Fallback to user cache (prevents crash if bundled cache is missing)
-                path = Path(platformdirs.user_cache_dir("llama_index"))
-                self._nltk_data_dir = str(path / "_static/nltk_cache")
+                # 1. Check for bundled static cache first
+                bundled_path = (
+                    Path(os.path.dirname(os.path.abspath(__file__)))
+                    / "_static/nltk_cache"
+                )
 
-        # Ensure the directory exists
-        if not os.path.exists(self._nltk_data_dir):
-            os.makedirs(self._nltk_data_dir, exist_ok=True)
+                # Use bundled cache ONLY if it exists and is not empty
+                if bundled_path.exists() and any(bundled_path.iterdir()):
+                    self._nltk_data_dir = str(self._reject_hardlinks(bundled_path))
+                else:
+                    # 2. Fallback to user cache (prevents crash if bundled cache is missing)
+                    path = Path(platformdirs.user_cache_dir("llama_index"))
+                    self._nltk_data_dir = str(path / "_static/nltk_cache")
+
+            # Ensure the directory exists
+            if not os.path.exists(self._nltk_data_dir):
+                os.makedirs(self._nltk_data_dir, exist_ok=True)
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
@@ -79,6 +82,33 @@ class GlobalsHelper:
 
         # Start downloading NLTK data / confirming it's available
         self._download_nltk_data()
+
+    @staticmethod
+    def _reject_hardlinks(bundled_path: Path) -> Path:
+        """
+        Nltk >= 3.10.3 refuses to read a resource file with st_nlink > 1
+        (pathsec's CWE-59 hardlink guard). Some pip/build toolchains install
+        the packages under _static/nltk_cache (stopwords, punkt_tab, ...) as
+        hardlinks, which trips that guard on every resource in the bundle,
+        not just the one a caller happens to touch first. If that's the
+        case here, copy the whole tree once into a private cache directory
+        so every file we hand to nltk has a single link.
+        """
+        try:
+            if not any(
+                f.is_file() and os.stat(f).st_nlink > 1 for f in bundled_path.rglob("*")
+            ):
+                return bundled_path
+
+            private_dir = (
+                Path(platformdirs.user_cache_dir("llama_index"))
+                / "_static"
+                / "nltk_cache_no_hardlinks"
+            )
+            shutil.copytree(bundled_path, private_dir, dirs_exist_ok=True)
+            return private_dir
+        except OSError:
+            return bundled_path
 
     def _download_nltk_data(self) -> None:
         """Download NLTK data packages in the background."""
