@@ -710,12 +710,15 @@ class Memory(BaseMemory):
                 messages_to_flush = []
                 flushed_tokens = 0
 
-                # Remove oldest messages (from end of reversed list) until reaching flush size
+                # Remove oldest messages (from end of reversed list) until reaching flush size.
+                # System messages are never evicted — stop collecting if one is at the tail.
                 while (
                     flushed_tokens < self.token_flush_size
                     and reversed_queue
                     and len(reversed_queue) > 1
                 ):
+                    if reversed_queue[-1].role == "system":
+                        break
                     message = reversed_queue.pop()
                     messages_to_flush.append(message)
                     flushed_tokens += self._estimate_token_count(message)
@@ -733,10 +736,11 @@ class Memory(BaseMemory):
                 # and the last message to be from assistant or tool
                 if chronological_view:
                     # Keep removing messages until first remaining message is from user
-                    # This ensures we start with a user message
+                    # or system (system prompt must never be evicted as stale turn).
+                    # This ensures we start with a valid conversation opener.
                     while (
                         chronological_view
-                        and chronological_view[0].role != "user"
+                        and chronological_view[0].role not in ("user", "system")
                         and len(reversed_queue) > 1
                     ):
                         if reversed_queue:
@@ -745,17 +749,21 @@ class Memory(BaseMemory):
                         else:
                             break
 
-                    # If we end up with an empty queue or only a non-user message,
-                    # keep at least one full conversation turn
+                    # If we end up with an empty queue or only a non-user/non-system
+                    # message, keep at least one full conversation turn
                     if (
                         not reversed_queue
                         or (
                             len(reversed_queue) == 1
-                            and reversed_queue[0].role != "user"
+                            and reversed_queue[0].role not in ("user", "system")
                         )
                     ) and messages_to_flush:
-                        # If reversed_queue has a non-user message, move it to messages_to_flush
-                        if reversed_queue and reversed_queue[0].role != "user":
+                        # If reversed_queue has a non-user/non-system message, move
+                        # it to messages_to_flush
+                        if reversed_queue and reversed_queue[0].role not in (
+                            "user",
+                            "system",
+                        ):
                             messages_to_flush.append(reversed_queue.pop(0))
 
                         # Find the most recent complete conversation turn in messages_to_flush

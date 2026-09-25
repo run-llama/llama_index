@@ -337,3 +337,75 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_preserves_system_message_on_flush():
+    """
+    Regression test for #23144: system message at head of queue must not
+    be evicted when the token limit is reached.
+
+    Before the fix, _manage_queue enforced "the queue must start with a
+    user message", so a system message would be treated like a stale turn
+    and archived.  After the fix, system is recognised as a valid
+    conversation opener and is never moved to messages_to_flush.
+    """
+    from llama_index.core.base.llms.types import MessageRole
+
+    memory = Memory(
+        token_limit=200,
+        token_flush_size=100,
+        chat_history_token_ratio=1.0,
+        session_id="test_system_preserved",
+    )
+
+    await memory.aput(ChatMessage(role="system", content="You are ACME support."))
+
+    for i in range(10):
+        await memory.aput(
+            ChatMessage(role="user", content=f"question {i} " + "pad " * 15)
+        )
+        await memory.aput(
+            ChatMessage(role="assistant", content=f"answer {i} " + "pad " * 15)
+        )
+
+    active = await memory.aget()
+    roles = [m.role for m in active]
+    assert MessageRole.SYSTEM in roles, (
+        f"System message was silently evicted; remaining roles: {roles}"
+    )
+    assert active[0].role == MessageRole.SYSTEM, (
+        f"System message should be first; got {active[0].role}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_system_message_with_exactly_one_turn_remaining():
+    """
+    Edge case: after aggressive flushing only [system, user, assistant] remain.
+    System message must be kept at index 0.
+    """
+    from llama_index.core.base.llms.types import MessageRole
+
+    memory = Memory(
+        token_limit=80,
+        token_flush_size=60,
+        chat_history_token_ratio=1.0,
+        session_id="test_system_one_turn",
+    )
+
+    await memory.aput(ChatMessage(role="system", content="sys"))
+    # Flood with turns to force aggressive flushing
+    for i in range(8):
+        await memory.aput(ChatMessage(role="user", content=f"u{i} " + "tok " * 10))
+        await memory.aput(ChatMessage(role="assistant", content=f"a{i} " + "tok " * 10))
+
+    active = await memory.aget()
+    if active:
+        assert active[0].role in (MessageRole.SYSTEM, MessageRole.USER), (
+            f"First message must be system or user, got {active[0].role}"
+        )
+        # System message must not have been lost
+        assert any(m.role == MessageRole.SYSTEM for m in active), (
+            "System message disappeared from queue"
+        )
