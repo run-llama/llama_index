@@ -251,6 +251,91 @@ async def test_workflow_handoff_empty(calculator_agent, empty_retriever_agent):
 
 
 @pytest.mark.asyncio
+async def test_react_agent_finalize_clears_reasoning_on_handoff():
+    """
+    finalize() must flush and clear reasoning even when the run ends on
+    a handoff, not just when it ends on a ResponseReasoningStep. Otherwise
+    the stale steps stay in the shared Context and contaminate the next
+    `workflow.run(..., ctx=ctx)` call. Regression test for #23243.
+    """
+    agent_a = ReActAgent(
+        name="A",
+        description="Agent A",
+        system_prompt="You are agent A.",
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="Thought: not my job\n"
+                        "Action: handoff\n"
+                        'Action Input: {"to_agent": "B", "reason": "B knows"}',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="Thought: I can answer now\nAnswer: A says hi",
+                    ),
+                ]
+            )
+        ),
+    )
+
+    agent_b = FunctionAgent(
+        name="B",
+        description="Agent B",
+        system_prompt="You are agent B.",
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content="B has the answer."
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="hand back",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="handoff",
+                                    tool_kwargs={
+                                        "to_agent": "A",
+                                        "reason": "A should answer",
+                                    },
+                                )
+                            ]
+                        },
+                    ),
+                ]
+            )
+        ),
+    )
+
+    workflow = AgentWorkflow(agents=[agent_a, agent_b], root_agent="A")
+    memory = ChatMemoryBuffer.from_defaults()
+    ctx = Context(workflow)
+
+    await workflow.run(user_msg="hello", memory=memory, ctx=ctx)
+
+    # Turn 1 ends with agent A handing off (last reasoning step is an
+    # ObservationReasoningStep, not a ResponseReasoningStep), so finalize
+    # must still clear agent A's scratchpad.
+    stale_reasoning = await ctx.store.get(agent_a.reasoning_key, default=None)
+    assert not stale_reasoning
+
+    await workflow.run(user_msg="again", memory=memory, ctx=ctx)
+
+    live_memory = await ctx.store.get("memory")
+    messages = await live_memory.aget()
+    assistant_messages = [m for m in messages if m.role == MessageRole.ASSISTANT]
+
+    # Turn 2's real answer must be recorded, not turn 1's stale handoff
+    # reasoning replayed on top of it.
+    assert "A says hi" in str(assistant_messages[-1].content)
+    assert "Action: handoff" not in str(assistant_messages[-1].content)
+
+
+@pytest.mark.asyncio
 async def test_invalid_handoff():
     """Test handling of invalid agent handoff."""
     agent1 = FunctionAgent(
