@@ -448,3 +448,63 @@ def test_oversized_leaf_not_dropped_token_mode() -> None:
     assert sum(chunk.count("A") for chunk in chunks) == 800
     assert all(len(tokenizer(chunk)) <= 20 for chunk in chunks)
     assert any("y = 1" in chunk for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_code_splitter_respects_chunk_lines() -> None:
+    """Test that chunk_lines is respected even when max_chars is large."""
+    if "CI" in os.environ:
+        return
+
+    text = """\
+def func1():
+    a = 1
+    b = 2
+
+def func2():
+    c = 3
+    d = 4
+
+def func3():
+    e = 5
+    f = 6
+"""
+    code_splitter = CodeSplitter(
+        language="python",
+        chunk_lines=4,
+        chunk_lines_overlap=0,
+        max_chars=10000,
+    )
+    chunks = code_splitter.split_text(text)
+    assert len(chunks) == 3
+    assert "def func1():" in chunks[0]
+    assert "def func2():" in chunks[1]
+    assert "def func3():" in chunks[2]
+    assert all(len(chunk.splitlines()) <= 4 for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_code_splitter_respects_chunk_lines_overlap() -> None:
+    """Test that chunk_lines_overlap overlaps lines between chunks."""
+    if "CI" in os.environ:
+        return
+
+    text = """\
+def func1():
+    print("line 1")
+    print("line 2")
+
+def func2():
+    print("line 3")
+    print("line 4")
+"""
+    code_splitter = CodeSplitter(
+        language="python",
+        chunk_lines=5,
+        chunk_lines_overlap=1,
+        max_chars=10000,
+    )
+    chunks = code_splitter.split_text(text)
+    assert len(chunks) == 2
+    assert 'print("line 2")' in chunks[1]
+

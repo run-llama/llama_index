@@ -38,7 +38,7 @@ class CodeSplitter(TextSplitter):
     chunk_lines_overlap: int = Field(
         default=DEFAULT_LINES_OVERLAP,
         description="How many lines of code each chunk overlaps with.",
-        gt=0,
+        ge=0,
     )
     max_chars: int = Field(
         default=DEFAULT_MAX_CHARS,
@@ -168,7 +168,7 @@ class CodeSplitter(TextSplitter):
 
     def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
         """
-        Recursively chunk a node into smaller pieces based on character or token limits.
+        Recursively chunk a node into smaller pieces based on character, token, or line limits.
 
         Args:
             node (Any): The AST node to chunk.
@@ -190,8 +190,9 @@ class CodeSplitter(TextSplitter):
                 if self.count_mode == "char"
                 else len(self._tokenizer(child_text))
             )
+            child_lines = len(child_text.splitlines())
 
-            if child_size > max_size:
+            if child_size > max_size or child_lines > self.chunk_lines:
                 # Child is too big, recursively chunk the child
                 if len(current_chunk) > 0:
                     new_chunks.append(current_chunk)
@@ -215,14 +216,37 @@ class CodeSplitter(TextSplitter):
                     if self.count_mode == "char"
                     else len(self._tokenizer(new_chunk_text))
                 )
+                new_chunk_lines = len(new_chunk_text.splitlines())
 
-                if new_chunk_size > max_size:
+                if new_chunk_size > max_size or new_chunk_lines > self.chunk_lines:
                     # Child would make the current chunk too big, so start a new chunk
                     if len(current_chunk) > 0:
                         new_chunks.append(current_chunk)
-                    current_chunk = text_bytes[last_end : child.end_byte].decode(
-                        "utf-8"
-                    )
+                    child_str = text_bytes[last_end : child.end_byte].decode("utf-8")
+                    if self.chunk_lines_overlap > 0 and len(current_chunk) > 0:
+                        lines = current_chunk.splitlines(keepends=True)
+                        overlap_lines_count = min(self.chunk_lines_overlap, len(lines))
+                        overlap_lines_list = lines[-overlap_lines_count:]
+                        while overlap_lines_list:
+                            candidate_overlap = "".join(overlap_lines_list)
+                            candidate_text = candidate_overlap + child_str
+                            cand_size = (
+                                len(candidate_text)
+                                if self.count_mode == "char"
+                                else len(self._tokenizer(candidate_text))
+                            )
+                            cand_lines = len(candidate_text.splitlines())
+                            if (
+                                cand_size <= max_size
+                                and cand_lines <= self.chunk_lines
+                            ):
+                                current_chunk = candidate_text
+                                break
+                            overlap_lines_list.pop(0)
+                        else:
+                            current_chunk = child_str
+                    else:
+                        current_chunk = child_str
                 else:
                     current_chunk += text_bytes[last_end : child.end_byte].decode(
                         "utf-8"
@@ -257,6 +281,35 @@ class CodeSplitter(TextSplitter):
             return []
 
         if self.count_mode == "char":
+            lines = text.splitlines(keepends=True)
+            if len(lines) > 1:
+                chunks: List[str] = []
+                current_chunk = ""
+                for line in lines:
+                    if len(line) > max_size:
+                        if current_chunk:
+                            chunks.append(current_chunk)
+                            current_chunk = ""
+                        chunks.extend(
+                            [
+                                line[i : i + max_size]
+                                for i in range(0, len(line), max_size)
+                            ]
+                        )
+                    else:
+                        new_chunk = current_chunk + line
+                        if (
+                            len(new_chunk) > max_size
+                            or len(new_chunk.splitlines()) > self.chunk_lines
+                        ):
+                            if current_chunk:
+                                chunks.append(current_chunk)
+                            current_chunk = line
+                        else:
+                            current_chunk = new_chunk
+                if current_chunk:
+                    chunks.append(current_chunk)
+                return chunks
             return [text[i : i + max_size] for i in range(0, len(text), max_size)]
 
         # Token mode: greedily accumulate characters while staying within the
@@ -265,7 +318,11 @@ class CodeSplitter(TextSplitter):
         chunks: List[str] = []
         current = ""
         for char in text:
-            if current and len(self._tokenizer(current + char)) > max_size:
+            cand = current + char
+            if current and (
+                len(self._tokenizer(cand)) > max_size
+                or len(cand.splitlines()) > self.chunk_lines
+            ):
                 chunks.append(current)
                 current = char
             else:
