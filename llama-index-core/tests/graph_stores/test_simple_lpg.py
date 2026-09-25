@@ -144,3 +144,45 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_get_rel_map_does_not_duplicate_triplets_on_cycles() -> None:
+    """A path that loops back to an earlier depth must not repeat triplets."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2")
+    e3 = EntityNode(name="e3")
+    r12 = Relation(label="r", source_id=e1.id, target_id=e2.id)
+    r21 = Relation(label="r", source_id=e2.id, target_id=e1.id)
+    r23 = Relation(label="r2", source_id=e2.id, target_id=e3.id)
+
+    g.upsert_nodes([e1, e2, e3])
+    g.upsert_relations([r12, r21, r23])
+
+    rel_map = g.get_rel_map([e1], depth=2, limit=30)
+    triplet_keys = [(t[0].id, t[1].id, t[2].id) for t in rel_map]
+
+    assert len(triplet_keys) == len(set(triplet_keys))
+    assert sorted(triplet_keys) == sorted(
+        [
+            (e1.id, "r", e2.id),
+            (e2.id, "r", e1.id),
+            (e2.id, "r2", e3.id),
+        ]
+    )
+
+
+def test_get_rel_map_self_loop_collected_once() -> None:
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    r11 = Relation(label="r", source_id=e1.id, target_id=e1.id)
+
+    g.upsert_nodes([e1])
+    g.upsert_relations([r11])
+
+    rel_map = g.get_rel_map([e1], depth=3, limit=30)
+    triplet_keys = [(t[0].id, t[1].id, t[2].id) for t in rel_map]
+
+    assert triplet_keys == [(e1.id, "r", e1.id)]
