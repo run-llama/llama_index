@@ -264,10 +264,18 @@ class VertexAISearchRetriever(BaseRetriever):
             document_dict = MessageToDict(
                 result.document._pb, preserving_proto_field_name=True
             )
+            struct_data = document_dict.get("struct_data", {})
+            metadata = {
+                **struct_data,
+                # Reserve these keys for upstream identity, including when absent.
+                "document_id": document_dict.get("id", ""),
+                "document_name": document_dict.get("name", ""),
+            }
             note_with_score.append(
                 NodeWithScore(
                     node=TextNode(
-                        text=json.dumps(document_dict.get("struct_data", {}))
+                        text=json.dumps(struct_data),
+                        metadata=metadata,
                     ),
                     score=score,
                 )
