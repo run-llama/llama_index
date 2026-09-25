@@ -277,13 +277,11 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         """Set all messages for a key (replacing existing ones) with the specified status (async)."""
         session_factory, table = await self._initialize()
 
-        # First delete all existing messages
-        await self.delete_messages(key)
-
-        # Then add new messages
         current_time = time.time_ns()
 
         async with session_factory() as session:
+            # Replace the messages atomically so failed inserts preserve the history.
+            await session.execute(delete(table).where(table.c.key == key))
             for i, message in enumerate(messages):
                 await session.execute(
                     insert(table).values(
