@@ -4,7 +4,7 @@
 pip install llama-index-readers-assemblyai
 ```
 
-The AssemblyAI Audio Transcript Loader allows to transcribe audio files with the [AssemblyAI API](https://www.assemblyai.com/) and loads the transcribed text into documents.
+The AssemblyAI Audio Transcript Loader allows you to transcribe audio files with the [AssemblyAI API](https://www.assemblyai.com/) and loads the transcribed text into documents.
 
 To use it, you should have the `assemblyai` python package installed, and the environment variable `ASSEMBLYAI_API_KEY` set with your API key. Alternatively, the API key can also be passed as an argument.
 
