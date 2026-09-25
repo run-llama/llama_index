@@ -246,7 +246,12 @@ class SimpleVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Get nodes for response."""
+        """
+        Get nodes for response.
+
+        For MMR queries, a ``mmr_threshold`` keyword argument overrides the query
+        field, including an explicit ``None`` to use the scorer's default.
+        """
         # Prevent metadata filtering on stores that were persisted without metadata.
         if (
             query.filters is not None
@@ -291,7 +296,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
                 embedding_ids=node_ids,
             )
         elif query.mode == MMR_MODE:
-            mmr_threshold = kwargs.get("mmr_threshold")
+            mmr_threshold = kwargs.get("mmr_threshold", query.mmr_threshold)
             top_similarities, top_ids = get_top_k_mmr_embeddings(
                 query_embedding,
                 embeddings,
