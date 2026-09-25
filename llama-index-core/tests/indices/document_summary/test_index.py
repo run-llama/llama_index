@@ -4,7 +4,10 @@ from typing import List
 
 import pytest
 from llama_index.core.indices.document_summary.base import DocumentSummaryIndex
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import Document
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
 def test_build_index(
@@ -89,3 +92,77 @@ def test_delete_nodes_deletes_valid_ids_and_skips_invalid_ones(
     index.delete_nodes(["does_not_exist_1", valid_node_id, "does_not_exist_2"])
 
     assert valid_node_id not in index.index_struct.node_id_to_summary_id
+
+
+def test_delete_nodes_keeps_docstore_by_default(
+    docs: List[Document],
+    index: DocumentSummaryIndex,
+) -> None:
+    """Without the flag the docstore is left untouched."""
+    node_ids = list(index.index_struct.node_id_to_summary_id.keys())
+    before = set(index.docstore.docs.keys())
+
+    index.delete_nodes([node_ids[0], node_ids[1]])
+
+    assert set(index.docstore.docs.keys()) == before
+
+
+def test_delete_nodes_from_docstore(
+    docs: List[Document],
+    index: DocumentSummaryIndex,
+) -> None:
+    """`delete_from_docstore=True` must remove the nodes and their emptied docs."""
+    node_ids = list(index.index_struct.node_id_to_summary_id.keys())
+    victims = [node_ids[0], node_ids[1]]
+    # in this fixture each document contributes exactly one indexed node, so
+    # deleting these empties doc_1 and doc_2 entirely
+    doomed_docs = ["doc_1", "doc_2"]
+    survivors = ["doc_3", "doc_4"]
+
+    index.delete_nodes(victims, delete_from_docstore=True)
+
+    remaining = set(index.docstore.docs.keys())
+    for node_id in victims:
+        assert node_id not in remaining
+    for doc_id in doomed_docs:
+        assert index.docstore.get_ref_doc_info(doc_id) is None
+    # documents that still have nodes are untouched
+    for doc_id in survivors:
+        assert index.docstore.get_ref_doc_info(doc_id) is not None
+
+
+def test_delete_nodes_from_docstore_partial_document(
+    patch_llm_predictor,
+    mock_embed_model,
+) -> None:
+    """
+    Deleting some of a document's nodes removes only those nodes.
+
+    The document keeps its remaining nodes and is not deleted.
+    """
+    long_doc = Document(
+        text=". ".join(f"sentence number {i}" for i in range(40)), id_="big"
+    )
+    index = DocumentSummaryIndex.from_documents(
+        [long_doc],
+        response_synthesizer=get_response_synthesizer(
+            text_qa_template=MOCK_TEXT_QA_PROMPT,
+            refine_template=MOCK_REFINE_PROMPT,
+        ),
+        summary_query="summary_query",
+        embed_model=mock_embed_model,
+        transformations=[SentenceSplitter(chunk_size=32, chunk_overlap=0)],
+    )
+    node_ids = list(index.index_struct.node_id_to_summary_id.keys())
+    assert len(node_ids) > 2, "fixture must produce several nodes for one document"
+
+    victims, keepers = node_ids[:2], node_ids[2:]
+    index.delete_nodes(victims, delete_from_docstore=True)
+
+    remaining = set(index.docstore.docs.keys())
+    for node_id in victims:
+        assert node_id not in remaining
+    for node_id in keepers:
+        assert node_id in remaining
+    # the document itself survives because it still has nodes
+    assert index.docstore.get_ref_doc_info("big") is not None
