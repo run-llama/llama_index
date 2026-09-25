@@ -203,14 +203,25 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         if votes_1 + votes_2 != 2:  # each round, the judge can give a total of 1 vote
             raise ValueError("Impossible score results. Total amount of votes is 2.")
 
+        # flipped_eval_result's score/passing are in the flipped frame (answer_1
+        # and answer_2 swapped), so convert them back to the original frame
+        # before they can be returned as-is, the same way votes_1/votes_2 above
+        # already convert flipped_eval_result.score with `1 - ...`
+        normalized_flipped_result = flipped_eval_result.model_copy(
+            update={
+                "score": 1 - flipped_eval_result.score,
+                "passing": flipped_eval_result.score == 0.0,
+            }
+        )
+
         # get the judges (original and flipped) who voted for answer_1
         voters_1 = [eval_result] * (eval_result.score == 1.0) + [
-            flipped_eval_result
+            normalized_flipped_result
         ] * (flipped_eval_result.score == 0.0)
 
         # get the judges (original and flipped) who voted for answer_2
         voters_2 = [eval_result] * (eval_result.score == 0.0) + [
-            flipped_eval_result
+            normalized_flipped_result
         ] * (flipped_eval_result.score == 1.0)
 
         if votes_1 > votes_2:
