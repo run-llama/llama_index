@@ -21,6 +21,21 @@ def test_split_token() -> None:
     assert chunks == ["foo bar", "bar hello", "hello world"]
 
 
+def test_split_token_respects_chunk_size_after_stripping() -> None:
+    tokenizer = tiktoken.get_encoding("cl100k_base")
+    text = "The quick brown fox jumps over the lazy dog. " * 4
+    text_splitter = TokenTextSplitter(
+        chunk_size=12,
+        chunk_overlap=4,
+        tokenizer=tokenizer.encode,
+    )
+
+    chunks = text_splitter.split_text(text)
+
+    assert chunks
+    assert all(len(tokenizer.encode(chunk)) <= 12 for chunk in chunks)
+
+
 def test_start_end_char_idx() -> None:
     document = Document(text="foo bar hello world baz bbq")
     text_splitter = TokenTextSplitter(chunk_size=3, chunk_overlap=1)
