@@ -3,6 +3,7 @@
 import numpy as np
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
+    get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
 
@@ -108,3 +109,37 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_top_k_zero() -> None:
+    """Test that similarity_top_k=0 returns empty results instead of all embeddings (#22508)."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0]]
+
+    sims, ids = get_top_k_embeddings(query_embedding, embeddings, similarity_top_k=0)
+    assert sims == []
+    assert ids == []
+
+
+def test_get_top_k_mmr_embeddings_top_k_zero() -> None:
+    """Test that similarity_top_k=0 in MMR returns empty results (#22508)."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0]]
+
+    sims, ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert sims == []
+    assert ids == []
+
+
+def test_get_top_k_embeddings_learner_top_k_zero() -> None:
+    """Test that similarity_top_k=0 in learner returns empty results (#22508)."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.0, 1.0]]
+
+    sims, ids = get_top_k_embeddings_learner(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+    assert len(sims) == 0
+    assert len(ids) == 0
