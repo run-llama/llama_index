@@ -66,6 +66,10 @@ def similarity(
     else:
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+        if norm == 0:
+            # one of the embeddings is a zero vector; cosine similarity is
+            # undefined, so report no similarity instead of nan
+            return 0.0
         return product / norm
 
 

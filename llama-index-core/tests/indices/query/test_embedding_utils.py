@@ -108,3 +108,26 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_zero_norm() -> None:
+    """
+    Zero-norm embeddings must not produce nan similarities.
+
+    A zero embedding (e.g. returned by some providers for empty text) makes
+    cosine similarity undefined. Returning nan lets the zero-vector node sort
+    into the top-k results over legitimately scored nodes.
+    """
+    embeddings = [[1.0, 0.0], [0.5, 0.5], [0.0, 0.0]]
+    similarities, ids = get_top_k_embeddings([1.0, 0.0], embeddings, similarity_top_k=2)
+
+    assert ids == [0, 1]
+    assert not any(np.isnan(s) for s in similarities)
+
+
+def test_similarity_zero_vector() -> None:
+    """Cosine similarity with a zero vector should be 0.0, not nan."""
+    from llama_index.core.base.embeddings.base import similarity
+
+    assert similarity([0.0, 0.0], [1.0, 0.0]) == 0.0
+    assert similarity([0.0, 0.0], [0.0, 0.0]) == 0.0
