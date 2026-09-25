@@ -17,6 +17,10 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
+from openai.types.completion_usage import (
+    CompletionTokensDetails,
+    PromptTokensDetails,
+)
 
 
 class CachedOpenAIApiKeys:
@@ -328,6 +332,167 @@ def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
         chat_response = llm.chat([message])
         assert chat_response.message.content == "\n\nThis is a test!"
         assert chat_response.additional_kwargs["total_tokens"] == 20
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_model_cached_prompt_tokens(MockSyncOpenAI: MagicMock) -> None:
+    """chat() must expose cached_tokens in additional_kwargs when the response
+    includes prompt_tokens_details.cached_tokens (OpenAI KV-cache hit)."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = ChatCompletion(
+            id="chatcmpl-cached",
+            object="chat.completion",
+            created=1677858242,
+            model="gpt-4o",
+            usage=CompletionUsage(
+                prompt_tokens=200,
+                completion_tokens=50,
+                total_tokens=250,
+                prompt_tokens_details=PromptTokensDetails(cached_tokens=180),
+            ),
+            choices=[
+                Choice(
+                    message=ChatCompletionMessage(
+                        role="assistant", content="cached response"
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+        )
+
+        llm = OpenAI(model="gpt-4o")
+        chat_response = llm.chat([ChatMessage(role="user", content="hi")])
+        assert chat_response.additional_kwargs["cached_tokens"] == 180
+        assert chat_response.additional_kwargs["prompt_tokens"] == 200
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_model_reasoning_tokens(MockSyncOpenAI: MagicMock) -> None:
+    """chat() must expose reasoning_tokens in additional_kwargs when the response
+    includes completion_tokens_details.reasoning_tokens (o1/o3 models)."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = ChatCompletion(
+            id="chatcmpl-reasoning",
+            object="chat.completion",
+            created=1677858242,
+            model="o3",
+            usage=CompletionUsage(
+                prompt_tokens=100,
+                completion_tokens=500,
+                total_tokens=600,
+                completion_tokens_details=CompletionTokensDetails(
+                    reasoning_tokens=400
+                ),
+            ),
+            choices=[
+                Choice(
+                    message=ChatCompletionMessage(
+                        role="assistant", content="reasoned response"
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+        )
+
+        llm = OpenAI(model="o3")
+        chat_response = llm.chat([ChatMessage(role="user", content="hi")])
+        assert chat_response.additional_kwargs["reasoning_tokens"] == 400
+        assert chat_response.additional_kwargs["completion_tokens"] == 500
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_model_no_token_details_no_extra_keys(MockSyncOpenAI: MagicMock) -> None:
+    """When prompt_tokens_details and completion_tokens_details are absent, the
+    response must not include cached_tokens or reasoning_tokens keys."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = mock_chat_completion_v1()
+
+        llm = OpenAI(model="gpt-3.5-turbo")
+        chat_response = llm.chat([ChatMessage(role="user", content="hi")])
+        assert "cached_tokens" not in chat_response.additional_kwargs
+        assert "reasoning_tokens" not in chat_response.additional_kwargs
+        assert chat_response.additional_kwargs["total_tokens"] == 20
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_model_zero_cached_tokens_included(MockSyncOpenAI: MagicMock) -> None:
+    """cached_tokens=0 (cache evaluated, no hit) must be included in additional_kwargs.
+
+    A zero value means the API evaluated the prompt for cache eligibility and found no
+    match.  This is distinct from the field being absent (provider does not support
+    caching).  Consumers computing cache hit-rate divide by the number of requests
+    where cached_tokens is present, so silently dropping zeros inflates the hit-rate.
+    """
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = ChatCompletion(
+            id="chatcmpl-zero-cache",
+            object="chat.completion",
+            created=1677858242,
+            model="gpt-4o",
+            usage=CompletionUsage(
+                prompt_tokens=200,
+                completion_tokens=50,
+                total_tokens=250,
+                prompt_tokens_details=PromptTokensDetails(cached_tokens=0),
+            ),
+            choices=[
+                Choice(
+                    message=ChatCompletionMessage(
+                        role="assistant", content="no cache hit"
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+        )
+
+        llm = OpenAI(model="gpt-4o")
+        chat_response = llm.chat([ChatMessage(role="user", content="hi")])
+        # zero must be present so hit-rate computation has the correct denominator
+        assert chat_response.additional_kwargs["cached_tokens"] == 0
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_model_zero_reasoning_tokens_included(MockSyncOpenAI: MagicMock) -> None:
+    """reasoning_tokens=0 must be included in additional_kwargs when details are present.
+
+    Some providers set completion_tokens_details.reasoning_tokens=0 on non-reasoning
+    turns to signal that the field is supported.  Dropping the zero makes it impossible
+    to distinguish "field present, no reasoning" from "field absent, unknown".
+    """
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = ChatCompletion(
+            id="chatcmpl-zero-reasoning",
+            object="chat.completion",
+            created=1677858242,
+            model="gpt-4o",
+            usage=CompletionUsage(
+                prompt_tokens=100,
+                completion_tokens=50,
+                total_tokens=150,
+                completion_tokens_details=CompletionTokensDetails(reasoning_tokens=0),
+            ),
+            choices=[
+                Choice(
+                    message=ChatCompletionMessage(
+                        role="assistant", content="direct answer"
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+        )
+
+        llm = OpenAI(model="gpt-4o")
+        chat_response = llm.chat([ChatMessage(role="user", content="hi")])
+        # zero must be present to signal "no reasoning on this turn" (not "unsupported")
+        assert chat_response.additional_kwargs["reasoning_tokens"] == 0
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
