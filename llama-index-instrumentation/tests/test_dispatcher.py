@@ -1220,3 +1220,48 @@ async def test_aevent_no_propagation():
     assert len(parent_handler.events) == 0
     assert child_handler.async_calls == 1
     assert parent_handler.async_calls == 0
+
+
+# --- Regression tests for https://github.com/run-llama/llama_index/issues/22705 ---
+# Dispatcher.__init__ previously used mutable default arguments (event_handlers=[],
+# span_handlers=[]) which are evaluated once at function-definition time and shared
+# across all calls. Replace with a None sentinel.
+
+
+def test_dispatcher_init_has_no_mutable_defaults() -> None:
+    """Regression test for #22705: __init__ signature must not carry mutable defaults."""
+    import inspect
+
+    sig = inspect.signature(Dispatcher.__init__)
+    assert sig.parameters["event_handlers"].default is None, (
+        "event_handlers must default to None (sentinel), not a mutable list"
+    )
+    assert sig.parameters["span_handlers"].default is None, (
+        "span_handlers must default to None (sentinel), not a mutable list"
+    )
+
+
+def test_dispatcher_constructs_distinct_default_lists() -> None:
+    """Regression test for #22705: two no-arg Dispatcher() instances must not share list state."""
+    d1 = Dispatcher()
+    d2 = Dispatcher()
+
+    # Fresh lists, not shared singletons
+    assert d1.event_handlers is not d2.event_handlers
+    assert d1.span_handlers is not d2.span_handlers
+
+    # Defaults still resolve to empty lists (observable behavior preserved)
+    assert d1.event_handlers == []
+    assert d1.span_handlers == []
+
+
+def test_dispatcher_mutating_one_instance_does_not_affect_another() -> None:
+    """Regression test for #22705: appending to one Dispatcher's handlers must not bleed into another."""
+    d1 = Dispatcher()
+    d2 = Dispatcher()
+
+    sentinel_handler = _TestEventHandler()
+    d1.event_handlers.append(sentinel_handler)
+
+    assert sentinel_handler in d1.event_handlers
+    assert sentinel_handler not in d2.event_handlers
