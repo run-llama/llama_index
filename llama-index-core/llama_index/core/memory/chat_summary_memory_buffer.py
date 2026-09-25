@@ -168,7 +168,10 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
     ) -> List[ChatMessage]:
         """Get chat history."""
-        chat_history = self.get_all()
+        # Copy the list: get_all() returns the store's list by reference, and
+        # _split_messages_summary_or_full_text pops from it. Without the copy,
+        # this read-style call would mutate the caller's own chat_history list.
+        chat_history = list(self.get_all())
         if len(chat_history) == 0:
             return []
 
