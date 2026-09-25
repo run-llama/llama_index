@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-indices-managed-vectara"
-version = "0.7.0"
+version = "0.7.1"
 description = "llama-index managed vectara integration"
 authors = [
     {name = "David Oplatka", email = "david.oplatka@vectara.com"},
