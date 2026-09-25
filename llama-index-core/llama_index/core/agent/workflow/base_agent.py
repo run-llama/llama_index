@@ -42,7 +42,13 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.agent.utils import generate_structured_response
-from llama_index.core.llms import ChatMessage, ChatResponse, LLM, TextBlock
+from llama_index.core.llms import (
+    ChatMessage,
+    ChatResponse,
+    LLM,
+    MessageRole,
+    TextBlock,
+)
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -78,6 +84,35 @@ WORKFLOW_KWARGS = (
 
 def get_default_llm() -> LLM:
     return Settings.llm
+
+
+def apply_state_to_last_user_message(
+    llm_input: List[ChatMessage], state_prompt: BasePromptTemplate, state: Any
+) -> List[ChatMessage]:
+    """
+    Format the last user message of an LLM input with the current state.
+
+    The message is copied rather than edited, so the one held by the memory keeps
+    the text the user sent and the state only reaches the prompt sent to the LLM.
+    """
+    for msg_idx in range(len(llm_input) - 1, -1, -1):
+        message = llm_input[msg_idx]
+        if message.role != MessageRole.USER:
+            continue
+
+        for block_idx in range(len(message.blocks) - 1, -1, -1):
+            block = message.blocks[block_idx]
+            if isinstance(block, TextBlock):
+                blocks = list(message.blocks)
+                blocks[block_idx] = block.model_copy(
+                    update={"text": state_prompt.format(state=state, msg=block.text)}
+                )
+                llm_input = [*llm_input]
+                llm_input[msg_idx] = message.model_copy(update={"blocks": blocks})
+                break
+        break
+
+    return llm_input
 
 
 class BaseWorkflowAgentMeta(WorkflowMeta, ModelMetaclass):
@@ -318,9 +353,6 @@ class BaseWorkflowAgent(
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
-        # always set to false initially
-        await ctx.store.set("formatted_input_with_state", False)
-
     async def _get_llm_response(
         self, ctx: Context, llm_input: List[ChatMessage], llm: Optional[LLM] = None
     ) -> ChatResponse:
@@ -456,16 +488,11 @@ class BaseWorkflowAgent(
             ]
 
         state = await ctx.store.get("state", default=None)
-        formatted_input_with_state = await ctx.store.get(
-            "formatted_input_with_state", default=False
-        )
-        if state and not formatted_input_with_state:
-            # update last message with current state
-            for block in llm_input[-1].blocks[::-1]:
-                if isinstance(block, TextBlock):
-                    block.text = self.state_prompt.format(state=state, msg=block.text)
-                    break
-            await ctx.store.set("formatted_input_with_state", True)
+        if state:
+            # add the current state to the prompt, without touching the memory
+            llm_input = apply_state_to_last_user_message(
+                llm_input, self.state_prompt, state
+            )
 
         return AgentSetup(
             input=llm_input,
