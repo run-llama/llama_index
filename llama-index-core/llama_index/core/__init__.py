@@ -81,7 +81,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 
 # sql wrapper
-from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from llama_index.core.utilities.sql_wrapper import SQLDatabase,TrinoSQLDatabase
 
 # global tokenizer
 from llama_index.core.utils import get_tokenizer, set_global_tokenizer
