@@ -71,7 +71,7 @@ class _TestAsyncEventHandler(BaseEventHandler):
 
     async def ahandle(self, e: BaseEvent, **kwargs: Any) -> Any:
         self.async_calls += 1
-        await asyncio.sleep(0.01)  # Simulate async work
+        await asyncio.sleep(0.05)  # Simulate async work
         self.events.append(e)
         return None
 
@@ -1122,8 +1122,10 @@ async def test_aevent_concurrent_handlers():
     end_time = time.time()
 
     # assert
-    # Should take ~0.01s (concurrent) not ~0.02s (sequential)
-    assert end_time - start_time < 0.015
+    # Each handler sleeps 0.05s. Sequential would take >= 0.1s.
+    # Concurrent execution should finish well under that, but we allow
+    # generous margin for event-loop scheduling overhead on all platforms.
+    assert end_time - start_time < 0.09
     assert len(handler1.events) == 1
     assert len(handler2.events) == 1
     assert handler1.async_calls == 1
@@ -1220,3 +1222,50 @@ async def test_aevent_no_propagation():
     assert len(parent_handler.events) == 0
     assert child_handler.async_calls == 1
     assert parent_handler.async_calls == 0
+
+
+def test_dispatcher_mutable_default_args():
+    """Test that two separate Dispatcher instances do not share mutable handler lists."""
+    # Create two dispatchers without explicit handlers
+    dispatcher1 = Dispatcher(name="dispatcher1")
+    dispatcher2 = Dispatcher(name="dispatcher2")
+
+    # Verify they have independent event_handlers lists
+    assert dispatcher1.event_handlers is not dispatcher2.event_handlers
+    assert dispatcher1.event_handlers == []
+    assert dispatcher2.event_handlers == []
+
+    # Add a handler to dispatcher1
+    handler1 = _TestEventHandler()
+    dispatcher1.add_event_handler(handler1)
+
+    # Verify dispatcher2 is unaffected
+    assert len(dispatcher1.event_handlers) == 1
+    assert len(dispatcher2.event_handlers) == 0
+    assert dispatcher1.event_handlers[0] is handler1
+
+    # Verify they have independent span_handlers lists
+    assert dispatcher1.span_handlers is not dispatcher2.span_handlers
+    assert len(dispatcher1.span_handlers) == 1
+    assert len(dispatcher2.span_handlers) == 1
+
+    # Add a span handler to dispatcher1
+    from llama_index_instrumentation.span_handlers import BaseSpanHandler
+
+    class TestSpanHandler(BaseSpanHandler):
+        def new_span(self, *args, **kwargs):
+            pass
+
+        def prepare_to_drop_span(self, *args, **kwargs):
+            pass
+
+        def prepare_to_exit_span(self, *args, **kwargs):
+            pass
+
+    span_handler1 = TestSpanHandler()
+    dispatcher1.add_span_handler(span_handler1)
+
+    # Verify dispatcher2 is unaffected
+    assert len(dispatcher1.span_handlers) == 2
+    assert len(dispatcher2.span_handlers) == 1
+    assert dispatcher1.span_handlers[1] is span_handler1
