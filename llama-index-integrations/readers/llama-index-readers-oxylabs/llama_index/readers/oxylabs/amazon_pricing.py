@@ -8,7 +8,7 @@ class OxylabsAmazonPricingReader(OxylabsBaseReader):
     """
     Get data about Amazon product offer listings.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/amazon/pricing
+    https://developers.oxylabs.io/api-targets/e-commerce/amazon/pricing
     """
 
     top_level_header: str = "Product pricing data"

@@ -1,7 +1,8 @@
 # LlamaIndex Oxylabs Reader Integration
 
-Use Oxylabs Reader to load the data from search engines, e-commerce sites, travel platforms, and any other website.
-For more information checkout out the [Oxylabs documentation](https://developers.oxylabs.io/scraper-apis/web-scraper-api).
+Use Oxylabs Reader to load data from Google Search and Amazon.
+To scrape any other website, use `OxylabsWebReader` from `llama-index-readers-web`.
+For more information check out the [Oxylabs documentation](https://developers.oxylabs.io/products/web-scraper-api).
 
 ## Instructions for OxylabsReader
 
