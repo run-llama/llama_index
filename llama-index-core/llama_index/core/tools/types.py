@@ -88,7 +88,8 @@ class ToolMetadata:
 
     def to_openai_tool(self, skip_length_check: bool = False) -> Dict[str, Any]:
         """To OpenAI tool."""
-        if not skip_length_check and len(self.description) > 1024:
+        description = self.description or ""
+        if not skip_length_check and len(description) > 1024:
             raise ValueError(
                 "Tool description exceeds maximum length of 1024 characters. "
                 "Please shorten your description or move it to the prompt."
@@ -97,7 +98,7 @@ class ToolMetadata:
             "type": "function",
             "function": {
                 "name": self._sanitize_name(self.name),
-                "description": self.description,
+                "description": description,
                 "parameters": self.get_parameters_dict(),
             },
         }
