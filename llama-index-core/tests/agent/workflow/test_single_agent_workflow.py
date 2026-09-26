@@ -303,6 +303,78 @@ async def test_max_iterations():
 
 
 @pytest.mark.asyncio
+async def test_max_iterations_applies_on_reused_context():
+    """
+    A max_iterations passed to a later run() must apply to that run, even
+    when reusing a Context whose store already holds a value from an earlier
+    run.
+    """
+    from llama_index.core.workflow import Context
+
+    def random_tool() -> str:
+        return "random"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handing off",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="random_tool",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                ]
+                * 100
+            )
+        ),
+    )
+
+    ctx = Context(agent)
+
+    # First run stores max_iterations=2 in the context.
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 2 reached"):
+        await agent.run(user_msg="test", ctx=ctx, max_iterations=2)
+
+    # A later run on the same context must honor its own max_iterations,
+    # not the value stashed by the first run.
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 6 reached"):
+        await agent.run(user_msg="test", ctx=ctx, max_iterations=6)
+
+
+@pytest.mark.asyncio
+async def test_max_iterations_zero_uses_default():
+    """max_iterations=0 is falsy and must keep resolving to the default, as on main."""
+    from llama_index.core.agent.workflow.base_agent import DEFAULT_MAX_ITERATIONS
+    from llama_index.core.workflow import Context
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [ChatMessage(role=MessageRole.ASSISTANT, content="done")]
+            )
+        ),
+    )
+
+    ctx = Context(agent)
+    await agent.run(user_msg="test", ctx=ctx, max_iterations=0)
+
+    assert await ctx.store.get("max_iterations") == DEFAULT_MAX_ITERATIONS
+
+
+@pytest.mark.asyncio
 async def test_early_stopping_method_generate():
     """Test early_stopping_method='generate' produces a final response instead of raising error."""
 
