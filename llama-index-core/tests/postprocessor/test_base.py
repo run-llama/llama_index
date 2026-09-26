@@ -379,3 +379,29 @@ def test_keyword_postprocessor_for_non_english() -> None:
         assert len(new_nodes) == 2
     except ImportError:
         pass
+
+
+def test_forward_back_processor_preserves_retrieved_scores() -> None:
+    """Overlapping neighbor expansion must not replace retrieved scores."""
+    nodes = [
+        TextNode(text="First sentence", id_="a"),
+        TextNode(text="Second sentence", id_="b"),
+    ]
+    nodes[0].relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id="b")
+    nodes[1].relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id="a")
+
+    docstore = SimpleDocumentStore()
+    docstore.add_documents(nodes)
+    postprocessor = PrevNextNodePostprocessor(docstore=docstore, mode="both")
+
+    for retrieved in (
+        [NodeWithScore(node=nodes[1], score=0.9), NodeWithScore(node=nodes[0], score=0.8)],
+        [NodeWithScore(node=nodes[0], score=0.8), NodeWithScore(node=nodes[1], score=0.9)],
+    ):
+        result = postprocessor.postprocess_nodes(retrieved)
+        scores = {node.node.node_id: node.score for node in result}
+        assert scores == {"a": 0.8, "b": 0.9}
+
+    zero_score = [NodeWithScore(node=nodes[1], score=0.0), NodeWithScore(node=nodes[0], score=0.8)]
+    result = postprocessor.postprocess_nodes(zero_score)
+    assert {node.node.node_id: node.score for node in result} == {"a": 0.8, "b": 0.0}
