@@ -202,7 +202,7 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
-        all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
+        # Preserve scores from the original retrieval results when neighbor expansion\n        # encounters the same node through another path.\n        for node in nodes:\n            all_nodes[node.node.node_id] = node\n\n        all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
         sorted_nodes: List[NodeWithScore] = []
         for node in all_nodes_values:
             # variable to check if cand node is inserted
