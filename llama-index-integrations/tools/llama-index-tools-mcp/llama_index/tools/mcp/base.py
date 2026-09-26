@@ -87,21 +87,7 @@ class McpToolSpec(
             if hasattr(dynamic_response, "resource_templates")
             else []
         )
-        resources = static_resources + dynamic_resources
-        if self.allowed_tools is None:
-            return resources
-
-        if any(self.allowed_tools):
-            return [
-                resource
-                for resource in resources
-                if resource.name in self.allowed_tools
-            ]
-
-        logging.warning(
-            "Returning an empty resource list due to the empty `allowed_tools` list. Please ensure `allowed_tools` is set appropriately."
-        )
-        return []
+        return static_resources + dynamic_resources
 
     def _create_tool_fn(self, tool_name: str) -> Callable:
         """
