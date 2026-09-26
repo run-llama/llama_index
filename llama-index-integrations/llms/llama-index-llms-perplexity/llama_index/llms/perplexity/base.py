@@ -113,14 +113,19 @@ class Perplexity(LLM):
         output_parser: Optional[BaseOutputParser] = None,
         enable_search_classifier: bool = False,
         timeout: float = 30.0,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> None:
         api_key = api_key or getenv("PPLX_API_KEY")
         additional_kwargs = additional_kwargs or {}
+        headers = dict(headers or {})
+        if not any(name.lower() == "x-pplx-integration" for name in headers):
+            headers["X-Pplx-Integration"] = "llamaindex"
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
             "authorization": f"Bearer {api_key}",
+            **headers,
         }
         super().__init__(
             model=model,
