@@ -2,7 +2,7 @@
 
 import contextvars
 import json
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -144,6 +144,112 @@ async def test_function_tool_async_defaults() -> None:
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+class _MCPTextContent:
+    """Stand-in for ``mcp.types.TextContent`` (``type`` + ``text``)."""
+
+    def __init__(self, text: str) -> None:
+        self.type = "text"
+        self.text = text
+
+
+class _MCPResource:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+class _MCPEmbeddedResource:
+    def __init__(self, text: str) -> None:
+        self.type = "resource"
+        self.resource = _MCPResource(text)
+
+
+class _MCPCallToolResult:
+    """
+    Stand-in for ``mcp.types.CallToolResult``.
+
+    Mirrors the fields ``McpToolSpec._create_tool_fn`` hands to ``FunctionTool``:
+    a ``content`` list plus the ``isError`` flag. Kept structural because
+    ``llama-index-core`` does not depend on ``mcp``.
+    """
+
+    def __init__(self, content: List[object], is_error: bool = False) -> None:
+        self.content = content
+        self.isError = is_error
+        self.structuredContent = None
+        self.meta = None
+
+
+async def _mcp_result_async(*_args: object, **_kwargs: object) -> _MCPCallToolResult:
+    return _MCPCallToolResult([_MCPTextContent("The answer is 42.")])
+
+
+@pytest.mark.asyncio
+async def test_function_tool_parses_mcp_call_tool_result_text() -> None:
+    """
+    An MCP result must reach the caller as its text, not as a repr.
+
+    ``McpToolSpec`` returns the raw ``CallToolResult`` from the tool function,
+    so a successful MCP call used to be handed to the LLM as
+    ``str(CallToolResult(...))``.
+    """
+    function_tool = FunctionTool.from_defaults(
+        async_fn=_mcp_result_async, name="lookup", description="bar"
+    )
+
+    output = await function_tool.acall()
+
+    assert [block.text for block in output.blocks] == ["The answer is 42."]
+
+
+@pytest.mark.asyncio
+async def test_function_tool_parses_mcp_embedded_resource_text() -> None:
+    """
+    An embedded resource with text maps to a text block, not a repr.
+    """
+    result = _MCPCallToolResult([_MCPEmbeddedResource("file body")])
+
+    async def call() -> _MCPCallToolResult:
+        return result
+
+    function_tool = FunctionTool.from_defaults(
+        async_fn=call, name="read", description="bar"
+    )
+
+    output = await function_tool.acall()
+
+    assert [block.text for block in output.blocks] == ["file body"]
+
+
+def test_function_tool_leaves_plain_strings_alone() -> None:
+    """A bare string result keeps going through the normal str() path."""
+
+    def call() -> str:
+        return "plain"
+
+    function_tool = FunctionTool.from_defaults(fn=call, name="echo", description="bar")
+
+    assert function_tool.call().blocks[0].text == "plain"  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_function_tool_parses_mcp_result_with_dict_content() -> None:
+    """
+    A dict-shaped MCP payload keeps its text instead of collapsing to a repr.
+    """
+    result = {"content": [{"type": "text", "text": "from dict"}], "isError": False}
+
+    async def call() -> Dict[str, object]:
+        return result
+
+    function_tool = FunctionTool.from_defaults(
+        async_fn=call, name="dicttool", description="bar"
+    )
+
+    output = await function_tool.acall()
+
+    assert [block.text for block in output.blocks] == ["from dict"]
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
