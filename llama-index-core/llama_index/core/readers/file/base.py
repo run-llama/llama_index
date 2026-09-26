@@ -396,9 +396,12 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 if is_dir:
                     ref_parent_dir = ref
                 else:
-                    ref_parent_dir = self.fs._parent(ref)
+                    ref_parent_dir = _Path(str(self.fs._parent(ref)))
                 for rejected_dir in rejected_dirs:
-                    if str(ref_parent_dir).startswith(str(rejected_dir)):
+                    if (
+                        ref_parent_dir == rejected_dir
+                        or rejected_dir in ref_parent_dir.parents
+                    ):
                         skip_because_excluded = True
                         logger.debug(
                             "Skipping %s because it in parent dir %s which is in %s",
