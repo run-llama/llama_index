@@ -318,23 +318,12 @@ class DashScope(FunctionCallingLLM):
         }
 
     def _convert_tool_to_dashscope_format(self, tool: "BaseTool") -> Dict:
-        params = tool.metadata.get_parameters_dict()
-        properties, required_fields, param_type = (
-            params["properties"],
-            params.get("required", []),
-            params.get("type"),
-        )
-
         return {
             "type": "function",
             "function": {
                 "name": tool.metadata.name,
                 "description": tool.metadata.description,
-                "parameters": {
-                    "type": param_type,
-                    "properties": properties,
-                },
-                "required": required_fields,
+                "parameters": tool.metadata.get_parameters_dict(),
             },
         }
 
