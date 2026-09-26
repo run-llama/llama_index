@@ -494,8 +494,9 @@ class IngestionPipeline(BaseModel):
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
-            existing_doc_ids_before = set(
-                self.docstore.get_all_document_hashes().values()
+            existing_ref_doc_info = self.docstore.get_all_ref_doc_info()
+            existing_doc_ids_before = (
+                set(existing_ref_doc_info.keys()) if existing_ref_doc_info else set()
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
@@ -730,8 +731,9 @@ class IngestionPipeline(BaseModel):
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
-            existing_doc_ids_before = set(
-                (await self.docstore.aget_all_document_hashes()).values()
+            existing_ref_doc_info = await self.docstore.aget_all_ref_doc_info()
+            existing_doc_ids_before = (
+                set(existing_ref_doc_info.keys()) if existing_ref_doc_info else set()
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
