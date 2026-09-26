@@ -726,3 +726,26 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_max_iterations_permits_exactly_that_many(
+    calculator_agent: ReActAgent,
+) -> None:
+    """max_iterations=N must allow N iterations, not N-1."""
+    agent = FunctionAgent(
+        name="retriever",
+        description="Manages data retrieval",
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [ChatMessage(role=MessageRole.ASSISTANT, content="the answer is 42")]
+            )
+        ),
+    )
+    workflow = AgentWorkflow(
+        agents=[agent, calculator_agent],
+        root_agent="retriever",
+    )
+
+    response = await workflow.run(user_msg="test", max_iterations=1)
+    assert "42" in str(response.response)

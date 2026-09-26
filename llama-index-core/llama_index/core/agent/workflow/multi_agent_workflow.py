@@ -531,7 +531,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         num_iterations += 1
         await ctx.store.set("num_iterations", num_iterations)
 
-        if num_iterations >= max_iterations:
+        # num_iterations counts iterations that have already completed, so the
+        # limit is reached only once it is exceeded. Comparing with `>=` here
+        # spends the budget one iteration early and discards the output of the
+        # last permitted iteration, even when that output is a final answer.
+        if num_iterations > max_iterations:
             early_stopping_method = await ctx.store.get(
                 "early_stopping_method", default="force"
             )
