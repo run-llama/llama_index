@@ -189,18 +189,21 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
         for node in nodes:
             all_nodes[node.node.node_id] = node
             if self.mode == "next":
-                all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
+                expanded_nodes = get_forward_nodes(node, self.num_nodes, self.docstore)
             elif self.mode == "previous":
-                all_nodes.update(
-                    get_backward_nodes(node, self.num_nodes, self.docstore)
-                )
+                expanded_nodes = get_backward_nodes(node, self.num_nodes, self.docstore)
             elif self.mode == "both":
-                all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
-                all_nodes.update(
+                expanded_nodes = get_forward_nodes(node, self.num_nodes, self.docstore)
+                expanded_nodes.update(
                     get_backward_nodes(node, self.num_nodes, self.docstore)
                 )
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
+
+            # Preserve scores from originally retrieved nodes when an overlapping
+            # neighbor expansion encounters the same node without a score.
+            for node_id, expanded_node in expanded_nodes.items():
+                all_nodes.setdefault(node_id, expanded_node)
 
         all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
         sorted_nodes: List[NodeWithScore] = []
