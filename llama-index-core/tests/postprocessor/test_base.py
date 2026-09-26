@@ -155,6 +155,40 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         PrevNextNodePostprocessor(docstore=docstore, num_nodes=4, mode="asdfasdf")
 
 
+@pytest.mark.parametrize("mode", ["previous", "next", "both"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_prev_next_preserves_retrieved_scores(mode: str, reverse: bool) -> None:
+    nodes = [TextNode(text=f"Sentence {i}", id_=str(i)) for i in range(4)]
+    for i, node in enumerate(nodes):
+        if i:
+            node.relationships[NodeRelationship.PREVIOUS] = nodes[
+                i - 1
+            ].as_related_node_info()
+        if i + 1 < len(nodes):
+            node.relationships[NodeRelationship.NEXT] = nodes[
+                i + 1
+            ].as_related_node_info()
+    docstore = SimpleDocumentStore()
+    docstore.add_documents(nodes)
+    retrieved = [
+        NodeWithScore(node=nodes[1], score=0.0),
+        NodeWithScore(node=nodes[2], score=0.9),
+    ]
+    if reverse:
+        retrieved.reverse()
+
+    result = PrevNextNodePostprocessor(docstore=docstore, mode=mode).postprocess_nodes(
+        retrieved
+    )
+    by_id = {node.node_id: node for node in result}
+    for original in retrieved:
+        assert by_id[original.node_id] is original
+        assert by_id[original.node_id].score == original.score
+    assert len(by_id) == len(result)
+    for node_id in by_id.keys() - {"1", "2"}:
+        assert by_id[node_id].score is None
+
+
 def test_fixed_recency_postprocessor() -> None:
     """Test fixed recency processor."""
     # try in metadata
