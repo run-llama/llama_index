@@ -617,6 +617,7 @@ async def test_init_run_with_system_only_history_raises_value_error(
     chat_history = [
         ChatMessage(role=MessageRole.SYSTEM, content="Only a system message"),
     ]
-    with pytest.raises(ValueError, match="Must provide either user_msg or chat_history"):
+    with pytest.raises(
+        ValueError, match="Must provide either user_msg or chat_history"
+    ):
         await function_agent.run(chat_history=chat_history)
-
