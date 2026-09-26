@@ -158,7 +158,8 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = {}
         for key, val_str in self._redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[key.decode()] = value
+            # key may be bytes or str depending on decode_responses
+            collection_kv_dict[key.decode() if isinstance(key, bytes) else key] = value
         return collection_kv_dict
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
@@ -166,7 +167,8 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = {}
         async for key, val_str in self._async_redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[key.decode()] = value
+            # key may be bytes or str depending on decode_responses
+            collection_kv_dict[key.decode() if isinstance(key, bytes) else key] = value
         return collection_kv_dict
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:

@@ -105,15 +105,32 @@ def test_embedding_class_context_model_with_params():
     assert emb.output_dtype == "float"
 
 
+def test_embedding_class_context_4_model():
+    emb = VoyageEmbedding(
+        model_name="voyage-context-4",
+        voyage_api_key="NOT_A_VALID_KEY",
+        output_dimension=1024,
+    )
+    assert isinstance(emb, BaseEmbedding)
+    assert emb.embed_batch_size == 1000
+    assert emb.model_name == "voyage-context-4"
+    assert emb.output_dimension == 1024
+    assert emb.output_dtype is None
+
+
 def test_context_model_detection():
     context_emb = VoyageEmbedding(
         model_name="voyage-context-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    context_4_emb = VoyageEmbedding(
+        model_name="voyage-context-4", voyage_api_key="NOT_A_VALID_KEY"
     )
     regular_emb = VoyageEmbedding(
         model_name="voyage-3", voyage_api_key="NOT_A_VALID_KEY"
     )
 
     assert context_emb.model_name in CONTEXT_MODELS
+    assert context_4_emb.model_name in CONTEXT_MODELS
     assert regular_emb.model_name not in CONTEXT_MODELS
 
 

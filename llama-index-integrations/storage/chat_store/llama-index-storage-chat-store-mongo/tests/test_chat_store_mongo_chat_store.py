@@ -54,7 +54,6 @@ def mongo_container() -> Generator[Dict[str, Union[str, Container]], None, None]
 
 
 @pytest.fixture()
-@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def mongo_chat_store(
     mongo_container: Dict[str, Union[str, Container]],
 ) -> Generator[MongoChatStore, None, None]:

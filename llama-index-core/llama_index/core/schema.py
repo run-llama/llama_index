@@ -959,23 +959,32 @@ class IndexNode(TextNode):
     index_id: str
     obj: Any = None
 
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+    def _serialize_obj(self) -> Any:
         from llama_index.core.storage.docstore.utils import doc_to_json
-
-        data = super().dict(**kwargs)
 
         try:
             if self.obj is None:
-                data["obj"] = None
+                return None
             elif isinstance(self.obj, BaseNode):
-                data["obj"] = doc_to_json(self.obj)
+                return doc_to_json(self.obj)
             elif isinstance(self.obj, BaseModel):
-                data["obj"] = self.obj.model_dump()
+                return self.obj.model_dump()
             else:
-                data["obj"] = json.dumps(self.obj)
+                return json.dumps(self.obj)
         except Exception:
             raise ValueError("IndexNode obj is not serializable: " + str(self.obj))
 
+    @model_serializer(mode="wrap")
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
+        data = super().custom_model_dump(handler, info)
+        data["obj"] = self._serialize_obj()
+        return data
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+        data["obj"] = self._serialize_obj()
         return data
 
     @classmethod

@@ -15,6 +15,7 @@ class HWPReader(BaseReader):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        self.MAX_DECOMPRESSED_SECTION_SIZE = 100 * 1024 * 1024
         self.FILE_HEADER_SECTION = "FileHeader"
         self.HWP_SUMMARY_SECTION = "\x05HwpSummaryInformation"
         self.SECTION_NAME_LENGTH = len("Section")
@@ -91,7 +92,7 @@ class HWPReader(BaseReader):
         data = bodytext.read()
 
         unpacked_data = (
-            zlib.decompress(data, -15) if self.is_compressed(load_file) else data
+            self._decompress_section(data) if self.is_compressed(load_file) else data
         )
         size = len(unpacked_data)
 
@@ -112,3 +113,28 @@ class HWPReader(BaseReader):
             i += 4 + rec_len
 
         return text
+
+    def _decompress_section(self, data: bytes) -> bytes:
+        decompressor = zlib.decompressobj(-15)
+        max_size = self.MAX_DECOMPRESSED_SECTION_SIZE
+        unpacked_data = decompressor.decompress(data, max_size + 1)
+
+        if len(unpacked_data) > max_size or decompressor.unconsumed_tail:
+            raise ValueError(
+                "Decompressed HWP section exceeds maximum allowed size "
+                f"({max_size} bytes)."
+            )
+
+        remaining_size = max_size + 1 - len(unpacked_data)
+        unpacked_data += decompressor.flush(remaining_size)
+        if not decompressor.eof:
+            raise zlib.error(
+                "Compressed HWP section ended before the stream was complete."
+            )
+        if len(unpacked_data) > max_size:
+            raise ValueError(
+                "Decompressed HWP section exceeds maximum allowed size "
+                f"({max_size} bytes)."
+            )
+
+        return unpacked_data

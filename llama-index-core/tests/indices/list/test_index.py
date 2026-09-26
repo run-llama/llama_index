@@ -1,7 +1,8 @@
 """Test summary index."""
 
-from typing import List
+from typing import Any, List
 
+import pytest
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
 from llama_index.core.schema import Document
@@ -49,6 +50,98 @@ def test_refresh_list(documents: List[Document]) -> None:
 
     test_node = summary_index.docstore.get_node(summary_index.index_struct.nodes[-1])
     assert test_node.get_content() == "Test document 2, now with changes!"
+
+
+def test_refresh_ref_docs_applies_insert_kwargs_to_every_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Insert kwargs should not be consumed by the first inserted document."""
+    summary_index = SummaryIndex([])
+    documents = [Document(id_="1", text="One"), Document(id_="2", text="Two")]
+    insert_kwargs = {"foo": "bar"}
+    captured_kwargs: List[dict[str, Any]] = []
+
+    def mock_insert(document: Document, **kwargs: Any) -> None:
+        captured_kwargs.append(kwargs)
+
+    monkeypatch.setattr(summary_index, "insert", mock_insert)
+
+    refreshed_docs = summary_index.refresh_ref_docs(
+        documents, insert_kwargs=insert_kwargs
+    )
+
+    assert refreshed_docs == [True, True]
+    assert captured_kwargs == [insert_kwargs, insert_kwargs]
+
+
+def test_refresh_ref_docs_applies_update_kwargs_to_every_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Update kwargs should not be consumed by the first updated document."""
+    old_documents = [Document(id_="1", text="One"), Document(id_="2", text="Two")]
+    summary_index = SummaryIndex.from_documents(old_documents)
+    new_documents = [Document(id_="1", text="One v2"), Document(id_="2", text="Two v2")]
+    update_kwargs = {"delete_kwargs": {"delete_from_docstore": True}}
+    captured_kwargs: List[dict[str, Any]] = []
+
+    def mock_update_ref_doc(document: Document, **kwargs: Any) -> None:
+        captured_kwargs.append(kwargs)
+
+    monkeypatch.setattr(summary_index, "update_ref_doc", mock_update_ref_doc)
+
+    refreshed_docs = summary_index.refresh_ref_docs(
+        new_documents, update_kwargs=update_kwargs
+    )
+
+    assert refreshed_docs == [True, True]
+    assert captured_kwargs == [update_kwargs, update_kwargs]
+
+
+@pytest.mark.asyncio
+async def test_arefresh_ref_docs_applies_insert_kwargs_to_every_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Async insert kwargs should not be consumed by the first inserted document."""
+    summary_index = SummaryIndex([])
+    documents = [Document(id_="1", text="One"), Document(id_="2", text="Two")]
+    insert_kwargs = {"foo": "bar"}
+    captured_kwargs: List[dict[str, Any]] = []
+
+    async def mock_ainsert(document: Document, **kwargs: Any) -> None:
+        captured_kwargs.append(kwargs)
+
+    monkeypatch.setattr(summary_index, "ainsert", mock_ainsert)
+
+    refreshed_docs = await summary_index.arefresh_ref_docs(
+        documents, insert_kwargs=insert_kwargs
+    )
+
+    assert refreshed_docs == [True, True]
+    assert captured_kwargs == [insert_kwargs, insert_kwargs]
+
+
+@pytest.mark.asyncio
+async def test_arefresh_ref_docs_applies_update_kwargs_to_every_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Async update kwargs should not be consumed by the first updated document."""
+    old_documents = [Document(id_="1", text="One"), Document(id_="2", text="Two")]
+    summary_index = SummaryIndex.from_documents(old_documents)
+    new_documents = [Document(id_="1", text="One v2"), Document(id_="2", text="Two v2")]
+    update_kwargs = {"delete_kwargs": {"delete_from_docstore": True}}
+    captured_kwargs: List[dict[str, Any]] = []
+
+    async def mock_aupdate_ref_doc(document: Document, **kwargs: Any) -> None:
+        captured_kwargs.append(kwargs)
+
+    monkeypatch.setattr(summary_index, "aupdate_ref_doc", mock_aupdate_ref_doc)
+
+    refreshed_docs = await summary_index.arefresh_ref_docs(
+        new_documents, update_kwargs=update_kwargs
+    )
+
+    assert refreshed_docs == [True, True]
+    assert captured_kwargs == [update_kwargs, update_kwargs]
 
 
 def test_build_list_multiple(patch_token_text_splitter) -> None:

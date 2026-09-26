@@ -18,7 +18,7 @@ from llama_index.core.node_parser.node_utils import default_id_func
 CHUNKERS = sorted(
     c.alias
     for c in ComponentRegistry.list_components(component_type=ComponentType.CHUNKER)
-    if c.alias not in ["table", "slumber"]
+    if c.alias not in ["table", "slumber", "code", "teraflopai"]
 )
 
 logger = logging.getLogger(__name__)

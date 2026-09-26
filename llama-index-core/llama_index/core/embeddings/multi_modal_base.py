@@ -39,7 +39,7 @@ class MultiModalEmbedding(BaseEmbedding):
         Embed the input image.
         """
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_payload()}
         ) as event:
             image_embedding = self._get_image_embedding(img_file_path)
 
@@ -54,7 +54,7 @@ class MultiModalEmbedding(BaseEmbedding):
     async def aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """Get image embedding."""
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_payload()}
         ) as event:
             image_embedding = await self._aget_image_embedding(img_file_path)
 
@@ -114,7 +114,7 @@ class MultiModalEmbedding(BaseEmbedding):
                 # flush
                 with self.callback_manager.event(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: self.to_payload()},
                 ) as event:
                     embeddings = self._get_image_embeddings(cur_batch)
                     result_embeddings.extend(embeddings)
@@ -145,7 +145,7 @@ class MultiModalEmbedding(BaseEmbedding):
                 # flush
                 event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: self.to_payload()},
                 )
                 callback_payloads.append((event_id, cur_batch))
                 embeddings_coroutines.append(self._aget_image_embeddings(cur_batch))

@@ -1,15 +1,23 @@
+from contextlib import AbstractContextManager, nullcontext
+from typing import Any
+
 from llama_index.core.schema import (
     TextNode,
     NodeRelationship,
     RelatedNodeInfo,
 )
 from llama_index.core.schema import TextNode
+from llama_index.vector_stores.weaviate.base import (
+    _INTEGRATION_HEADER,
+    _integration_header_value,
+    _is_valid_batch_context_manager,
+    _register_integration_header,
+)
 from llama_index.vector_stores.weaviate import (
     WeaviateVectorStore,
     SyncClientNotProvidedError,
     AsyncClientNotProvidedError,
 )
-import asyncio
 import pytest
 import pytest_asyncio
 import weaviate
@@ -28,6 +36,31 @@ from weaviate.collections.batch.base import (
 )
 
 TEST_COLLECTION_NAME = "TestCollection"
+
+
+class _FakeBatchWriter:
+    def add_object(self, **kwargs: Any) -> None:
+        pass
+
+
+class _WrappedBatchManager(AbstractContextManager):
+    def __init__(self, batch: Any) -> None:
+        self._ContextManagerSync__current_batch = batch
+
+    def __enter__(self) -> Any:
+        return self._ContextManagerSync__current_batch
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+
+def test_custom_batch_validation_rejects_generic_context_manager():
+    assert not _is_valid_batch_context_manager(nullcontext(object()))
+
+
+def test_custom_batch_validation_checks_wrapped_writer_interface():
+    assert _is_valid_batch_context_manager(_WrappedBatchManager(_FakeBatchWriter()))
+    assert not _is_valid_batch_context_manager(_WrappedBatchManager(object()))
 
 
 def test_no_weaviate_client_instance_provided():
@@ -51,26 +84,54 @@ def test_no_weaviate_client_instance_provided():
     assert not weaviate_client.is_connected()  # As the Weaviate client was created within WeaviateVectorStore, it lies in its responsibility to close the connection when it is not longer needed
 
 
-@pytest.mark.asyncio
+def _grpc_header_value(connection, header_name):
+    grpc_headers = connection.grpc_headers() or ()
+    lowered = header_name.lower()
+    for key, value in grpc_headers:
+        if key.lower() == lowered:
+            return value
+    return None
+
+
+def test_integration_header_value_format():
+    value = _integration_header_value()
+    assert value.startswith("llama-index-python")
+
+
+def test_register_integration_header_is_best_effort():
+    # No client / wrong shape must never raise (telemetry must not break the store)
+    _register_integration_header(None)
+    _register_integration_header(object())
+
+
+def test_integration_header_registered_on_sync_client():
+    vector_store = WeaviateVectorStore(
+        client_kwargs={"embedded_options": weaviate.embedded.EmbeddedOptions()}
+    )
+    try:
+        expected = _integration_header_value()
+        connection = vector_store.client._connection
+        # REST: additional_headers (gRPC source), _headers, and the live httpx client
+        assert connection.additional_headers[_INTEGRATION_HEADER] == expected
+        assert connection._headers[_INTEGRATION_HEADER] == expected
+        assert connection._client.headers[_INTEGRATION_HEADER] == expected
+        # gRPC metadata (header keys are lowercased)
+        assert _grpc_header_value(connection, _INTEGRATION_HEADER) == expected
+    finally:
+        del vector_store
+
+
+@pytest.mark.asyncio(loop_scope="class")
 class TestWeaviateAsync:
-    @pytest_asyncio.fixture(scope="class")
+    @pytest_asyncio.fixture(scope="class", loop_scope="class")
     async def async_client(self):
         client = weaviate.use_async_with_embedded()
         await client.connect()
         yield client
         await client.close()
 
-    # This replaces the event loop which is deprecated (discussion: https://github.com/pytest-dev/pytest-asyncio/discussions/587)
-    # It was necessary to implement it this way due to pytest 7 currently always being used in the pants test performed during CI.
-    # TODO Revert the commit where it was implemented like this as soon as pytest >= 8 is used in the pants tests (discussion: https://github.com/run-llama/llama_index/pull/17220#issuecomment-2532175072)
-    @pytest.fixture(scope="session")
-    def event_loop(self):
-        loop = asyncio.get_event_loop()
-        yield loop
-        loop.close()
-
-    @pytest_asyncio.fixture
-    async def async_vector_store(self, async_client, event_loop):
+    @pytest_asyncio.fixture(loop_scope="class")
+    async def async_vector_store(self, async_client):
         vector_store = WeaviateVectorStore(
             weaviate_client=async_client, index_name=TEST_COLLECTION_NAME
         )
@@ -101,6 +162,15 @@ class TestWeaviateAsync:
         assert results.similarities[0] == 1.0
 
         assert results.similarities[0] > results.similarities[1]
+
+    async def test_integration_header_registered_on_async_client(
+        self, async_vector_store
+    ):
+        expected = _integration_header_value()
+        connection = async_vector_store.async_client._connection
+        assert connection.additional_headers[_INTEGRATION_HEADER] == expected
+        assert connection._headers[_INTEGRATION_HEADER] == expected
+        assert _grpc_header_value(connection, _INTEGRATION_HEADER) == expected
 
     async def test_async_old_data_gone(self, async_vector_store):
         """Makes sure that no data stays in the database in between tests (otherwise more than one node would be found in the assertion)."""
@@ -273,6 +343,28 @@ class TestWeaviateSync:
 
         assert results.similarities[0] > results.similarities[1]
 
+    def test_query_with_node_ids(self, vector_store_with_sample_nodes):
+        all_nodes = vector_store_with_sample_nodes.query(
+            VectorStoreQuery(
+                query_embedding=[0.3, 0.0, 0.0],
+                similarity_top_k=10,
+                mode=VectorStoreQueryMode.DEFAULT,
+            )
+        )
+        target_node_id = all_nodes.ids[0]
+
+        query = VectorStoreQuery(
+            query_embedding=[0.3, 0.0, 0.0],
+            similarity_top_k=10,
+            node_ids=[target_node_id],
+            mode=VectorStoreQueryMode.DEFAULT,
+        )
+
+        results = vector_store_with_sample_nodes.query(query)
+
+        assert len(results.nodes) == 1
+        assert results.ids[0] == target_node_id
+
     def test_hybrid_search(self, vector_store_with_sample_nodes):
         query = VectorStoreQuery(
             query_embedding=[0.0, 0.3, 0.0],
@@ -391,6 +483,7 @@ class TestWeaviateSync:
         assert len(results.nodes) == 1
         results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.mark.asyncio
     async def test_async_methods_called_without_async_client(self, vector_store):
         """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
         with pytest.raises(AsyncClientNotProvidedError):

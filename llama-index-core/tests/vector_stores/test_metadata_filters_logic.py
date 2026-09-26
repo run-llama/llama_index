@@ -52,6 +52,21 @@ def test_and_condition_matches_expected_nodes() -> None:
     assert fn("n3")
 
 
+def test_none_condition_defaults_to_and() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="rank", operator=FilterOperator.NE, value="a"),
+            MetadataFilter(key="weight", operator=FilterOperator.GTE, value=2.0),
+        ],
+        condition=None,
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    assert not fn("n1")
+    assert fn("n2")
+    assert fn("n3")
+
+
 def test_or_condition_matches_expected_nodes() -> None:
     filters = MetadataFilters(
         filters=[
@@ -97,6 +112,27 @@ def test_is_empty_matches_missing_and_empty_values() -> None:
     assert fn("n1")
     assert fn("n2")
     assert fn("n3")
+
+
+def test_ne_and_nin_match_missing_metadata_values() -> None:
+    ne_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.NE, value="a"),
+        ]
+    )
+    nin_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.NIN, value=["a"]),
+        ]
+    )
+
+    ne_fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, ne_filters)
+    nin_fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, nin_filters)
+
+    # Missing metadata values are not equal to, and not contained in, the
+    # filtered value. This keeps NE/NIN consistent with NOT(EQ)/NOT(IN).
+    assert ne_fn("n1")
+    assert nin_fn("n1")
 
 
 def test_text_match_insensitive_uses_case_insensitive_search() -> None:

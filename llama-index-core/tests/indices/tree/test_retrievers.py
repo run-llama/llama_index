@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from llama_index.core.indices.tree.base import TreeIndex
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, QueryBundle
 
 
 def test_query(
@@ -19,6 +19,24 @@ def test_query(
     retriever = tree.as_retriever()
     nodes = retriever.retrieve(query_str)
     assert len(nodes) == 1
+
+
+def test_query_response_includes_selected_leaf_source_nodes(
+    documents: List[Document],
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Dict,
+) -> None:
+    """Test select leaf query response preserves selected leaf source nodes."""
+    index_kwargs, query_kwargs = struct_kwargs
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
+
+    query_str = "What is?"
+    retriever = tree.as_retriever(**query_kwargs)
+    response = retriever._query(QueryBundle(query_str))
+
+    assert len(response.source_nodes) == 1
+    assert response.source_nodes[0].node.get_content() == "Hello world."
 
 
 def test_summarize_query(

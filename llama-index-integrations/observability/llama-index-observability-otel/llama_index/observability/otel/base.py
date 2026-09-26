@@ -281,10 +281,36 @@ class OTelCompatibleEventHandler(BaseEventHandler):
                 attrs=["bold"],
             )
 
-        # Get the current span id from the contextvars context
-        current_span_id = active_span_id.get()
+        # Prefer the span id the event was stamped with, falling back to the
+        # ambient contextvar.
+        #
+        # Events dispatched from inside a streaming generator cannot rely on
+        # the contextvar: the generator body runs in the *consumer's* context,
+        # long after the coroutine that created it returned and reset
+        # `active_span_id`. That is why the streaming wrappers in
+        # `llama_index.core.llms.callbacks` capture `active_span_id.get()`
+        # eagerly and pass it explicitly (`LLMChatInProgressEvent(...,
+        # span_id=span_id)`). Reading only the contextvar here discards that
+        # and silently drops every streamed event.
+        current_span_id = event.span_id or active_span_id.get()
         if current_span_id is None:
             # The event is happening outside of any span - nothing to do
+            return
+
+        # Only buffer events for a span that is currently open. `all_spans`
+        # holds a span between `new_span` and `prepare_to_exit_span`/
+        # `prepare_to_drop_span`, and those flush the buffer with a `pop`.
+        # Without this check, an event stamped with an already-ended span id
+        # would create a bucket that nothing ever drains — an unbounded leak
+        # in long-running processes.
+        if current_span_id not in self.span_handler.all_spans:
+            if self.debug:
+                cprint(
+                    f"Discarding a {event.class_name()} event for span "
+                    f"{current_span_id}, which is not open",
+                    color="red",
+                    attrs=["bold"],
+                )
             return
 
         try:

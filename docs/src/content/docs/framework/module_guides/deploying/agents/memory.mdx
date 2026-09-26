@@ -268,6 +268,32 @@ memory = Memory.from_defaults(
 )
 ```
 
+### Custom Chat Store
+
+If SQLAlchemy isn't a fit for your infrastructure, implement the `AsyncDBChatStore` interface and pass it as `chat_store`. The SQL-specific arguments (`table_name`, `async_database_uri`, `async_engine`, `db_schema`) are ignored when a `chat_store` is given.
+
+```python
+from llama_index.core.memory import Memory
+from llama_index.core.storage.chat_store.base_db import (
+    AsyncDBChatStore,
+    MessageStatus,
+)
+
+
+class MyChatStore(AsyncDBChatStore):
+    # implement get_messages, add_message(s), set_messages,
+    # delete_message(s), delete_oldest_messages,
+    # archive_oldest_messages, count_messages and get_keys
+    ...
+
+
+memory = Memory.from_defaults(
+    session_id="my_session",
+    token_limit=40000,
+    chat_store=MyChatStore(),
+)
+```
+
 ## Memory vs. Workflow Context
 
 At this point in the documentation, you may have encountered cases where you are using a Workflow and are serializing a `Context` object to save and resume a specific workflow state. The workflow `Context` is a complex object that holds runtime information about the workflow, as well as key/value pairs that are shared across workflow steps.
