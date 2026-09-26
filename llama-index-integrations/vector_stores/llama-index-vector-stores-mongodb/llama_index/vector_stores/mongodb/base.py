@@ -135,6 +135,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     _oversampling_factor: int = PrivateAttr()
     _metadata_delete_index_name: str = PrivateAttr()
     _metadata_index_created: bool = PrivateAttr(default=False)
+    _auto_embed: bool = PrivateAttr()
+    _rerank_model: Optional[str] = PrivateAttr()
+    _rerank_top_n: Optional[int] = PrivateAttr()
 
     def __init__(
         self,
@@ -153,6 +156,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         index_name: str = None,
         insert_kwargs: Optional[Dict] = None,
         oversampling_factor: int = 10,
+        auto_embed: bool = False,
+        rerank_model: Optional[str] = None,
+        rerank_top_n: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -178,9 +184,34 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 'ef' determines the number of nearest neighbor candidates to consider during the search phase.
                 A higher value leads to more accuracy, but is slower. Default = 10
             index_name: DEPRECATED: Please use vector_index_name.
+            auto_embed: Use a preconfigured autoEmbed index on text_key for DEFAULT
+                and HYBRID searches. MongoDB embeds query_str using the index's model.
+                Inserts omit embeddings, and retrievers skip query embedding generation.
+            rerank_model: Voyage AI model for native $rerank, or None to disable.
+                Only DEFAULT mode is supported. Requires query_str and an Atlas
+                deployment with native reranking enabled (MongoDB 8.3 or later).
+                Returned similarities are reranker scores when enabled.
+            rerank_top_n: Number of vector search results to rerank (1 to 1000).
+                Defaults to similarity_top_k; must be at least similarity_top_k.
+                The final result is limited to similarity_top_k.
 
         """
         super().__init__()
+
+        if rerank_model is not None and (
+            not isinstance(rerank_model, str) or not rerank_model.strip()
+        ):
+            raise ValueError("rerank_model must be a non-empty model name")
+        if rerank_top_n is not None:
+            if rerank_model is None:
+                raise ValueError("rerank_top_n requires rerank_model")
+            if type(rerank_top_n) is not int or not 1 <= rerank_top_n <= 1000:
+                raise ValueError("rerank_top_n must be an integer between 1 and 1000")
+
+        self._auto_embed = auto_embed
+        self.is_embedding_query = not auto_embed
+        self._rerank_model = rerank_model
+        self._rerank_top_n = rerank_top_n
 
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
@@ -297,10 +328,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
             entry = {
                 self._id_key: node.node_id,
-                self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
             }
+            if not self._auto_embed:
+                entry[self._embedding_key] = node.get_embedding()
             data_to_insert.append(entry)
             ids.append(node.node_id)
 
@@ -315,7 +347,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         Add nodes to index.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
+            nodes: List[BaseNode]: list of nodes with embeddings, unless auto_embed is enabled
 
         Returns:
             A List of ids for successfully added nodes.
@@ -336,7 +368,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         Asynchronously add nodes to index.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
+            nodes: List[BaseNode]: list of nodes with embeddings, unless auto_embed is enabled
 
         Returns:
             A List of ids for successfully added nodes.
@@ -421,8 +453,28 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
         dense_top_k = query.similarity_top_k
 
+        if self._auto_embed and query.mode in (
+            VectorStoreQueryMode.DEFAULT,
+            VectorStoreQueryMode.HYBRID,
+        ):
+            if not isinstance(query.query_str, str) or not query.query_str.strip():
+                raise ValueError("auto_embed requires a non-empty query_str")
+
+        if self._rerank_model is not None:
+            if query.mode != VectorStoreQueryMode.DEFAULT:
+                raise ValueError("Native reranking only supports DEFAULT query mode")
+            if not isinstance(query.query_str, str) or not query.query_str.strip():
+                raise ValueError("Native reranking requires a non-empty query_str")
+            dense_top_k = self._rerank_top_n or query.similarity_top_k
+            if type(dense_top_k) is not int or not 1 <= dense_top_k <= 1000:
+                raise ValueError(
+                    "Number of documents to rerank must be between 1 and 1000"
+                )
+            if dense_top_k < query.similarity_top_k:
+                raise ValueError("rerank_top_n must be at least similarity_top_k")
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
-            if not query.query_embedding:
+            if not self._auto_embed and not query.query_embedding:
                 raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
             # Atlas Vector Search, potentially with filter
             logger.debug(f"Running {query.mode} mode query pipeline")
@@ -430,7 +482,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             pipeline = [
                 vector_search_stage(
                     query_vector=query.query_embedding,
-                    search_field=self._embedding_key,
+                    query_text=query.query_str if self._auto_embed else None,
+                    search_field=self._text_key
+                    if self._auto_embed
+                    else self._embedding_key,
                     index_name=self._vector_index_name,
                     limit=dense_top_k,
                     filter=filter,
@@ -462,11 +517,14 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = []
             # Vector Search pipeline
-            if query.query_embedding:
+            if self._auto_embed or query.query_embedding:
                 vector_pipeline = [
                     vector_search_stage(
                         query_vector=query.query_embedding,
-                        search_field=self._embedding_key,
+                        query_text=query.query_str if self._auto_embed else None,
+                        search_field=self._text_key
+                        if self._auto_embed
+                        else self._embedding_key,
                         index_name=self._vector_index_name,
                         limit=dense_top_k,
                         filter=filter,
@@ -509,6 +567,22 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 f"{VectorStoreQueryMode.DEFAULT} (vector), "
                 f"{VectorStoreQueryMode.HYBRID} and {VectorStoreQueryMode.TEXT_SEARCH} "
                 f"are available. {query.mode} is not."
+            )
+
+        if self._rerank_model is not None:
+            pipeline.extend(
+                [
+                    {
+                        "$rerank": {
+                            "query": {"text": query.query_str},
+                            "path": self._text_key,
+                            "model": self._rerank_model,
+                            "numDocsToRerank": dense_top_k,
+                        }
+                    },
+                    {"$set": {"score": {"$meta": "score"}}},
+                    {"$limit": query.similarity_top_k},
+                ]
             )
 
         return pipeline
