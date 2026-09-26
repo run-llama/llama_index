@@ -356,7 +356,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Added {len(keys)} documents to index {self._async_index.name}")
         return [
-            key.strip(self._async_index.prefix + self._async_index.key_separator)
+            key.removeprefix(self._async_index.prefix + self._async_index.key_separator)
             for key in keys
         ]
 
@@ -408,7 +408,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         keys = self._index.load(data, id_field=NODE_ID_FIELD_NAME, **add_kwargs)
         logger.info(f"Added {len(keys)} documents to index {self._index.name}")
         return [
-            key.strip(self._index.prefix + self._index.key_separator) for key in keys
+            key.removeprefix(self._index.prefix + self._index.key_separator) for key in keys
         ]
 
     def _build_node_id_filter_expression(self, node_ids: list[str]) -> FilterExpression:
