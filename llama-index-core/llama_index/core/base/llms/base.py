@@ -63,7 +63,24 @@ class BaseLLM(BaseComponent, DispatcherSpanMixin):
         never contain credentials (e.g. ``api_key``) or auth headers. Defaults
         to the model's metadata; subclasses may override to add safe details.
         """
-        return {"class_name": self.class_name(), **self.metadata.model_dump()}
+        payload: Dict[str, Any] = {
+            "class_name": self.class_name(),
+            **self.metadata.model_dump(),
+        }
+
+        # Observability consumers following the OpenTelemetry GenAI semantic
+        # conventions read `model` and `temperature` off this payload to set the
+        # `gen_ai.request.model` / `gen_ai.request.temperature` span attributes.
+        # LLMMetadata names the model `model_name` and carries no temperature at
+        # all, so both resolved to None on every LLM event.
+        payload.setdefault(
+            "model", getattr(self, "model", None) or self.metadata.model_name
+        )
+        temperature = getattr(self, "temperature", None)
+        if temperature is not None:
+            payload.setdefault("temperature", temperature)
+
+        return payload
 
     def convert_chat_messages(self, messages: Sequence[ChatMessage]) -> List[Any]:
         """Convert chat messages to an LLM specific message format."""

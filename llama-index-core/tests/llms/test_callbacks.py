@@ -94,6 +94,13 @@ class _SecretMockLLM(MockLLM):
     api_key: Optional[str] = None
 
 
+class _ConfiguredMockLLM(MockLLM):
+    """MockLLM exposing the fields real integrations define."""
+
+    model: str = "mock-model-v1"
+    temperature: float = 0.25
+
+
 class _CapturingHandler(BaseCallbackHandler):
     def __init__(self) -> None:
         super().__init__([], [])
@@ -128,6 +135,24 @@ def test_to_payload_excludes_secrets() -> None:
     assert "api_key" not in payload
     assert payload["model_name"] == llm.metadata.model_name
     assert payload["class_name"] == llm.class_name()
+
+
+def test_to_payload_includes_model_and_temperature() -> None:
+    """The OTel GenAI attributes are read as `model` / `temperature` (#22949)."""
+    payload = _ConfiguredMockLLM().to_payload()
+
+    assert payload["model"] == "mock-model-v1"
+    assert payload["temperature"] == 0.25
+    # the metadata view is still there, unchanged
+    assert payload["class_name"] == _ConfiguredMockLLM.class_name()
+    assert "model_name" in payload
+
+
+def test_to_payload_falls_back_to_metadata_model_name() -> None:
+    """LLMs without a `model` field still get the metadata name as `model`."""
+    llm = MockLLM()
+
+    assert llm.to_payload()["model"] == llm.metadata.model_name
 
 
 def test_callback_serialized_excludes_secrets(prompt: str) -> None:
