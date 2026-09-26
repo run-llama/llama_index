@@ -41,16 +41,25 @@ class EpubReader(BaseReader):
                 "from fsspec filesystems. Will load from local filesystem instead."
             )
 
-        text_list = []
         book = epub.read_epub(file, options={"ignore_ncx": True})
 
-        # Iterate through all chapters.
-        for item in book.get_items():
-            # Chapters are typically located in epub documents items.
-            if item.get_type() == ebooklib.ITEM_DOCUMENT:
-                text_list.append(
-                    html2text.html2text(item.get_content().decode("utf-8"))
-                )
+        # Chapters are typically located in epub documents items. Their reading
+        # order is the spine; the manifest lists them in no particular order.
+        # Documents the spine leaves out follow it, in manifest order.
+        documents = [
+            item
+            for item in book.get_items()
+            if item.get_type() == ebooklib.ITEM_DOCUMENT
+        ]
+        ordered = []
+        for idref, _linear in book.spine:
+            item = book.get_item_with_id(idref)
+            if item in documents and item not in ordered:
+                ordered.append(item)
+        ordered.extend(item for item in documents if item not in ordered)
 
+        text_list = [
+            html2text.html2text(item.get_content().decode("utf-8")) for item in ordered
+        ]
         text = "\n".join(text_list)
         return [Document(text=text, metadata=extra_info or {})]
