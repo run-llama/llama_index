@@ -54,6 +54,10 @@ for full tracing integrations.
 
 - [LlamaIndex + Ray](https://www.anyscale.com/blog/build-and-scale-a-powerful-query-engine-with-llamaindex-ray)
 
+## Human-in-the-loop
+
+- [Pushary](https://github.com/Pushary/pushary-python/tree/main/examples/llamaindex) — Customer approvals on a phone for LlamaIndex Workflows, with persisted context and verified resumption.
+
 ## Other
 
 - [ChatGPT Plugins](/python/framework/community/integrations/chatgpt_plugins)
