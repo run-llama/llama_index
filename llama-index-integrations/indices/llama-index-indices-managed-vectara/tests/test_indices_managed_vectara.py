@@ -1,4 +1,6 @@
+import builtins
 from typing import List
+from unittest.mock import MagicMock
 from llama_index.core.schema import Document, Node, MediaResource
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.vectara import VectaraIndex
@@ -334,6 +336,40 @@ def vectara2():
 
     # Tear down code
     vectara2.delete_ref_doc(id, corpus_key="llamaindex-testing-2")
+
+
+def test_insert_file_closes_file_handle(tmp_path, monkeypatch) -> None:
+    file_path = tmp_path / "doc.txt"
+    file_path.write_text("hello world")
+
+    index = VectaraIndex.__new__(VectaraIndex)
+    index._base_url = "https://api.vectara.io"
+    index._vectara_api_key = "test-key"
+    index._vectara_corpus_key = "test-corpus"
+    index._x_source_str = "llama_index"
+    index.vectara_api_timeout = 90
+    index.doc_ids = []
+
+    fake_response = MagicMock()
+    fake_response.status_code = 201
+    fake_response.json.return_value = {"id": "doc123"}
+    index._session = MagicMock()
+    index._session.post.return_value = fake_response
+
+    opened_files = []
+    real_open = builtins.open
+
+    def tracking_open(*args, **kwargs):
+        f = real_open(*args, **kwargs)
+        opened_files.append(f)
+        return f
+
+    monkeypatch.setattr(builtins, "open", tracking_open)
+    doc_id = index.insert_file(str(file_path))
+
+    assert doc_id == "doc123"
+    assert opened_files
+    assert all(f.closed for f in opened_files)
 
 
 def test_file_upload(vectara2) -> None:
