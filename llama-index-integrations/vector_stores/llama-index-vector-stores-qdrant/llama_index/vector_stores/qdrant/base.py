@@ -1361,7 +1361,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     node.embedding = embedding
             except Exception:
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    payload
+                    payload, text_key=self.text_key
                 )
 
                 node = TextNode(
