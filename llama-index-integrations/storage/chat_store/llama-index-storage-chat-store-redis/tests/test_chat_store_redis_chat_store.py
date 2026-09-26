@@ -4,6 +4,7 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.redis import RedisChatStore
+from redis.exceptions import RedisError
 
 REDIS_KEY = "redis_chat_store_tests"
 
@@ -272,3 +273,23 @@ def test_get_keys(redis_chat_store: RedisChatStore):
 
     assert len(keys) == 1
     assert keys[0] == REDIS_KEY
+
+
+def test_unreachable_redis_raises_redis_error() -> None:
+    """
+    An unreachable Redis must surface a redis error, not a NameError.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/22956:
+    ``_check_for_cluster`` caught ``redis.exceptions.RedisError`` but only the
+    redis classes were imported, so the ``redis`` package name was unbound and
+    the except clause raised ``NameError: name 'redis' is not defined``.
+
+    The connection error is expected here, but it has to be a redis error that
+    callers can actually handle.
+    """
+    # port with nothing listening on it
+    chat_store = RedisChatStore(redis_url="redis://127.0.0.1:56999")
+
+    message = ChatMessage(role=MessageRole.USER, content="test_user_message")
+    with pytest.raises(RedisError):
+        chat_store.add_message(REDIS_KEY, message)
