@@ -560,3 +560,64 @@ async def test_run_id_default(function_agent: FunctionAgent) -> None:
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_chat_history_no_user_messages(
+    function_agent: FunctionAgent,
+) -> None:
+    """Test that chat_history containing only assistant messages does not raise IndexError."""
+    chat_history = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Hello! I am ready to assist you.",
+        )
+    ]
+    response = await function_agent.run(chat_history=chat_history)
+    assert response is not None
+    assert str(response) == "Success with the FunctionAgent"
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_system_and_assistant_history(
+    function_agent: FunctionAgent,
+) -> None:
+    """Test that chat_history with system and assistant messages falls back to the assistant message."""
+    chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content="System prompt"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Assistant greeting",
+        ),
+    ]
+    response = await function_agent.run(chat_history=chat_history)
+    assert response is not None
+    assert str(response) == "Success with the FunctionAgent"
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_user_and_assistant_history(
+    function_agent: FunctionAgent,
+) -> None:
+    """Test that chat_history containing user messages prioritizes the user message."""
+    chat_history = [
+        ChatMessage(role=MessageRole.USER, content="Initial user inquiry"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Initial response"),
+    ]
+    response = await function_agent.run(chat_history=chat_history)
+    assert response is not None
+    assert str(response) == "Success with the FunctionAgent"
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_system_only_history_raises_value_error(
+    function_agent: FunctionAgent,
+) -> None:
+    """Test that chat_history with only system messages raises ValueError."""
+    chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content="Only a system message"),
+    ]
+    with pytest.raises(
+        ValueError, match="Must provide either user_msg or chat_history"
+    ):
+        await function_agent.run(chat_history=chat_history)
