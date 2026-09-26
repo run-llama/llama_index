@@ -1003,3 +1003,104 @@ class TestRefine:
         )
         assert str(synthesizer.synthesize("question", nodes)) == "Empty Response"
         assert str(await synthesizer.asynthesize("question", nodes)) == "Empty Response"
+
+
+# --- regression: gh-23155 refine must process repacked sub-chunks in document order ---
+
+class _OrderRecordingLLM(CustomLLM):
+    """Records the first/last wNNN token seen in every complete()/acomplete() prompt."""
+
+    def __init__(self, records: list) -> None:
+        super().__init__(context_window=1024, num_output=0)
+        object.__setattr__(self, "records", records)
+
+    @property
+    def metadata(self) -> Any:
+        from llama_index.core.base.llms.types import LLMMetadata
+
+        return LLMMetadata(
+            context_window=1024, num_output=0, is_chat_model=False, is_function_calling_model=False
+        )
+
+    def _record(self, prompt: str) -> CompletionResponse:
+        import re
+
+        words = re.findall(r"w\d{3}", prompt)
+        self.records.append((words[0] if words else None, words[-1] if words else None))
+        return CompletionResponse(text="answer tokens " * 300)
+
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+        return self._record(prompt)
+
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+        return self._record(prompt)
+
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> Generator:
+        raise NotImplementedError
+
+
+def test_refine_repacks_sub_chunks_in_document_order_sync() -> None:
+    """gh-23155: sync path must fold the beginning of a repacked chunk before its tail."""
+    import re
+
+    from llama_index.core.indices.prompt_helper import PromptHelper
+    from llama_index.core.response_synthesizers import Refine
+
+    records: list = []
+    llm = _OrderRecordingLLM(records=records)
+    prompt_helper = PromptHelper(
+        context_window=1024, num_output=64, chunk_overlap_ratio=0.0
+    )
+    refine = Refine(llm=llm, prompt_helper=prompt_helper, streaming=False)
+
+    chunk2 = " ".join(f"w{i:03d}" for i in range(150))
+    refine.get_response("what is in the docs?", ["first context about apples", chunk2])
+
+    seen = [
+        (first, last)
+        for first, last in records
+        if first is not None or last is not None
+    ]
+    # The very first call is the QA call with no wNNN tokens, then the chunk is
+    # refined once as a single unit (fits), then it is repacked and refined again.
+    # Assert that within the repacked portion the sub-chunks appear in document order:
+    # w000..w140 before w141..w149.
+    assert seen[0][0] == "w000", f"first refined sub-chunk started with {seen[0][0]!r}"
+    assert seen[-1][1] == "w149", f"last refined sub-chunk ended with {seen[-1][1]!r}"
+    for prev, cur in zip(seen, seen[1:]):
+        assert cur[0] is None or prev[0] is None or cur[0] > prev[0], (
+            f"sub-chunks out of order: {prev} before {cur}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_refine_repacks_sub_chunks_in_document_order_async() -> None:
+    """gh-23155: async path must fold the beginning of a repacked chunk before its tail."""
+    import re
+
+    from llama_index.core.indices.prompt_helper import PromptHelper
+    from llama_index.core.response_synthesizers import Refine
+
+    records: list = []
+    llm = _OrderRecordingLLM(records=records)
+    prompt_helper = PromptHelper(
+        context_window=1024, num_output=64, chunk_overlap_ratio=0.0
+    )
+    refine = Refine(llm=llm, prompt_helper=prompt_helper, streaming=False)
+
+    chunk2 = " ".join(f"w{i:03d}" for i in range(150))
+    await refine.aget_response(
+        "what is in the docs?", ["first context about apples", chunk2]
+    )
+
+    seen = [
+        (first, last)
+        for first, last in records
+        if first is not None or last is not None
+    ]
+    assert seen[0][0] == "w000", f"first refined sub-chunk started with {seen[0][0]!r}"
+    assert seen[-1][1] == "w149", f"last refined sub-chunk ended with {seen[-1][1]!r}"
+    for prev, cur in zip(seen, seen[1:]):
+        assert cur[0] is None or prev[0] is None or cur[0] > prev[0], (
+            f"sub-chunks out of order: {prev} before {cur}"
+        )
