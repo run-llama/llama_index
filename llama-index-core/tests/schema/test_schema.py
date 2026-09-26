@@ -12,10 +12,14 @@ from llama_index.core.schema import (
     ImageNode,
     MediaResource,
     MetadataMode,
+    Node,
+    NodeRelationship,
     NodeWithScore,
     ObjectType,
+    RelatedNodeInfo,
     TextNode,
 )
+from llama_index.core.vector_stores.utils import node_to_metadata_dict
 
 
 @pytest.fixture()
@@ -84,6 +88,65 @@ def test_text_node_with_text_resource():
     tr_dict = tr.model_dump()
     text_node = TextNode(text_resource=tr_dict)
     assert text_node.text == "This is a test"
+
+
+@pytest.mark.parametrize("identity_kwarg", ["document_id", "doc_id", "ref_doc_id"])
+def test_text_node_identity_kwargs_set_source_relationship(identity_kwarg: str) -> None:
+    source_node_id = "source-node"
+    node = TextNode(text="This is a test", **{identity_kwarg: source_node_id})
+
+    assert node.ref_doc_id == source_node_id
+    assert node.source_node is not None
+    assert node.source_node.node_id == source_node_id
+    assert node.relationships[NodeRelationship.SOURCE].node_id == source_node_id
+
+    metadata = node_to_metadata_dict(node)
+    assert metadata["document_id"] == source_node_id
+    assert metadata["doc_id"] == source_node_id
+    assert metadata["ref_doc_id"] == source_node_id
+
+
+@pytest.mark.parametrize("identity_kwarg", ["document_id", "ref_doc_id"])
+def test_node_identity_kwargs_set_source_relationship(identity_kwarg: str) -> None:
+    source_node_id = "source-node"
+    node = Node(
+        text_resource=MediaResource(text="This is a test"),
+        **{identity_kwarg: source_node_id},
+    )
+
+    assert node.ref_doc_id == source_node_id
+    metadata = node_to_metadata_dict(node)
+    assert metadata["ref_doc_id"] == source_node_id
+
+
+def test_text_node_ref_doc_id_setter() -> None:
+    node = TextNode(text="This is a test")
+    assert node.ref_doc_id is None
+
+    node.ref_doc_id = "source-node"
+    assert node.ref_doc_id == "source-node"
+    assert node.source_node is not None
+    assert node.source_node.node_id == "source-node"
+
+    node.source_node = RelatedNodeInfo(node_id="other-source")
+    assert node.ref_doc_id == "other-source"
+
+    node.ref_doc_id = None
+    assert node.ref_doc_id is None
+    assert NodeRelationship.SOURCE not in node.relationships
+
+
+def test_text_node_rejects_conflicting_identity_kwargs() -> None:
+    with pytest.raises(ValueError, match="conflicting values"):
+        TextNode(text="This is a test", ref_doc_id="a", document_id="b")
+
+
+def test_document_doc_id_alias_is_preserved() -> None:
+    doc = Document(doc_id="test")
+
+    assert doc.id_ == "test"
+    assert doc.doc_id == "test"
+    assert doc.ref_doc_id is None
 
 
 def test_text_node_metadata_separator_consistency() -> None:
