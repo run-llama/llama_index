@@ -77,6 +77,18 @@ async def test_estimate_token_count_document(memory):
 
 
 @pytest.mark.asyncio
+async def test_put_empty_messages(memory):
+    """An empty batch works before and after messages have been stored."""
+    await memory.aput_messages([])
+    assert await memory.aget_all() == []
+
+    message = ChatMessage(role="user", content="Keep this message")
+    await memory.aput(message)
+    await memory.aput_messages([])
+    assert await memory.aget_all() == [message]
+
+
+@pytest.mark.asyncio
 async def test_manage_queue_under_limit(memory):
     """Test queue management when under token limit."""
     # Set up a case where we're under the token limit
