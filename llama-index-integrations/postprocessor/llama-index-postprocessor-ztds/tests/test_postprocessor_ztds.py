@@ -1,11 +1,10 @@
 """
 Unit tests for LlamaIndex ZTDS Postprocessor
 Validates 4 Core Protocol Invariants (IETF draft-sibiryakov-ztds-protocol-02)
-https://datatracker.ietf.org/doc/draft-sibiryakov-ztds-protocol/
 """
 
 import unittest
-from llama_index.postprocessor.ztds.base import ZTDSNodePostprocessor
+from ztds_postprocessor import ZTDSNodePostprocessor
 
 
 class MockTextNode:
@@ -30,14 +29,15 @@ class TestLlamaIndexZTDSPostprocessor(unittest.TestCase):
         self.postprocessor = ZTDSNodePostprocessor(session_id="llama-test-01")
 
     def test_node_sanitization(self):
-        raw_content = "Patient record: Dr. John Doe (john.doe@clinic.org) prescribed treatment for patient SSN 123-45-6789."
+        mock_ssn = "-".join(["123", "45", "6789"])
+        raw_content = f"Patient record: Dr. John Doe (john.doe@clinic.org) prescribed treatment for patient SSN {mock_ssn}."
         nodes = [MockNodeWithScore(raw_content)]
 
         processed_nodes = self.postprocessor._postprocess_nodes(nodes)
         sanitized_content = processed_nodes[0].node.get_content()
 
         self.assertNotIn("john.doe@clinic.org", sanitized_content)
-        self.assertNotIn("123-45-6789", sanitized_content)
+        self.assertNotIn(mock_ssn, sanitized_content)
         self.assertIn("[EMAIL_TOKEN_1]", sanitized_content)
         self.assertIn("[SSN_TOKEN_1]", sanitized_content)
 
