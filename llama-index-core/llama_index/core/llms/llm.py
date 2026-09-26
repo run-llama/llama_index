@@ -508,6 +508,7 @@ class LLM(BaseLLM):
         result = self._structured_stream_call(
             output_cls, prompt, llm_kwargs, **prompt_args
         )
+        r = None
         for r in result:
             dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
             assert not isinstance(r, list)
@@ -588,6 +589,7 @@ class LLM(BaseLLM):
             result = await self._structured_astream_call(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
+            r = None
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
                 assert not isinstance(r, list)
