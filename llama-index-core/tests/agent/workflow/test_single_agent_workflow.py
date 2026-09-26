@@ -560,3 +560,58 @@ async def test_run_id_default(function_agent: FunctionAgent) -> None:
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_max_iterations_permits_exactly_that_many() -> None:
+    """max_iterations=N must allow N iterations, not N-1."""
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(tool_id="one", tool_name="random_tool", tool_kwargs={})
+            ]
+        },
+    )
+    final = ChatMessage(role=MessageRole.ASSISTANT, content="the answer is 42")
+
+    # An agent that answers on its first LLM call needs one iteration.
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([final])
+        ),
+    )
+    response = await agent.run(user_msg="test", max_iterations=1)
+    assert "42" in str(response.response)
+
+    # An agent that calls one tool first needs two, so one is still not enough.
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([tool_call, final])
+        ),
+    )
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 1 reached"):
+        _ = await agent.run(user_msg="test", max_iterations=1)
+
+    # ...and two is.
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([tool_call, final])
+        ),
+    )
+    response = await agent.run(user_msg="test", max_iterations=2)
+    assert "42" in str(response.response)
