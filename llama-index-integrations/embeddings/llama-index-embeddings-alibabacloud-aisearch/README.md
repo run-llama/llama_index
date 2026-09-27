@@ -8,7 +8,7 @@ pip install llama-index-embeddings-alibabacloud-aisearch
 
 ## Usage
 
-For further details, please visit [text-embedding-api-details](`https://help.aliyun.com/zh/open-search/search-platform/developer-reference/text-embedding-api-details`).
+For further details, please visit [text-embedding-api-details](https://help.aliyun.com/zh/open-search/search-platform/developer-reference/text-embedding-api-details).
 
 You can specify the `endpoint` and `aisearch_api_key` in the constructor, or set the environment variables `AISEARCH_ENDPOINT` and `AISEARCH_API_KEY`.
 
