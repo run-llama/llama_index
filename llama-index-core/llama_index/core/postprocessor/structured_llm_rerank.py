@@ -64,10 +64,13 @@ def default_parse_structured_choice_select_answer(
     """
     Parse the answer from the choice select prompt.
     """
+    # Choices are 1-based: callers index their batch with int(choice) - 1.
+    # A number outside 1..num_choices is dropped here, because a 0 would
+    # become -1 downstream and index the last node instead of failing.
     documents = [
         doc
         for doc in document_relevance_list.documents
-        if doc.document_number <= num_choices
+        if 1 <= doc.document_number <= num_choices
     ]
     doc_numbers = [doc.document_number for doc in documents]
     doc_relevance_scores = [doc.relevance for doc in documents]

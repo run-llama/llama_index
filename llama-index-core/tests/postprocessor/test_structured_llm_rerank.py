@@ -286,3 +286,34 @@ async def test_allm_rerank_runs_batches_concurrently() -> None:
         f"expected all {n_batches} batches in flight concurrently, "
         f"saw at most {max_in_flight}"
     )
+
+
+@pytest.mark.parametrize("doc_num", [0, -1, -3])
+def test_parse_structured_choice_select_rejects_nonpositive_doc_numbers(
+    doc_num: int,
+) -> None:
+    """
+    Document numbers are 1-based, so non-positive numbers must not survive parsing.
+
+    Callers index their node batch with ``int(choice) - 1``. A parsed 0 becomes
+    ``-1``, which indexes the *last* node instead of raising, so a model that
+    answers "0" silently retrieves the wrong document.
+    """
+    from llama_index.core.postprocessor.structured_llm_rerank import (
+        default_parse_structured_choice_select_answer,
+    )
+
+    doc_list = DocumentRelevanceList(
+        documents=[
+            DocumentWithRelevance(document_number=doc_num, relevance=9),
+            DocumentWithRelevance(document_number=2, relevance=8),
+            DocumentWithRelevance(document_number=6, relevance=7),
+        ]
+    )
+
+    doc_numbers, doc_relevance_scores = default_parse_structured_choice_select_answer(
+        doc_list, num_choices=5
+    )
+
+    assert doc_numbers == [2]
+    assert doc_relevance_scores == [8]
