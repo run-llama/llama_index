@@ -28,6 +28,7 @@ from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
     from_openai_completion_logprobs,
+    from_openai_message_dict,
     from_openai_message_dicts,
     from_openai_messages,
     from_openai_token_logprob,
@@ -336,6 +337,48 @@ def test_to_openai_message_dicts_with_content_blocks_with_detail() -> None:
             },
         ],
     }
+
+
+def test_from_openai_message_dict_with_image_without_detail() -> None:
+    message_dict = {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "What is in this image?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/cat.png"},
+            },
+        ],
+    }
+
+    message = from_openai_message_dict(message_dict)
+
+    assert message.role == MessageRole.USER
+    assert len(message.blocks) == 2
+    assert message.blocks[0] == TextBlock(text="What is in this image?")
+    image_block = message.blocks[1]
+    assert isinstance(image_block, ImageBlock)
+    assert str(image_block.url) == "https://example.com/cat.png"
+    assert image_block.detail is None
+
+
+def test_openai_message_dict_image_without_detail_round_trip() -> None:
+    original = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[ImageBlock(url="https://example.com/cat.png")],
+    )
+
+    message_dict = to_openai_message_dict(original)
+    assert "detail" not in message_dict["content"][0]["image_url"]  # type: ignore[index]
+
+    message = from_openai_message_dict(message_dict)
+
+    assert message.role == original.role
+    assert len(message.blocks) == 1
+    image_block = message.blocks[0]
+    assert isinstance(image_block, ImageBlock)
+    assert str(image_block.url) == "https://example.com/cat.png"
+    assert image_block.detail is None
 
 
 def test_from_openai_token_logprob_none_top_logprob() -> None:
