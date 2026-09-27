@@ -18,7 +18,8 @@ def _function_tool_accepts_kwargs(tool: FunctionTool, arguments: dict) -> bool:
         return True
 
     try:
-        signature.bind_partial(**arguments)
+        kwargs = {**tool.partial_params, **arguments}
+        signature.bind(**kwargs)
     except TypeError:
         return False
     return True

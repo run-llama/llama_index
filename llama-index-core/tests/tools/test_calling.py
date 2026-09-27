@@ -2,6 +2,7 @@
 
 import pytest
 
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools.calling import acall_tool, call_tool
 from llama_index.core.tools.function_tool import FunctionTool
 
@@ -57,3 +58,33 @@ def test_call_tool_supports_positional_only_function_tool() -> None:
     output = call_tool(tool, {"query": "LlamaIndex"})
 
     assert output.raw_output == "LlamaIndex"
+
+
+def test_call_tool_uses_positional_arg_for_unbound_required_param() -> None:
+    class InputSchema(BaseModel):
+        input: str
+
+    def lookup(query: str, **kwargs: object) -> str:
+        return query
+
+    tool = FunctionTool.from_defaults(fn=lookup, fn_schema=InputSchema)
+
+    output = call_tool(tool, {"input": "LlamaIndex"})
+
+    assert not output.is_error
+    assert output.raw_output == "LlamaIndex"
+
+
+def test_call_tool_accounts_for_partial_params_when_binding() -> None:
+    def lookup(context: str, query: str) -> str:
+        return f"{context}: {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=lookup,
+        partial_params={"context": "docs"},
+    )
+
+    output = call_tool(tool, {"query": "LlamaIndex"})
+
+    assert not output.is_error
+    assert output.raw_output == "docs: LlamaIndex"
