@@ -2,7 +2,7 @@
 
 import pytest
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.tools.calling import acall_tool, call_tool
 from llama_index.core.tools.function_tool import FunctionTool
 
@@ -88,3 +88,68 @@ def test_call_tool_accounts_for_partial_params_when_binding() -> None:
 
     assert not output.is_error
     assert output.raw_output == "docs: LlamaIndex"
+
+
+def test_call_tool_uses_positional_arg_for_unbound_defaulted_param() -> None:
+    class InputSchema(BaseModel):
+        input: str
+
+    def lookup(query: str = "default", **kwargs: object) -> str:
+        return query
+
+    tool = FunctionTool.from_defaults(fn=lookup, fn_schema=InputSchema)
+
+    output = call_tool(tool, {"input": "LlamaIndex"})
+
+    assert not output.is_error
+    assert output.raw_output == "LlamaIndex"
+
+
+@pytest.mark.asyncio
+async def test_acall_tool_uses_positional_arg_for_unbound_defaulted_param() -> None:
+    class InputSchema(BaseModel):
+        input: str
+
+    async def lookup(query: str = "default", **kwargs: object) -> str:
+        return query
+
+    tool = FunctionTool.from_defaults(async_fn=lookup, fn_schema=InputSchema)
+
+    output = await acall_tool(tool, {"input": "LlamaIndex"})
+
+    assert not output.is_error
+    assert output.raw_output == "LlamaIndex"
+
+
+def test_call_tool_does_not_duplicate_partial_positional_param() -> None:
+    class InputSchema(BaseModel):
+        input: str
+
+    def lookup(prefix: str = "default", **kwargs: object) -> str:
+        return prefix
+
+    tool = FunctionTool.from_defaults(
+        fn=lookup,
+        fn_schema=InputSchema,
+        partial_params={"prefix": "docs"},
+    )
+
+    output = call_tool(tool, {"input": "LlamaIndex"})
+
+    assert not output.is_error
+    assert output.raw_output == "docs"
+
+
+def test_call_tool_does_not_duplicate_field_default() -> None:
+    class InputSchema(BaseModel):
+        input: str
+
+    def lookup(query: str = Field(default="default"), **kwargs: object) -> str:
+        return query
+
+    tool = FunctionTool.from_defaults(fn=lookup, fn_schema=InputSchema)
+
+    output = call_tool(tool, {"input": "LlamaIndex"})
+
+    assert not output.is_error
+    assert output.raw_output == "default"
