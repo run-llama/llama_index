@@ -4,7 +4,7 @@
 
 The SteamshipFile Reader allows you to load documents from persistent Steamship Files. Steamship is a platform for storing and managing files with advanced tagging capabilities.
 
-For more detailed information about the SteamshipFile Reader, visit [SteamShip](steamship.com).
+For more detailed information about the SteamshipFile Reader, visit [SteamShip](https://steamship.com).
 
 ### Installation
 
@@ -14,7 +14,7 @@ You can install the SteamshipFile Reader via pip:
 pip install llama-index-readers-steamship
 ```
 
-This reader requires steamship API key, which can be acquired from [SteamShip](steamship.com).
+This reader requires steamship API key, which can be acquired from [SteamShip](https://steamship.com).
 
 ### Usage
 
