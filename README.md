@@ -1,4 +1,4 @@
-# 🗂️ LlamaIndex (OSS Framework) 🦙
+# 🗂️ LlamaIndex Framework 🦙
 
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)
 [![Build](https://github.com/run-llama/llama_index/actions/workflows/build_package.yml/badge.svg)](https://github.com/run-llama/llama_index/actions/workflows/build_package.yml)
@@ -14,12 +14,12 @@
 >
 > While we still have the OSS framework available as an open toolkit that you're welcome to use, our primary focus has shifted towards LlamaParse, along with liteparse and our benchmarking efforts. We have a strong belief that agents are the new consumers of documents, and they fundamentally need the right tools to unlock context from the world's hardest documents accurately/cheaply at scale. Whether you're an AI startup processing documents or an enterprise looking to automate document workflows, [come talk to us](https://www.llamaindex.ai/contact).
 
-LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)) is an open-source framework to build agentic applications. You can use LlamaParse with this framework or on its own; see [LlamaParse](#llamacloud-document-agent-platform) below for signup and product links.
+LlamaIndex Framework (by [LlamaIndex](https://llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--), the company behind LlamaParse) is an open-source framework to build agentic applications. You can use LlamaParse with this framework or on its own; see [LlamaParse](#llamacloud-document-agent-platform) below for signup and product links.
 
 > ### 📚 **Documentation:**
 >
-> - [LlamaParse](https://developers.llamaindex.ai/python/cloud/llamaparse/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
-> - [LlamaIndex OSS](https://developers.llamaindex.ai/python/framework/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
+> - [LlamaParse](https://developers.llamaindex.ai/llamaparse/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
+> - [LlamaIndex Framework](https://developers.llamaindex.ai/python/framework/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
 > - [LlamaAgents](https://developers.llamaindex.ai/python/llamaagents/overview/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
 
 Building with LlamaIndex typically involves working with LlamaIndex core and a chosen set of integrations (or plugins). There are two ways to start building with LlamaIndex in

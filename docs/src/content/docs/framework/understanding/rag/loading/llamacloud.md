@@ -2,7 +2,7 @@
 title: Loading from LlamaParse
 ---
 
-[LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team (previously called LlamaCloud), can parse, index and query your data in a fully managed environment. Its [Index](/llamaparse/cloud-index-v2/getting_started/) product connects to your data sources, keeps the index in sync and serves retrieval, and the framework talks to it through `LlamaCloudIndex`. The class kept its name through the rename.
+[LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team (previously called LlamaCloud), can parse, index and query your data in a fully managed environment. Its [Index](/llamaparse/cloud-index-v2/getting_started/) product connects to your data sources, keeps the index in sync and serves retrieval, and the framework talks to it through `LlamaCloudIndex`.
 
 ## Using LlamaParse from LlamaIndex
 

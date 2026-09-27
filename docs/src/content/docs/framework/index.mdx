@@ -8,91 +8,96 @@ tableOfContents: false
 ---
 
 <PageHero
-  eyebrow="Open-source framework · Python"
   title="LlamaIndex Framework"
   lede="LlamaIndex is the company behind LlamaParse, the document parsing platform for AI agents. The LlamaIndex framework is our original open-source toolkit for RAG and agents."
-  primary={{ label: "Start the tutorial", href: "/python/framework/getting_started/starter_example/" }}
-  secondary={{ label: "Installation", href: "/python/framework/getting_started/installation/" }}
+  primary={{
+    label: "Start the tutorial",
+    href: "/python/framework/getting_started/starter_example/",
+  }}
+  secondary={{
+    label: "Installation",
+    href: "/python/framework/getting_started/installation/",
+  }}
   github="https://github.com/run-llama/llama_index"
-  note="Data connectors, indexes, query engines, agents and workflows. MIT-licensed, also in TypeScript. Stable, with model updates and fixes; our newer open-source work goes into LiteParse and LlamaAgents."
->
-  <Tabs syncKey="framework-llm">
-    <TabItem label="OpenAI">
-      ```bash
-      pip install llama-index
-      export OPENAI_API_KEY=sk-...
-      ```
+/>
 
-      ```python
-      from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+## Introduction
 
-      documents = SimpleDirectoryReader("data").load_data()
-      index = VectorStoreIndex.from_documents(documents)
-      query_engine = index.as_query_engine()
-      response = query_engine.query("What does this document say about pricing?")
-      print(response)
-      ```
-    </TabItem>
-    <TabItem label="Local models">
-      ```bash
-      pip install llama-index llama-index-llms-ollama llama-index-embeddings-huggingface
-      ollama pull llama3.1
-      ```
+The LlamaIndex framework is a Python toolkit for building LLM-powered agents over your data. LLMs are trained on public data, not yours. Your data is behind APIs, in databases, or trapped in PDFs and slide decks. Context augmentation makes that data available to the model at the moment it answers, and its best-known form is [retrieval-augmented generation (RAG)](/python/framework/getting_started/concepts/). The framework gives you the parts to build any context-augmentation use case, from prototype to production, and it is the shortest path from documents parsed by [LlamaParse](/llamaparse/) to an agent that can use them.
 
-      ```python
-      from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
-      from llama_index.llms.ollama import Ollama
-      from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+- **[Agents](/python/framework/understanding/agent/)** are LLM-powered assistants that use tools to complete tasks, from answering questions over your documents to taking actions in other systems. A RAG pipeline is one of many tools an agent can call.
+- **[Workflows](/python/llamaagents/workflows/)** are event-driven, multi-step processes that combine agents, data connectors and tools, with branching, retries and human-in-the-loop review, and can be deployed as services.
 
-      Settings.llm = Ollama(model="llama3.1", request_timeout=360.0)
-      Settings.embed_model = HuggingFaceEmbedding(
-          model_name="BAAI/bge-base-en-v1.5"
-      )
+The framework is built from composable parts. The high-level API gets you from documents to answers in a few lines; the lower-level API lets you customize or replace any of them.
 
-      documents = SimpleDirectoryReader("data").load_data()
-      index = VectorStoreIndex.from_documents(documents)
-      query_engine = index.as_query_engine()
-      response = query_engine.query("What does this document say about pricing?")
-      print(response)
-      ```
-    </TabItem>
-    <TabItem label="Hard documents (LlamaParse)">
-      ```bash
-      pip install llama-index "llama-cloud>=2.8"
-      export OPENAI_API_KEY=sk-...
-      export LLAMA_CLOUD_API_KEY=llx-...
-      ```
+<IconCards
+  columns={2}
+  variant="tile"
+  items={[
+    {
+      icon: "cloud-download",
+      title: "Data connectors",
+      href: "/python/framework/module_guides/loading/",
+    },
+    {
+      icon: "list-format",
+      title: "Indexes and vector stores",
+      href: "/python/framework/module_guides/indexing/",
+    },
+    {
+      icon: "magnifier",
+      title: "Query and chat engines",
+      href: "/python/framework/module_guides/querying/",
+    },
+    {
+      icon: "puzzle",
+      title: "Agents and tools",
+      href: "/python/framework/module_guides/deploying/agents/",
+    },
+    {
+      icon: "random",
+      title: "Workflows",
+      href: "/python/llamaagents/workflows/",
+    },
+    {
+      icon: "setting",
+      title: "Models, evaluation and observability",
+      href: "/python/framework/module_guides/models/",
+    },
+  ]}
+/>
 
-      ```python
-      from llama_cloud import LlamaCloud
-      from llama_index.core import Document, VectorStoreIndex
-
-      client = LlamaCloud()  # reads LLAMA_CLOUD_API_KEY
-
-      file = client.files.create(file="data/report.pdf", purpose="parse")
-      result = client.parsing.parse(
-          file_id=file.id, tier="agentic", version="latest", expand=["markdown"]
-      )
-      pages = result.markdown.pages
-      documents = [Document(text=p.markdown) for p in pages if p.success]
-
-      index = VectorStoreIndex.from_documents(documents)
-      query_engine = index.as_query_engine()
-      response = query_engine.query("What does this document say about pricing?")
-      print(response)
-      ```
-    </TabItem>
-
-  </Tabs>
-</PageHero>
-
-Put a few files in a folder called `data` first. The OpenAI route needs an [OpenAI API key](https://platform.openai.com/api-keys), the local route needs [Ollama](https://ollama.com/) and no key, and the LlamaParse route needs a [LlamaParse API key](https://cloud.llamaindex.ai/?utm_source=developers&utm_medium=docs&utm_campaign=framework-landing&utm_content=quickstart) and handles scans, tables and forms. Longer versions: the [starter tutorial](/python/framework/getting_started/starter_example/), the [local-models tutorial](/python/framework/getting_started/starter_example_local/), and [how to read these docs](/python/framework/getting_started/reading/).
-
-<Eyebrow>Documents</Eyebrow>
+New here? The [starter tutorial](/python/framework/getting_started/starter_example/) builds an agent with a tool over your documents, the [local-models tutorial](/python/framework/getting_started/starter_example_local/) does the same without any hosted API, and [how to read these docs](/python/framework/getting_started/reading/) points you to the right section for your experience level. The [Learn](/python/framework/understanding/) section then walks through a complete application step by step.
 
 ## When the documents get hard
 
-Built-in readers are fine for clean text. For scanned PDFs, forms, spreadsheets and slide decks, the quality of what goes into your index decides the quality of every answer. That is what [LlamaParse](/llamaparse/) is for: [Parse](/llamaparse/parse/), [Extract](/llamaparse/extract/), [Classify](/llamaparse/classify/), [Split](/llamaparse/split/) and [Index](/llamaparse/cloud-index-v2/getting_started/), as in the third tab above. For fully managed retrieval, [Index](/llamaparse/cloud-index-v2/getting_started/) keeps an index in sync with your data sources and serves retrieval to your query engine or agent.
+The framework's built-in readers are fine for clean text. For scanned PDFs, forms, spreadsheets and slide decks, the quality of what goes into your index decides the quality of every answer. That is what [LlamaParse](/llamaparse/) is for: [Parse](/llamaparse/parse/) (agentic OCR for scans, tables and charts), [Extract](/llamaparse/extract/) (JSON in your schema), [Classify](/llamaparse/classify/), [Split](/llamaparse/split/) and [Index](/llamaparse/cloud-index-v2/getting_started/) (managed ingestion and retrieval). Parsed pages drop straight into a framework index:
+
+```bash
+pip install llama-index "llama-cloud>=2.8"
+export LLAMA_CLOUD_API_KEY=llx-...
+```
+
+```python
+from llama_cloud import LlamaCloud
+from llama_index.core import Document, VectorStoreIndex
+
+client = LlamaCloud()  # reads LLAMA_CLOUD_API_KEY
+
+file = client.files.create(file="data/report.pdf", purpose="parse")
+result = client.parsing.parse(
+    file_id=file.id, tier="agentic", version="latest", expand=["markdown"]
+)
+pages = result.markdown.pages
+documents = [Document(text=p.markdown) for p in pages if p.success]
+
+index = VectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+response = query_engine.query("What does this document say about pricing?")
+print(response)
+```
+
+For fully managed retrieval, [Index](/llamaparse/cloud-index-v2/getting_started/) keeps an index in sync with your data sources and serves retrieval to your query engine or agent. For parsing on your own machine, [LiteParse](/liteparse/) is the open-source, local option.
 
 <HeroBanner
   title="Hard documents in, clean Markdown out"
@@ -106,12 +111,11 @@ Built-in readers are fine for clean text. For scanned PDFs, forms, spreadsheets 
 
 <Aside type="note" title="LlamaCloud is now LlamaParse">
   The hosted platform formerly called LlamaCloud has been renamed LlamaParse;
-  its docs live at [developers.llamaindex.ai/llamaparse](/llamaparse/). Package
-  and class names are unchanged (`llama-cloud`, `LlamaCloud`,
-  `LLAMA_CLOUD_API_KEY`, `LlamaCloudIndex`), so existing code keeps working.
+  its docs live at [developers.llamaindex.ai/llamaparse](/llamaparse/). The
+  `llama-cloud` package, the `LlamaCloud` client and the `LLAMA_CLOUD_API_KEY`
+  variable keep their names. The older `llama-parse` and `llama-cloud-services`
+  packages are deprecated in favour of `llama-cloud` 2.x.
 </Aside>
-
-<Eyebrow>Use cases</Eyebrow>
 
 ## What you can build
 
@@ -164,53 +168,6 @@ Built-in readers are fine for clean text. For scanned PDFs, forms, spreadsheets 
 
 More on the [use cases page](/python/framework/use_cases/): text-to-SQL, querying CSVs, prompting techniques and fine-tuning.
 
-<Eyebrow>Building blocks</Eyebrow>
-
-## How the pieces fit together
-
-LLMs are trained on public data, not yours. LlamaIndex makes your data available to the model at the moment it answers, a pattern called context augmentation, of which [RAG](/python/framework/getting_started/concepts/) is the best-known form. The framework is a set of composable parts for that job; the high-level API gets you from documents to answers in five lines, and the lower-level API lets you replace any part when the defaults stop being enough.
-
-<IconCards
-  columns={2}
-  variant="tile"
-  items={[
-    {
-      icon: "cloud-download",
-      title: "Data connectors",
-      href: "/python/framework/module_guides/loading/",
-    },
-    {
-      icon: "list-format",
-      title: "Indexes and vector stores",
-      href: "/python/framework/module_guides/indexing/",
-    },
-    {
-      icon: "magnifier",
-      title: "Query and chat engines",
-      href: "/python/framework/module_guides/querying/",
-    },
-    {
-      icon: "puzzle",
-      title: "Agents and tools",
-      href: "/python/framework/module_guides/deploying/agents/",
-    },
-    {
-      icon: "random",
-      title: "Workflows",
-      href: "/python/llamaagents/workflows/",
-    },
-    {
-      icon: "setting",
-      title: "Models, evaluation and observability",
-      href: "/python/framework/module_guides/models/",
-    },
-  ]}
-/>
-
-The [Learn](/python/framework/understanding/) section walks through building a complete application step by step. For PDFs and scans, pair the connectors with [LiteParse](/liteparse/) on your machine or [LlamaParse](/llamaparse/parse/) in the cloud.
-
-<Eyebrow>Open source</Eyebrow>
-
 ## LlamaIndex open source
 
 The framework is the oldest of our open-source projects, not the only one. The newer ones are smaller, focused on documents, and work with the framework or on their own.
@@ -241,19 +198,17 @@ The framework is the oldest of our open-source projects, not the only one. The n
     },
     {
       icon: "open-book",
-      title: "LlamaIndex framework",
+      title: "LlamaIndex Framework",
       description:
-        "This toolkit: connectors, indexes, query engines, agents and workflows for Python, with a TypeScript port.",
+        "This toolkit: connectors, indexes, query engines, agents and workflows for Python.",
       href: "/python/framework/getting_started/installation/",
     },
   ]}
 />
 
-<Eyebrow>Community</Eyebrow>
-
 ## Get help and contribute
 
-LlamaIndex is MIT-licensed and built with its community. The [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md) covers everything from a documentation fix to a new integration. The [FAQ](/python/framework/getting_started/faq/) answers the questions everyone asks first.
+LlamaIndex Framework is MIT-licensed and built with its community. The [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md) covers everything from a documentation fix to a new integration. The [FAQ](/python/framework/getting_started/faq/) answers the questions everyone asks first.
 
 <IconCards
   columns={3}
@@ -281,11 +236,11 @@ LlamaIndex is MIT-licensed and built with its community. The [contributing guide
       href: "https://pypi.org/project/llama-index/",
     },
     {
-      icon: "npm",
-      title: "LlamaIndex.TS on npm",
-      href: "https://www.npmjs.com/package/llamaindex",
+      icon: "open-book",
+      title: "Integrations",
+      href: "/python/framework/community/integrations/",
     },
   ]}
 />
 
-More from LlamaIndex: [Integrations](/python/framework/community/integrations/), [LlamaIndex.TS](/typescript/framework/), [create-llama](https://www.npmjs.com/package/create-llama), [full-stack projects](/python/framework/community/full_stack_projects/) and the [Discover LlamaIndex video series](/python/framework/getting_started/discover_llamaindex/).
+More from LlamaIndex: [create-llama](https://www.npmjs.com/package/create-llama), [full-stack projects](/python/framework/community/full_stack_projects/) and the [Discover LlamaIndex video series](/python/framework/getting_started/discover_llamaindex/).
