@@ -1,6 +1,8 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
-from llama_index.core.bridge.pydantic import AnyUrl
+import pytest
+
+from llama_index.core.bridge.pydantic import AnyUrl, ValidationError
 from llama_index.core.schema import MediaResource
 
 
@@ -53,3 +55,17 @@ def test_hash():
         == "04414a5f03ad7fa055229b4d3690d47427cb0b65bc7eb8f770d1ecbd54ab4909"
     )
     assert MediaResource().hash == ""
+
+
+def test_invalid_path_raises_validation_error():
+    """
+    An invalid path must surface as ValidationError, not KeyError.
+
+    validate_mimetype reads info.data["path"]. A field that failed validation
+    is absent from info.data, so an unguarded subscript raises KeyError before
+    pydantic can assemble the ValidationError. The sibling lookup for "data" in
+    the same validator already uses .get().
+    """
+    for bad in (12345, object(), PurePosixPath("a/b.txt")):
+        with pytest.raises(ValidationError):
+            MediaResource(path=bad)
