@@ -562,56 +562,66 @@ async def test_run_id_default(function_agent: FunctionAgent) -> None:
     handler.cancel()
 
 
+TOOL_CALL_RESPONSE = ChatMessage(
+    role=MessageRole.ASSISTANT,
+    content="calling tool",
+    additional_kwargs={
+        "tool_calls": [
+            ToolSelection(tool_id="one", tool_name="side_effect", tool_kwargs={})
+        ]
+    },
+)
+FINAL_RESPONSE = ChatMessage(role=MessageRole.ASSISTANT, content="the answer is 42")
+
+
+def _counting_agent(responses: List[ChatMessage], counts: dict) -> FunctionAgent:
+    """An agent that records every LLM call and every tool run it performs."""
+    index = 0
+
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        nonlocal index
+        counts["llm_calls"] += 1
+        response = responses[min(index, len(responses) - 1)]
+        index += 1
+        return response
+
+    def side_effect() -> str:
+        counts["tool_runs"] += 1
+        return "done"
+
+    return FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[side_effect],
+        llm=MockFunctionCallingLLM(response_generator=generator),
+    )
+
+
 @pytest.mark.asyncio
 async def test_max_iterations_permits_exactly_that_many() -> None:
-    """max_iterations=N must allow N iterations, not N-1."""
-
-    def random_tool() -> str:
-        return "random"
-
-    tool_call = ChatMessage(
-        role=MessageRole.ASSISTANT,
-        content="calling tool",
-        additional_kwargs={
-            "tool_calls": [
-                ToolSelection(tool_id="one", tool_name="random_tool", tool_kwargs={})
-            ]
-        },
-    )
-    final = ChatMessage(role=MessageRole.ASSISTANT, content="the answer is 42")
-
-    # An agent that answers on its first LLM call needs one iteration.
-    agent = FunctionAgent(
-        name="agent",
-        description="test",
-        tools=[random_tool],
-        llm=MockFunctionCallingLLM(
-            response_generator=_response_generator_from_list([final])
-        ),
-    )
+    """max_iterations=N allows N LLM calls, and a final answer on the Nth is kept."""
+    counts = {"llm_calls": 0, "tool_runs": 0}
+    agent = _counting_agent([FINAL_RESPONSE], counts)
     response = await agent.run(user_msg="test", max_iterations=1)
     assert "42" in str(response.response)
+    assert counts == {"llm_calls": 1, "tool_runs": 0}
 
-    # An agent that calls one tool first needs two, so one is still not enough.
-    agent = FunctionAgent(
-        name="agent",
-        description="test",
-        tools=[random_tool],
-        llm=MockFunctionCallingLLM(
-            response_generator=_response_generator_from_list([tool_call, final])
-        ),
-    )
+
+@pytest.mark.asyncio
+async def test_max_iterations_stops_before_the_next_tool_and_llm_call() -> None:
+    """A tool call on the last permitted iteration stops without spending another."""
+    counts = {"llm_calls": 0, "tool_runs": 0}
+    agent = _counting_agent([TOOL_CALL_RESPONSE, FINAL_RESPONSE], counts)
     with pytest.raises(WorkflowRuntimeError, match="Max iterations of 1 reached"):
         _ = await agent.run(user_msg="test", max_iterations=1)
+    assert counts == {"llm_calls": 1, "tool_runs": 0}
 
-    # ...and two is.
-    agent = FunctionAgent(
-        name="agent",
-        description="test",
-        tools=[random_tool],
-        llm=MockFunctionCallingLLM(
-            response_generator=_response_generator_from_list([tool_call, final])
-        ),
-    )
+
+@pytest.mark.asyncio
+async def test_max_iterations_counts_a_tool_round_as_one_iteration() -> None:
+    """A tool round plus the answer after it fits in two iterations exactly."""
+    counts = {"llm_calls": 0, "tool_runs": 0}
+    agent = _counting_agent([TOOL_CALL_RESPONSE, FINAL_RESPONSE], counts)
     response = await agent.run(user_msg="test", max_iterations=2)
     assert "42" in str(response.response)
+    assert counts == {"llm_calls": 2, "tool_runs": 1}
