@@ -92,10 +92,9 @@ pages = result.markdown.pages
 documents = [Document(text=p.markdown) for p in pages if p.success]
 
 index = VectorStoreIndex.from_documents(documents)
-query_engine = index.as_query_engine()
-response = query_engine.query("What does this document say about pricing?")
-print(response)
 ```
+
+From there the index is a tool like any other: the [starter tutorial](/python/framework/getting_started/starter_example/) shows how to hand it to an agent.
 
 For fully managed retrieval, [Index](/llamaparse/cloud-index-v2/getting_started/) keeps an index in sync with your data sources and serves retrieval to your query engine or agent. For parsing on your own machine, [LiteParse](/liteparse/) is the open-source, local option.
 
@@ -110,11 +109,9 @@ For fully managed retrieval, [Index](/llamaparse/cloud-index-v2/getting_started/
 />
 
 <Aside type="note" title="LlamaCloud is now LlamaParse">
-  The hosted platform formerly called LlamaCloud has been renamed LlamaParse;
-  its docs live at [developers.llamaindex.ai/llamaparse](/llamaparse/). The
-  `llama-cloud` package, the `LlamaCloud` client and the `LLAMA_CLOUD_API_KEY`
-  variable keep their names. The older `llama-parse` and `llama-cloud-services`
-  packages are deprecated in favour of `llama-cloud` 2.x.
+  The hosted platform formerly called LlamaCloud has been renamed LlamaParse.
+  Its documentation lives at
+  [developers.llamaindex.ai/llamaparse](/llamaparse/).
 </Aside>
 
 ## What you can build
