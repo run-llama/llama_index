@@ -2477,6 +2477,7 @@ source = { editable = "." }
 dependencies = [
     { name = "chromadb" },
     { name = "llama-index-core" },
+    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -2506,6 +2507,7 @@ dev = [
 requires-dist = [
     { name = "chromadb", specifier = ">=0.5.17" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
+    { name = "onnxruntime", marker = "python_full_version < '3.11'", specifier = ">=1.17,<1.24" },
 ]
 
 [package.metadata.requires-dev]

@@ -3561,6 +3561,7 @@ source = { editable = "." }
 dependencies = [
     { name = "chonkie", extra = ["all"] },
     { name = "llama-index-core" },
+    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -3591,6 +3592,7 @@ dev = [
 requires-dist = [
     { name = "chonkie", extras = ["all"] },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
+    { name = "onnxruntime", marker = "python_full_version < '3.11'", specifier = ">=1.17,<1.24" },
 ]
 
 [package.metadata.requires-dev]
