@@ -29,7 +29,7 @@ for full tracing integrations.
 
 ## Callbacks
 
-- [PromptFirewall](https://github.com/TimurRakhmatullin86/promptfirewall)
+- [PromptFirewall](https://github.com/TimurRakhmatullin86/llama-index-callbacks-promptfirewall)
 
 ## Experiment Tracking
 
