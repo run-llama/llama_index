@@ -75,6 +75,17 @@ def _get_mcp_content(raw_output: Any) -> Optional[List[Any]]:
     return content if isinstance(content, list) else None
 
 
+def _get_mcp_field(item: Any, wire_name: str, python_name: Optional[str] = None) -> Any:
+    """Read a field from an MCP wire dictionary or structural content object."""
+    python_name = python_name or wire_name
+    if isinstance(item, dict):
+        if wire_name in item:
+            return item[wire_name]
+        return item.get(python_name)
+    value = getattr(item, python_name, None)
+    return value if value is not None else getattr(item, wire_name, None)
+
+
 def _decode_base64(data: str) -> Optional[bytes]:
     """Decode base64 content, returning ``None`` when it is not decodable."""
     try:
@@ -336,23 +347,16 @@ class FunctionTool(AsyncBaseTool):
         """
         blocks: List[ContentBlock] = []
         for item in content:
-            if isinstance(item, dict):
-                text = item.get("text")
-                if isinstance(text, str):
-                    blocks.append(TextBlock(text=text))
-                    continue
-                blocks.append(TextBlock(text=str(item)))
-                continue
-            text = getattr(item, "text", None)
+            text = _get_mcp_field(item, "text")
             if isinstance(text, str):
                 blocks.append(TextBlock(text=text))
                 continue
-            item_type = getattr(item, "type", None)
-            data = getattr(item, "data", None)
+            item_type = _get_mcp_field(item, "type")
+            data = _get_mcp_field(item, "data")
             if item_type in ("image", "audio") and isinstance(data, str):
                 raw_bytes = _decode_base64(data)
                 if raw_bytes is not None:
-                    mime = getattr(item, "mimeType", None)
+                    mime = _get_mcp_field(item, "mimeType", "mime_type")
                     if item_type == "image":
                         blocks.append(ImageBlock(image=raw_bytes, image_mimetype=mime))
                         continue
@@ -365,10 +369,8 @@ class FunctionTool(AsyncBaseTool):
                     continue
             # EmbeddedResource with text, or anything else we do not model:
             # fall back to the item's own text rendering.
-            resource = getattr(item, "resource", None)
-            resource_text = (
-                getattr(resource, "text", None) if resource is not None else None
-            )
+            resource = _get_mcp_field(item, "resource")
+            resource_text = _get_mcp_field(resource, "text")
             if isinstance(resource_text, str):
                 blocks.append(TextBlock(text=resource_text))
             else:
