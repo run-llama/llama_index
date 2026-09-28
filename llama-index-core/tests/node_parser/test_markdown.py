@@ -1,5 +1,7 @@
+import pytest
+
 from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, MetadataMode
 
 
 def test_header_splits() -> None:
@@ -119,6 +121,52 @@ A list begins here:
 
     assert splits[5].metadata == {"header_path": "/Header 1/"}
     assert splits[5].text == "## Another Header 2"
+
+
+@pytest.mark.parametrize(
+    ("opening_fence", "closing_fence"),
+    [("```", "```"), ("````", "````"), ("```", "````")],
+)
+def test_header_splits_with_backtick_fences(
+    opening_fence: str, closing_fence: str
+) -> None:
+    section = (
+        f"# Section A\n{opening_fence}python\n# code, not a heading\n{closing_fence}"
+    )
+    splits = MarkdownNodeParser().get_nodes_from_documents(
+        [Document(text=section + "\n# Section B\ntext")]
+    )
+
+    assert [split.get_content(metadata_mode=MetadataMode.NONE) for split in splits] == [
+        section,
+        "# Section B\ntext",
+    ]
+
+
+@pytest.mark.parametrize("closing_fence", ["````", "`````"])
+def test_header_splits_with_shorter_fence_inside_code_block(closing_fence: str) -> None:
+    section = f"# Section A\n````markdown\n```\n# code, not a heading\n{closing_fence}"
+    splits = MarkdownNodeParser().get_nodes_from_documents(
+        [Document(text=section + "\n# Section B\ntext")]
+    )
+
+    assert [split.get_content(metadata_mode=MetadataMode.NONE) for split in splits] == [
+        section,
+        "# Section B\ntext",
+    ]
+    assert [split.metadata for split in splits] == [
+        {"header_path": "/"},
+        {"header_path": "/"},
+    ]
+
+
+def test_header_splits_with_unclosed_code_block_and_shorter_fence() -> None:
+    text = "# Section A\n````markdown\n```\n# code, not a heading"
+    splits = MarkdownNodeParser().get_nodes_from_documents([Document(text=text)])
+
+    assert [split.get_content(metadata_mode=MetadataMode.NONE) for split in splits] == [
+        text
+    ]
 
 
 def test_non_header_splits() -> None:
