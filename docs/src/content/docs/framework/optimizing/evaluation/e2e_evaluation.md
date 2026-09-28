@@ -42,7 +42,7 @@ Sensitivity testing can be a good inroad into choosing which components to indiv
 
 More details on how to discover issues automatically with methods such as sensitivity testing will come soon.
 
-Examples of this in the more traditional ML domain include [Giskard](https://docs.giskard.ai/en/latest/getting-started/quickstart.html).
+Examples of this in the more traditional ML domain include [Giskard](https://docs.giskard.ai/).
 
 ## Metrics Ensembling
 
