@@ -431,3 +431,17 @@ class TestCacheControlOnlyLastBlock:
 def test_opus_4_6_has_1m_context_window(model: str) -> None:
     """Opus 4.6 has a 1M context window, like the 4.6+ models around it."""
     assert anthropic_modelname_to_contextsize(model) == 1000000
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-opus-5-5",
+        "anthropic.claude-opus-5-5",
+    ],
+)
+def test_opus_5_5_has_1m_context_window(model: str) -> None:
+    """Opus 5.5 is registered with a 1M context window (issue #23222)."""
+    assert anthropic_modelname_to_contextsize(model) == 1000000
+    assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
+    assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
