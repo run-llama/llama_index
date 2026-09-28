@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
+import asyncio
+
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -51,7 +53,16 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         return {}
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return self._query_index(query_bundle, index_id=None, level=0)
+        """
+        Query and get response asynchronously.
+
+        The graph traversal and underlying query engines' sync path are
+        synchronous, so offload ``_query_index`` to a worker thread to avoid
+        blocking the event loop.
+        """
+        return await asyncio.to_thread(
+            self._query_index, query_bundle, index_id=None, level=0
+        )
 
     @dispatcher.span
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
