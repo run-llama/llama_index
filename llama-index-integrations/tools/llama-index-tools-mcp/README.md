@@ -257,3 +257,30 @@ client_with_oauth = BasicMCPClient.with_oauth(
 This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-mcp/examples/mcp.ipynb).
 
 This tool is designed to be used as a way to call the tools provided by MCP Servers.
+
+## Loading ScreenContext history
+
+The optional `ScreenContextReader` adapts the local [ScreenContext](https://github.com/ikeikeikeda66/screen-context-agent)
+MCP server's explicitly requested screen observations into LlamaIndex `Document` objects. It uses the server's
+`get_day_material` tool, so the server must expose that tool and the normal ScreenContext approval and policy checks
+still apply. The `standard` profile is sufficient and keeps IDE and terminal frames excluded by default.
+
+```python
+from datetime import datetime, timezone
+
+from llama_index.tools.mcp import BasicMCPClient, ScreenContextReader
+
+client = BasicMCPClient(
+    "screen-context",
+    args=["serve", "--profile", "standard"],
+)
+reader = ScreenContextReader(client)
+documents = await reader.aload_data(
+    query="database error",
+    start_time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    end_time=datetime(2026, 1, 2, tzinfo=timezone.utc),
+)
+```
+
+Each document preserves the observed timestamp, application and window title in metadata. The `source` and `trust`
+metadata remain `observed_screen` and `untrusted`; screen text is evidence, not instructions.
