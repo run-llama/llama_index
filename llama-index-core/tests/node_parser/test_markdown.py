@@ -143,9 +143,22 @@ def test_header_splits_with_backtick_fences(
     ]
 
 
-@pytest.mark.parametrize("closing_fence", ["````", "`````"])
-def test_header_splits_with_shorter_fence_inside_code_block(closing_fence: str) -> None:
-    section = f"# Section A\n````markdown\n```\n# code, not a heading\n{closing_fence}"
+@pytest.mark.parametrize(
+    ("opening_fence", "inner_code", "closing_fence"),
+    [
+        ("````", "```\n# code, not a heading", "````"),
+        ("````", "```\n# code, not a heading", "`````"),
+        (
+            "`````",
+            "````\n# first code heading\n```\n# second code heading",
+            "`````",
+        ),
+    ],
+)
+def test_header_splits_with_shorter_fence_inside_code_block(
+    opening_fence: str, inner_code: str, closing_fence: str
+) -> None:
+    section = f"# Section A\n{opening_fence}markdown\n{inner_code}\n{closing_fence}"
     splits = MarkdownNodeParser().get_nodes_from_documents(
         [Document(text=section + "\n# Section B\ntext")]
     )
