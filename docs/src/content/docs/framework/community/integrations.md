@@ -27,6 +27,10 @@ We support [a huge number of LLMs](/python/framework/module_guides/models/llms/m
 Check out our [one-click observability](/python/framework/module_guides/observability) page
 for full tracing integrations.
 
+## Callbacks
+
+- [PromptFirewall](https://github.com/TimurRakhmatullin86/promptfirewall)
+
 ## Experiment Tracking
 
 - [Kiln](https://github.com/Kiln-AI/Kiln/tree/main/libs/core#taking-kiln-rag-to-production)
