@@ -5,6 +5,11 @@ from llama_index.tools.mcp.utils import (
     get_tools_from_mcp_url,
     aget_tools_from_mcp_url,
 )
+from llama_index.tools.mcp.screen_context import (
+    ScreenContextConnector,
+    ScreenContextExcerpt,
+    normalize_screen_context,
+)
 
 __all__ = [
     "McpToolSpec",
@@ -12,4 +17,7 @@ __all__ = [
     "workflow_as_mcp",
     "get_tools_from_mcp_url",
     "aget_tools_from_mcp_url",
+    "ScreenContextConnector",
+    "ScreenContextExcerpt",
+    "normalize_screen_context",
 ]

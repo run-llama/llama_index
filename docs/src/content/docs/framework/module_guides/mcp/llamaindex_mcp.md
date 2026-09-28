@@ -58,3 +58,38 @@ http_client = BasicMCPClient("https://example.com/mcp")
 # Local process
 local_client = BasicMCPClient("python", args=["server.py"])
 ```
+
+## ScreenContextAgent connector
+
+[ScreenContextAgent](https://github.com/ikeikeikeda66/screen-context-agent) is a
+local, encrypted screen-history MCP server. Its search results are OCR
+observations, not instructions. LlamaIndex exposes a small wrapper that keeps
+the server local, allows only `search_screen_history`, and requires an
+explicit time window:
+
+```bash
+pip install llama-index-tools-mcp
+```
+
+```python
+from datetime import datetime, timezone
+
+from llama_index.tools.mcp import BasicMCPClient, ScreenContextConnector
+
+client = BasicMCPClient(
+    "screen-context",
+    args=["serve", "--profile", "standard", "--transport", "stdio"],
+    env={"SCREEN_CONTEXT_CLIENT_TOKEN": "<token from screen-context mcp-config>"},
+)
+connector = ScreenContextConnector(client)
+tools = await connector.as_tool_spec().to_tool_list_async()
+matches = await connector.search(
+    "build error",
+    start=datetime(2026, 9, 28, 9, 0, tzinfo=timezone.utc),
+    end=datetime(2026, 9, 28, 10, 0, tzinfo=timezone.utc),
+)
+```
+
+The connector filters the upper bound locally, preserves `frame_id`, timestamp
+and source-app metadata, and labels every excerpt as untrusted observed data.
+It never captures, writes or uploads screen history.
