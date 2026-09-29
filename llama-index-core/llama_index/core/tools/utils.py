@@ -1,4 +1,4 @@
-from inspect import Parameter, signature
+from inspect import Parameter, Signature, signature
 from typing import (
     Any,
     Awaitable,
@@ -17,6 +17,21 @@ import datetime
 import typing
 
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
+
+
+def get_function_signature(func: Callable[..., Any]) -> Signature:
+    """
+    Get the signature of a function with string annotations resolved.
+
+    Functions defined in modules using ``from __future__ import annotations``
+    have string annotations, which have to be evaluated in the function's own
+    globals. If they can't be (e.g. names only imported under ``TYPE_CHECKING``),
+    the unresolved signature is returned.
+    """
+    try:
+        return signature(func, eval_str=True)
+    except Exception:
+        return signature(func)
 
 
 def create_schema_from_function(
@@ -43,7 +58,7 @@ def create_schema_from_function(
     fields = {}
     ignore_fields = ignore_fields or []
     param_descriptions = param_descriptions or {}
-    params = signature(func).parameters
+    params = get_function_signature(func).parameters
 
     for param_name in params:
         if param_name in ignore_fields:
