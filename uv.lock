@@ -1496,7 +1496,7 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.14.24"
+version = "0.14.25"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1531,7 +1531,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.14.24,<0.15.0" },
+    { name = "llama-index-core", specifier = ">=0.14.25,<0.15.0" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.6.0,<0.7" },
     { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.8" },
     { name = "nltk", specifier = ">=3.9.3" },
@@ -1562,7 +1562,7 @@ dev = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.24"
+version = "0.14.25"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1597,9 +1597,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/7a/e54d5ea405b51c1b7e1ed078036f698bcbeefc82128d5c48b7cb6d997ce6/llama_index_core-0.14.24.tar.gz", hash = "sha256:4b2eb3af98eecf3579707ef018be0346bd851be2c7660102d88fab0457b95b61", size = 11590565, upload-time = "2026-08-19T18:47:21.401Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/70/fe1f0a92459c3692075875c1e09fc51494602daaeb71734045e1d9d815d3/llama_index_core-0.14.25.tar.gz", hash = "sha256:4ebfdc5317f0382501fa80262d7a7382715f80741cf41a7b11a52d4335e6f696", size = 11591384, upload-time = "2026-09-21T16:21:51.975Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/f8/8a2aec65cba9459b24cce9bc188392014f70c2af0dc43c4cc668c685912e/llama_index_core-0.14.24-py3-none-any.whl", hash = "sha256:a12f39b8a777cc526bf400d929016cd244372af61c5e98f6f4186f51a0b9288c", size = 11927515, upload-time = "2026-08-19T18:47:18.772Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/20/60be179aaba858981edbe18eab106ff485967a9d3b198f8c58496cad9e32/llama_index_core-0.14.25-py3-none-any.whl", hash = "sha256:caa7d9c5ac9b13dc33400cf8d5e92e689b6d1e4497eb9bfa50d6f52ca2eb22a1", size = 11928254, upload-time = "2026-09-21T16:21:48.626Z" },
 ]
 
 [[package]]
