@@ -2,14 +2,18 @@
 title: LlamaCloudIndex + LlamaCloudRetriever
 ---
 
-`LlamaCloudIndex` connects this framework to Index, the managed ingestion and retrieval service in [LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team. LlamaParse was previously called LlamaCloud; the class and package names below kept the old name, so existing code keeps working.
+`LlamaCloudIndex` connects this framework to the first version of Index, the managed ingestion and retrieval service in [LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team. LlamaParse was previously called LlamaCloud, which is where the class and package names below come from.
+
+:::caution[This integration targets the earlier version of Index]
+`LlamaCloudIndex` ships in `llama-cloud-services`, a package that is deprecated and no longer updated, and it talks to the first version of Index. Installing it pins an old release of `llama-cloud`, so it cannot share an environment with the current `llama-cloud` SDK. For new projects, use [Index v2](/llamaparse/cloud-index-v2/getting_started/) through the `llama-cloud` SDK.
+:::
 
 Index gives you
 
 - Managed ingestion: parsing, chunking, embedding and document management, kept in sync with your data sources
 - Managed retrieval: a retrieval endpoint tuned for your RAG system, used here as a LlamaIndex retriever or query engine
 
-For the service itself, see the [Index documentation](/llamaparse/cloud-index-v2/getting_started/).
+For the service itself, see the [documentation for that version of Index](/llamaparse/deprecated/cloud-index/getting_started/).
 
 ## Access
 
@@ -24,7 +28,7 @@ pip uninstall llama-index  # run this if upgrading from v0.9.x or older
 pip install -U llama-index --upgrade --no-cache-dir --force-reinstall
 ```
 
-The `llama-cloud-services` package is included with the above install, but you can also install directly
+Then install the integration package, which is not included with `llama-index`:
 
 ```
 pip install -U llama-cloud-services

@@ -11,4 +11,5 @@ It was previously called LlamaCloud. The `llama-cloud` package, the `LlamaCloud`
 - [LlamaParse documentation](/llamaparse/)
 - [Sign up for LlamaParse](https://cloud.llamaindex.ai/) to get an API key
 - [Parse](/llamaparse/parse/), [Extract](/llamaparse/extract/), [Classify](/llamaparse/classify/), [Split](/llamaparse/split/) and [Index](/llamaparse/cloud-index-v2/getting_started/) docs
-- [Using LlamaParse from this framework](/python/framework/module_guides/indexing/llama_cloud_index/)
+- [Using LlamaParse from this framework](/python/framework/#when-the-documents-get-hard)
+- [`LlamaCloudIndex`](/python/framework/module_guides/indexing/llama_cloud_index/), the integration for the earlier version of Index

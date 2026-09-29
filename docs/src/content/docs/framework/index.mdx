@@ -76,7 +76,10 @@ The framework's built-in readers are fine for clean text. For scanned PDFs, form
 ```bash
 pip install llama-index "llama-cloud>=2.8"
 export LLAMA_CLOUD_API_KEY=llx-...
+export OPENAI_API_KEY=sk-...
 ```
+
+The OpenAI key is for the index, which embeds the pages with OpenAI by default. To embed locally instead, set `Settings.embed_model` as in the [local-models tutorial](/python/framework/getting_started/starter_example_local/).
 
 ```python
 from llama_cloud import LlamaCloud

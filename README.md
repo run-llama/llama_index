@@ -55,7 +55,7 @@ from llama_index.llms.openai import OpenAI
 - **[Sign up for LlamaParse](https://cloud.llamaindex.ai?utm_medium=li_github&utm_source=github&utm_campaign=2026--)** — Create an account and get your API key.
 - **Parse** — Agentic OCR and document parsing (130+ formats). [Docs](https://developers.llamaindex.ai/python/cloud/llamaparse/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
 - **Extract** — Structured data extraction from documents. [Docs](https://developers.llamaindex.ai/python/cloud/llamaextract/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
-- **Index** — Ingest, index, and RAG pipelines. [Docs](https://developers.llamaindex.ai/python/cloud/llamacloud/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
+- **Index** — Ingest, index, and RAG pipelines. [Docs](https://developers.llamaindex.ai/llamaparse/cloud-index-v2/getting_started/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
 - **Split** — Split large documents into subcategories. [Docs](https://developers.llamaindex.ai/python/cloud/split/getting_started/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
 - **Agents** — Build end-to-end document agents with `Workflows` and Agent Builder. [Docs](https://developers.llamaindex.ai/python/llamaagents/overview/?utm_medium=li_github&utm_source=github&utm_campaign=2026--)
 
