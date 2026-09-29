@@ -219,32 +219,64 @@ class SQLDatabase:
 
         Preserves CTE (Common Table Expression) names and already
         schema-qualified identifiers so they are not double-prefixed.
+        Masks string literals, quoted identifiers, and SQL comments so
+        text matching FROM/JOIN inside literals or comments is not altered.
         """
-        # Collect CTE names defined in WITH clauses
+        # Mask string literals, quoted identifiers, and comments so that
+        # keywords inside literals/comments are not treated as SQL syntax.
+        token_pattern = re.compile(
+            r"(?P<str>'(''|[^'])*')"
+            r"|(?P<dstr>"(""|[^"])*")"
+            r"|(?P<line_comment>--[^\r\n]*)"
+            r"|(?P<block_comment>/\*[\s\S]*?\*/)"
+            r"|(?P<other>[^'"/-]+|[/"'-])"
+        )
+        masked_chars: List[str] = []
+        for m in token_pattern.finditer(command):
+            if (
+                m.group("str")
+                or m.group("dstr")
+                or m.group("line_comment")
+                or m.group("block_comment")
+            ):
+                masked_chars.append(" " * len(m.group(0)))
+            else:
+                masked_chars.append(m.group(0))
+        masked_command = "".join(masked_chars)
+
+        # Collect CTE names defined in WITH clauses from the masked command
         cte_names: Set[str] = set()
         # First CTE: WITH [RECURSIVE] name AS (
         for m in re.finditer(
-            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(", command, re.IGNORECASE
+            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(",
+            masked_command,
+            re.IGNORECASE,
         ):
             cte_names.add(m.group(1).lower())
         # Subsequent CTEs: ), name AS (
-        for m in re.finditer(r"\)\s*,\s*(\w+)\s+AS\s*\(", command, re.IGNORECASE):
+        for m in re.finditer(
+            r"\)\s*,\s*(\w+)\s+AS\s*\(", masked_command, re.IGNORECASE
+        ):
             cte_names.add(m.group(1).lower())
 
-        def _replace(match: re.Match) -> str:
-            keyword = match.group(1)
-            table_ref = match.group(2)
+        replacements: List[Tuple[int, int, str]] = []
+        for m in re.finditer(
+            r"\b((?:FROM|JOIN)\s+)(\w+(?:\.\w+)?)",
+            masked_command,
+            flags=re.IGNORECASE,
+        ):
+            table_ref = m.group(2)
             # Skip CTE references and already schema-qualified names
             if table_ref.lower() in cte_names or "." in table_ref:
-                return match.group(0)
-            return f"{keyword}{self._schema}.{table_ref}"
+                continue
+            start = m.start(2)
+            end = m.end(2)
+            replacements.append((start, end, f"{self._schema}.{command[start:end]}"))
 
-        return re.sub(
-            r"\b((?:FROM|JOIN)\s+)(\w+(?:\.\w+)?)",
-            _replace,
-            command,
-            flags=re.IGNORECASE,
-        )
+        res = command
+        for start, end, repl in reversed(replacements):
+            res = res[:start] + repl + res[end:]
+        return res
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """

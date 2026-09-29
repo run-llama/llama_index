@@ -201,3 +201,29 @@ def test_schema_prefix_case_insensitive(sql_database: SQLDatabase) -> None:
     result = sql_database._add_schema_prefix("select * from users join orders on 1=1")
     assert "from myschema.users" in result
     assert "join myschema.orders" in result
+
+
+def test_schema_prefix_preserves_literals_and_comments(
+    sql_database: SQLDatabase,
+) -> None:
+    sql_database._schema = "tenant"
+    cmd = (
+        "SELECT 'FROM users', name FROM users "
+        "-- JOIN orders\n"
+        "/* FROM hidden */"
+    )
+    result = sql_database._add_schema_prefix(cmd)
+    assert "SELECT 'FROM users', name FROM tenant.users" in result
+    assert "-- JOIN orders" in result
+    assert "/* FROM hidden */" in result
+    assert "tenant.hidden" not in result
+    assert "tenant.orders" not in result
+
+
+def test_schema_prefix_preserves_escaped_quotes_in_literals(
+    sql_database: SQLDatabase,
+) -> None:
+    sql_database._schema = "tenant"
+    cmd = "SELECT 'O''Reilly FROM books', id FROM books"
+    result = sql_database._add_schema_prefix(cmd)
+    assert result == "SELECT 'O''Reilly FROM books', id FROM tenant.books"
