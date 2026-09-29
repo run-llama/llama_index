@@ -735,21 +735,21 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"{self._to_postgres_operator(filter_.operator)}"
             )
         else:
-            # Check if value is a number. If so, cast the metadata value to a float
-            # This is necessary because the metadata is stored as a string
-            try:
+            # Decide by the value's type: float() also parses strings such as
+            # "2024_123" or "nan" that Postgres' ::float cast rejects (#15962).
+            if isinstance(filter_.value, (int, float)) and not isinstance(
+                filter_.value, bool
+            ):
                 return text(
                     f"(metadata_->>'{filter_.key}')::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"{float(filter_.value)}"
                 )
-            except ValueError:
-                # If not a number, then treat it as a string
-                return text(
-                    f"metadata_->>'{filter_.key}' "
-                    f"{self._to_postgres_operator(filter_.operator)} "
-                    f"'{filter_.value}'"
-                )
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'{filter_.value}'"
+            )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
