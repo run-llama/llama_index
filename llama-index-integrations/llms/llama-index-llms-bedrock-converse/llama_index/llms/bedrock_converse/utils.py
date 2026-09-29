@@ -83,6 +83,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-sonnet-4-6": 1000000,
     "anthropic.claude-sonnet-5": 1000000,
+    "anthropic.claude-sonnet-5-5": 1000000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
@@ -150,6 +151,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
@@ -198,6 +200,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
@@ -230,6 +233,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
@@ -254,6 +258,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
     "deepseek.v3-v1:0",
@@ -269,6 +274,7 @@ BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
 )
 
 BEDROCK_NO_TEMP_MODELS = (
@@ -278,12 +284,16 @@ BEDROCK_NO_TEMP_MODELS = (
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
     "anthropic.claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
     "openai.gpt-6-astra",
 )
 
-BEDROCK_NO_FORCED_TOOL_CALL_MODELS = ("anthropic.claude-opus-5-5",)
+BEDROCK_NO_FORCED_TOOL_CALL_MODELS = (
+    "anthropic.claude-opus-5-5",
+    "anthropic.claude-sonnet-5-5",
+)
 
 
 def is_reasoning(model_name: str) -> bool:
@@ -1087,5 +1097,5 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
 
 class ThinkingDict(TypedDict):
-    type: Literal["enabled", "adaptive", "disabled"]
+    type: Literal["enabled", "adaptive", "disabled", "between_tools"]
     budget_tokens: NotRequired[int]
