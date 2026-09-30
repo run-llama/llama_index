@@ -126,7 +126,8 @@ def test_retriever_missing_page_content_skips() -> None:
     assert nodes == []
 
 
-def test_retriever_query_exception_returns_empty() -> None:
+def test_retriever_query_exception_propagates() -> None:
+    """A query that could not run must not look like a query that matched nothing."""
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -134,8 +135,8 @@ def test_retriever_query_exception_returns_empty() -> None:
     )
 
     retriever.sl_client.query = Mock(side_effect=Exception("failure"))
-    nodes = retriever.retrieve("q")
-    assert nodes == []
+    with pytest.raises(Exception, match="failure"):
+        retriever.retrieve("q")
 
 
 def test_query_text_param_is_used() -> None:
@@ -154,3 +155,15 @@ def test_query_text_param_is_used() -> None:
     kwargs = retriever.sl_client.query.call_args.kwargs
     assert kwargs["query_descriptor"] is retriever.sl_query
     assert kwargs["search_term"] == "hello"
+
+
+def test_retriever_query_with_no_entries_is_still_empty() -> None:
+    """The other half: a query that ran and matched nothing still returns []."""
+    retriever = SuperlinkedRetriever(
+        sl_client=MockApp(),
+        sl_query=MockQuery(),
+        page_content_field="text",
+    )
+
+    retriever.sl_client.query = Mock(return_value=Mock(entries=[]))
+    assert retriever.retrieve("q") == []
