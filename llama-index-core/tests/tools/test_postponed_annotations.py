@@ -65,8 +65,21 @@ def test_function_tool_ctx_param_postponed_annotations() -> None:
     assert schema["properties"]["item"]["$ref"] == "#/$defs/Item"
 
 
+async def add_item_with_ctx_and_unresolvable(ctx: Context, amount: Decimal) -> str:
+    return str(amount)
+
+
 def test_function_tool_unresolvable_postponed_annotations() -> None:
     tool = FunctionTool.from_defaults(type_checking_only)
 
     assert not tool.requires_context
     assert tool.metadata.name == "type_checking_only"
+
+
+def test_function_tool_ctx_with_unresolvable_postponed_annotation() -> None:
+    tool = FunctionTool.from_defaults(async_fn=add_item_with_ctx_and_unresolvable)
+
+    assert tool.requires_context
+    assert tool.ctx_param_name == "ctx"
+    assert "ctx" not in tool.metadata.fn_schema.model_fields
+    assert "amount" in tool.metadata.fn_schema.model_fields

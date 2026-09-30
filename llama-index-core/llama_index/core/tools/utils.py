@@ -25,13 +25,37 @@ def get_function_signature(func: Callable[..., Any]) -> Signature:
 
     Functions defined in modules using ``from __future__ import annotations``
     have string annotations, which have to be evaluated in the function's own
-    globals. If they can't be (e.g. names only imported under ``TYPE_CHECKING``),
-    the unresolved signature is returned.
+    globals. If any cannot be evaluated (e.g. names only imported under
+    ``TYPE_CHECKING``), annotations are resolved on a best-effort per-parameter basis.
     """
     try:
         return signature(func, eval_str=True)
     except Exception:
-        return signature(func)
+        sig = signature(func)
+        func_globals = getattr(func, "__globals__", None)
+        if func_globals is None and hasattr(func, "__wrapped__"):
+            func_globals = getattr(func.__wrapped__, "__globals__", {})
+        func_globals = func_globals or {}
+
+        new_params = []
+        for param in sig.parameters.values():
+            if isinstance(param.annotation, str):
+                try:
+                    resolved = eval(param.annotation, func_globals)
+                    new_params.append(param.replace(annotation=resolved))
+                    continue
+                except Exception:
+                    pass
+            new_params.append(param)
+
+        new_return = sig.return_annotation
+        if isinstance(new_return, str):
+            try:
+                new_return = eval(new_return, func_globals)
+            except Exception:
+                pass
+
+        return sig.replace(parameters=new_params, return_annotation=new_return)
 
 
 def create_schema_from_function(
