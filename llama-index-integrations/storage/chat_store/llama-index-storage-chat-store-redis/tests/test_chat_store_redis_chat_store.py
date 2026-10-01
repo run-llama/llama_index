@@ -1,6 +1,7 @@
 from typing import Generator
 
 import pytest
+import redis.exceptions
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.redis import RedisChatStore
@@ -32,6 +33,19 @@ test is skipped.
 def test_class():
     names_of_base_classes = [b.__name__ for b in RedisChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
+
+
+def test_unreachable_redis_does_not_raise_name_error():
+    # A privileged, closed port that refuses connections. `_check_for_cluster`
+    # should catch the resulting redis.exceptions.RedisError and treat the
+    # server as a non-cluster instance, rather than crashing with a NameError
+    # because `redis.exceptions` was never imported.
+    try:
+        RedisChatStore(redis_url="redis://localhost:1")
+    except NameError:
+        pytest.fail("RedisChatStore raised NameError instead of a redis error")
+    except redis.exceptions.RedisError:
+        pass
 
 
 @pytest.fixture()
