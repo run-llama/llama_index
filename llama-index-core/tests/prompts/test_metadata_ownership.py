@@ -65,7 +65,9 @@ def test_default_metadata_is_still_created() -> None:
 
 
 def test_langchain_prompt_template_leaves_the_callers_dict_alone() -> None:
-    pytest.importorskip("langchain_core")
+    # The bridge needs langchain *and* langchain_classic, so guard on the import
+    # the constructor actually performs instead of on langchain_core alone.
+    pytest.importorskip("llama_index.core.bridge.langchain")
     from langchain_core.prompts import PromptTemplate as LangchainTemplate
 
     from llama_index.core.prompts import LangchainPromptTemplate
@@ -73,7 +75,7 @@ def test_langchain_prompt_template_leaves_the_callers_dict_alone() -> None:
     metadata: Dict[str, Any] = {"team": "rag"}
 
     prompt = LangchainPromptTemplate(
-        selector=LangchainTemplate.from_template("answer {question}"),
+        template=LangchainTemplate.from_template("answer {question}"),
         metadata=metadata,
         prompt_type="langchain",
     )
