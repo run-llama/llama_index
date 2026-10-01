@@ -12,12 +12,12 @@ ACTION_URL_TMPL = "https://nla.zapier.com/api/v1/dynamic/exposed/{action_id}/exe
 class ZapierToolSpec(BaseToolSpec):
     """Zapier tool spec."""
 
-    spec_functions = []
-
     def __init__(
         self, api_key: Optional[str] = None, oauth_access_token: Optional[str] = None
     ) -> None:
         """Initialize with parameters."""
+        self.spec_functions = []
+
         if api_key:
             self._headers = {"x-api-key": api_key}
         elif oauth_access_token:
