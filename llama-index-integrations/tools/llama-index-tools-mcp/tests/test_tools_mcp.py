@@ -239,14 +239,12 @@ async def test_resource_tool_uses_uri_not_name(client: BasicMCPClient):
     internal function is created with the resource's name ('get_app_config')
     instead of its URI ('config://app'), causing the client call to fail.
     """
-    tool_spec = McpToolSpec(
-        client, allowed_tools=["get_app_config"], include_resources=True
-    )
+    tool_spec = McpToolSpec(client, allowed_tools=[], include_resources=True)
     tools = await tool_spec.to_tool_list_async()
 
-    assert len(tools) == 1
-    tool = tools[0]
-    assert tool.metadata.name == "get_app_config"
+    matching = [t for t in tools if t.metadata.name == "get_app_config"]
+    assert len(matching) == 1
+    tool = matching[0]
 
     # This call will fail due to the bug.
     result = await tool.acall()
@@ -265,6 +263,28 @@ async def test_dynamic_resource_template_tool_is_created(client: BasicMCPClient)
     # This should now be found.
     tool_names = {t.metadata.name for t in tools}
     assert "get_user_profile" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_fetch_resources_ignores_allowed_tools(client: BasicMCPClient):
+    """
+    allowed_tools filters callable tools, not resources. A resource whose
+    name is not in allowed_tools must still be returned by fetch_resources.
+    """
+    tool_spec = McpToolSpec(client, allowed_tools=["echo"], include_resources=True)
+    resources = await tool_spec.fetch_resources()
+    resource_names = {r.name for r in resources}
+    assert "get_app_config" in resource_names
+
+
+@pytest.mark.asyncio
+async def test_fetch_resources_not_disabled_by_empty_allowed_tools(
+    client: BasicMCPClient,
+):
+    """An empty allowed_tools list should not disable resources entirely."""
+    tool_spec = McpToolSpec(client, allowed_tools=[], include_resources=True)
+    resources = await tool_spec.fetch_resources()
+    assert len(resources) > 0
 
 
 # --- Tests for global_partial_params ---
