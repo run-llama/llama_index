@@ -47,6 +47,27 @@ async def test_get_tools_async(client: BasicMCPClient):
     assert len(tools_plus_resources) > len(tools)
 
 
+@pytest.mark.asyncio
+async def test_failed_tool_call_sets_is_error(client: BasicMCPClient):
+    tool_spec = McpToolSpec(client, allowed_tools=["always_fails"])
+    tools = await tool_spec.to_tool_list_async()
+
+    output = await tools[0].acall()
+
+    assert output.is_error is True
+    assert "Error executing tool always_fails" in str(output)
+
+
+@pytest.mark.asyncio
+async def test_successful_tool_call_is_not_an_error(client: BasicMCPClient):
+    tool_spec = McpToolSpec(client, allowed_tools=["echo"])
+    tools = await tool_spec.to_tool_list_async()
+
+    output = await tools[0].acall(message="hello")
+
+    assert output.is_error is False
+
+
 def test_get_single_tool(client: BasicMCPClient):
     tool_spec = McpToolSpec(client, allowed_tools=["echo"])
 
