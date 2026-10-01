@@ -104,8 +104,8 @@ class CodeActAgent(BaseWorkflowAgent):
                 code_act_system_prompt += "\n" + system_prompt
             code_act_system_prompt = PromptTemplate(code_act_system_prompt)
         elif isinstance(code_act_system_prompt, BasePromptTemplate):
+            code_act_system_str = code_act_system_prompt.get_template()
             if system_prompt:
-                code_act_system_str = code_act_system_prompt.get_template()
                 code_act_system_str += "\n" + system_prompt
             code_act_system_prompt = PromptTemplate(code_act_system_str)
 
