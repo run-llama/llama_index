@@ -25,6 +25,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
     _get_waiting_for_event_exception,
+    apply_state_to_last_user_message,
 )
 from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
@@ -308,9 +309,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
-        # always set to false initially
-        await ctx.store.set("formatted_input_with_state", False)
-
     async def _get_llm_response(
         self,
         ctx: Context,
@@ -447,16 +445,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
 
         state = await ctx.store.get("state", default=None)
-        formatted_input_with_state = await ctx.store.get(
-            "formatted_input_with_state", default=False
-        )
-        if state and not formatted_input_with_state:
-            # update last message with current state
-            for block in llm_input[-1].blocks[::-1]:
-                if isinstance(block, TextBlock):
-                    block.text = self.state_prompt.format(state=state, msg=block.text)
-                    break
-            await ctx.store.set("formatted_input_with_state", True)
+        if state:
+            # add the current state to the prompt, without touching the memory
+            llm_input = apply_state_to_last_user_message(
+                llm_input, self.state_prompt, state
+            )
 
         return AgentSetup(
             input=llm_input,
