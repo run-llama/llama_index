@@ -2,20 +2,23 @@
 
 import dataclasses
 from abc import abstractmethod
-from typing import Dict, Optional, cast
+from typing import Dict, List, Optional, Tuple, cast
 
 from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
+    DEFAULT_STEPBACK_QUERY_TRANSFORM_PROMPT,
     DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DecomposeQueryTransformPrompt,
     ImageOutputQueryTransformPrompt,
+    StepBackQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.llms import LLM
-from llama_index.core.prompts import BasePromptTemplate
+from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.core.prompts.mixin import (
     PromptDictType,
@@ -210,6 +213,56 @@ class DecomposeQueryTransform(BaseQueryTransform):
         )
 
 
+class StepBackQueryTransform(BaseQueryTransform):
+    """
+    Step-back query transform (Zheng et al., 2023).
+
+    Transforms a specific query into a higher-level, principle-oriented
+    question. As described in `[Take a Step Back: Evoking Reasoning via
+    Abstraction in Large Language Models](https://arxiv.org/abs/2310.06117)`.
+
+    Follows the same return pattern as ``DecomposeQueryTransform``:
+    ``query_str`` is replaced by the abstracted question and
+    ``custom_embedding_strs=[new_query_str]`` so retrievers embed the
+    abstracted question. This is in contrast to ``HyDEQueryTransform``,
+    which keeps ``query_str`` as the original and adds a hypothetical
+    document as an embedding string.
+
+    Args:
+        llm: LLM for generating step-back questions. Defaults to
+            ``Settings.llm``.
+        step_back_prompt: Custom prompt template. Defaults to
+            ``DEFAULT_STEPBACK_QUERY_TRANSFORM_PROMPT``.
+
+    """
+
+    def __init__(
+        self,
+        llm: Optional[LLM] = None,
+        step_back_prompt: Optional[StepBackQueryTransformPrompt] = None,
+    ) -> None:
+        super().__init__()
+        self._llm = llm or Settings.llm
+        self._step_back_prompt: BasePromptTemplate = (
+            step_back_prompt or DEFAULT_STEPBACK_QUERY_TRANSFORM_PROMPT
+        )
+
+    def _get_prompts(self) -> PromptDictType:
+        return {"step_back_prompt": self._step_back_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        if "step_back_prompt" in prompts:
+            self._step_back_prompt = prompts["step_back_prompt"]
+
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
+        query_str = query_bundle.query_str
+        new_query_str = self._llm.predict(self._step_back_prompt, query_str=query_str)
+        return QueryBundle(
+            query_str=new_query_str,
+            custom_embedding_strs=[new_query_str],
+        )
+
+
 class ImageOutputQueryTransform(BaseQueryTransform):
     """
     Image output query transform.
@@ -319,3 +372,45 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
             query_str=new_query_str,
             custom_embedding_strs=query_bundle.custom_embedding_strs,
         )
+
+
+def build_step_back_prompt(
+    system_instructions: str,
+    few_shot_examples: Optional[List[Tuple[str, str]]] = None,
+    original_question_label: str = "Original question",
+    step_back_question_label: str = "Step-back question",
+    cue_text: str = "Step-back question:",
+    prompt_type: "PromptType" = PromptType.CUSTOM,
+) -> PromptTemplate:
+    """
+    Build a step-back PromptTemplate from a role/rules block + optional few-shot pairs.
+
+    Args:
+        system_instructions: Role definition and task rules. Must not contain
+            few-shot examples (those are appended automatically).
+        few_shot_examples: Optional list of ``(original_question, step_back_question)``
+            pairs rendered as few-shot demonstrations before the actual question.
+        original_question_label: Header label for the original question
+            (default ``"Original question"``).
+        step_back_question_label: Header label for the step-back question in
+            few-shot demonstrations (default ``"Step-back question"``).
+        cue_text: Final completion cue passed to the LLM (default
+            ``"Step-back question:"``).
+        prompt_type: ``PromptType`` for the resulting template. Defaults to
+            ``PromptType.CUSTOM``; pass ``PromptType.STEP_BACK`` to use the
+            built-in step-back routing in the mock fixture.
+
+    Returns:
+        A ``PromptTemplate`` with format variable ``{query_str}``.
+
+    """
+    parts: List[str] = [system_instructions]
+    if few_shot_examples:
+        parts.append(
+            "\n\n".join(
+                f"{original_question_label}: {q}\n{step_back_question_label}: {a}"
+                for q, a in few_shot_examples
+            )
+        )
+    parts.append(f"{original_question_label}: {{query_str}}\n\n{cue_text}")
+    return PromptTemplate("\n\n".join(parts), prompt_type=prompt_type)
