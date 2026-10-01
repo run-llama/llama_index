@@ -88,6 +88,34 @@ print(str(response))
 
 As usual, you can see the [full code of this example](https://github.com/run-llama/python-agents-tutorial/blob/main/5_human_in_the_loop.py).
 
+### Make waits safe to replay
+
+When a workflow step is waiting, it can be replayed from the beginning as events arrive. Keep any side effect that precedes `wait_for_event` replay-safe: persist its result in `ctx.store` before waiting, then reuse that value if the step runs again. This avoids repeating work such as API calls, payments, or writes.
+
+Also derive `waiter_id` from a stable identifier for the logical operation. Do not generate a new UUID inside the step: a replay would then wait for a different ID than the one shown to the caller.
+
+```python
+async def dangerous_task(ctx: Context, request_id: str) -> str:
+    cache_key = f"dangerous-task:{request_id}"
+    result = await ctx.store.get(cache_key, default=None)
+    if result is None:
+        # Run this side effect once, then persist it before waiting.
+        result = await inspect_the_request(request_id)
+        await ctx.store.set(cache_key, result)
+
+    waiter_id = f"approval:{request_id}"
+    response = await ctx.wait_for_event(
+        HumanResponseEvent,
+        waiter_id=waiter_id,
+        waiter_event=InputRequiredEvent(
+            prefix="Are you sure you want to proceed? ",
+            waiter_id=waiter_id,
+        ),
+        requirements={"waiter_id": waiter_id},
+    )
+    return finish_task(result, response.response)
+```
+
 You can do anything you want to capture the input; you could use a GUI, or audio input, or even get another, separate agent involved. If your input is going to take a while, or happen in another process, you might want to [serialize the context](/python/framework/understanding/agent/state) and save it to a database or file so that you can resume the workflow later.
 
 Speaking of getting other agents involved brings us to our next section, detailing several ways to build [multi-agent systems](/python/framework/understanding/agent/multi_agent).
