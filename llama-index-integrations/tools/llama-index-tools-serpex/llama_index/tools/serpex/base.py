@@ -1,4 +1,4 @@
-"""SERPEX search tool specification."""
+"""Serpex search tool specification."""
 
 import os
 from typing import Any, Dict, List, Optional
@@ -11,20 +11,15 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 class SerpexToolSpec(BaseToolSpec):
     """
-    SERPEX tool spec for web search.
+    Serpex tool spec for web search.
 
-    This tool allows you to search the web using the SERPEX API and get
-    real-time search results from multiple search engines including Google,
-    Bing, DuckDuckGo, Brave, Yahoo, and Yandex.
-
-    SERPEX provides fast, reliable search results via API, perfect for
-    AI applications, RAG systems, and data analytics.
+    Serpex is a web search API for AI agents. Search returns ranked web
+    results (title, URL and snippet). Serpex runs its own search engine.
 
     Args:
         api_key (Optional[str]): SERPEX API key. If not provided, will look
             for SERPEX_API_KEY environment variable.
-        engine (str): Default search engine to use. Options: 'auto' (default),
-            'google', 'bing', 'duckduckgo', 'brave', 'yahoo', 'yandex'.
+        engine (str): Deprecated, ignored. Results are routed automatically.
 
     Examples:
         >>> from llama_index.tools.serpex import SerpexToolSpec
@@ -47,7 +42,7 @@ class SerpexToolSpec(BaseToolSpec):
         Args:
             api_key: SERPEX API key. If not provided, reads from
                 SERPEX_API_KEY environment variable.
-            engine: Default search engine ('auto', 'google', 'bing', etc.).
+            engine: Deprecated, ignored. Results are routed automatically.
 
         Raises:
             ValueError: If API key is not provided and not found in environment.
@@ -72,16 +67,14 @@ class SerpexToolSpec(BaseToolSpec):
         time_range: Optional[str] = None,
     ) -> List[Document]:
         """
-        Search the web using SERPEX API.
+        Search the web with Serpex.
 
-        This function queries the specified search engine and returns structured
-        results containing titles, URLs, and snippets.
+        Returns ranked web results containing titles, URLs, and snippets.
 
         Args:
             query: Search query string.
             num_results: Number of results to return (default: 10, max: 100).
-            engine: Override default search engine. Options: 'auto', 'google',
-                'bing', 'duckduckgo', 'brave', 'yahoo', 'yandex'.
+            engine: Deprecated, ignored. Results are routed automatically.
             time_range: Filter results by time. Options: 'day', 'week',
                 'month', 'year'.
 
@@ -97,13 +90,6 @@ class SerpexToolSpec(BaseToolSpec):
             ...     print(f"Title: {doc.metadata['title']}")
             ...     print(f"URL: {doc.metadata['url']}")
             ...     print(doc.text)
-
-            >>> # Search with specific engine
-            >>> results = tool.search(
-            ...     "privacy focused browser",
-            ...     engine="duckduckgo",
-            ...     num_results=5
-            ... )
 
             >>> # Search with time filter
             >>> results = tool.search(

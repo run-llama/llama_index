@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-tools-serpex"
-version = "0.3.0"
-description = "LlamaIndex tools integration for SERPEX - Multi-engine web search API"
+version = "0.3.1"
+description = "LlamaIndex tools integration for Serpex, a web search API for AI agents"
 authors = [{name = "SERPEX Team", email = "support@serpex.dev"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-core>=0.13.0,<0.15", "requests>=2.28.0"]
-keywords = ["search", "serpex", "google", "bing", "duckduckgo", "brave", "web search", "llm", "ai"]
+keywords = ["search", "serpex", "web search", "search api", "ai agents", "rag", "llm", "ai"]
 
 [tool.codespell]
 check-filenames = true
