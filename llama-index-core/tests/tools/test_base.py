@@ -603,3 +603,78 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_field_default_factory_runs_per_call_not_per_tool() -> None:
+    """pydantic's contract is that default_factory is evaluated per use.
+
+    The defaults were materialized once in __init__, so every call reused a
+    single value — ids/timestamps froze for the life of the process.
+    """
+    from uuid import uuid4
+
+    def start_job(
+        name: str, job_id: str = Field(default_factory=lambda: uuid4().hex)
+    ) -> str:
+        return job_id
+
+    tool = FunctionTool.from_defaults(fn=start_job)
+    ids = {str(tool.call(name=n).raw_output) for n in ("a", "b", "c")}
+    assert len(ids) == 3
+
+
+@pytest.mark.asyncio
+async def test_field_default_factory_runs_per_call_async() -> None:
+    """acall shares the same default resolution as call."""
+    from uuid import uuid4
+
+    def start_job(
+        name: str, job_id: str = Field(default_factory=lambda: uuid4().hex)
+    ) -> str:
+        return job_id
+
+    tool = FunctionTool.from_defaults(fn=start_job)
+    first = str((await tool.acall(name="a")).raw_output)
+    second = str((await tool.acall(name="b")).raw_output)
+    assert first != second
+
+
+def test_mutable_field_default_is_not_shared_between_calls() -> None:
+    """A default_factory=list must hand each call its own container.
+
+    Previously one list was built at construction and reused, so a tool that
+    appended to it accumulated state across unrelated calls.
+    """
+
+    def collect(item: str, acc: List[str] = Field(default_factory=list)) -> List[str]:
+        acc.append(item)
+        return acc
+
+    tool = FunctionTool.from_defaults(fn=collect)
+    assert tool.call(item="apple").raw_output == ["apple"]
+    assert tool.call(item="pear").raw_output == ["pear"]
+
+
+def test_field_default_does_not_break_positional_calls() -> None:
+    """A Field-defaulted param passed positionally must not also arrive as a
+    keyword — that raised TypeError: got multiple values for argument.
+    """
+
+    def greet(name: str, greeting: str = Field(default="hi")) -> str:
+        return f"{greeting} {name}"
+
+    tool = FunctionTool.from_defaults(fn=greet)
+    assert tool.call("bob").content == "hi bob"
+    assert tool.call("bob", "yo").content == "yo bob"
+    assert tool.call("bob", greeting="hey").content == "hey bob"
+
+
+def test_plain_field_default_still_applied() -> None:
+    """Regression guard for the original Field(default=...) behavior."""
+
+    def get_weather(location: Optional[str] = Field(default="Berlin")) -> str:
+        return f"weather in {location}"
+
+    tool = FunctionTool.from_defaults(get_weather)
+    assert tool.call().content == "weather in Berlin"
+    assert tool.call(location="Munich").content == "weather in Munich"
