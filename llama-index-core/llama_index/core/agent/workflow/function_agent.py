@@ -8,7 +8,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, ThinkingBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
@@ -98,6 +98,52 @@ class FunctionAgent(BaseWorkflowAgent):
 
         return last_chat_response
 
+    @staticmethod
+    def _extract_reasoning_content(chat_response: ChatResponse) -> Optional[str]:
+        """
+        Best-effort recovery of a final answer that a model placed in its
+        reasoning channel instead of the normal text content.
+
+        Looks, in order, at:
+        1. ThinkingBlock content on the message (all non-empty blocks, joined);
+        2. a ``reasoning_content`` string in ``message.additional_kwargs``;
+        3. a ``reasoning_content`` string in the raw provider payload
+           (top level or under an OpenAI-style ``choices[0].message``).
+
+        Returns ``None`` when no reasoning content is available.
+        """
+        message = chat_response.message
+
+        thinking = [
+            block.content
+            for block in message.blocks
+            if isinstance(block, ThinkingBlock) and block.content
+        ]
+        if thinking:
+            return "".join(thinking)
+
+        kwargs_reasoning = message.additional_kwargs.get("reasoning_content")
+        if isinstance(kwargs_reasoning, str) and kwargs_reasoning:
+            return kwargs_reasoning
+
+        raw = chat_response.raw
+        raw_dict = raw.model_dump() if isinstance(raw, BaseModel) else raw
+        if isinstance(raw_dict, dict):
+            raw_reasoning = raw_dict.get("reasoning_content")
+            if isinstance(raw_reasoning, str) and raw_reasoning:
+                return raw_reasoning
+            choices = raw_dict.get("choices")
+            if isinstance(choices, list) and choices:
+                first = choices[0]
+                if isinstance(first, dict):
+                    inner = first.get("message")
+                    if isinstance(inner, dict):
+                        inner_reasoning = inner.get("reasoning_content")
+                        if isinstance(inner_reasoning, str) and inner_reasoning:
+                            return inner_reasoning
+
+        return None
+
     async def take_step(
         self,
         ctx: AgentContext,
@@ -128,6 +174,26 @@ class FunctionAgent(BaseWorkflowAgent):
         tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
             last_chat_response, error_on_no_tool_call=False
         )
+
+        # Some OpenAI-compatible models (e.g. Kimi-K2.5) return the final answer in
+        # `reasoning_content` / a ThinkingBlock instead of the normal text content.
+        # When the step produced no tool calls and no text content, FunctionAgent would
+        # otherwise silently return an empty answer -- unlike ReActAgent, which validates
+        # for empty content. Promote the reasoning content to text so the answer is not
+        # lost. This never overrides content that is already present.
+        if not tool_calls and not last_chat_response.message.content:
+            reasoning_content = self._extract_reasoning_content(last_chat_response)
+            if reasoning_content:
+                last_chat_response = ChatResponse(
+                    message=ChatMessage(
+                        role=last_chat_response.message.role,
+                        content=reasoning_content,
+                        additional_kwargs=last_chat_response.message.additional_kwargs,
+                    ),
+                    delta=reasoning_content,
+                    raw=last_chat_response.raw,
+                    additional_kwargs=last_chat_response.additional_kwargs,
+                )
 
         # only add to scratchpad if we didn't select the handoff tool
         scratchpad.append(last_chat_response.message)
