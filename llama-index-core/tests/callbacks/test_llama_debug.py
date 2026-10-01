@@ -1,5 +1,8 @@
 """Embeddings."""
 
+from datetime import datetime, timedelta
+from unittest.mock import patch
+
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.llama_debug import LlamaDebugHandler
 from llama_index.core.callbacks.schema import CBEventType
@@ -42,17 +45,27 @@ def test_on_event_end() -> None:
 
 def test_get_event_stats() -> None:
     """Test get event stats."""
+    # Stamp the start/end events with fixed times: back-to-back
+    # `datetime.now()` calls can return the same value on platforms with a
+    # coarse wall clock (e.g. Windows), which made `total_secs == 0.0`
+    # and this test fail there.
+    start = datetime(2026, 1, 1, 12, 0, 0)
+    end = start + timedelta(seconds=1.5)
     handler = LlamaDebugHandler()
 
-    event_id = handler.on_event_start(CBEventType.CHUNKING, payload=TEST_PAYLOAD)
-    handler.on_event_end(CBEventType.CHUNKING, event_id=event_id)
+    with patch("llama_index.core.callbacks.schema.datetime") as mock_datetime:
+        mock_datetime.now.side_effect = [start, end]
+        mock_datetime.strptime = datetime.strptime
+        event_id = handler.on_event_start(CBEventType.CHUNKING, payload=TEST_PAYLOAD)
+        handler.on_event_end(CBEventType.CHUNKING, event_id=event_id)
 
     assert len(handler.event_pairs_by_type[CBEventType.CHUNKING]) == 2
 
     event_stats = handler.get_event_time_info(CBEventType.CHUNKING)
 
     assert event_stats.total_count == 1
-    assert event_stats.total_secs > 0.0
+    assert event_stats.total_secs == 1.5
+    assert event_stats.average_secs == 1.5
 
 
 def test_flush_events() -> None:
