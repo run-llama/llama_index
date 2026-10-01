@@ -122,9 +122,15 @@ class SimpleVectorStore(BasePydanticVectorStore):
                     namespace = fname.split(NAMESPACE_SEP)[0]
 
                     # handle backwards compatibility with stores that were persisted
+                    # without a namespace prefix: load the actual file found instead
+                    # of re-deriving a namespaced path that won't exist on disk.
                     if namespace == DEFAULT_PERSIST_FNAME:
-                        vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
-                            persist_dir=persist_dir, fs=fs
+                        if fs is not None:
+                            persist_path = concat_dirs(persist_dir, fname)
+                        else:
+                            persist_path = os.path.join(persist_dir, fname)
+                        vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_path(
+                            persist_path, fs=fs
                         )
                     else:
                         vector_stores[namespace] = cls.from_persist_dir(
