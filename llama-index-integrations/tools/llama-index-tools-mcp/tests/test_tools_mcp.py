@@ -256,15 +256,24 @@ async def test_resource_tool_uses_uri_not_name(client: BasicMCPClient):
 @pytest.mark.asyncio
 async def test_dynamic_resource_template_tool_is_created(client: BasicMCPClient):
     """
-    Tests that a tool is created for a dynamic resource template.
+    Tests that a tool is created for a dynamic resource template and that
+    invoking it with a template variable expands the URI and returns the
+    corresponding resource.
     """
     tool_spec = McpToolSpec(client, include_resources=True)
     tools = await tool_spec.to_tool_list_async()
 
-    # The server.py defines a dynamic resource template named 'get_user_profile'.
-    # This should now be found.
-    tool_names = {t.metadata.name for t in tools}
-    assert "get_user_profile" in tool_names
+    # The server.py defines a dynamic resource template named 'get_user_profile'
+    # with uriTemplate 'users://{user_id}/profile'.
+    tools_by_name = {t.metadata.name: t for t in tools}
+    assert "get_user_profile" in tools_by_name
+
+    template_tool = tools_by_name["get_user_profile"]
+    schema_props = template_tool.metadata.fn_schema.model_json_schema()["properties"]
+    assert "user_id" in schema_props
+
+    result = await template_tool.acall(user_id="123")
+    assert "Test User" in result.content
 
 
 # --- Tests for global_partial_params ---
