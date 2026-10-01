@@ -80,3 +80,22 @@ def test_failed_parse(output_parser: SelectionOutputParser) -> None:
     )
     with pytest.raises(ValueError, match="Failed to convert*") as exc_info:
         output_parser.parse(output=no_json_in_response)
+
+
+def test_parse_skips_non_dict_list_items(
+    output_parser: SelectionOutputParser,
+) -> None:
+    parsed = output_parser.parse(output="[1, 2, 3]")
+    assert isinstance(parsed, StructuredOutput)
+    assert parsed.parsed_output == []
+
+
+def test_parse_keeps_dicts_when_mixed_with_scalars(
+    output_parser: SelectionOutputParser,
+) -> None:
+    parsed = output_parser.parse(
+        output='[1, {"choice": 1, "reason": "just because"}]'
+    )
+    assert len(parsed.parsed_output) == 1
+    assert parsed.parsed_output[0].choice == 1
+    assert parsed.parsed_output[0].reason == "just because"
