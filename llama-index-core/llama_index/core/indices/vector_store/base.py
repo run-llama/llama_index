@@ -19,6 +19,7 @@ from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.utils import async_embed_nodes, embed_nodes
 from llama_index.core.schema import (
     BaseNode,
+    Document,
     ImageNode,
     IndexNode,
     MetadataMode,
@@ -407,13 +408,229 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 self._docstore.delete_document(node_id, raise_error=False)
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
+    def _get_ref_doc_vector_ids(self, ref_doc_id: str) -> List[str]:
+        """
+        Get this index's vector ids for a ref doc.
+
+        Only returns ids tracked by this index's struct, excluding nodes that
+        belong to other indexes sharing the same docstore.
+        """
+        ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
+        if ref_doc_info is None:
+            return []
+        ref_doc_node_ids = set(ref_doc_info.node_ids)
+        return [
+            vector_id
+            for vector_id, node_id in self._index_struct.nodes_dict.items()
+            if node_id in ref_doc_node_ids
+        ]
+
+    async def _aget_ref_doc_vector_ids(self, ref_doc_id: str) -> List[str]:
+        """Asynchronously get this index's vector ids for a ref doc."""
+        ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
+        if ref_doc_info is None:
+            return []
+        ref_doc_node_ids = set(ref_doc_info.node_ids)
+        return [
+            vector_id
+            for vector_id, node_id in self._index_struct.nodes_dict.items()
+            if node_id in ref_doc_node_ids
+        ]
+
+    def _ref_doc_changed_in_index(self, document: Document) -> bool:
+        """
+        Check if this index's own nodes for a document are missing or stale.
+
+        The docstore hash only reflects the index that refreshed last, so an
+        index sharing a docstore also needs to compare against its own stored
+        nodes.
+
+        Returns False when nodes are not tracked in the index struct (i.e. the
+        vector store keeps text), preserving the docstore-hash-only behavior.
+        """
+        if self._vector_store.stores_text and not self._store_nodes_override:
+            return False
+
+        vector_ids = self._get_ref_doc_vector_ids(document.id_)
+        if not vector_ids:
+            return True
+
+        node_ids = [
+            self._index_struct.nodes_dict[vector_id] for vector_id in vector_ids
+        ]
+        nodes = self._docstore.get_nodes(node_ids, raise_error=False)
+        if len(nodes) < len(node_ids):
+            return True
+
+        return any(
+            node.source_node is None or node.source_node.hash != document.hash
+            for node in nodes
+        )
+
+    async def _aref_doc_changed_in_index(self, document: Document) -> bool:
+        """Asynchronously check if this index's own nodes are missing or stale."""
+        if self._vector_store.stores_text and not self._store_nodes_override:
+            return False
+
+        vector_ids = await self._aget_ref_doc_vector_ids(document.id_)
+        if not vector_ids:
+            return True
+
+        node_ids = [
+            self._index_struct.nodes_dict[vector_id] for vector_id in vector_ids
+        ]
+        nodes = await self._docstore.aget_nodes(node_ids, raise_error=False)
+        if len(nodes) < len(node_ids):
+            return True
+
+        return any(
+            node.source_node is None or node.source_node.hash != document.hash
+            for node in nodes
+        )
+
+    def _delete_ref_doc_from_index(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete a ref doc from this index only.
+
+        Removes this index's nodes from the vector store, index struct, and
+        docstore without touching the shared ref doc entry or nodes that
+        belong to other indexes sharing the docstore.
+        """
+        self._vector_store.delete(ref_doc_id, **delete_kwargs)
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            for vector_id in self._get_ref_doc_vector_ids(ref_doc_id):
+                node_id = self._index_struct.nodes_dict[vector_id]
+                self._index_struct.delete(vector_id)
+                self._docstore.delete_document(node_id, raise_error=False)
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    async def _adelete_ref_doc_from_index(
+        self, ref_doc_id: str, **delete_kwargs: Any
+    ) -> None:
+        """Asynchronously delete a ref doc from this index only."""
+        await self._vector_store.adelete(ref_doc_id, **delete_kwargs)
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            for vector_id in await self._aget_ref_doc_vector_ids(ref_doc_id):
+                node_id = self._index_struct.nodes_dict[vector_id]
+                self._index_struct.delete(vector_id)
+                await self._docstore.adelete_document(node_id, raise_error=False)
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
+        """
+        Update a document and it's corresponding nodes.
+
+        This is equivalent to deleting the document and then inserting it again.
+
+        NOTE: overrides BaseIndex.update_ref_doc to only delete this index's
+            own nodes, so that other indexes sharing the docstore are unaffected.
+
+        Args:
+            document (Union[BaseDocument, BaseIndex]): document to update
+            insert_kwargs (Dict): kwargs to pass to insert
+            delete_kwargs (Dict): kwargs to pass to delete
+
+        """
+        with self._callback_manager.as_trace("update_ref_doc"):
+            self._delete_ref_doc_from_index(
+                document.id_, **update_kwargs.pop("delete_kwargs", {})
+            )
+            self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+
+    async def aupdate_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
+        """
+        Asynchronously update a document and it's corresponding nodes.
+
+        This is equivalent to deleting the document and then inserting it again.
+
+        NOTE: overrides BaseIndex.aupdate_ref_doc to only delete this index's
+            own nodes, so that other indexes sharing the docstore are unaffected.
+
+        Args:
+            document (Union[BaseDocument, BaseIndex]): document to update
+            insert_kwargs (Dict): kwargs to pass to insert
+            delete_kwargs (Dict): kwargs to pass to delete
+
+        """
+        with self._callback_manager.as_trace("aupdate_ref_doc"):
+            await self._adelete_ref_doc_from_index(
+                document.id_, **update_kwargs.pop("delete_kwargs", {})
+            )
+            await self.ainsert(document, **update_kwargs.pop("insert_kwargs", {}))
+
+    def refresh_ref_docs(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """
+        Refresh an index with documents that have changed.
+
+        This allows users to save LLM and Embedding model calls, while only
+        updating documents that have any changes in text or metadata. It
+        will also insert any documents that previously were not stored.
+
+        NOTE: overrides BaseIndex.refresh_ref_docs so that indexes sharing a
+            docstore are refreshed against their own stored nodes, not only
+            the shared docstore hash.
+        """
+        with self._callback_manager.as_trace("refresh_ref_docs"):
+            refreshed_documents = [False] * len(documents)
+            for i, document in enumerate(documents):
+                existing_doc_hash = self._docstore.get_document_hash(document.id_)
+                if existing_doc_hash is None:
+                    self.insert(document, **update_kwargs.get("insert_kwargs", {}))
+                    refreshed_documents[i] = True
+                elif (
+                    existing_doc_hash != document.hash
+                    or self._ref_doc_changed_in_index(document)
+                ):
+                    self.update_ref_doc(
+                        document, **update_kwargs.get("update_kwargs", {})
+                    )
+                    refreshed_documents[i] = True
+
+            return refreshed_documents
+
+    async def arefresh_ref_docs(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """
+        Asynchronously refresh an index with documents that have changed.
+
+        This allows users to save LLM and Embedding model calls, while only
+        updating documents that have any changes in text or metadata. It
+        will also insert any documents that previously were not stored.
+
+        NOTE: overrides BaseIndex.arefresh_ref_docs so that indexes sharing a
+            docstore are refreshed against their own stored nodes, not only
+            the shared docstore hash.
+        """
+        with self._callback_manager.as_trace("arefresh_ref_docs"):
+            refreshed_documents = [False] * len(documents)
+            for i, document in enumerate(documents):
+                existing_doc_hash = await self._docstore.aget_document_hash(
+                    document.id_
+                )
+                if existing_doc_hash is None:
+                    await self.ainsert(
+                        document, **update_kwargs.get("insert_kwargs", {})
+                    )
+                    refreshed_documents[i] = True
+                elif (
+                    existing_doc_hash != document.hash
+                    or await self._aref_doc_changed_in_index(document)
+                ):
+                    await self.aupdate_ref_doc(
+                        document, **update_kwargs.get("update_kwargs", {})
+                    )
+                    refreshed_documents[i] = True
+
+            return refreshed_documents
+
     def _delete_from_index_struct(self, ref_doc_id: str) -> None:
         # delete from index_struct only if needed
         if not self._vector_store.stores_text or self._store_nodes_override:
-            ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
-            if ref_doc_info is not None:
-                for node_id in ref_doc_info.node_ids:
-                    self._index_struct.delete(node_id)
+            for vector_id in self._get_ref_doc_vector_ids(ref_doc_id):
+                self._index_struct.delete(vector_id)
 
     def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
@@ -433,10 +650,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     async def _adelete_from_index_struct(self, ref_doc_id: str) -> None:
         """Delete from index_struct only if needed."""
         if not self._vector_store.stores_text or self._store_nodes_override:
-            ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
-            if ref_doc_info is not None:
-                for node_id in ref_doc_info.node_ids:
-                    self._index_struct.delete(node_id)
+            for vector_id in await self._aget_ref_doc_vector_ids(ref_doc_id):
+                self._index_struct.delete(vector_id)
 
     async def _adelete_from_docstore(self, ref_doc_id: str) -> None:
         """Delete from docstore only if needed."""
