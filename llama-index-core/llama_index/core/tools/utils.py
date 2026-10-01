@@ -1,4 +1,4 @@
-from inspect import Parameter, signature
+from inspect import Parameter, Signature, signature
 from typing import (
     Any,
     Awaitable,
@@ -17,6 +17,45 @@ import datetime
 import typing
 
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
+
+
+def get_function_signature(func: Callable[..., Any]) -> Signature:
+    """
+    Get the signature of a function with string annotations resolved.
+
+    Functions defined in modules using ``from __future__ import annotations``
+    have string annotations, which have to be evaluated in the function's own
+    globals. If any cannot be evaluated (e.g. names only imported under
+    ``TYPE_CHECKING``), annotations are resolved on a best-effort per-parameter basis.
+    """
+    try:
+        return signature(func, eval_str=True)
+    except Exception:
+        sig = signature(func)
+        func_globals = getattr(func, "__globals__", None)
+        if func_globals is None and hasattr(func, "__wrapped__"):
+            func_globals = getattr(func.__wrapped__, "__globals__", {})
+        func_globals = func_globals or {}
+
+        new_params = []
+        for param in sig.parameters.values():
+            if isinstance(param.annotation, str):
+                try:
+                    resolved = eval(param.annotation, func_globals)
+                    new_params.append(param.replace(annotation=resolved))
+                    continue
+                except Exception:
+                    pass
+            new_params.append(param)
+
+        new_return = sig.return_annotation
+        if isinstance(new_return, str):
+            try:
+                new_return = eval(new_return, func_globals)
+            except Exception:
+                pass
+
+        return sig.replace(parameters=new_params, return_annotation=new_return)
 
 
 def create_schema_from_function(
@@ -43,7 +82,7 @@ def create_schema_from_function(
     fields = {}
     ignore_fields = ignore_fields or []
     param_descriptions = param_descriptions or {}
-    params = signature(func).parameters
+    params = get_function_signature(func).parameters
 
     for param_name in params:
         if param_name in ignore_fields:
