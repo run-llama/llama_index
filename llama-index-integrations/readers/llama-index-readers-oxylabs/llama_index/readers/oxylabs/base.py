@@ -15,13 +15,13 @@ class OxylabsBaseReader(BasePydanticReader, abc.ABC):
     """
     Oxylabs Scraper base class.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api
+    https://developers.oxylabs.io/products/web-scraper-api
     """
+
+    is_remote: bool = True
 
     top_level_header: Optional[str] = None
 
-    timeout_s: int = 100
-    oxylabs_scraper_url: str = "https://realtime.oxyserps-dev.fun/v1/queries"
     oxylabs_api: RealtimeClient
     async_oxylabs_api: AsyncClient
 
@@ -49,8 +49,7 @@ class OxylabsBaseReader(BasePydanticReader, abc.ABC):
 
         Args:
             payload (dict): Oxylabs API parameters as described
-                [here](https://developers.oxylabs.io/scraper-apis/
-                web-scraper-api/targets/generic-target#additional).
+                [here](https://developers.oxylabs.io/products/web-scraper-api/features).
 
         Returns:
             List[Document]: List of documents.
@@ -81,8 +80,21 @@ class OxylabsBaseReader(BasePydanticReader, abc.ABC):
         Validate Oxylabs response format and unpack data.
         """
         validated_results = []
+
+        raw = getattr(response, "raw", None)
+        if raw is None:
+            raise RuntimeError(
+                "No response returned by the Oxylabs API."
+                " Check the credentials and the request parameters."
+            )
+
+        # A rejected job carries the API's own explanation instead of `results`.
+        # Surface it rather than letting it fall through as a KeyError.
+        if isinstance(raw, dict) and "results" not in raw and raw.get("message"):
+            raise RuntimeError(f"Oxylabs API error: {raw['message']}")
+
         try:
-            result_pages = response.raw["results"]
+            result_pages = raw["results"]
             if not isinstance(result_pages, list) or not result_pages:
                 raise ValueError("No results returned!")
 
