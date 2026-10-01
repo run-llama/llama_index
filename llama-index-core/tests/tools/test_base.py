@@ -7,7 +7,7 @@ from typing import List, Optional
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
-from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.function_tool import FunctionTool, ToolOutput
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
@@ -326,6 +326,45 @@ async def test_function_tool_output_single_block() -> None:
 
     assert len(tool_output.blocks) == 1
     assert tool_output.content == "Hello"
+
+
+def test_function_tool_preserves_tool_output() -> None:
+    def failing_tool() -> ToolOutput:
+        return ToolOutput(
+            content="The lookup failed: index down",
+            tool_name="failing_tool",
+            raw_input={},
+            raw_output=None,
+            is_error=True,
+        )
+
+    tool = FunctionTool.from_defaults(failing_tool)
+
+    result = tool.call()
+
+    assert result.is_error is True
+    assert result.content == "The lookup failed: index down"
+    assert result.tool_name == "failing_tool"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_preserves_tool_output_async() -> None:
+    async def failing_tool() -> ToolOutput:
+        return ToolOutput(
+            content="The lookup failed: index down",
+            tool_name="failing_tool",
+            raw_input={},
+            raw_output=None,
+            is_error=True,
+        )
+
+    tool = FunctionTool.from_defaults(async_fn=failing_tool)
+
+    result = await tool.acall()
+
+    assert result.is_error is True
+    assert result.content == "The lookup failed: index down"
+    assert result.tool_name == "failing_tool"
 
 
 def test_fn_schema_docstring_descriptions():
