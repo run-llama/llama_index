@@ -175,6 +175,7 @@ def test_chat_message_serializer():
             "some_object": {"some_field": ""},
         },
         "blocks": [{"block_type": "text", "text": "test content"}],
+        "id_": m.id_,
     }
 
 
@@ -189,6 +190,7 @@ def test_chat_message_legacy_roundtrip():
         "additional_kwargs": {},
         "blocks": [{"block_type": "text", "text": "foo"}],
         "role": MessageRole.USER,
+        "id_": m.id_,
     }
 
 
@@ -1956,3 +1958,48 @@ def test_tool_call_block_format():
     # Currently, ToolCallBlock does not support template vars
     assert formatted_block.tool_name == "{tool_name}"
     assert formatted_block.tool_kwargs == {"param": "{param_value}"}
+
+
+def test_chat_message_gets_a_unique_id():
+    m1 = ChatMessage(content="same text")
+    m2 = ChatMessage(content="same text")
+
+    assert m1.id_ and m2.id_
+    assert m1.id_ != m2.id_
+    assert ChatMessage(content="x", id_="fixed").id_ == "fixed"
+
+
+def test_chat_message_equality_ignores_id():
+    m1 = ChatMessage(content="same text")
+    m2 = ChatMessage(content="same text")
+
+    assert m1.id_ != m2.id_
+    assert m1 == m2
+    assert m1 != ChatMessage(content="other text")
+    assert m1 != ChatMessage(content="same text", role=MessageRole.ASSISTANT)
+    assert m1 != ChatMessage(content="same text", additional_kwargs={"a": 1})
+    assert m1 != "same text"
+
+
+def test_chat_message_id_survives_a_roundtrip():
+    m = ChatMessage(content="persisted")
+
+    assert ChatMessage.model_validate(m.model_dump()).id_ == m.id_
+
+    # data persisted before id_ existed still loads, and gets an id_ of its own
+    legacy = ChatMessage.model_validate(
+        {"role": MessageRole.USER, "blocks": [{"block_type": "text", "text": "old"}]}
+    )
+    assert legacy.id_
+
+
+@pytest.mark.asyncio
+async def test_chat_message_amerge_ignores_differing_ids():
+    m1 = ChatMessage(content="Hello")
+    m2 = ChatMessage(content="world!")
+    assert m1.id_ != m2.id_
+
+    merged = await ChatMessage.amerge([m1, m2], chunk_size=10000)
+
+    assert len(merged) == 1
+    assert merged[0].content == "Hello world!"
