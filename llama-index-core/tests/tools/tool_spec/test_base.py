@@ -172,6 +172,11 @@ def test_tool_spec_subset() -> None:
     )
 
 
+def test_tool_spec_empty_subset() -> None:
+    """Test empty tool spec subset."""
+    assert TestToolSpec().to_tool_list(spec_functions=[]) == []
+
+
 @pytest.mark.asyncio
 async def test_async_tool_spec() -> None:
     """Test tool spec."""

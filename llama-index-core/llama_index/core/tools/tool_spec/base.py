@@ -68,7 +68,8 @@ class BaseToolSpec:
         func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
     ) -> List[FunctionTool]:
         """Convert tool spec to list of tools."""
-        spec_functions = spec_functions or self.spec_functions
+        if spec_functions is None:
+            spec_functions = self.spec_functions
         func_to_metadata_mapping = func_to_metadata_mapping or {}
         tool_list = []
         for func_spec in spec_functions:
