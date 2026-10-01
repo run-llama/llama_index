@@ -716,6 +716,9 @@ class Memory(BaseMemory):
                     and reversed_queue
                     and len(reversed_queue) > 1
                 ):
+                    # Never evict system messages from the active queue
+                    if reversed_queue[-1].role == "system":
+                        break
                     message = reversed_queue.pop()
                     messages_to_flush.append(message)
                     flushed_tokens += self._estimate_token_count(message)
@@ -733,10 +736,10 @@ class Memory(BaseMemory):
                 # and the last message to be from assistant or tool
                 if chronological_view:
                     # Keep removing messages until first remaining message is from user
-                    # This ensures we start with a user message
+                    # or system (system messages must be preserved at the head).
                     while (
                         chronological_view
-                        and chronological_view[0].role != "user"
+                        and chronological_view[0].role not in ("user", "system")
                         and len(reversed_queue) > 1
                     ):
                         if reversed_queue:
@@ -778,10 +781,13 @@ class Memory(BaseMemory):
                             reversed_queue = turn_messages[::-1] + reversed_queue
                         # else: No user message found - queue may remain empty (defensive)
 
-                # Archive the flushed messages
+                # Archive the flushed messages (system messages are excluded so they
+                # survive the waterfall regardless of their timestamp position)
                 if messages_to_flush:
                     await self.sql_store.archive_oldest_messages(
-                        self.session_id, n=len(messages_to_flush)
+                        self.session_id,
+                        n=len(messages_to_flush),
+                        exclude_roles=["system"],
                     )
 
                     # Waterfall the flushed messages to memory blocks
