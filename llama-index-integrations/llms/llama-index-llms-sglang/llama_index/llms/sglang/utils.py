@@ -1,5 +1,5 @@
 import json
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import requests
 
@@ -29,7 +29,10 @@ def get_response(response: requests.Response) -> List[str]:
 
 
 def post_http_request(
-    api_url: str, sampling_params: dict = {}, stream: bool = False, api_key: str = None
+    api_url: str,
+    sampling_params: Optional[dict] = None,
+    stream: bool = False,
+    api_key: str = None,
 ) -> requests.Response:
     """Post HTTP request to SGLang server."""
     headers = {
@@ -41,12 +44,14 @@ def post_http_request(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
-    sampling_params["stream"] = stream
+    # Build the payload instead of writing `stream` into the caller's dict, which also used
+    # to persist into the shared `{}` default.
+    payload = {**(sampling_params or {}), "stream": stream}
 
     return requests.post(
         api_url,
         headers=headers,
-        json=sampling_params,
+        json=payload,
         stream=stream,
     )
 

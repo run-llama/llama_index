@@ -11,7 +11,7 @@ def get_response(response: requests.Response) -> List[str]:
 
 def post_http_request(
     api_url: str,
-    sampling_params: dict = {},
+    sampling_params: Optional[dict] = None,
     stream: bool = False,
     headers: Optional[Dict[str, str]] = None,
     timeout: Optional[float] = None,
@@ -19,12 +19,14 @@ def post_http_request(
     base_headers = {"User-Agent": "LlamaIndex-VLLMClient"}
     if headers:
         base_headers.update(headers)
-    sampling_params["stream"] = stream
+    # Build the payload instead of writing `stream` into the caller's dict, which also used
+    # to persist into the shared `{}` default.
+    payload = {**(sampling_params or {}), "stream": stream}
 
     response = requests.post(
         api_url,
         headers=base_headers,
-        json=sampling_params,
+        json=payload,
         stream=stream,
         timeout=timeout,
     )
