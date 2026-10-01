@@ -101,17 +101,37 @@ class GlobalsHelper:
         except Exception as e:
             print(f"NLTK download error: {e}")
 
+    def _load_stopwords(self) -> List[str]:
+        """
+        Return English stopwords, falling back to a direct file read if nltk's
+        corpus reader rejects the bundled data due to the CWE-59 hardlink check
+        introduced in nltk 3.10.3 (pathsec.open raises PermissionError when
+        st_nlink > 1).
+        """
+        from nltk.corpus import stopwords
+
+        try:
+            return stopwords.words("english")
+        except PermissionError:
+            # The installed package stores the stopwords file with st_nlink > 1
+            # (e.g. hardlinked by pip or the build toolchain).  Read the
+            # plain-text file directly to avoid the security gate.
+            if self._nltk_data_dir is None:
+                raise
+            stopwords_path = (
+                Path(self._nltk_data_dir) / "corpora" / "stopwords" / "english"
+            )
+            return stopwords_path.read_text(encoding="utf-8").splitlines()
+
     @property
     def stopwords(self) -> List[str]:
         """Get stopwords, ensuring data is downloaded."""
         if self._stopwords is None:
-            # Wait for stopwords to be available
             self.wait_for_nltk_check()
 
-            from nltk.corpus import stopwords
             from nltk.tokenize import PunktSentenceTokenizer
 
-            self._stopwords = stopwords.words("english")
+            self._stopwords = self._load_stopwords()
             self._punkt_tokenizer = PunktSentenceTokenizer()
 
         return self._stopwords
@@ -120,14 +140,12 @@ class GlobalsHelper:
     def punkt_tokenizer(self) -> "PunktSentenceTokenizer":
         """Get punkt tokenizer, ensuring data is downloaded."""
         if self._punkt_tokenizer is None:
-            # Wait for punkt to be available
             self.wait_for_nltk_check()
 
-            from nltk.corpus import stopwords
             from nltk.tokenize import PunktSentenceTokenizer
 
             self._punkt_tokenizer = PunktSentenceTokenizer()
-            self._stopwords = stopwords.words("english")
+            self._stopwords = self._load_stopwords()
 
         return self._punkt_tokenizer
 
