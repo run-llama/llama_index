@@ -22,7 +22,7 @@ def img_2_b64(image: ImageFile, format: str = "JPEG") -> str:
     """
     buff = BytesIO()
     image.save(buff, format=format)
-    return cast(str, base64.b64encode(buff.getvalue()))
+    return base64.b64encode(buff.getvalue()).decode("utf-8")
 
 
 def b64_2_img(data: str) -> ImageFile:
