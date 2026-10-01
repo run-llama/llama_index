@@ -350,3 +350,58 @@ def test_prompt_with_chat_messages(png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes
     for i, role in enumerate(["user", "assistant", "system"]):
         assert messages[i].role == role
         assert len(messages[i].blocks) == 5
+
+
+def test_prompt_with_audio_file_path(tmp_path, monkeypatch, mp3_bytes):
+    """Embedded audio files must become audio bytes, not a 'url' of base64."""
+    monkeypatch.setenv("BANKS_MEDIA_ROOT", str(tmp_path))
+    audio_file = tmp_path / "clip.mp3"
+    audio_file.write_bytes(mp3_bytes)
+
+    prompt = RichPromptTemplate("{% chat role='user' %}{{ p | audio }}{% endchat %}")
+    messages = prompt.format_messages(p=str(audio_file))
+
+    block = messages[0].blocks[0]
+    assert block.block_type == "audio"
+    assert block.resolve_audio().read() == mp3_bytes
+    assert block.format == "mp3"
+
+
+def test_prompt_with_video_file_path(tmp_path, monkeypatch, mp4_bytes):
+    """Embedded video files must become video bytes, not a 'url' of base64."""
+    monkeypatch.setenv("BANKS_MEDIA_ROOT", str(tmp_path))
+    video_file = tmp_path / "clip.mp4"
+    video_file.write_bytes(mp4_bytes)
+
+    prompt = RichPromptTemplate("{% chat role='user' %}{{ p | video }}{% endchat %}")
+    messages = prompt.format_messages(p=str(video_file))
+
+    block = messages[0].blocks[0]
+    assert block.block_type == "video"
+    assert block.resolve_video().read() == mp4_bytes
+    assert block.video_mimetype == "video/mp4"
+
+
+def test_prompt_with_document_file_path(tmp_path, monkeypatch, mock_pdf_bytes):
+    """Embedded documents must become document bytes, not a 'url' of base64."""
+    monkeypatch.setenv("BANKS_MEDIA_ROOT", str(tmp_path))
+    doc_file = tmp_path / "doc.pdf"
+    doc_file.write_bytes(mock_pdf_bytes)
+
+    prompt = RichPromptTemplate("{% chat role='user' %}{{ p | document }}{% endchat %}")
+    messages = prompt.format_messages(p=str(doc_file))
+
+    block = messages[0].blocks[0]
+    assert block.block_type == "document"
+    assert block.resolve_document().read() == mock_pdf_bytes
+    assert block.document_mimetype == "application/pdf"
+
+
+def test_prompt_with_media_urls_stay_urls():
+    """Media given as URLs must keep landing in the url field."""
+    prompt = RichPromptTemplate("{% chat role='user' %}{{ p | audio }}{% endchat %}")
+    messages = prompt.format_messages(p="https://example.com/clip.mp3")
+
+    block = messages[0].blocks[0]
+    assert block.block_type == "audio"
+    assert str(block.url) == "https://example.com/clip.mp3"
