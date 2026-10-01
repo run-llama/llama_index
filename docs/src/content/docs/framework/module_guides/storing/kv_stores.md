@@ -7,7 +7,7 @@ Key-Value stores are the underlying storage abstractions that power our [Documen
 We provide the following key-value stores:
 
 - **Simple Key-Value Store**: An in-memory KV store. The user can choose to call `persist` on this kv store to persist data to disk.
-- **MongoDB Key-Value Store**: A MongoDB KV store.
+- **MongoDB Key-Value Store**: A MongoDB KV store. Data is persisted as it is written, so the user doesn’t need to call `persist` and multiple processes can share the same store. Supports async operations.
 - **Tablestore Key-Value Store**: A Tablestore KV store.
 
 See the [API Reference](/python/framework-api-reference/storage/kvstore) for more details.
