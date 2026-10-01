@@ -2095,6 +2095,7 @@ dependencies = [
     { name = "llama-index-core" },
     { name = "pandas" },
     { name = "pypdf" },
+    { name = "requests" },
     { name = "striprtf" },
 ]
 
@@ -2135,6 +2136,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.0.0,<3" },
     { name = "pymupdf", marker = "extra == 'pymupdf'", specifier = ">=1.23.21,<2" },
     { name = "pypdf", specifier = ">=6.1.3,<7" },
+    { name = "requests", specifier = ">=2.31.0,<3" },
     { name = "striprtf", specifier = ">=0.0.26,<0.0.27" },
 ]
 provides-extras = ["pymupdf"]
