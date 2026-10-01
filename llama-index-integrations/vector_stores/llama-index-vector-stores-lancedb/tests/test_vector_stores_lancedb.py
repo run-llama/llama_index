@@ -278,6 +278,36 @@ def test_delete(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
+def test_delete_ref_doc_id_with_embedded_quote(
+    tmp_path: Path, embed_model: BaseEmbedding
+) -> None:
+    # given: a ref_doc_id containing a single quote — regression test for
+    # the double-quoted SQL predicate bug (lancedb>=0.38 parses double
+    # quotes as identifiers, not string literals; see lancedb#3825).
+    node = TextNode(
+        text="test",
+        id_="44444444-4444-4444-4444-444444444444",
+        relationships={
+            NodeRelationship.SOURCE: RelatedNodeInfo(node_id="o'brien's-doc")
+        },
+    )
+    node.embedding = embed_model.get_text_embedding(node.text)
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    vector_store.add([node])
+
+    # when
+    vector_store.delete(ref_doc_id="o'brien's-doc")
+
+    # then
+    assert vector_store._table.count_rows() == 0
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
 def test_delete_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     # given
     vector_store = LanceDBVectorStore(
