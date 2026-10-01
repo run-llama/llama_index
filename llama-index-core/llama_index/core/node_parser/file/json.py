@@ -65,20 +65,24 @@ class JSONNodeParser(NodeParser):
 
         json_nodes = []
         if isinstance(data, dict):
-            lines = [*self._depth_first_yield(data, 0, [])]
+            json_objects = [data]
+        elif isinstance(data, list):
+            json_objects = data
+        else:
+            raise ValueError(
+                f"JSON must be an object or an array of objects, "
+                f"got {type(data).__name__}."
+            )
+
+        for json_object in json_objects:
+            lines = [*self._depth_first_yield(json_object, 0, [])]
+            if not lines:
+                # e.g. an empty object/array entry: skip instead of emitting
+                # an empty-text node (consistent with the [] top-level case)
+                continue
             json_nodes.extend(
                 build_nodes_from_splits(["\n".join(lines)], node, id_func=self.id_func)
             )
-        elif isinstance(data, list):
-            for json_object in data:
-                lines = [*self._depth_first_yield(json_object, 0, [])]
-                json_nodes.extend(
-                    build_nodes_from_splits(
-                        ["\n".join(lines)], node, id_func=self.id_func
-                    )
-                )
-        else:
-            raise ValueError("JSON is invalid")
 
         return json_nodes
 
