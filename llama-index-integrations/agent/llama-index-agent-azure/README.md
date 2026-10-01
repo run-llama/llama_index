@@ -11,7 +11,7 @@ This package provides an Azure Foundry Agent integration for LlamaIndex. It allo
 You can install the package via pip:
 
 ```bash
-pip install llama-index-agent-azure
+pip install llama-index-agent-azure-foundry
 ```
 
 or if working from source:
