@@ -186,9 +186,12 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
 
         tool = get_function_tool(self._output_cls)
 
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+        messages = self._llm._extend_messages(messages)
+
         agent_response = await self._llm.apredict_and_call(
             [tool],
-            chat_history=self._prompt.format_messages(llm=self._llm, **kwargs),
+            chat_history=messages,
             verbose=self._verbose,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
             tool_choice=self._tool_choice,
