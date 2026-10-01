@@ -36,7 +36,7 @@ class PDFNougatOCR(BaseReader):
             # Rest of your code for reading and processing the output
             file_path = Path(file_path)
             output_path = output_folder / f"{file_path.stem}.mmd"
-            with output_path.open("r") as f:
+            with output_path.open("r", encoding="utf-8") as f:
                 content = f.read()
 
             content = (
