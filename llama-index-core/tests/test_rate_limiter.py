@@ -2,11 +2,13 @@
 
 import asyncio
 import time
+from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.rate_limiter import (
     BaseRateLimiter,
@@ -14,6 +16,7 @@ from llama_index.core.rate_limiter import (
     SlidingWindowRateLimiter,
     TokenBucketRateLimiter,
 )
+from llama_index.core.storage.kvstore import SimpleKVStore
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +255,55 @@ def test_embedding_batch_calls_acquire_per_batch() -> None:
     texts = ["text"] * 12  # 3 batches: 5, 5, 2
     embed.get_text_embedding_batch(texts)
     assert mock_limiter.acquire.call_count == 3
+
+
+@pytest.mark.parametrize(("cached_count", "requests"), [(0, 3), (1, 3), (2, 2), (5, 0)])
+def test_cached_batches_only_rate_limit_provider_requests(
+    cached_count: int, requests: int
+) -> None:
+    cache = SimpleKVStore()
+    texts = [f"text-{i}" for i in range(5)]
+    expected_embedding = [0.5] * 4
+    for text in texts[:cached_count]:
+        cache.put(text, {"cached": expected_embedding}, collection="embeddings")
+    limiter = MagicMock()
+    model = MockEmbedding(
+        embed_dim=4, embed_batch_size=2, embeddings_cache=cache, rate_limiter=limiter
+    )
+
+    assert model.get_text_embedding_batch(texts) == [expected_embedding] * 5
+    assert limiter.acquire.call_count == requests
+    limiter.reset_mock()
+    assert model.get_text_embedding_batch(texts) == [expected_embedding] * 5
+    limiter.acquire.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("cached_count", "requests"), [(0, 3), (1, 3), (2, 2), (5, 0)])
+@pytest.mark.parametrize("num_workers", [None, 2])
+async def test_async_cached_batches_rate_limit_provider_requests(
+    cached_count: int, requests: int, num_workers: Optional[int]
+) -> None:
+    cache = SimpleKVStore()
+    texts = [f"text-{i}" for i in range(5)]
+    expected_embedding = [0.5] * 4
+    for text in texts[:cached_count]:
+        cache.put(text, {"cached": expected_embedding}, collection="embeddings")
+    limiter = MagicMock()
+    limiter.async_acquire = AsyncMock()
+    model = MockEmbedding(
+        embed_dim=4,
+        embed_batch_size=2,
+        embeddings_cache=cache,
+        rate_limiter=limiter,
+        num_workers=num_workers,
+    )
+
+    assert await model.aget_text_embedding_batch(texts) == [expected_embedding] * 5
+    assert limiter.async_acquire.await_count == requests
+    limiter.reset_mock()
+    assert await model.aget_text_embedding_batch(texts) == [expected_embedding] * 5
+    limiter.async_acquire.assert_not_awaited()
 
 
 def test_embedding_without_rate_limiter_works() -> None:
