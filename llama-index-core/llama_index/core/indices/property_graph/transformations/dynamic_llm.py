@@ -233,7 +233,13 @@ class DynamicLLMPathExtractor(TransformComponent):
             max_triplets_per_chunk (int): Maximum number of triplets to extract per chunk.
             num_workers (int): Number of workers for parallel processing.
             allowed_entity_types (Optional[List[str]]): List of initial entity types for the ontology.
+            allowed_entity_props (Optional[Union[List[str], List[Tuple[str, str]]]]): List of initial
+                entity properties for the ontology. Can be either property names or tuples of
+                (name, description).
             allowed_relation_types (Optional[List[str]]): List of initial relation types for the ontology.
+            allowed_relation_props (Optional[Union[List[str], List[Tuple[str, str]]]]): List of initial
+                relation properties for the ontology. Can be either property names or tuples of
+                (name, description).
             raise_on_error (bool): Whether to raise exceptions if extraction fails. Defaults to False.
 
         """
