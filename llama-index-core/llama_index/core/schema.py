@@ -586,7 +586,7 @@ class MediaResource(BaseModel):
                 return guess.mime
 
         # guess from path
-        rpath: str | None = info.data["path"]
+        rpath: str | None = info.data.get("path")
         if rpath:
             extension = Path(rpath).suffix.replace(".", "")
             if ftype := filetype.get_type(ext=extension):
