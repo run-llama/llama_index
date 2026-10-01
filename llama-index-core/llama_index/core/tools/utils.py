@@ -19,6 +19,22 @@ import typing
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
 
 
+def _build_field_info(
+    annotated_field: Optional[FieldInfo], **overrides: Any
+) -> FieldInfo:
+    """
+    Build a field's `FieldInfo`, keeping constraints carried by `Annotated`.
+
+    A parameter declared as `Annotated[int, Field(ge=1, le=8)]` records `ge`/`le` on the
+    `FieldInfo` rather than on the annotation, so constructing a fresh `FieldInfo` here
+    drops them: the tool JSON schema loses `minimum`/`maximum` and pydantic no longer
+    validates the arguments the model sends. Merging the annotated field in keeps them.
+    """
+    if annotated_field is None:
+        return FieldInfo(**overrides)
+    return FieldInfo.merge_field_infos(annotated_field, **overrides)
+
+
 def create_schema_from_function(
     name: str,
     func: Union[Callable[..., Any], Callable[..., Awaitable[Any]]],
@@ -59,6 +75,7 @@ def create_schema_from_function(
         param_default = params[param_name].default
         description = None
         json_schema_extra: dict[str, Any] = {}
+        annotated_field: Optional[FieldInfo] = None
 
         if get_origin(param_type) is typing.Annotated:
             args = get_args(param_type)
@@ -67,6 +84,7 @@ def create_schema_from_function(
             if isinstance(args[1], str):
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
+                annotated_field = args[1]
                 description = args[1].description
                 if args[1].json_schema_extra and isinstance(
                     args[1].json_schema_extra, dict
@@ -91,7 +109,11 @@ def create_schema_from_function(
             # Required field
             fields[param_name] = (
                 param_type,
-                FieldInfo(description=description, json_schema_extra=json_schema_extra),
+                _build_field_info(
+                    annotated_field,
+                    description=description,
+                    json_schema_extra=json_schema_extra,
+                ),
             )
         elif isinstance(param_default, FieldInfo):
             # Field with pydantic.Field as default value
@@ -107,7 +129,8 @@ def create_schema_from_function(
         else:
             fields[param_name] = (
                 param_type,
-                FieldInfo(
+                _build_field_info(
+                    annotated_field,
                     default=param_default,
                     description=description,
                     json_schema_extra=json_schema_extra,
