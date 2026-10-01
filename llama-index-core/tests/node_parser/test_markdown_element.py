@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
@@ -2797,3 +2799,31 @@ outro text"""
     assert result[1].type == "code"
     assert "def hello():" in result[1].element
     assert result[2].type == "text"
+
+
+@pytest.mark.asyncio
+async def test_md_table_extraction_async() -> None:
+    """The async path must match the sync one when structured output falls back."""
+    test_data = Document(
+        text="""
+# This is a test
+
+| Year | Benefits |
+| ---- | -------- |
+| 2020 | 12,000   |
+| 2021 | 10,000   |
+| 2022 | 130,000  |
+
+        """
+    )
+
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+
+    sync_nodes = node_parser.get_nodes_from_documents([test_data])
+    async_nodes = await node_parser.aget_nodes_from_documents([test_data])
+
+    assert [type(n) for n in async_nodes] == [type(n) for n in sync_nodes]
+    assert len(async_nodes) == 3
+    assert isinstance(async_nodes[0], TextNode)
+    assert isinstance(async_nodes[1], IndexNode)
+    assert isinstance(async_nodes[2], TextNode)
