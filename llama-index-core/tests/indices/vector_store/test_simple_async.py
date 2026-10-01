@@ -229,3 +229,47 @@ async def test_adelete_ref_doc_calls_vector_store_with_ref_doc_id_only(
     assert delete_log == ["my-doc-id"], (
         f"Expected delete() called once with ref_doc_id only, got: {delete_log}"
     )
+
+
+@pytest.mark.asyncio
+async def test_adelete_nodes_removed_from_docstore_updates_ref_doc_info(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """
+    Test adelete_nodes with delete_from_docstore=True updates ref-doc bookkeeping.
+
+    Deleting an individual node through the async path should remove it from the
+    ref doc's node_ids list in the docstore, matching the sync delete_nodes()
+    behavior.
+    """
+    new_documents = [
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    index = SimpleKeywordTableIndex.from_documents(
+        documents=new_documents, embed_model=mock_embed_model
+    )
+
+    # Get node IDs for test_id_1 before deletion
+    ref_doc_info = index.docstore.get_ref_doc_info("test_id_1")
+    assert ref_doc_info is not None
+    # snapshot: the store may hand out the live list
+    node_ids = list(ref_doc_info.node_ids)
+    assert len(node_ids) > 0
+
+    # Delete one node through the async path
+    await index.adelete_nodes([node_ids[0]], delete_from_docstore=True)
+
+    # The deleted node is gone from the docstore ...
+    assert index.docstore.get_node(node_ids[0], raise_error=False) is None
+
+    # ... and from the ref doc's node_ids bookkeeping
+    remaining_info = index.docstore.get_ref_doc_info("test_id_1")
+    if len(node_ids) > 1:
+        assert remaining_info is not None
+        assert node_ids[0] not in remaining_info.node_ids
+        for node_id in node_ids[1:]:
+            assert node_id in remaining_info.node_ids
+    else:
+        # last node deleted, ref doc entry should be gone entirely
+        assert remaining_info is None
