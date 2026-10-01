@@ -58,7 +58,7 @@ def load_indices_from_storage(
     Args:
         storage_context (StorageContext): storage context containing
             docstore, index store and vector store.
-        index_id (Optional[Sequence[str]]): IDs of the indices to load.
+        index_ids (Optional[Sequence[str]]): IDs of the indices to load.
             Defaults to None, which loads all indices in the index store.
         **kwargs: Additional keyword args to pass to the index constructors.
 
