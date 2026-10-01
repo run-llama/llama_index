@@ -9,6 +9,27 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
 
+EMBEDDING_2_MODEL = "gemini-embedding-2"
+LEGACY_MODEL = "gemini-embedding-001"
+API_KEY = "fake_key"
+EXAMPLE_TEXT = "example"
+QUERY_TEXT = "Where is Paris?"
+DOCUMENT_TEXT = "Paris is in France."
+EMBEDDING_VALUES = [0.1, 0.2, 0.3]
+OUTPUT_DIMENSIONALITY = 128
+UNKNOWN_TASK_TYPE = "UNKNOWN_TASK"
+TASK_INSTRUCTIONS = {
+    "RETRIEVAL_QUERY": f"task: search result | query: {EXAMPLE_TEXT}",
+    "RETRIEVAL_DOCUMENT": f"title: none | text: {EXAMPLE_TEXT}",
+    "QUESTION_ANSWERING": f"task: question answering | query: {EXAMPLE_TEXT}",
+    "FACT_VERIFICATION": f"task: fact checking | query: {EXAMPLE_TEXT}",
+    "CODE_RETRIEVAL_QUERY": f"task: code retrieval | query: {EXAMPLE_TEXT}",
+    "SEMANTIC_SIMILARITY": f"task: sentence similarity | query: {EXAMPLE_TEXT}",
+    "CLASSIFICATION": f"task: classification | query: {EXAMPLE_TEXT}",
+    "CLUSTERING": f"task: clustering | query: {EXAMPLE_TEXT}",
+}
+
+
 def test_embedding_class():
     emb = GoogleGenAIEmbedding(api_key="...")
     assert isinstance(emb, BaseEmbedding)
@@ -56,7 +77,7 @@ def test_task_type_setting_mock(mock_client_class):
     mock_embed_content.return_value = mock_result
 
     # Test query embedding (should use RETRIEVAL_QUERY task type)
-    emb = GoogleGenAIEmbedding(api_key="fake_key")
+    emb = GoogleGenAIEmbedding(model_name=LEGACY_MODEL, api_key=API_KEY)
     emb.get_query_embedding("test query")
 
     # Check if task_type was set correctly in the call
@@ -72,6 +93,139 @@ def test_task_type_setting_mock(mock_client_class):
     # Check if task_type was set correctly in the call
     _, kwargs = mock_embed_content.call_args
     assert kwargs.get("config").task_type == "RETRIEVAL_DOCUMENT"
+
+
+@patch("google.genai.Client")
+def test_embedding_2_formats_query_instruction(mock_client_class):
+    mock_embed_content = mock_client_class.return_value.models.embed_content
+    mock_result = MagicMock()
+    mock_result.embeddings = [MagicMock(values=EMBEDDING_VALUES)]
+    mock_embed_content.return_value = mock_result
+
+    emb = GoogleGenAIEmbedding(
+        model_name=EMBEDDING_2_MODEL,
+        api_key=API_KEY,
+        embedding_config={
+            "task_type": "RETRIEVAL_QUERY",
+            "output_dimensionality": OUTPUT_DIMENSIONALITY,
+        },
+    )
+    emb.get_query_embedding(QUERY_TEXT)
+
+    _, kwargs = mock_embed_content.call_args
+    assert kwargs["contents"] == [[f"task: search result | query: {QUERY_TEXT}"]]
+    assert kwargs["config"]["output_dimensionality"] == OUTPUT_DIMENSIONALITY
+    assert "task_type" not in kwargs["config"]
+
+
+@patch("google.genai.Client")
+def test_default_model_uses_embedding_2_instructions(mock_client_class):
+    mock_embed_content = mock_client_class.return_value.models.embed_content
+    mock_result = MagicMock()
+    mock_result.embeddings = [MagicMock(values=EMBEDDING_VALUES)]
+    mock_embed_content.return_value = mock_result
+
+    emb = GoogleGenAIEmbedding(api_key=API_KEY)
+    emb.get_query_embedding(QUERY_TEXT)
+
+    _, kwargs = mock_embed_content.call_args
+    assert kwargs["model"] == EMBEDDING_2_MODEL
+    assert kwargs["contents"] == [[f"task: search result | query: {QUERY_TEXT}"]]
+
+
+@pytest.mark.asyncio
+@patch("google.genai.Client")
+async def test_embedding_2_formats_document_instruction(mock_client_class):
+    mock_aembed_content = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.embeddings = [MagicMock(values=EMBEDDING_VALUES)]
+    mock_aembed_content.return_value = mock_result
+    mock_client_class.return_value.aio.models.embed_content = mock_aembed_content
+
+    emb = GoogleGenAIEmbedding(model_name=EMBEDDING_2_MODEL, api_key=API_KEY)
+    await emb.aget_text_embedding(DOCUMENT_TEXT)
+
+    _, kwargs = mock_aembed_content.call_args
+    assert kwargs["contents"] == [[f"title: none | text: {DOCUMENT_TEXT}"]]
+    assert kwargs["config"] is None
+
+
+@patch("google.genai.Client")
+@pytest.mark.parametrize(("task_type", "expected"), TASK_INSTRUCTIONS.items())
+def test_embedding_2_formats_all_task_instructions(
+    mock_client_class, task_type, expected
+):
+    emb = GoogleGenAIEmbedding(model_name=EMBEDDING_2_MODEL, api_key=API_KEY)
+
+    texts, _ = emb._prepare_request([EXAMPLE_TEXT], task_type)
+
+    assert texts == [expected]
+
+
+@patch("google.genai.Client")
+def test_embedding_2_uses_configured_task_instruction(mock_client_class):
+    mock_embed_content = mock_client_class.return_value.models.embed_content
+    mock_result = MagicMock()
+    mock_result.embeddings = [MagicMock(values=EMBEDDING_VALUES)]
+    mock_embed_content.return_value = mock_result
+    emb = GoogleGenAIEmbedding(
+        model_name=EMBEDDING_2_MODEL,
+        api_key=API_KEY,
+        embedding_config={"task_type": "CLASSIFICATION"},
+    )
+
+    emb._embed_texts([EXAMPLE_TEXT])
+
+    _, kwargs = mock_embed_content.call_args
+    assert kwargs["contents"] == [["task: classification | query: example"]]
+    assert kwargs["config"] == {}
+
+
+@patch("google.genai.Client")
+def test_embedding_2_warns_when_task_instruction_is_unknown(mock_client_class):
+    emb = GoogleGenAIEmbedding(model_name=EMBEDDING_2_MODEL, api_key=API_KEY)
+
+    with pytest.warns(UserWarning, match=UNKNOWN_TASK_TYPE):
+        texts, _ = emb._prepare_request([EXAMPLE_TEXT], UNKNOWN_TASK_TYPE)
+
+    assert texts == ["task: search result | query: example"]
+
+
+@patch("google.genai.Client")
+@pytest.mark.parametrize(
+    ("task_type", "text"),
+    [
+        ("RETRIEVAL_QUERY", "task: search result | query: existing query"),
+        ("RETRIEVAL_DOCUMENT", "title: Existing | text: existing document"),
+    ],
+)
+def test_embedding_2_preserves_existing_instruction(mock_client_class, task_type, text):
+    emb = GoogleGenAIEmbedding(model_name=EMBEDDING_2_MODEL, api_key=API_KEY)
+
+    texts, _ = emb._prepare_request([text], task_type)
+
+    assert texts == [text]
+
+
+@patch("google.genai.Client")
+def test_legacy_model_preserves_embedding_config(mock_client_class):
+    mock_embed_content = mock_client_class.return_value.models.embed_content
+    mock_result = MagicMock()
+    mock_result.embeddings = [MagicMock(values=EMBEDDING_VALUES)]
+    mock_embed_content.return_value = mock_result
+    emb = GoogleGenAIEmbedding(
+        api_key=API_KEY,
+        model_name=LEGACY_MODEL,
+        embedding_config={"output_dimensionality": OUTPUT_DIMENSIONALITY},
+    )
+
+    emb.get_query_embedding(QUERY_TEXT)
+    _, query_kwargs = mock_embed_content.call_args
+    assert query_kwargs["config"]["task_type"] == "RETRIEVAL_QUERY"
+
+    emb._embed_texts([DOCUMENT_TEXT])
+    _, document_kwargs = mock_embed_content.call_args
+    assert document_kwargs["config"].output_dimensionality == OUTPUT_DIMENSIONALITY
 
 
 @pytest.mark.asyncio
