@@ -44,7 +44,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
-from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
+from llama_index.core.llms import ChatMessage, ChatResponse, MessageRole, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -487,7 +487,17 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Generate a final response when max iterations is reached with early_stopping_method='generate'."""
         memory: BaseMemory = await ctx.store.get("memory")
         agent = self.agents[ev.current_agent_name]
+        # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's messages
+        await agent.finalize(ctx, ev, memory)
         messages = await memory.aget()
+        if (
+            messages
+            and messages[-1].role == MessageRole.ASSISTANT
+            and messages[-1].additional_kwargs.get("tool_calls")
+        ):
+            # the tool calls of the last step are never run when we stop early, so
+            # that message has no tool results to pair with
+            messages = messages[:-1]
 
         early_stopping_prompt = DEFAULT_EARLY_STOPPING_PROMPT.format(
             max_iterations=max_iterations
