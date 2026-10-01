@@ -15,6 +15,13 @@ from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.sentinel import Sentinel
 
+# asyncio.create_task() requires a running loop and, even when one is
+# running, only holds a weak reference to the returned Task - a task with no
+# other strong reference can be garbage-collected before it runs. Keeping
+# tasks here until they finish (removed via the done callback) keeps them
+# alive long enough to actually close the discarded connection.
+_background_close_tasks: set = set()
+
 
 class RedisChatStore(BaseChatStore):
     """Redis chat store."""
@@ -357,6 +364,15 @@ class RedisChatStore(BaseChatStore):
             redis_client.close()
 
             if is_cluster:
-                asyncio.create_task(aredis_client.close())
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    # No running loop: close synchronously so this doesn't
+                    # crash callers who construct this from plain sync code.
+                    asyncio.run(aredis_client.close())
+                else:
+                    task = loop.create_task(aredis_client.close())
+                    _background_close_tasks.add(task)
+                    task.add_done_callback(_background_close_tasks.discard)
                 aredis_client = self._aredis_cluster_client(redis_url, **kwargs)
         return aredis_client

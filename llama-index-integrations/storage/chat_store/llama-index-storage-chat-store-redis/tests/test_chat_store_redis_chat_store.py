@@ -1,4 +1,5 @@
 from typing import Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -32,6 +33,82 @@ test is skipped.
 def test_class():
     names_of_base_classes = [b.__name__ for b in RedisChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
+
+
+def test_aget_client_cluster_without_running_loop_does_not_raise():
+    """
+    _aget_client() discards the initial non-cluster async client and
+    reconnects with a cluster client when the server turns out to be a
+    Redis Cluster. Closing the discarded client used to call
+    asyncio.create_task() unconditionally, which raises RuntimeError when
+    there's no running event loop - the common case, since RedisChatStore()
+    is a plain synchronous constructor. It must close the discarded client
+    without needing a running loop.
+    """
+    # RedisChatStore is a pydantic model; __new__ alone leaves it without
+    # the pydantic internals _aget_client's unrelated code paths don't need
+    # anyway, so call it unbound against a plain mock standing in for self.
+    fake_self = MagicMock()
+    fake_self._check_for_cluster.return_value = True
+
+    mock_aredis_client = MagicMock()
+    mock_aredis_client.close = AsyncMock()
+    fake_self._aredis_cluster_client.return_value = MagicMock()
+
+    with (
+        patch(
+            "llama_index.storage.chat_store.redis.base.AsyncRedis.from_url",
+            return_value=mock_aredis_client,
+        ),
+        patch(
+            "llama_index.storage.chat_store.redis.base.Redis.from_url",
+            return_value=MagicMock(),
+        ),
+    ):
+        result = RedisChatStore._aget_client(fake_self, "redis://localhost:6379")
+
+    mock_aredis_client.close.assert_called_once()
+    assert result is fake_self._aredis_cluster_client.return_value
+
+
+@pytest.mark.asyncio
+async def test_aget_client_cluster_keeps_close_task_alive_until_it_completes():
+    """
+    Same discard-and-reconnect path as above, but called with a loop already
+    running: closing the discarded client is scheduled via
+    asyncio.create_task(), which only keeps a *weak* reference to the
+    returned Task. With nothing else referencing it, the task can be
+    garbage-collected before it ever runs. _aget_client() must keep a
+    strong reference (_background_close_tasks) until the task is done.
+    """
+    from llama_index.storage.chat_store.redis.base import _background_close_tasks
+
+    fake_self = MagicMock()
+    fake_self._check_for_cluster.return_value = True
+
+    mock_aredis_client = MagicMock()
+    mock_aredis_client.close = AsyncMock()
+    fake_self._aredis_cluster_client.return_value = MagicMock()
+
+    with (
+        patch(
+            "llama_index.storage.chat_store.redis.base.AsyncRedis.from_url",
+            return_value=mock_aredis_client,
+        ),
+        patch(
+            "llama_index.storage.chat_store.redis.base.Redis.from_url",
+            return_value=MagicMock(),
+        ),
+    ):
+        result = RedisChatStore._aget_client(fake_self, "redis://localhost:6379")
+
+    assert len(_background_close_tasks) == 1
+    (task,) = tuple(_background_close_tasks)
+    await task
+
+    mock_aredis_client.close.assert_called_once()
+    assert len(_background_close_tasks) == 0
+    assert result is fake_self._aredis_cluster_client.return_value
 
 
 @pytest.fixture()
