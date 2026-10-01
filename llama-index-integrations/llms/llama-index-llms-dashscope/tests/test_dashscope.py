@@ -149,12 +149,44 @@ def test_convert_tool_to_dashscope_format(dashscope_llm):
                 "properties": {
                     "param1": {"type": "string", "description": "A test parameter."}
                 },
+                "required": ["param1"],
             },
-            "required": ["param1"],
         },
     }
 
     assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_convert_tool_to_dashscope_format_preserves_nested_defs():
+    """
+    Nested Pydantic models produce root $defs referenced via $ref; both must survive
+    the conversion together, and `required` must live under `parameters`, not `function`.
+    """
+    from pydantic import BaseModel, Field
+    from llama_index.core.tools import FunctionTool
+
+    class Item(BaseModel):
+        entity: str
+        entity_type: str
+
+    class Batch(BaseModel):
+        entities: List[Item] = Field(max_length=128)
+
+    def validate_entities(entities: List[Item]) -> str:
+        return "ok"
+
+    tool = FunctionTool.from_defaults(fn=validate_entities, fn_schema=Batch)
+    llm = DashScope(api_key="test")
+
+    result = llm._convert_tool_to_dashscope_format(tool)
+    parameters = result["function"]["parameters"]
+
+    assert "$defs" in parameters
+    assert parameters["properties"]["entities"]["items"]["$ref"] in (
+        f"#/$defs/{name}" for name in parameters["$defs"]
+    )
+    assert parameters["required"] == ["entities"]
+    assert "required" not in result["function"]
 
 
 def test_get_tool_calls_from_response_actual_data(dashscope_llm):
@@ -234,8 +266,8 @@ def test_prepare_chat_with_tools(dashscope_llm):
                 "properties": {
                     "param1": {"type": "string", "description": "A test parameter."}
                 },
+                "required": ["param1"],
             },
-            "required": ["param1"],
         },
     }
     assert len(tools_spec) == 1
