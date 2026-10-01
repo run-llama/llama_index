@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import logging
-import traceback
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from llama_index.core.schema import Document
@@ -20,6 +19,17 @@ if TYPE_CHECKING:
     from oracledb import Connection
 
 logger = logging.getLogger(__name__)
+
+# The same anonymous PL/SQL block was previously inlined once per input branch
+# (str / Document / List[str] / List[Document]). Hoisting it keeps a single copy
+# and lets Oracle reuse one cached statement instead of two indentation variants.
+_UTL_TO_SUMMARY_PLSQL = """
+declare
+    input clob;
+begin
+    input := :data;
+    :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
+end;"""
 
 
 """OracleSummary class"""
@@ -67,6 +77,7 @@ class OracleSummary:
             return None
 
         results = []
+        cursor = None
         try:
             oracledb.defaults.fetch_lobs = False
             cursor = self.conn.cursor()
@@ -81,13 +92,7 @@ class OracleSummary:
 
                 summary = cursor.var(oracledb.DB_TYPE_CLOB)
                 cursor.execute(
-                    """
-                    declare
-                        input clob;
-                    begin
-                        input := :data;
-                        :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                    end;""",
+                    _UTL_TO_SUMMARY_PLSQL,
                     data=docs,
                     params=json.dumps(self.summary_params),
                     summ=summary,
@@ -103,13 +108,7 @@ class OracleSummary:
 
                 summary = cursor.var(oracledb.DB_TYPE_CLOB)
                 cursor.execute(
-                    """
-                    declare
-                        input clob;
-                    begin
-                        input := :data;
-                        :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                    end;""",
+                    _UTL_TO_SUMMARY_PLSQL,
                     data=docs.text,
                     params=json.dumps(self.summary_params),
                     summ=summary,
@@ -125,35 +124,18 @@ class OracleSummary:
                 for doc in docs:
                     summary = cursor.var(oracledb.DB_TYPE_CLOB)
                     if isinstance(doc, str):
-                        cursor.execute(
-                            """
-                            declare
-                                input clob;
-                            begin
-                                input := :data;
-                                :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                            end;""",
-                            data=doc,
-                            params=json.dumps(self.summary_params),
-                            summ=summary,
-                        )
-
+                        data = doc
                     elif isinstance(doc, Document):
-                        cursor.execute(
-                            """
-                            declare
-                                input clob;
-                            begin
-                                input := :data;
-                                :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                            end;""",
-                            data=doc.text,
-                            params=json.dumps(self.summary_params),
-                            summ=summary,
-                        )
-
+                        data = doc.text
                     else:
                         raise Exception("Invalid input type")
+
+                    cursor.execute(
+                        _UTL_TO_SUMMARY_PLSQL,
+                        data=data,
+                        params=json.dumps(self.summary_params),
+                        summ=summary,
+                    )
 
                     if summary is None:
                         results.append("")
@@ -163,11 +145,17 @@ class OracleSummary:
             else:
                 raise Exception("Invalid input type")
 
-            cursor.close()
             return results
 
-        except Exception as ex:
-            print(f"An exception occurred :: {ex}")
-            traceback.print_exc()
-            cursor.close()
+        except Exception:
+            # The previous handler wrote to stdout/stderr via print() and
+            # print_exc(), which callers cannot capture or silence through their
+            # logging config; the module-level logger above was never used.
+            logger.exception("An exception occurred while generating the summary.")
             raise
+        finally:
+            # cursor.close() used to live in the except branch. If self.conn.cursor()
+            # itself raised, cursor was still unbound and close() raised
+            # UnboundLocalError, masking the real Oracle error.
+            if cursor is not None:
+                cursor.close()
