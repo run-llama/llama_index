@@ -432,7 +432,7 @@ class AGUIChatWorkflow(Workflow):
         # marks it as already resolved, so the client never executes its
         # handler.
         new_tool_messages = []
-        for tool_result in backend_tool_calls:
+        for tool_result in [*backend_tool_calls, *frontend_tool_calls]:
             new_tool_messages.append(
                 ChatMessage(
                     role="tool",
