@@ -116,7 +116,8 @@ class RedisChatStore(BaseChatStore):
             removed_item = current_list.pop(idx)
 
             self._redis_client.delete(key)
-            self._redis_client.lpush(key, *current_list)
+            if current_list:
+                self._redis_client.rpush(key, *current_list)
             return removed_item
         else:
             return None
@@ -128,7 +129,8 @@ class RedisChatStore(BaseChatStore):
             removed_item = current_list.pop(idx)
 
             await self._aredis_client.delete(key)
-            await self._aredis_client.lpush(key, *current_list)
+            if current_list:
+                await self._aredis_client.rpush(key, *current_list)
             return removed_item
         else:
             return None
