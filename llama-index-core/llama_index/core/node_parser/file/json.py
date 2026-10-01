@@ -70,13 +70,13 @@ class JSONNodeParser(NodeParser):
                 build_nodes_from_splits(["\n".join(lines)], node, id_func=self.id_func)
             )
         elif isinstance(data, list):
+            text_splits = []
             for json_object in data:
                 lines = [*self._depth_first_yield(json_object, 0, [])]
-                json_nodes.extend(
-                    build_nodes_from_splits(
-                        ["\n".join(lines)], node, id_func=self.id_func
-                    )
-                )
+                text_splits.append("\n".join(lines))
+            json_nodes.extend(
+                build_nodes_from_splits(text_splits, node, id_func=self.id_func)
+            )
         else:
             raise ValueError("JSON is invalid")
 
