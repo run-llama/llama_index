@@ -293,6 +293,23 @@ def test_max_tokens_without_summarizer() -> None:
     assert len(memory.get()) == 2
 
 
+def test_get_does_not_mutate_caller_chat_history() -> None:
+    # get() is a read-style call and must not mutate the list the caller passed
+    # to from_defaults. Previously it popped messages off the shared list object.
+    chat_history = [
+        ChatMessage(role=MessageRole.USER, content=f"Message {i}") for i in range(6)
+    ]
+    # token_limit small enough that only the last two messages fit.
+    token_limit = len(tokenizer("Message 5")) + len(tokenizer("Message 4"))
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=chat_history, token_limit=token_limit
+    )
+
+    memory.get()
+
+    assert len(chat_history) == 6
+
+
 @pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_max_tokens_with_summarizer(summarizer_llm) -> None:
     max_tokens = 1
