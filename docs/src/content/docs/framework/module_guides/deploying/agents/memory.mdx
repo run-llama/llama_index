@@ -168,6 +168,10 @@ memory = Memory.from_defaults(
 
 As the memory is used, the short-term memory will fill up. Once the short-term memory exceeds the `chat_history_token_ratio`, the oldest messages that fit into the `token_flush_size` will be flushed and sent to each memory block for processing.
 
+Messages stay active until every block accepts the batch. If a block fails, the next put retries the same batch only for blocks that did not return successfully. New messages are processed in later batches. If archiving fails, completed block deliveries are retained while the archive is retried or recognized as already committed.
+
+This retry state belongs to the current `Memory` instance and is not persisted by serialization or shared across instances. Use one `Memory` instance to mutate a session's history; direct changes to its chat store or concurrent writers are not coordinated. A process restart, or a block that writes data before raising or being cancelled, can still cause duplicate delivery. Blocks that need stronger guarantees should make their own writes idempotent. If replacing or resetting active history fails, retry that operation successfully before adding or flushing more messages, since the store may have changed the history before reporting the error.
+
 When memory is retrieved, the short-term and long-term memories are merged together. The `Memory` object will ensure that the short-term memory + long-term memory content is less than or equal to the `token_limit`. If it is longer, the `.truncate()` method will be called on the memory blocks, using the `priority` to determine the truncation order.
 
 <Aside type="tip">
