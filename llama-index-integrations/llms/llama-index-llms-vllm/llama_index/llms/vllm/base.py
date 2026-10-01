@@ -589,7 +589,9 @@ class VllmServer(Vllm):
             "temperature": params.get("temperature", self.temperature),
             "top_p": params.get("top_p", self.top_p),
             "n": params.get("n", self.n),
-            "max_tokens": params.get("max_new_tokens", self.max_new_tokens),
+            "max_tokens": params.get(
+                "max_new_tokens", params.get("max_tokens", self.max_new_tokens)
+            ),
         }
 
         # Map stop sequences if provided
