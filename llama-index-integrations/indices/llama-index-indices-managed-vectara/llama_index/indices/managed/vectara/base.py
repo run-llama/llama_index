@@ -110,13 +110,21 @@ class VectaraIndex(BaseManagedIndex):
         self.vectara_api_timeout = 90
         self.doc_ids: List[str] = []
 
+        # Cache this per instance instead of decorating the method directly:
+        # `lru_cache` on an instance method keys the cache on `self` too, so with
+        # `maxsize=None` every `VectaraIndex` that ever calls `_get_corpus_key`
+        # (insert/query/delete/update all do) would stay reachable through the
+        # cache for the life of the process. That also means `__del__` below,
+        # which exists specifically to close `self._session`, would never run -
+        # the HTTP session leaks along with the index.
+        self._get_corpus_key = lru_cache(maxsize=None)(self._get_corpus_key)
+
     def __del__(self) -> None:
         """Attempt to close the session when the object is garbage collected."""
         if hasattr(self, "_session") and self._session:
             self._session.close()
             self._session = None
 
-    @lru_cache(maxsize=None)
     def _get_corpus_key(self, corpus_key: str) -> str:
         """
         Get the corpus key to use for the index.

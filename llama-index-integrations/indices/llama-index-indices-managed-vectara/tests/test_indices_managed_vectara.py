@@ -1,4 +1,6 @@
+import gc
 from typing import List
+import weakref
 from llama_index.core.schema import Document, Node, MediaResource
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.vectara import VectaraIndex
@@ -30,6 +32,23 @@ import re
 def test_class():
     names_of_base_classes = [b.__name__ for b in VectaraIndex.__mro__]
     assert BaseManagedIndex.__name__ in names_of_base_classes
+
+
+def test_index_is_garbage_collected_after_get_corpus_key() -> None:
+    # `_get_corpus_key` used to be `@lru_cache(maxsize=None)` directly on the
+    # class, which keys the cache on `self` too - every VectaraIndex that ever
+    # called it (insert/query/delete/update all do) stayed reachable through
+    # the cache for the life of the process, so `__del__` (which exists
+    # specifically to close `self._session`) never ran and the HTTP session
+    # leaked along with the index.
+    index = VectaraIndex(vectara_corpus_key="test-corpus", vectara_api_key="test-key")
+    index._get_corpus_key(None)
+    ref = weakref.ref(index)
+
+    del index
+    gc.collect()
+
+    assert ref() is None
 
 
 def get_docs() -> List[Document]:
