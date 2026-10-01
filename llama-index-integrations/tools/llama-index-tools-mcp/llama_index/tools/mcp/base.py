@@ -215,6 +215,11 @@ class McpToolSpec(
             A Pydantic model class.
 
         """
+        # Each call converts a self-contained schema, so start from an empty
+        # cache. Reusing it across calls let a $defs type from one tool leak
+        # into another tool that happened to define a type of the same name,
+        # silently handing the LLM the wrong parameter schema.
+        self.properties_cache = {}
         defs = schema.get("$defs", {})
 
         # Process all type definitions
