@@ -11,6 +11,8 @@ from llama_index.core.indices.struct_store.sql_query import (
     SQLStructStoreQueryEngine,
     SQLTableRetrieverQueryEngine,
 )
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.objects import (
     SQLTableNodeMapping,
     ObjectIndex,
@@ -148,6 +150,19 @@ def test_sql_index_async_query(
     task = nl_query_engine.aquery("test_table:user_id,foo")
     response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
+
+    # response synthesis must run on the async path like the sync path
+    synthesis_prompt = PromptTemplate(
+        "{query_str}", prompt_type=PromptType.SIMPLE_INPUT
+    )
+    nl_query_engine = NLStructStoreQueryEngine(
+        index, response_synthesis_prompt=synthesis_prompt, **query_kwargs
+    )
+    response = nl_query_engine.query("test_table:user_id,foo")
+    assert str(response) == "test_table:user_id,foo"
+    task = nl_query_engine.aquery("test_table:user_id,foo")
+    response = asyncio_run(task)
+    assert str(response) == "test_table:user_id,foo"
 
     nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
     task = nl_table_engine.aquery("test_table:user_id,foo")
