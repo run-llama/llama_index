@@ -380,6 +380,20 @@ class TestWeaviateSync:
 
         assert results.similarities[0] > results.similarities[1]
 
+    def test_hybrid_search_with_alpha_zero(self, vector_store_with_sample_nodes):
+        # alpha=0 is a pure keyword (BM25) search: the node that only matches
+        # the query vector must not be returned
+        query = VectorStoreQuery(
+            query_embedding=[0.3, 0.0, 0.0],
+            similarity_top_k=10,
+            query_str="world",
+            mode=VectorStoreQueryMode.HYBRID,
+            alpha=0.0,
+        )
+
+        results = vector_store_with_sample_nodes.query(query)
+        assert [node.text for node in results.nodes] == ["Hello world."]
+
     def test_query_kwargs(self, vector_store_with_sample_nodes):
         query = VectorStoreQuery(
             query_embedding=[0.0, 0.3, 0.0],
