@@ -156,6 +156,12 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
     "claude-sonnet-5-5",
 )
 
+# Models that reject a forced tool_choice ("any" or "tool")
+ANTHROPIC_NO_FORCED_TOOL_CALL_MODELS: Tuple[str, ...] = (
+    "claude-opus-5-5",
+    "claude-sonnet-5-5",
+)
+
 
 def is_function_calling_model(modelname: str) -> bool:
     return "-3" in modelname or "-4" in modelname or "-5" in modelname
