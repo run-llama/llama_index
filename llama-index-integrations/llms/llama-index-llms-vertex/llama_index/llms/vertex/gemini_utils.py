@@ -1,3 +1,4 @@
+import re
 from typing import Any, Union, Optional
 from vertexai.generative_models._generative_models import SafetySettingsType
 from google.cloud.aiplatform_v1beta1.types import content as gapic_content_types
@@ -5,7 +6,12 @@ from llama_index.core.llms import ChatMessage, MessageRole, ImageBlock, TextBloc
 
 
 def is_gemini_model(model: str) -> bool:
-    return model.startswith("gemini")
+    normalized = re.sub(
+        r"^[a-z]{2,}\.(?=(?:gemini|gemma)-)",
+        "",
+        model.lower().rsplit("/", 1)[-1],
+    )
+    return normalized.startswith("gemini")
 
 
 def create_gemini_client(

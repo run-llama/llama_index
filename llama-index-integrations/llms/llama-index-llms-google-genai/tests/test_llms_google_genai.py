@@ -2413,3 +2413,219 @@ async def test_tool_response_roundtrip_omits_id_for_vertex() -> None:
     # no synthetic id is emitted for Vertex
     assert fn_call.id is None
     assert fn_resp.id is None
+
+
+def test_usage_metadata_thoughts_and_cached_tokens_in_response() -> None:
+    """Test that thoughts_token_count and cached_content_token_count are extracted into additional_kwargs."""
+    response = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[types.Part(text="Final answer")],
+                ),
+                finish_reason=types.FinishReason.STOP,
+            )
+        ],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=100,
+            candidates_token_count=50,
+            total_token_count=180,
+            thoughts_token_count=30,
+            cached_content_token_count=40,
+        ),
+    )
+
+    chat_response = chat_from_gemini_response(response, [])
+    assert chat_response.additional_kwargs["prompt_tokens"] == 100
+    assert chat_response.additional_kwargs["completion_tokens"] == 50
+    assert chat_response.additional_kwargs["total_tokens"] == 180
+    assert chat_response.additional_kwargs["thoughts_tokens"] == 30
+    assert chat_response.additional_kwargs["cached_content_tokens"] == 40
+
+
+def test_streaming_coalesces_consecutive_thinking_blocks_and_sets_num_tokens() -> None:
+    """Consecutive streaming thought chunks coalesce into one ThinkingBlock with num_tokens set."""
+    existing_content: List[Any] = []
+    thought_signatures: List[Optional[bytes]] = []
+
+    chunk1 = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[types.Part(text="Step 1. ", thought=True)],
+                ),
+            )
+        ],
+    )
+    chunk2 = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[
+                        types.Part(
+                            text="Step 2.",
+                            thought=True,
+                            thought_signature=b"sig-123",
+                        )
+                    ],
+                ),
+            )
+        ],
+    )
+    chunk3 = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[types.Part(text="Final answer.")],
+                ),
+                finish_reason=types.FinishReason.STOP,
+            )
+        ],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=20,
+            candidates_token_count=10,
+            thoughts_token_count=42,
+            total_token_count=72,
+        ),
+    )
+
+    chat_from_gemini_response(chunk1, existing_content, thought_signatures)
+    chat_from_gemini_response(chunk2, existing_content, thought_signatures)
+    final_resp = chat_from_gemini_response(chunk3, existing_content, thought_signatures)
+
+    thinking_blocks = [
+        b for b in final_resp.message.blocks if isinstance(b, ThinkingBlock)
+    ]
+    text_blocks = [b for b in final_resp.message.blocks if isinstance(b, TextBlock)]
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].content == "Step 1. Step 2."
+    assert thinking_blocks[0].num_tokens == 42
+    assert (
+        thinking_blocks[0].additional_information.get("thought_signature") == b"sig-123"
+    )
+    assert len(text_blocks) == 1
+    assert text_blocks[0].text == "Final answer."
+    assert final_resp.additional_kwargs["thoughts_tokens"] == 42
+
+
+def test_stream_chat_yields_trailing_usage_only_chunk() -> None:
+    """Trailing usage-only chunks (empty/None parts with usage_metadata) are yielded in stream_chat."""
+    chunk1 = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[
+                        types.Part(text="Hello", thought=True),
+                        types.Part(text=" world"),
+                    ],
+                ),
+            )
+        ],
+    )
+    trailing_usage_chunk = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(role="model", parts=[]),
+                finish_reason=types.FinishReason.STOP,
+            )
+        ],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=15,
+            candidates_token_count=8,
+            thoughts_token_count=25,
+            cached_content_token_count=5,
+            total_token_count=48,
+        ),
+    )
+
+    with patch("google.genai.Client") as mock_client_cls:
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+
+        mock_chat = MagicMock()
+        mock_chat.send_message_stream.return_value = iter(
+            [chunk1, trailing_usage_chunk]
+        )
+        mock_client.chats.create.return_value = mock_chat
+
+        llm = GoogleGenAI(model="gemini-3-flash-preview", api_key="test-key")
+        msgs = [ChatMessage(role=MessageRole.USER, content="Hi")]
+
+        sync_chunks = list(llm.stream_chat(msgs))
+        assert len(sync_chunks) == 2
+        assert sync_chunks[-1].delta == ""
+        assert sync_chunks[-1].additional_kwargs["prompt_tokens"] == 15
+        assert sync_chunks[-1].additional_kwargs["completion_tokens"] == 8
+        assert sync_chunks[-1].additional_kwargs["thoughts_tokens"] == 25
+        assert sync_chunks[-1].additional_kwargs["cached_content_tokens"] == 5
+        assert sync_chunks[-1].additional_kwargs["total_tokens"] == 48
+        thinking_blocks = [
+            b for b in sync_chunks[-1].message.blocks if isinstance(b, ThinkingBlock)
+        ]
+        assert len(thinking_blocks) == 1
+        assert thinking_blocks[0].num_tokens == 25
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_yields_trailing_usage_only_chunk() -> None:
+    """Trailing usage-only chunks (empty/None parts with usage_metadata) are yielded in astream_chat."""
+    chunk1 = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[
+                        types.Part(text="Hello", thought=True),
+                        types.Part(text=" world"),
+                    ],
+                ),
+            )
+        ],
+    )
+    trailing_usage_chunk = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=None,
+                finish_reason=types.FinishReason.STOP,
+            )
+        ],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=15,
+            candidates_token_count=8,
+            thoughts_token_count=25,
+            cached_content_token_count=5,
+            total_token_count=48,
+        ),
+    )
+
+    with patch("google.genai.Client") as mock_client_cls:
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+
+        async def _async_stream():
+            yield chunk1
+            yield trailing_usage_chunk
+
+        mock_achat = MagicMock()
+        mock_achat.send_message_stream = AsyncMock(return_value=_async_stream())
+        mock_client.aio.chats.create.return_value = mock_achat
+
+        llm = GoogleGenAI(model="gemini-3-flash-preview", api_key="test-key")
+        msgs = [ChatMessage(role=MessageRole.USER, content="Hi")]
+
+        async_chunks = [c async for c in await llm.astream_chat(msgs)]
+        assert len(async_chunks) == 2
+        assert async_chunks[-1].delta == ""
+        assert async_chunks[-1].additional_kwargs["thoughts_tokens"] == 25
+        assert async_chunks[-1].additional_kwargs["cached_content_tokens"] == 5
