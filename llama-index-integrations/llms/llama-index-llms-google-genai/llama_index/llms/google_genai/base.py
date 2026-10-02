@@ -426,25 +426,28 @@ class GoogleGenAI(FunctionCallingLLM):
                             continue
 
                         top_candidate = candidates[0]
-                        if response_content := top_candidate.content:
-                            if parts := response_content.parts:
-                                # Only use non-thought text parts for the delta
-                                content_delta = "".join(
+                        response_content = top_candidate.content
+                        parts = response_content.parts if response_content else None
+                        if parts or r.usage_metadata:
+                            # Only use non-thought text parts for the delta
+                            content_delta = (
+                                "".join(
                                     part.text
                                     for part in parts
                                     if part.text and not part.thought
                                 )
+                                if parts
+                                else ""
+                            )
 
-                                llama_resp = chat_from_gemini_response(
-                                    r,
-                                    existing_content=content,
-                                    thought_signatures=thought_signatures,
-                                )
-                                llama_resp.delta = (
-                                    llama_resp.delta or content_delta or ""
-                                )
+                            llama_resp = chat_from_gemini_response(
+                                r,
+                                existing_content=content,
+                                thought_signatures=thought_signatures,
+                            )
+                            llama_resp.delta = llama_resp.delta or content_delta or ""
 
-                                yield llama_resp
+                            yield llama_resp
             finally:
                 if self.file_mode in ("fileapi", "hybrid"):
                     delete_uploaded_files(file_api_names, self._client)
@@ -482,25 +485,28 @@ class GoogleGenAI(FunctionCallingLLM):
                             continue
 
                         top_candidate = candidates[0]
-                        if response_content := top_candidate.content:
-                            if parts := response_content.parts:
-                                # Only use non-thought text parts for the delta
-                                content_delta = "".join(
+                        response_content = top_candidate.content
+                        parts = response_content.parts if response_content else None
+                        if parts or r.usage_metadata:
+                            # Only use non-thought text parts for the delta
+                            content_delta = (
+                                "".join(
                                     part.text
                                     for part in parts
                                     if part.text and not part.thought
                                 )
+                                if parts
+                                else ""
+                            )
 
-                                llama_resp = chat_from_gemini_response(
-                                    r,
-                                    existing_content=content,
-                                    thought_signatures=thought_signatures,
-                                )
-                                llama_resp.delta = (
-                                    llama_resp.delta or content_delta or ""
-                                )
+                            llama_resp = chat_from_gemini_response(
+                                r,
+                                existing_content=content,
+                                thought_signatures=thought_signatures,
+                            )
+                            llama_resp.delta = llama_resp.delta or content_delta or ""
 
-                                yield llama_resp
+                            yield llama_resp
             finally:
                 if self.file_mode in ("fileapi", "hybrid"):
                     await adelete_uploaded_files(file_api_names, self._client)
