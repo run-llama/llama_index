@@ -9,6 +9,7 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterCondition,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -40,6 +41,13 @@ DISTANCE_STRATEGIES = Literal[
     "EUCLIDEAN_DISTANCE",
 ]
 
+# How a MetadataFilters condition maps onto an Elasticsearch bool clause.
+_CONDITION_TO_ES_CLAUSE = {
+    FilterCondition.AND: "must",
+    FilterCondition.OR: "should",
+    FilterCondition.NOT: "must_not",
+}
+
 
 def _to_elasticsearch_filter(
     standard_filters: MetadataFilters, metadata_keyword_suffix: str = ".keyword"
@@ -49,33 +57,32 @@ def _to_elasticsearch_filter(
 
     Args:
         standard_filters: Standard Llama-index filters.
+        metadata_keyword_suffix: Suffix appended to the metadata field name.
 
     Returns:
         Elasticsearch filter.
 
     """
-    if len(standard_filters.legacy_filters()) == 1:
-        filter = standard_filters.legacy_filters()[0]
-        return {
+    operands = [
+        {
             "term": {
                 f"metadata.{filter.key}{metadata_keyword_suffix}": {
                     "value": filter.value,
                 }
             }
         }
-    else:
-        operands = []
-        for filter in standard_filters.legacy_filters():
-            operands.append(
-                {
-                    "term": {
-                        f"metadata.{filter.key}{metadata_keyword_suffix}": {
-                            "value": filter.value,
-                        }
-                    }
-                }
-            )
-        return {"bool": {"must": operands}}
+        for filter in standard_filters.legacy_filters()
+    ]
+
+    # `condition` is optional, and AND is what the previous behavior implied.
+    condition = standard_filters.condition or FilterCondition.AND
+
+    if len(operands) == 1 and condition != FilterCondition.NOT:
+        # A single AND/OR operand needs no bool wrapper. NOT still does,
+        # because the clause has to be negated.
+        return operands[0]
+
+    return {"bool": {_CONDITION_TO_ES_CLAUSE[condition]: operands}}
 
 
 def _to_llama_similarities(scores: List[float]) -> List[float]:
