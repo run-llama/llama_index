@@ -674,7 +674,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         if query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")
             if vector is not None and query.query_str:
-                alpha = query.alpha or 0.5
+                alpha = query.alpha if query.alpha is not None else 0.5
 
         if query.filters is not None:
             filters = _to_weaviate_filter(query.filters, property_types)
