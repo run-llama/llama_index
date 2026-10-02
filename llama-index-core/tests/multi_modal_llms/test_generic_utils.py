@@ -64,14 +64,12 @@ def test_image_documents_to_base64_multiple_sources(tmp_path: Path):
     documents = [
         ImageDocument(image=expected_b64),
         ImageDocument(image_path=fl_path),
-        ImageDocument(metadata={"file_path": "test.jpg"}),
+        ImageDocument(metadata={"file_path": str(fl_path)}),
         ImageDocument(image_url=EXP_IMAGE_URLS[0]),
     ]
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = content
-        with patch("os.path.isfile", return_value=True):
-            with patch("builtins.open", mock_open(read_data=content)):
-                result = image_documents_to_base64(documents)
+        result = image_documents_to_base64(documents)
 
     assert len(result) == 4
     assert all(encoding == expected_b64 for encoding in result)
@@ -90,6 +88,51 @@ def test_image_documents_to_base64_empty_sequence():
     """Test handling of empty sequence of documents."""
     result = image_documents_to_base64([])
     assert result == []
+
+
+def test_image_documents_to_base64_metadata_file_path_non_image_skipped(
+    tmp_path: Path,
+):
+    """A metadata file_path that is not an image is skipped, not encoded."""
+    txt_file = tmp_path / "not_an_image.txt"
+    txt_file.write_text("this is not an image")
+    document = ImageDocument(metadata={"file_path": str(txt_file)})
+
+    result = image_documents_to_base64([document])
+
+    assert result == []
+
+
+def test_image_documents_to_base64_deserialized_image_path_non_image_skipped(
+    tmp_path: Path,
+):
+    """An image_path set after construction (e.g. via from_dict) is checked too."""
+    txt_file = tmp_path / "not_an_image.txt"
+    txt_file.write_text("this is not an image")
+    # The constructor rejects this path; a deserialized document bypasses it.
+    with pytest.raises(ValueError):
+        ImageDocument(image_path=str(txt_file))
+    data = ImageDocument(text="placeholder").to_dict()
+    data["image_resource"] = {"path": str(txt_file)}
+    document = ImageDocument.from_dict(data)
+    assert document.image_path == str(txt_file)
+
+    result = image_documents_to_base64([document])
+
+    assert result == []
+
+
+def test_image_documents_to_base64_metadata_file_path_image(tmp_path: Path):
+    """A metadata file_path pointing at a real image is still encoded."""
+    from PIL import Image
+
+    img_path = tmp_path / "pixel.png"
+    Image.new("RGB", (1, 1)).save(img_path)
+    document = ImageDocument(metadata={"file_path": str(img_path)})
+
+    result = image_documents_to_base64([document])
+
+    assert result == [base64.b64encode(img_path.read_bytes()).decode("utf-8")]
 
 
 def test_image_documents_to_base64_invalid_metadata():
@@ -157,10 +200,7 @@ def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
 
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
-        # patch os.path.isfile
-        with patch("os.path.isfile", return_value=True):
-            with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-                results = set_base64_and_mimetype_for_image_docs(image_docs)
+        results = set_base64_and_mimetype_for_image_docs(image_docs)
 
     assert len(results) == 2
     assert results[0].image == expected_b64
