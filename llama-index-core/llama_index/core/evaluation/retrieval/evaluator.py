@@ -40,7 +40,7 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
 
         if self.node_postprocessors:
             for node_postprocessor in self.node_postprocessors:
-                retrieved_nodes = node_postprocessor.postprocess_nodes(
+                retrieved_nodes = await node_postprocessor.apostprocess_nodes(
                     retrieved_nodes, query_str=query
                 )
 
@@ -78,7 +78,7 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
 
         if self.node_postprocessors:
             for node_postprocessor in self.node_postprocessors:
-                retrieved_nodes = node_postprocessor.postprocess_nodes(
+                retrieved_nodes = await node_postprocessor.apostprocess_nodes(
                     retrieved_nodes, query_str=query
                 )
 
