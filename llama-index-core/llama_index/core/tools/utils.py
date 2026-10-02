@@ -3,6 +3,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Dict,
     List,
     Optional,
     Tuple,
@@ -25,6 +26,7 @@ def create_schema_from_function(
         List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]
     ] = None,
     ignore_fields: Optional[List[str]] = None,
+    param_descriptions: Optional[Dict[str, str]] = None,
 ) -> Type[BaseModel]:
     """
     Create schema from function.
@@ -32,9 +34,15 @@ def create_schema_from_function(
         - datetime.date -> format: "date"
         - datetime.datetime -> format: "date-time"
         - datetime.time -> format: "time"
+    - `param_descriptions` supplies fallback descriptions (e.g. parsed from the
+      function's docstring) for parameters that don't carry one of their own.
+      These must be passed in here rather than assigned to `model_fields` after
+      the fact: `model_json_schema()` is derived from the core schema frozen at
+      `create_model()` time, so a later mutation never reaches the schema.
     """
     fields = {}
     ignore_fields = ignore_fields or []
+    param_descriptions = param_descriptions or {}
     params = signature(func).parameters
 
     for param_name in params:
@@ -65,6 +73,9 @@ def create_schema_from_function(
                 ):
                     json_schema_extra.update(args[1].json_schema_extra)
 
+        if description is None:
+            description = param_descriptions.get(param_name)
+
         # Add format based on param_type
         if param_type == datetime.date:
             json_schema_extra.setdefault("format", "date")
@@ -84,6 +95,14 @@ def create_schema_from_function(
             )
         elif isinstance(param_default, FieldInfo):
             # Field with pydantic.Field as default value
+            if param_default.description is None and description is not None:
+                # Merge rather than assign: pydantic builds the field from the
+                # attributes the FieldInfo records as explicitly set, so a plain
+                # `param_default.description = ...` would never reach the schema
+                # (and would edit the caller's instance).
+                param_default = FieldInfo.merge_field_infos(
+                    param_default, description=description
+                )
             fields[param_name] = (param_type, param_default)
         else:
             fields[param_name] = (

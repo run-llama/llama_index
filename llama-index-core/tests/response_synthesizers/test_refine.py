@@ -553,6 +553,38 @@ class TestRefine:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
 
+    def test_synthesize__streaming_default_refine_program_yields_incremental_chunks(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        """Without an output_cls there is no json to wait on, so tokens must stream through."""
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = synthesizer.synthesize(query="test", nodes=nodes)
+        assert isinstance(response, StreamingResponse)
+
+        chunks = list(response.response_gen)
+        expected = " ".join(["text"] * 10)
+        assert len(chunks) > 1
+        # no chunk is the whole answer, and boundary whitespace is preserved
+        assert "".join(chunks) == expected
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_default_refine_program_yields_incremental_chunks(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        """Without an output_cls there is no json to wait on, so tokens must stream through."""
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = await synthesizer.asynthesize(query="test", nodes=nodes)
+        assert isinstance(response, AsyncStreamingResponse)
+
+        chunks = [chunk async for chunk in response.async_response_gen()]
+        expected = " ".join(["text"] * 10)
+        assert len(chunks) > 1
+        assert "".join(chunks) == expected
+
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
         llm_case: LLMCase,

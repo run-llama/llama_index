@@ -143,7 +143,8 @@ class TypecastToolSpec(BaseToolSpec):
             UnauthorizedError: If API authentication fails
             PaymentRequiredError: If API quota exceeded
             NotFoundError: If resource not found
-            UnprocessableEntityError: If validation error
+            UnprocessableEntityError: If validation fails or the input text cannot
+                be synthesized. Correct the input before retrying.
             InternalServerError: If Typecast API server error
             TypecastError: If other API error occurs
             IOError: If file save fails

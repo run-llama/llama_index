@@ -68,7 +68,7 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "gemini-3-flash-preview"
+DEFAULT_MODEL = "gemini-3.7-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -606,7 +606,10 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.tool_name,
+                    # Use the per-call id when the provider supplies one (Gemini)
+                    # so parallel calls to the same tool can be correlated. Vertex
+                    # AI has no id, so tool_call_id falls back to the tool name.
+                    tool_id=tool_call.tool_call_id or tool_call.tool_name,
                     tool_name=tool_call.tool_name,
                     tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
                 )
