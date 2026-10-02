@@ -14,14 +14,16 @@ from ag_ui.core import (
     FunctionCall,
 )
 from ag_ui.core.types import (
-    AudioInputContent,
-    BinaryInputContent,
-    DocumentInputContent,
-    ImageInputContent,
-    InputContentDataSource,
-    InputContentUrlSource,
-    TextInputContent,
-    VideoInputContent,
+    AudioPart,
+    ContentPart,
+    FileSource,
+    PartSource,
+    DocumentPart,
+    ImagePart,
+    DataSource,
+    UrlSource,
+    TextPart,
+    VideoPart,
 )
 from ag_ui.encoder import EventEncoder
 from typing import Any, List, Optional, Union, Callable
@@ -74,7 +76,7 @@ def _drop_none(**kwargs: Any) -> dict:
 
 
 def _source_kwargs(
-    source: Union[InputContentDataSource, InputContentUrlSource],
+    source: PartSource,
 ) -> dict:
     """
     Project an AG-UI input-content source onto block constructor kwargs.
@@ -88,43 +90,11 @@ def _source_kwargs(
     through. Returns ``{}`` for a source this converter cannot read, so the
     caller can skip the part with a warning.
     """
-    if isinstance(source, InputContentDataSource):
+    if isinstance(source, DataSource):
         return {"data": source.value.encode("ascii"), "mime_type": source.mime_type}
-    if isinstance(source, InputContentUrlSource):
+    if isinstance(source, UrlSource):
         return {"url": source.value, "mime_type": source.mime_type}
     return {}
-
-
-def _binary_part_to_block(part: BinaryInputContent) -> Optional[ContentBlock]:
-    """Convert the deprecated flat ``binary`` part, routed by MIME prefix."""
-    mime = part.mime_type or ""
-    # MIME types are case-insensitive (RFC 2045); route on the lowercased form
-    # but keep the original casing on the block's mimetype field.
-    mime_lower = mime.lower()
-    # Base64 passes through verbatim; see _source_kwargs for why it is not decoded.
-    data = part.data.encode("ascii") if part.data else None
-    if not part.url and data is None:
-        return None
-    if mime_lower.startswith("image/"):
-        return ImageBlock(
-            **_drop_none(image=data, url=part.url, image_mimetype=mime or None)
-        )
-    if mime_lower.startswith("audio/"):
-        return AudioBlock(
-            **_drop_none(audio=data, url=part.url, format=_audio_format_from_mime(mime))
-        )
-    if mime_lower.startswith("video/"):
-        return VideoBlock(
-            **_drop_none(video=data, url=part.url, video_mimetype=mime or None)
-        )
-    return DocumentBlock(
-        **_drop_none(
-            data=data,
-            url=part.url,
-            document_mimetype=mime or None,
-            title=part.filename,
-        )
-    )
 
 
 #: additional_kwargs key marking a user message whose AG-UI wire content was a
@@ -139,14 +109,16 @@ AG_UI_PARTS_KEY = "ag_ui_parts"
 AG_UI_STATE_BLOCK_KEY = "ag_ui_injected_state_block"
 
 
-def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]:
+def agui_content_to_blocks(
+    content: Union[str, List[ContentPart]],
+) -> List[ContentBlock]:
     """
     Convert AG-UI user-message content onto llama-index content blocks.
 
     String content becomes a single :class:`TextBlock`. List content maps each
-    typed part (text/image/audio/video/document, plus the deprecated flat
-    ``binary`` shape) onto the corresponding block; a part this converter
-    cannot represent is skipped with a warning rather than silently stringified.
+    typed part (text/image/audio/video/document) onto the corresponding block.
+    A part this converter cannot represent is skipped with a warning rather
+    than silently stringified.
     Part ``metadata`` is deliberately not carried onto blocks: llama-index
     blocks have no field for it, and providers reject unknown content keys.
     """
@@ -155,9 +127,18 @@ def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]
 
     blocks: List[ContentBlock] = []
     for part in content:
-        if isinstance(part, TextInputContent):
+        if isinstance(
+            part, (ImagePart, AudioPart, VideoPart, DocumentPart)
+        ) and isinstance(part.source, FileSource):
+            # LlamaIndex's generic media blocks cannot carry opaque provider
+            # handles. Never treat a handle as a URL or decode it as data.
+            logger.warning(
+                "Skipping %s part with unsupported provider file source", part.type
+            )
+            continue
+        if isinstance(part, TextPart):
             blocks.append(TextBlock(text=part.text))
-        elif isinstance(part, ImageInputContent):
+        elif isinstance(part, ImagePart):
             kwargs = _source_kwargs(part.source)
             if not kwargs:
                 logger.warning("Skipping image part with unreadable source")
@@ -171,7 +152,7 @@ def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]
                     )
                 )
             )
-        elif isinstance(part, AudioInputContent):
+        elif isinstance(part, AudioPart):
             kwargs = _source_kwargs(part.source)
             if not kwargs:
                 logger.warning("Skipping audio part with unreadable source")
@@ -185,7 +166,7 @@ def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]
                     )
                 )
             )
-        elif isinstance(part, VideoInputContent):
+        elif isinstance(part, VideoPart):
             kwargs = _source_kwargs(part.source)
             if not kwargs:
                 logger.warning("Skipping video part with unreadable source")
@@ -199,7 +180,7 @@ def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]
                     )
                 )
             )
-        elif isinstance(part, DocumentInputContent):
+        elif isinstance(part, DocumentPart):
             kwargs = _source_kwargs(part.source)
             if not kwargs:
                 logger.warning("Skipping document part with unreadable source")
@@ -213,17 +194,26 @@ def agui_content_to_blocks(content: Union[str, List[Any]]) -> List[ContentBlock]
                     )
                 )
             )
-        elif isinstance(part, BinaryInputContent):
-            block = _binary_part_to_block(part)
-            if block is None:
-                logger.warning("Skipping binary part with no url or data")
-                continue
-            blocks.append(block)
         else:
             logger.warning(
                 "Skipping unrecognized content part type: %r", type(part).__name__
             )
     return blocks
+
+
+def _tool_content_to_text(content: Union[str, List[ContentPart]]) -> str:
+    """Project tool results onto the text-only tool path used by this adapter."""
+    if isinstance(content, str):
+        return content
+    text = []
+    for part in content:
+        if isinstance(part, TextPart):
+            text.append(part.text)
+        else:
+            logger.warning(
+                "Skipping %s part in tool result: only text is supported", part.type
+            )
+    return "".join(text)
 
 
 def _block_to_agui_part(block: ContentBlock) -> Optional[Any]:
@@ -237,11 +227,11 @@ def _block_to_agui_part(block: ContentBlock) -> Optional[Any]:
 
     def _source(
         data: Optional[bytes], url: Optional[Any], mime: Optional[str]
-    ) -> Optional[Union[InputContentDataSource, InputContentUrlSource]]:
+    ) -> Optional[Union[DataSource, UrlSource]]:
         if url:
-            return InputContentUrlSource(type="url", value=str(url), mime_type=mime)
+            return UrlSource(type="url", value=str(url), mime_type=mime)
         if data is not None:
-            return InputContentDataSource(
+            return DataSource(
                 type="data",
                 value=base64.b64encode(data).decode("ascii"),
                 mime_type=mime or "application/octet-stream",
@@ -260,23 +250,23 @@ def _block_to_agui_part(block: ContentBlock) -> Optional[Any]:
         return resolve().read()
 
     if isinstance(block, TextBlock):
-        return TextInputContent(type="text", text=block.text)
+        return TextPart(type="text", text=block.text)
     if isinstance(block, ImageBlock):
         data = _bytes(block, block.image, block.resolve_image)
         source = _source(data, block.url, block.image_mimetype)
-        return ImageInputContent(type="image", source=source) if source else None
+        return ImagePart(type="image", source=source) if source else None
     if isinstance(block, AudioBlock):
         data = _bytes(block, block.audio, block.resolve_audio)
         source = _source(data, block.url, _audio_mime_from_format(block.format))
-        return AudioInputContent(type="audio", source=source) if source else None
+        return AudioPart(type="audio", source=source) if source else None
     if isinstance(block, VideoBlock):
         data = _bytes(block, block.video, block.resolve_video)
         source = _source(data, block.url, block.video_mimetype)
-        return VideoInputContent(type="video", source=source) if source else None
+        return VideoPart(type="video", source=source) if source else None
     if isinstance(block, DocumentBlock):
         data = _bytes(block, block.data, block.resolve_document)
         source = _source(data, block.url, block.document_mimetype)
-        return DocumentInputContent(type="document", source=source) if source else None
+        return DocumentPart(type="document", source=source) if source else None
     return None
 
 
@@ -312,7 +302,7 @@ def llama_index_message_to_ag_ui_message(
         parts = []
         for block in blocks:
             if isinstance(block, TextBlock):
-                parts.append(TextInputContent(type="text", text=block.text))
+                parts.append(TextPart(type="text", text=block.text))
                 continue
             part = _block_to_agui_part(block)
             if part is not None:
@@ -420,7 +410,7 @@ def ag_ui_message_to_llama_index_message(message: Message) -> ChatMessage:
         # This is a bit of an opinionated hack for now to support the ag-ui tool calls
         return ChatMessage(
             role="user",
-            content=message.content,
+            content=_tool_content_to_text(message.content),
             additional_kwargs={"id": message.id, "tool_call_id": message.tool_call_id},
         )
     elif isinstance(message, DeveloperMessage):
