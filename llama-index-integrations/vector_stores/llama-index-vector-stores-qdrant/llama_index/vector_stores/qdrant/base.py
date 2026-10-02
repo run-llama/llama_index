@@ -432,11 +432,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             limit = len(node_ids) if limit is None else min(len(node_ids), limit)
 
         if filters is not None:
-            filter = self._build_subfilter(filters)
-            if filter.should is None:
-                filter.should = should
-            else:
-                filter.should.extend(should)
+            # AND the metadata filter with node_ids: merging an OR filter's
+            # conditions into `should` would match either of them.
+            filter = Filter(
+                must=[self._build_subfilter(filters)], should=should or None
+            )
         else:
             filter = Filter(should=should)
 
@@ -500,11 +500,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             limit = len(node_ids) if limit is None else min(len(node_ids), limit)
 
         if filters is not None:
-            filter = self._build_subfilter(filters)
-            if filter.should is None:
-                filter.should = should
-            else:
-                filter.should.extend(should)
+            # AND the metadata filter with node_ids: merging an OR filter's
+            # conditions into `should` would match either of them.
+            filter = Filter(
+                must=[self._build_subfilter(filters)], should=should or None
+            )
         else:
             filter = Filter(should=should)
 
@@ -719,11 +719,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ]
 
         if filters is not None:
-            filter = self._build_subfilter(filters)
-            if filter.should is None:
-                filter.should = should
-            else:
-                filter.should.extend(should)
+            # AND the metadata filter with node_ids: merging an OR filter's
+            # conditions into `should` would match either of them.
+            filter = Filter(
+                must=[self._build_subfilter(filters)], should=should or None
+            )
         else:
             filter = Filter(should=should)
 
@@ -766,11 +766,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ]
 
         if filters is not None:
-            filter = self._build_subfilter(filters)
-            if filter.should is None:
-                filter.should = should
-            else:
-                filter.should.extend(should)
+            # AND the metadata filter with node_ids: merging an OR filter's
+            # conditions into `should` would match either of them.
+            filter = Filter(
+                must=[self._build_subfilter(filters)], should=should or None
+            )
         else:
             filter = Filter(should=should)
 
