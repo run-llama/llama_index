@@ -34,3 +34,19 @@ def test_default_parse_choice_select_answer_fn(answer):
     answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
     assert answer_nums == [2, 4]
     assert answer_relevances == [8, 6]
+
+
+def test_default_parse_choice_select_answer_fn_skips_out_of_range_choices():
+    from llama_index.core.indices.utils import default_parse_choice_select_answer_fn
+
+    answer = (
+        "Doc: 0, Relevance: 9\n"
+        "Doc: -2, Relevance: 8\n"
+        "Doc: 2, Relevance: 7\n"
+        "Doc: 6, Relevance: 6"
+    )
+
+    answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
+
+    assert answer_nums == [2]
+    assert answer_relevances == [7]
