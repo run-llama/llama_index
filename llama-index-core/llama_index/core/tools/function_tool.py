@@ -1,6 +1,9 @@
 import asyncio
 import contextvars
 import inspect
+from copy import deepcopy
+from dataclasses import replace
+import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +17,6 @@ from typing import (
     Tuple,
     get_origin,
 )
-import re
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -30,7 +32,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     VideoBlock,
 )
-from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
+from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
 from llama_index.core.schema import BaseNode, Document
@@ -269,6 +271,40 @@ class FunctionTool(AsyncBaseTool):
     def metadata(self) -> ToolMetadata:
         """Metadata."""
         return self._metadata
+
+    def with_partial_params(self, partial_params: Dict[str, Any]) -> "FunctionTool":
+        """
+        Return a tool view with additional partial parameters applied.
+
+        This is useful when the same tool should expose different schemas per request.
+        The returned tool hides the supplied parameters from its metadata schema and
+        injects their values at call time without mutating the original tool.
+        """
+        all_partial_params = {**self.partial_params, **partial_params}
+        partial_param_names = set(all_partial_params)
+        fn_schema = self.metadata.fn_schema
+
+        if fn_schema is not None:
+            fields = {
+                field_name: (field_info.annotation or Any, deepcopy(field_info))
+                for field_name, field_info in fn_schema.model_fields.items()
+                if field_name not in partial_param_names
+            }
+            fn_schema = create_model(f"{fn_schema.__name__}Partial", **fields)
+
+        tool = FunctionTool(
+            fn=self._fn,
+            metadata=replace(self.metadata, fn_schema=fn_schema),
+            async_fn=self._async_fn,
+            callback=self._callback,
+            async_callback=self._async_callback,
+            partial_params=all_partial_params,
+        )
+        tool.requires_context = self.requires_context
+        tool.ctx_param_name = self.ctx_param_name
+        tool._field_defaults = dict(self._field_defaults)
+        tool._real_fn = self._real_fn
+        return tool
 
     @property
     def fn(self) -> Callable[..., Any]:
