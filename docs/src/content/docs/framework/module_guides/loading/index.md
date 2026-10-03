@@ -10,7 +10,7 @@ Once you have [learned about the basics of loading data](/python/framework/under
 
 - [SimpleDirectoryReader](/python/framework/module_guides/loading/simpledirectoryreader), our built-in loader for loading all sorts of file types from a local directory
 - [LlamaParse](/python/framework/module_guides/loading/connector/llama_parse), LlamaIndex's official tool for PDF parsing, available as a managed API.
-- [LlamaHub](/python/framework/module_guides/loading/connector), our registry of hundreds of data loading libraries to ingest data from any source
+- [Data connectors](/python/framework/module_guides/loading/connector), hundreds of data loading integrations to ingest data from any source
 
 ### Transformations
 

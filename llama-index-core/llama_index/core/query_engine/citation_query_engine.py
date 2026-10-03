@@ -330,11 +330,20 @@ class CitationQueryEngine(BaseQueryEngine):
                 node.node.get_content(metadata_mode=self._metadata_mode)
             )
 
+            # Each citation node holds a single chunk, so the source node's id and
+            # character offsets no longer describe it: copying the id would give
+            # every chunk of a source the same one, and the offsets would span the
+            # whole source. _create_multimodal_citation_nodes already omits both.
+            source_data = node.node.model_dump()
+            source_data.pop("id_", None)
+            source_data["start_char_idx"] = None
+            source_data["end_char_idx"] = None
+
             for text_chunk in text_chunks:
                 text = f"Source {len(new_nodes) + 1}:\n{text_chunk}\n"
 
                 new_node = NodeWithScore(
-                    node=TextNode.model_validate(node.node.model_dump()),
+                    node=TextNode.model_validate(source_data),
                     score=node.score,
                 )
                 new_node.node.set_content(text)
