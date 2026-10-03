@@ -47,6 +47,7 @@ as the storage backend for `VectorStoreIndex`.
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
+- Rostam (`RostamVectorStore`). [Quickstart](https://docs.rostamlabs.com/). [Python Client](https://pypi.org/project/llama-index-vector-stores-rostam/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](/python/examples/vector_stores/tablestoredemo). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
 - TiDB (`TiDBVectorStore`). [Quickstart](/python/examples/vector_stores/tidbvector). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).

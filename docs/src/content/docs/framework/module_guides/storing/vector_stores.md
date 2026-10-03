@@ -52,6 +52,7 @@ We are actively adding more integrations and improving feature coverage for each
 | pgvecto.rs                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |                               |
 | Qdrant                     | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | Redis                      | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
+| Rostam                     | self-hosted             | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | S3                         | cloud                   | ✓                  |               | ✓      | ✓               | ✓\* (using asyncio.to_thread) |
 | Simple                     | in-memory               | ✓                  |               | ✓      |                 |                               |
 | SingleStore                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
