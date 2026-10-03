@@ -209,13 +209,13 @@ async def test_sparse_query(
     assert res.nodes[1].node_id == "ddd"
 
 
-@pytest.mark.parametrize("hybird", [True, False])
-def test_opengauss_init(hybird: bool) -> None:
+@pytest.mark.parametrize("hybrid", [True, False])
+def test_opengauss_init(hybrid: bool) -> None:
     store = OpenGaussStore.from_params(
         **PARAMS,
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
         schema_name=TEST_SCHEMA_NAME,
-        hybrid_search=hybird,
+        hybrid_search=hybrid,
         embed_dim=TEST_EMBED_DIM,
     )
