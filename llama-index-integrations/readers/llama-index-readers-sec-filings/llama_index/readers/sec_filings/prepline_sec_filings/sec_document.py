@@ -1,12 +1,6 @@
 import re
-import sys
 from functools import partial
-from typing import Any, Iterable, Iterator, List, Optional, Tuple
-
-if sys.version_info < (3, 8):  # noqa: UP036
-    from typing import Final
-else:
-    from typing import Final
+from typing import Any, Final, Iterable, Iterator, List, Optional, Tuple
 
 from collections import defaultdict
 
