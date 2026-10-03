@@ -527,7 +527,7 @@ The requirement for extractors is that the insert graph data into the metadata o
 Here is a small example of sub-classing to create a custom extractor:
 
 ```python
-from llama_index.core.graph_store.types import (
+from llama_index.core.graph_stores.types import (
     EntityNode,
     Relation,
     KG_NODES_KEY,
