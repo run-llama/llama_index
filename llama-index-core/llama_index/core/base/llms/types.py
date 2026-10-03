@@ -31,6 +31,7 @@ except ImportError:  # pragma: no cover
 import filetype
 from tinytag import TinyTag, UnsupportedFormatError
 from typing_extensions import Self
+from xml.sax.saxutils import escape
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import (
@@ -1233,6 +1234,11 @@ class ChatMessage(BaseRecursiveContentBlock):
             raise ValueError(
                 "ChatMessage contains multiple blocks, use 'ChatMessage.blocks' instead."
             )
+
+    def to_xml_string(self) -> str:
+        """Serialize the message's text content with its role as XML."""
+        content = escape(self.content or "")
+        return f"<{self.role.value}>{content}</{self.role.value}>"
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"

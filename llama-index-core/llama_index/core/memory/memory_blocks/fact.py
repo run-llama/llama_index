@@ -1,7 +1,7 @@
 import re
 from typing import Any, List, Optional, Union
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock
 from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.llms import LLM
 from llama_index.core.memory.memory import BaseMemoryBlock
@@ -62,6 +62,36 @@ Return ONLY the condensed facts in this exact format:
 
 def get_default_llm() -> LLM:
     return Settings.llm
+
+
+def _prepend_conversation_history(
+    messages: List[ChatMessage], prompt_messages: List[ChatMessage]
+) -> List[ChatMessage]:
+    """Add provider-neutral conversation history to the prompt."""
+    conversation = "\n".join(message.to_xml_string() for message in messages)
+    conversation_block = TextBlock(
+        text=f"<current_conversation>\n{conversation}\n</current_conversation>\n\n"
+    )
+    prompt_messages = [message.model_copy(deep=True) for message in prompt_messages]
+
+    for prompt_message in prompt_messages:
+        if prompt_message.role == MessageRole.USER:
+            prompt_message.blocks.insert(0, conversation_block)
+            return prompt_messages
+
+    history_message = ChatMessage(role=MessageRole.USER, blocks=[conversation_block])
+    insert_at = 0
+    while insert_at < len(prompt_messages) and prompt_messages[insert_at].role in (
+        MessageRole.SYSTEM,
+        MessageRole.DEVELOPER,
+    ):
+        insert_at += 1
+
+    return [
+        *prompt_messages[:insert_at],
+        history_message,
+        *prompt_messages[insert_at:],
+    ]
 
 
 class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
@@ -135,7 +165,9 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
         )
 
         # Get the facts extraction
-        response = await self.llm.achat(messages=[*messages, *prompt_messages])
+        response = await self.llm.achat(
+            messages=_prepend_conversation_history(messages, prompt_messages)
+        )
 
         # Parse the XML response to extract facts
         facts_text = response.message.content or ""
@@ -156,7 +188,9 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
                 existing_facts=existing_facts_text,
                 max_facts=self.max_facts,
             )
-            response = await self.llm.achat(messages=[*messages, *prompt_messages])
+            response = await self.llm.achat(
+                messages=_prepend_conversation_history(messages, prompt_messages)
+            )
             condensed_facts = self._parse_facts_xml(response.message.content or "")
 
             # The condensed response replaces the fact list wholesale, so only
