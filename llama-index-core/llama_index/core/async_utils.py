@@ -82,7 +82,36 @@ def run_async_tasks(
     show_progress: bool = False,
     progress_bar_desc: str = "Running async tasks",
 ) -> List[Any]:
-    """Run a list of async tasks."""
+    """Run a list of async tasks.
+
+    Executes a list of coroutines concurrently using ``asyncio.gather``.
+    An optional progress bar (powered by ``tqdm``) can be shown while the
+    tasks are running.
+
+    Args:
+        tasks (List[Coroutine]): The coroutines to execute concurrently.
+        show_progress (bool): If ``True``, display a ``tqdm`` progress bar
+            while the tasks are running.  Defaults to ``False``.
+        progress_bar_desc (str): Description label shown on the progress bar
+            when *show_progress* is ``True``.
+            Defaults to ``"Running async tasks"``.
+
+    Returns:
+        List[Any]: A list of results in the same order as *tasks*.
+
+    Example:
+        >>> import asyncio
+        >>> from llama_index.core.async_utils import run_async_tasks
+        >>>
+        >>> async def double(x: int) -> int:
+        ...     await asyncio.sleep(0)
+        ...     return x * 2
+        >>>
+        >>> tasks = [double(i) for i in range(5)]
+        >>> results = run_async_tasks(tasks)
+        >>> print(results)
+        [0, 2, 4, 6, 8]
+    """
     tasks_to_execute: List[Any] = tasks
     if show_progress:
         try:
