@@ -30,7 +30,6 @@ dev_notebooks/
 # Other
 llamaindex_registry.txt
 packages_to_bump_deduped.txt
-.env
 credentials.json
 token.json
 .python-version
@@ -47,3 +46,5 @@ llama-index-core/llama_index/core/_static
 **/.coverage
 **/coverage.xml
 \nstorage/
+config.bat
+node_modules
