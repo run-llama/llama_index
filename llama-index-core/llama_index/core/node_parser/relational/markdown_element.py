@@ -47,6 +47,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         elements = self.extract_elements(
             node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
         )
+        elements = self.extract_html_tables(elements)
         # extract summaries over table elements
         # Pass all elements so that aextract_table_summaries can access
         # surrounding context (e.g., table titles) for better summarization
