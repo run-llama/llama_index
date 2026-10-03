@@ -1,4 +1,7 @@
+import datetime
 from unittest.mock import Mock, patch, mock_open
+
+import pytest
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.google import (
     GmailToolSpec,
@@ -22,6 +25,35 @@ def test_google_calendar_tool_spec_init_without_creds():
     """Test GoogleCalendarToolSpec initialization without credentials."""
     tool = GoogleCalendarToolSpec()
     assert tool.creds is None
+
+
+@pytest.mark.parametrize("start_as_string", [False, True])
+@pytest.mark.parametrize("end_as_string", [False, True])
+def test_create_event_accepts_datetime_inputs(
+    start_as_string: bool, end_as_string: bool
+) -> None:
+    start = datetime.datetime(2026, 10, 2, 10, tzinfo=datetime.timezone.utc)
+    end = start + datetime.timedelta(hours=1)
+    tool = GoogleCalendarToolSpec()
+    tool.service = Mock()
+
+    result = tool.create_event(
+        title="Meeting",
+        start_datetime=start.isoformat() if start_as_string else start,
+        end_datetime=end.isoformat() if end_as_string else end,
+    )
+
+    event = tool.service.events.return_value.insert.call_args.kwargs["body"]
+    assert (
+        datetime.datetime.strptime(event["start"]["dateTime"], "%Y-%m-%dT%H:%M:%S.%f%z")
+        == start
+    )
+    assert (
+        datetime.datetime.strptime(event["end"]["dateTime"], "%Y-%m-%dT%H:%M:%S.%f%z")
+        == end
+    )
+    tool.service.events.return_value.insert.return_value.execute.assert_called_once()
+    assert "created successfully" in result
 
 
 def test_google_calendar_tool_spec_init_with_creds():
