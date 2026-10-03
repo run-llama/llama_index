@@ -1268,7 +1268,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return self._hybrid_fusion_fn(
                 self.parse_to_query_result(sparse_response[0].points),
                 self.parse_to_query_result(sparse_response[1].points),
-                alpha=query.alpha or 0.5,
+                alpha=query.alpha if query.alpha is not None else 0.5,
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
                 top_k=query.hybrid_top_k or query.similarity_top_k,
             )
