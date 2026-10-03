@@ -59,21 +59,60 @@ def test_node_with_score_passthrough(node_with_score: NodeWithScore) -> None:
 def test_text_node_hash() -> None:
     node = TextNode(text="hello", metadata={"foo": "bar"})
     assert (
-        node.hash == "aa158bf3388f103cef4bd85b2ca93f343ad8f5e50f58ae4141a35d75a2f21fb0"
+        node.hash == "a98c32b3bf66d9514ee252ac7d7031e43a9c800620f25876095152b2640080cc"
     )
     node.set_content("world")
     assert (
-        node.hash == "ce6a3cefc3451ecb1ff41ec41a7d7e24354983520d8b2d6f5447be0b6b9b6b99"
+        node.hash == "546b28d61bae0226e30fb638ceb11f51a45966b14ca70ec341c4054bac69150a"
     )
 
     node.text = "new"
     assert (
-        node.hash == "bef8ff82498c9aa7d9f9751f441da9a1a1c4e9941bd03c57caa4a602cd5cadd0"
+        node.hash == "da8cebc17ab289e53fa89602bf0b00e7b4291ac8d986ee2b9bf4a34f9b7bcc17"
     )
     node2 = TextNode(text="new", metadata={"foo": "bar"})
     assert node2.hash == node.hash
     node3 = TextNode(text="new", metadata={"foo": "baz"})
     assert node3.hash != node.hash
+
+
+def test_text_node_hash_ignores_excluded_embed_metadata() -> None:
+    """`TextNode.hash` must ignore metadata fields listed in
+    `excluded_embed_metadata_keys`. These fields are volatile (e.g.
+    `last_modified_date` populated by `SimpleDirectoryReader` from the
+    filesystem stat); including them in the hash would produce a new
+    hash for byte-identical content on every run, forcing the cache to
+    miss and the embedding model to re-embed unchanged text.
+    """
+    node_a = TextNode(
+        text="hello world",
+        metadata={
+            "source": "docs/readme.md",
+            "last_modified_date": "2026-04-22",
+        },
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+    node_b = TextNode(
+        text="hello world",
+        metadata={
+            "source": "docs/readme.md",
+            "last_modified_date": "2026-04-23",
+        },
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+    assert node_a.hash == node_b.hash
+
+    # Sanity check: a non-excluded field must still affect the hash,
+    # otherwise the main assertion would pass trivially.
+    node_c = TextNode(
+        text="hello world",
+        metadata={
+            "source": "docs/CHANGED.md",
+            "last_modified_date": "2026-04-22",
+        },
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+    assert node_c.hash != node_a.hash
 
 
 def test_text_node_with_text_resource():
