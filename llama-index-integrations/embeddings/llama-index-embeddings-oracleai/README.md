@@ -7,20 +7,17 @@ This API is to generate an embedding from a text.
 # A sample example
 
 ```python
-from typing import TYPE_CHECKING
-from llama_index.core.embeddings import BaseEmbedding
+import os
+
+import oracledb
+
 from llama_index.embeddings.oracleai import OracleEmbeddings
 
-if TYPE_CHECKING:
-    import oracledb
-
 """ get the Oracle connection """
-conn = oracledb.connect(
-    user="<user>",
-    password="<password>",
-    dsn="<dsn>",
-)
-print("Oracle connection is established...")
+username = os.environ["ORACLE_DB_USERNAME"]
+password = os.environ["ORACLE_DB_PASSWORD"]
+dsn = os.environ["ORACLE_DB_DSN"]
+conn = oracledb.connect(user=username, password=password, dsn=dsn)
 
 """ params """
 embedder_params = {"provider": "<provider_name>", "model": "<model_name>"}
