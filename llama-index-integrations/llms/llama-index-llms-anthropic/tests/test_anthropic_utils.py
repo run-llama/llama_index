@@ -1,31 +1,30 @@
 import pytest
-
-from llama_index.llms.anthropic.utils import (
-    anthropic_modelname_to_contextsize,
-    is_anthropic_prompt_caching_supported_model,
-    ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS,
-    update_tool_calls,
-    is_anthropic_structured_output_supported,
-    STRUCTURED_OUTPUT_SUPPORT,
-    messages_to_anthropic_beta_messages,
-    blocks_to_anthropic_blocks,
-    blocks_to_anthropic_beta_blocks,
-    messages_to_anthropic_messages,
-)
-from llama_index.core.base.llms.types import (
-    ToolCallBlock,
-    TextBlock,
-    ChatMessage,
-    ThinkingBlock,
-    ImageBlock,
-    DocumentBlock,
-    MessageRole,
-)
 from anthropic.types.beta import (
     BetaTextBlockParam,
     BetaThinkingBlockParam,
-    BetaToolUseBlockParam,
     BetaToolResultBlockParam,
+    BetaToolUseBlockParam,
+)
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    DocumentBlock,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
+)
+from llama_index.llms.anthropic.utils import (
+    ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS,
+    STRUCTURED_OUTPUT_SUPPORT,
+    anthropic_modelname_to_contextsize,
+    blocks_to_anthropic_beta_blocks,
+    blocks_to_anthropic_blocks,
+    is_anthropic_prompt_caching_supported_model,
+    is_anthropic_structured_output_supported,
+    messages_to_anthropic_beta_messages,
+    messages_to_anthropic_messages,
+    update_tool_calls,
 )
 
 
@@ -442,6 +441,20 @@ def test_opus_4_6_has_1m_context_window(model: str) -> None:
 )
 def test_opus_5_5_has_1m_context_window(model: str) -> None:
     """Opus 5.5 is registered with a 1M context window (issue #23222)."""
+    assert anthropic_modelname_to_contextsize(model) == 1000000
+    assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
+    assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-sonnet-5-5",
+        "anthropic.claude-sonnet-5-5",
+    ],
+)
+def test_sonnet_5_5_has_1m_context_window(model: str) -> None:
+    """Sonnet 5.5 is registered with a 1M context window"""
     assert anthropic_modelname_to_contextsize(model) == 1000000
     assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
     assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
