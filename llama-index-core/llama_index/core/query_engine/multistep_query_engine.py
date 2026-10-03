@@ -100,7 +100,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            nodes, source_nodes, metadata = self._query_multistep(query_bundle)
+            nodes, source_nodes, metadata = await self._aquery_multistep(query_bundle)
 
             final_response = await self._response_synthesizer.asynthesize(
                 query=query_bundle,
@@ -153,6 +153,60 @@ class MultiStepQueryEngine(BaseQueryEngine):
                 break
 
             cur_response = self._query_engine.query(updated_query_bundle)
+
+            # append to response builder
+            cur_qa_text = (
+                f"\nQuestion: {updated_query_bundle.query_str}\n"
+                f"Answer: {cur_response!s}"
+            )
+            text_chunks.append(cur_qa_text)
+            for source_node in cur_response.source_nodes:
+                source_nodes.append(source_node)
+            # update metadata
+            final_response_metadata["sub_qa"].append(
+                (updated_query_bundle.query_str, cur_response)
+            )
+
+            prev_reasoning += (
+                f"- {updated_query_bundle.query_str}\n- {cur_response!s}\n"
+            )
+            cur_steps += 1
+
+        nodes = [
+            NodeWithScore(node=TextNode(text=text_chunk)) for text_chunk in text_chunks
+        ]
+        return nodes, source_nodes, final_response_metadata
+
+    async def _aquery_multistep(
+        self, query_bundle: QueryBundle
+    ) -> Tuple[List[NodeWithScore], List[NodeWithScore], Dict[str, Any]]:
+        """Run query combiner (async)."""
+        prev_reasoning = ""
+        cur_response = None
+        should_stop = False
+        cur_steps = 0
+
+        # use response
+        final_response_metadata: Dict[str, Any] = {"sub_qa": []}
+
+        text_chunks = []
+        source_nodes = []
+        while not should_stop:
+            if self._num_steps is not None and cur_steps >= self._num_steps:
+                should_stop = True
+                break
+            elif should_stop:
+                break
+
+            updated_query_bundle = self._combine_queries(query_bundle, prev_reasoning)
+
+            # TODO: make stop logic better
+            stop_dict = {"query_bundle": updated_query_bundle}
+            if self._stop_fn(stop_dict):
+                should_stop = True
+                break
+
+            cur_response = await self._query_engine.aquery(updated_query_bundle)
 
             # append to response builder
             cur_qa_text = (
