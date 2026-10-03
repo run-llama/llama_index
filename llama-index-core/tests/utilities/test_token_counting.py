@@ -84,6 +84,37 @@ def test_estimate_tokens_in_messages_none_guards():
     assert tokens > 0
 
 
+def test_estimate_tokens_in_messages_conservation_invariant():
+    """Drift guard: ensure TokenCounter estimate stays within sane conservation band against mock provider usage."""
+    counter = TokenCounter(tokenizer=dummy_tokenizer)
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="I will query the database now.",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "call_101",
+                    "type": "function",
+                    "function": {
+                        "name": "sql_query",
+                        "arguments": '{"query": "SELECT * FROM users WHERE active = 1"}',
+                    },
+                }
+            ]
+        },
+    )
+
+    estimated_tokens = counter.estimate_tokens_in_messages([msg])
+    raw_content_tokens = len(str(msg.content or "").split())
+    raw_tool_tokens = len("sql_query".split()) + len('{"query": "SELECT * FROM users WHERE active = 1"}'.split())
+    expected_tokens = raw_content_tokens + raw_tool_tokens
+
+    assert estimated_tokens == expected_tokens
+    assert 0.85 * expected_tokens <= estimated_tokens <= 1.15 * expected_tokens
+
+
+
 @pytest.mark.asyncio
 async def test_aestimate_tokens_in_messages_dict_tool_calls():
     counter = TokenCounter(tokenizer=dummy_tokenizer)
