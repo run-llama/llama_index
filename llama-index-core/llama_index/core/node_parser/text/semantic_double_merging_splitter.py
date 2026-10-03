@@ -256,19 +256,23 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
     def _create_initial_chunks(self, sentences: List[str]) -> List[str]:
         initial_chunks: List[str] = []
+        # Every join below inserts one `merging_separator`, so the size guards have to account
+        # for its real length instead of assuming a single character.
+        separator_len = len(self.merging_separator)
         chunk = sentences[0]
         new = True
         for sentence in sentences[1:]:
             if new:
                 if (
                     self._similarity(chunk, sentence) < self.initial_threshold
-                    and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
+                    and len(chunk) + len(sentence) + separator_len
+                    <= self.max_chunk_size
                 ):
                     initial_chunks.append(chunk)
                     chunk = sentence
                     continue
                 chunk_sentences = [chunk]
-                if len(chunk) + len(sentence) + 1 <= self.max_chunk_size:
+                if len(chunk) + len(sentence) + separator_len <= self.max_chunk_size:
                     chunk_sentences.append(sentence)
                     chunk = self.merging_separator.join(chunk_sentences)
                     new = False
@@ -280,7 +284,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 last_sentences = self.merging_separator.join(chunk_sentences[-2:])
             elif (
                 self._similarity(last_sentences, sentence) > self.appending_threshold
-                and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
+                and len(chunk) + len(sentence) + separator_len <= self.max_chunk_size
             ):
                 chunk_sentences.append(sentence)
                 last_sentences = self.merging_separator.join(chunk_sentences[-2:])
@@ -294,6 +298,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
     def _merge_initial_chunks(self, initial_chunks: List[str]) -> List[str]:
         chunks: List[str] = []
+        separator_len = len(self.merging_separator)
         skip = 0
         current = initial_chunks[0]
         for i in range(1, len(initial_chunks)):
@@ -305,7 +310,8 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 current = initial_chunks[i]
             elif (
                 self._similarity(current, initial_chunks[i]) > self.merging_threshold
-                and len(current) + len(initial_chunks[i]) + 1 <= self.max_chunk_size
+                and len(current) + len(initial_chunks[i]) + separator_len
+                <= self.max_chunk_size
             ):
                 current += self.merging_separator + initial_chunks[i]
             elif (
@@ -315,7 +321,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 and len(current)
                 + len(initial_chunks[i])
                 + len(initial_chunks[i + 1])
-                + 2
+                + 2 * separator_len
                 <= self.max_chunk_size
             ):
                 current += (
@@ -334,7 +340,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 + len(initial_chunks[i])
                 + len(initial_chunks[i + 1])
                 + len(initial_chunks[i + 2])
-                + 3
+                + 3 * separator_len
                 <= self.max_chunk_size
             ):
                 current += (
