@@ -52,6 +52,25 @@ def asyncio_run(coro: Coroutine) -> Any:
             ctx = contextvars.copy_context()
 
             def run_coro_in_thread() -> Any:
+                """Run *coro* in a brand-new event loop on the current thread.
+
+                Creates a fresh :class:`asyncio.AbstractEventLoop`, installs it
+                as the running loop for this thread, executes *coro* to
+                completion while propagating the caller's
+                :mod:`contextvars` context, then closes the loop.
+
+                Returns:
+                    Any: The value returned by *coro*.
+
+                Example:
+                    >>> import asyncio
+                    >>> async def _add(x: int, y: int) -> int:
+                    ...     return x + y
+                    >>> # asyncio_run() calls run_coro_in_thread() internally
+                    >>> # when an event loop is already running:
+                    >>> result = asyncio_run(_add(1, 2))
+                    >>> assert result == 3
+                """
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
