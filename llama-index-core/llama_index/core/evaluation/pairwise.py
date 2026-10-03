@@ -1,6 +1,7 @@
 """Pairwise evaluation."""
 
 import asyncio
+import re
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
@@ -63,17 +64,21 @@ DEFAULT_EVAL_TEMPLATE = ChatPromptTemplate(
 def _default_parser_function(
     eval_response: str,
 ) -> Tuple[Optional[bool], Optional[float], Optional[str]]:
-    # Extract from response
+    # Extract from response using last-match so that a verdict token echoed
+    # in reasoning does not override the judge's final verdict.
     feedback: Optional[str] = ""
-    if "[[A]]" in eval_response:
-        passing: Optional[bool] = True
-        score = 1.0
-    elif "[[B]]" in eval_response:
-        passing = False
-        score = 0.0
-    elif "[[C]]" in eval_response:
-        passing = None
-        score = 0.5
+    pairwise_matches = re.findall(r"\[\[([ABC])\]\]", eval_response)
+    if pairwise_matches:
+        verdict = pairwise_matches[-1]
+        if verdict == "A":
+            passing: Optional[bool] = True
+            score = 1.0
+        elif verdict == "B":
+            passing = False
+            score = 0.0
+        else:
+            passing = None
+            score = 0.5
     else:
         passing = None
         score = None
