@@ -12,7 +12,7 @@ This has been renamed to `VectorStoreIndex`, as well as unifying all vector inde
 
 Please see the following links for more details on usage.
 
-- [Index Usage Pattern](/python/framework/module_guides/evaluating/usage_pattern)
+- [Index Usage Pattern](/python/framework/module_guides/indexing/vector_store_index)
 - [Vector Store Guide](/python/framework/module_guides/indexing/vector_store_guide)
 - [Vector Store Integrations](/python/framework/community/integrations/vector_stores)
 
@@ -20,7 +20,7 @@ Please see the following links for more details on usage.
 
 This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. Please see the following links for more details on usage.
 
-- [Index Usage Pattern](/python/framework/module_guides/evaluating/usage_pattern)
+- [Index Usage Pattern](/python/framework/module_guides/indexing/vector_store_index)
 - [Vector Store Guide](/python/framework/module_guides/indexing/vector_store_guide)
 - [Vector Store Integrations](/python/framework/community/integrations/vector_stores)
 
