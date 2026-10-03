@@ -38,18 +38,14 @@ def test_unsupported_extension() -> None:
         (".html", "<p>HTML body</p>"),
     ],
 )
-def test_supported_extension_uses_custom_id_func(
-    extension: str, text: str
-) -> None:
+def test_supported_extension_uses_custom_id_func(extension: str, text: str) -> None:
     calls: list[tuple[int, Document]] = []
 
     def custom_id(index: int, source: Document) -> str:
         calls.append((index, source))
         return f"{source.id_}::{index}"
 
-    document = Document(
-        id_="source", text=text, metadata={"extension": extension}
-    )
+    document = Document(id_="source", text=text, metadata={"extension": extension})
     nodes = SimpleFileNodeParser(id_func=custom_id).get_nodes_from_documents([document])
 
     assert len(nodes) == 1
