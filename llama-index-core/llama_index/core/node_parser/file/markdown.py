@@ -75,6 +75,7 @@ class MarkdownNodeParser(NodeParser):
                                 self.header_path_separator.join(
                                     h[1] for h in header_stack[:-1]
                                 ),
+                                len(markdown_nodes),
                             )
                         )
 
@@ -101,6 +102,7 @@ class MarkdownNodeParser(NodeParser):
                     current_section.strip(),
                     node,
                     self.header_path_separator.join(h[1] for h in header_stack[:-1]),
+                    len(markdown_nodes),
                 )
             )
 
@@ -111,9 +113,14 @@ class MarkdownNodeParser(NodeParser):
         text_split: str,
         node: BaseNode,
         header_path: str,
+        node_index: int = 0,
     ) -> TextNode:
         """Build node from single text split."""
-        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+        node = build_nodes_from_splits(
+            [text_split],
+            node,
+            id_func=lambda i, doc: self.id_func(node_index, doc),
+        )[0]
 
         if self.include_metadata:
             separator = self.header_path_separator
