@@ -114,7 +114,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         Initialize HyDEQueryTransform.
 
         Args:
-            llm_predictor (Optional[LLM]): LLM for generating
+            llm (Optional[LLM]): LLM for generating
                 hypothetical documents
             hyde_prompt (Optional[BasePromptTemplate]): Custom prompt for HyDE
             include_original (bool): Whether to include original query
@@ -158,7 +158,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
     Performs a single step transformation.
 
     Args:
-        llm_predictor (Optional[LLM]): LLM for generating
+        llm (Optional[LLM]): LLM for generating
             hypothetical documents
 
     """
@@ -266,7 +266,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
     NOTE: doesn't work yet.
 
     Args:
-        llm_predictor (Optional[LLM]): LLM for generating
+        llm (Optional[LLM]): LLM for generating
             hypothetical documents
 
     """
