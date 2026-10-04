@@ -6,7 +6,8 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, ThinkingBlock, TextBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai.utils import O1_MODELS
+from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
+from llama_index.llms.openai.utils import O1_MODELS, TURBO_MODELS
 
 import openai
 from openai.types.chat.chat_completion import (
@@ -427,6 +428,17 @@ def test_validates_api_key_is_present() -> None:
         # We can create a new LLM when the api_key is set on the
         # class directly
         assert OpenAI(api_key="sk-" + ("a" * 48))
+
+
+def test_default_model() -> None:
+    # OpenAI shuts down gpt-3.5-turbo on October 23, 2026; its named
+    # replacement is gpt-5.6-terra (https://developers.openai.com/api/docs/deprecations)
+    llm = OpenAI(api_key="sk-" + ("a" * 48))
+    assert llm.model == DEFAULT_OPENAI_MODEL == "gpt-5.6-terra"
+    assert llm.model not in TURBO_MODELS
+    assert llm.metadata.context_window > 0
+    assert llm.metadata.is_chat_model
+    assert llm.metadata.is_function_calling_model
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
