@@ -1226,7 +1226,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             if subfilter.operator == FilterOperator.IN:
                 value_str = " or ".join(
                     [
-                        f"t eq '{value}'" if isinstance(value, str) else f"t eq {value}"
+                        f"t eq '{value}'"
+                        if isinstance(value, str)
+                        else (
+                            f"t eq {'true' if value else 'false'}"
+                            if isinstance(value, bool)
+                            else f"t eq {value}"
+                        )
                         for value in subfilter.value
                     ]
                 )
@@ -1235,7 +1241,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             # odata filters support eq, ne, gt, lt, ge, le
             elif subfilter.operator in BASIC_ODATA_FILTER_MAP:
                 operator_str = BASIC_ODATA_FILTER_MAP[subfilter.operator]
-                if isinstance(subfilter.value, str):
+                if isinstance(subfilter.value, bool):
+                    odata_filter.append(
+                        f"{index_field} {operator_str} {'true' if subfilter.value else 'false'}"
+                    )
+                elif isinstance(subfilter.value, str):
                     escaped_value = "".join(
                         [("''" if s == "'" else s) for s in subfilter.value]
                     )
@@ -1250,12 +1260,14 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             else:
                 raise ValueError(f"Unsupported filter operator {subfilter.operator}")
 
-        if metadata_filters.condition == FilterCondition.AND:
+        condition = metadata_filters.condition or FilterCondition.AND
+        if condition == FilterCondition.AND:
             odata_expr = " and ".join(odata_filter)
-        elif metadata_filters.condition == FilterCondition.OR:
+        elif condition == FilterCondition.OR:
             odata_expr = " or ".join(odata_filter)
-        elif metadata_filters.condition == FilterCondition.NOT:
-            odata_expr = f"not ({odata_filter})"
+        elif condition == FilterCondition.NOT:
+            inner_expr = " and ".join(odata_filter)
+            odata_expr = f"not ({inner_expr})" if inner_expr else ""
         else:
             raise ValueError(
                 f"Unsupported filter condition {metadata_filters.condition}"
