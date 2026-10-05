@@ -840,6 +840,45 @@ async def test_text_block_asplit_no_overlap():
 
 
 @pytest.mark.asyncio
+async def test_text_block_asplit_with_overlap():
+    """A non-zero overlap must reach the underlying splitter."""
+    tb = TextBlock(text=" ".join(f"word{i}" for i in range(200)))
+
+    chunks = await tb.asplit(max_tokens=20, overlap=10)
+    splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=10)
+    assert len(chunks) == len(splitter.split_text(tb.text))
+
+    # overlap produces strictly more chunks than no overlap
+    no_overlap = await tb.asplit(max_tokens=20, overlap=0)
+    assert len(chunks) > len(no_overlap)
+
+
+@pytest.mark.asyncio
+async def test_recursive_block_asplit_forwards_overlap():
+    """
+    Recursive blocks must pass `overlap` down when splitting nested blocks.
+
+    `ChatMessage` is a `BaseRecursiveContentBlock`, so splitting one delegates to
+    the nested `TextBlock`. The overlap was previously dropped at that boundary,
+    silently producing unoverlapped chunks.
+    """
+    text = " ".join(f"word{i}" for i in range(200))
+
+    with_overlap = await ChatMessage(
+        role=MessageRole.USER, blocks=[TextBlock(text=text)]
+    ).asplit(max_tokens=20, overlap=10)
+    without_overlap = await ChatMessage(
+        role=MessageRole.USER, blocks=[TextBlock(text=text)]
+    ).asplit(max_tokens=20, overlap=0)
+
+    assert len(with_overlap) > len(without_overlap)
+
+    # the recursive block must match what the nested block does on its own
+    expected = await TextBlock(text=text).asplit(max_tokens=20, overlap=10)
+    assert len(with_overlap) == len(expected)
+
+
+@pytest.mark.asyncio
 async def test_text_block_atruncate():
     tb = TextBlock(text="Hello world! This is a test.")
     truncated_tb = await tb.atruncate(max_tokens=4)
