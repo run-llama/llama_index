@@ -202,3 +202,27 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+def test_more_than_six_hashes_not_header() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Header 1
+###### Valid Header 6
+####### Not a header (7 hashes)
+######## Also not a header (8 hashes)
+"""
+            )
+        ]
+    )
+    assert len(splits) == 2
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[0].text == "# Header 1"
+    assert splits[1].metadata == {"header_path": "/Header 1/"}
+    assert (
+        splits[1].text
+        == "###### Valid Header 6\n####### Not a header (7 hashes)\n######## Also not a header (8 hashes)"
+    )
