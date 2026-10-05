@@ -77,7 +77,7 @@ class HTMLNodeParser(NodeParser):
 
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         soup = BeautifulSoup(text, "html.parser")
-        html_nodes = []
+        html_nodes: List[TextNode] = []
         last_tag = None
         current_section = ""
 

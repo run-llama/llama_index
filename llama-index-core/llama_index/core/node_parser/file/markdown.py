@@ -48,7 +48,7 @@ class MarkdownNodeParser(NodeParser):
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
         """Get nodes from document by splitting on headers."""
         text = node.get_content(metadata_mode=MetadataMode.NONE)
-        markdown_nodes = []
+        markdown_nodes: List[TextNode] = []
         lines = text.split("\n")
         current_section = ""
         # Keep track of (markdown level, text) for headers
