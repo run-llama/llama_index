@@ -38,6 +38,21 @@ def _marshal_llm_to_json(output: str) -> str:
 
 def parse_json_markdown(text: str) -> Any:
     if "```json" in text:
+        fenced_text = text.split("```json", 1)[1].lstrip()
+        if "```json" in fenced_text:
+            try:
+                json_obj, end = json.JSONDecoder().raw_decode(fenced_text)
+            except json.JSONDecodeError:
+                pass
+            else:
+                # Preserve literal fence markers in JSON without changing fallback parsing.
+                if (
+                    isinstance(json_obj, (dict, list))
+                    and "```json" in fenced_text[:end]
+                    and fenced_text[end:].lstrip().startswith("```")
+                ):
+                    return json_obj
+
         text = text.split("```json")[1].strip().strip("```").strip()
 
     json_string = _marshal_llm_to_json(text)
