@@ -160,3 +160,27 @@ def test_blank_lines_in_markdown() -> None:
     """
     expected_tups = []
     assert reader.markdown_to_tups(markdown_text) == expected_tups
+
+
+def test_remove_images_strips_image_syntax_and_keeps_description() -> None:
+    reader = MarkdownReader()
+    content = "Before ![alt text](https://example.com/cat.png) after"
+    assert reader.remove_images(content) == "Before alt text after"
+
+
+def test_remove_images_handles_multiple_images() -> None:
+    reader = MarkdownReader()
+    content = "a ![one](1.png) b ![two](2.png) c"
+    assert reader.remove_images(content) == "a one b two c"
+
+
+def test_remove_images_leaves_plain_text_untouched() -> None:
+    reader = MarkdownReader()
+    content = "No images here, just text with (parens) and [brackets]."
+    assert reader.remove_images(content) == content
+
+
+def test_remove_hyperlinks_keeps_link_text() -> None:
+    reader = MarkdownReader()
+    content = "See [docs](https://example.com/docs) for details."
+    assert reader.remove_hyperlinks(content) == "See docs for details."
