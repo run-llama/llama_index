@@ -1,3 +1,3 @@
 ::: llama_index.readers.oxylabs
 options:
-members: - OxylabsBaseReader - OxylabsAmazonSearchReader - OxylabsAmazonPricingReader - OxylabsAmazonProductReader - OxylabsAmazonSellersReader - OxylabsAmazonBestsellersReader - OxylabsAmazonReviewsReader - OxylabsGoogleSearchReader - OxylabsGoogleAdsReader - OxylabsYoutubeTranscriptReader
+members: - OxylabsBaseReader - OxylabsAmazonSearchReader - OxylabsAmazonPricingReader - OxylabsAmazonProductReader - OxylabsAmazonSellersReader - OxylabsAmazonBestsellersReader - OxylabsGoogleSearchReader - OxylabsGoogleAdsReader

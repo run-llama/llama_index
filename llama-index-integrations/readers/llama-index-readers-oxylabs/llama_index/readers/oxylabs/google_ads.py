@@ -9,7 +9,7 @@ class OxylabsGoogleAdsReader(OxylabsGoogleBaseReader):
     """
     Get Google Search results data with paid ads.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/google/ads
+    https://developers.oxylabs.io/api-targets/search-engines/google/ads
     """
 
     def __init__(self, username: str, password: str, **data) -> None:
