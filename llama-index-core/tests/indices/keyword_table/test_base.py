@@ -89,6 +89,23 @@ def test_build_table_async(
     }
 
 
+def test_node_ids_when_table_empty() -> None:
+    from llama_index.core.data_structs.data_structs import KeywordTable
+
+    assert KeywordTable().node_ids == set()
+
+
+def test_node_ids_after_delete_last_document(patch_token_text_splitter) -> None:
+    table = SimpleKeywordTableIndex.from_documents(
+        [Document(text="Hello world.", id_="test_id")]
+    )
+
+    table.delete_ref_doc("test_id")
+
+    assert table.index_struct.table == {}
+    assert table.index_struct.node_ids == set()
+
+
 @patch(
     "llama_index.core.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
