@@ -67,12 +67,12 @@ As always, you can check [the repo](https://github.com/run-llama/python-agents-t
 
 ## Building and contributing your own tools
 
-We love open source contributions of new tools! You can see an example of [what the code of the Yahoo finance tool looks like](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-yahoo-finance/llama_index/tools/yahoo_finance/base.py):
+You can build tools directly in your application with existing LlamaIndex APIs; you do not need to create a LlamaIndex integration package to use a custom tool. For an example of an in-repository tool package, see [the Yahoo Finance tool implementation](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-yahoo-finance/llama_index/tools/yahoo_finance/base.py):
 
 - A class that extends `BaseToolSpec`
 - A set of arbitrary Python functions
 - A `spec_functions` list that maps the functions to the tool's API
 
-Once you've got a tool working, follow our [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md#steps-to-contribute) for instructions on correctly setting metadata and submitting a pull request.
+The repository [no longer accepts new integration packages](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md#what-can-you-work-on). Maintain and publish a new integration package in its own repository instead of adding a package to this monorepo. If your integration uses existing LlamaIndex APIs and you want to suggest it for discovery, you can propose a **docs-only** link on the [community integrations page](/python/framework/community/integrations/); maintainers review listing proposals.
 
 Next we'll look at [how to maintain state](/python/framework/understanding/agent/state) in your agents.
