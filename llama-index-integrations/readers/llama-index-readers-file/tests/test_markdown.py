@@ -1,3 +1,8 @@
+from pathlib import Path
+from typing import List, Tuple
+
+import pytest
+
 from llama_index.readers.file.markdown.base import MarkdownReader
 
 
@@ -160,3 +165,55 @@ def test_blank_lines_in_markdown() -> None:
     """
     expected_tups = []
     assert reader.markdown_to_tups(markdown_text) == expected_tups
+
+
+@pytest.mark.parametrize(
+    ("markdown_text", "expected_tups"),
+    [
+        (
+            "# Root\n### Deep\nalpha\n## Sibling\nbeta",
+            [("Root Deep", "alpha"), ("Root Sibling", "beta")],
+        ),
+        (
+            "### First\nalpha\n## Second\nbeta",
+            [("First", "alpha"), ("Second", "beta")],
+        ),
+        (
+            "### First\nalpha\n# Second\nbeta",
+            [("First", "alpha"), ("Second", "beta")],
+        ),
+        (
+            "# Root\n#### Deep\nalpha\n### Middle\nbeta\n## Shallow\ngamma",
+            [
+                ("Root Deep", "alpha"),
+                ("Root Middle", "beta"),
+                ("Root Shallow", "gamma"),
+            ],
+        ),
+        (
+            "# Root\n### Deep\n## Sibling\nbeta",
+            [("Root Deep", ""), ("Root Sibling", "beta")],
+        ),
+    ],
+)
+def test_parse_markdown_with_skipped_heading_levels(
+    markdown_text: str, expected_tups: List[Tuple[str, str]]
+) -> None:
+    assert MarkdownReader().markdown_to_tups(markdown_text) == expected_tups
+
+
+def test_load_markdown_with_skipped_heading_levels(tmp_path: Path) -> None:
+    path = tmp_path / "handbook.md"
+    path.write_text(
+        "# Handbook\n### Authentication\nRotate credentials monthly.\n"
+        "## Billing\nRefunds are available within thirty days.",
+        encoding="utf-8",
+    )
+    documents = MarkdownReader(separator=" / ").load_data(
+        str(path), extra_info={"source": "handbook"}
+    )
+    assert [document.text for document in documents] == [
+        "\n\nHandbook / Authentication\nRotate credentials monthly.",
+        "\n\nHandbook / Billing\nRefunds are available within thirty days.",
+    ]
+    assert all(document.metadata == {"source": "handbook"} for document in documents)
