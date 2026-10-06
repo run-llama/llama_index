@@ -1,6 +1,7 @@
+from enum import Enum
 from typing import Any, List, Optional
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, field_validator
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
     ReRankEndEvent,
@@ -11,9 +12,22 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
-from rank_llm.rerank.rankllm import PromptMode
-from rank_llm.rerank.reranker import Reranker
-from rank_llm.data import Request, Query, Candidate
+
+class PromptMode(str, Enum):
+    """
+    Prompt modes supported by RankLLM.
+
+    This local definition keeps importing and configuring the postprocessor
+    independent from RankLLM's optional model backends.
+    """
+
+    UNSPECIFIED = "unspecified"
+    RANK_GPT = "rank_GPT"
+    RANK_GPT_APEER = "rank_GPT_APEER"
+    LRL = "LRL"
+    MONOT5 = "monot5"
+    DUOT5 = "duot5"
+    LIT5 = "LiT5"
 
 
 class RankLLMRerank(BaseNodePostprocessor):
@@ -84,6 +98,14 @@ class RankLLMRerank(BaseNodePostprocessor):
 
     _reranker: Any = PrivateAttr()
 
+    @field_validator("prompt_mode", mode="before")
+    @classmethod
+    def _coerce_prompt_mode(cls, value: Any) -> Any:
+        """Accept enum values from RankLLM without importing it eagerly."""
+        if isinstance(value, Enum):
+            return value.value
+        return value
+
     @classmethod
     def class_name(cls) -> str:
         return "RankLLMRerank"
@@ -93,11 +115,22 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
+        try:
+            from rank_llm.data import Candidate, Query, Request
+            from rank_llm.rerank.rankllm import PromptMode as RankLLMPromptMode
+            from rank_llm.rerank.reranker import Reranker
+        except ImportError as exc:
+            raise ImportError(
+                "RankLLMRerank could not load RankLLM's reranking backends. "
+                "Install the dependencies required by the selected RankLLM backend. "
+                f"Original error: {exc}"
+            ) from exc
+
         kwargs = {
             "model_path": self.model,
             "default_model_coordinator": None,
             "context_size": self.context_size,
-            "prompt_mode": self.prompt_mode,
+            "prompt_mode": RankLLMPromptMode(self.prompt_mode.value),
             "num_gpus": self.num_gpus,
             "use_logits": self.use_logits,
             "use_alpha": self.use_alpha,
