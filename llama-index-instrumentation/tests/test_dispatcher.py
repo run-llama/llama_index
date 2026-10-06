@@ -1220,3 +1220,23 @@ async def test_aevent_no_propagation():
     assert len(parent_handler.events) == 0
     assert child_handler.async_calls == 1
     assert parent_handler.async_calls == 0
+
+
+def test_dispatcher_init_uses_none_defaults_not_mutable() -> None:
+    """Regression test for #22705.
+
+    ``Dispatcher.__init__`` must not use mutable list defaults for
+    ``event_handlers``/``span_handlers`` (the ``B006`` anti-pattern). They
+    default to ``None`` and are turned into fresh lists inside ``__init__``, so
+    separate instances never share handler state.
+    """
+    params = inspect.signature(Dispatcher.__init__).parameters
+    assert params["event_handlers"].default is None
+    assert params["span_handlers"].default is None
+
+    d1 = Dispatcher()
+    d2 = Dispatcher()
+    assert d1.event_handlers == [] and d2.event_handlers == []
+    assert d1.span_handlers == [] and d2.span_handlers == []
+    assert d1.event_handlers is not d2.event_handlers
+    assert d1.span_handlers is not d2.span_handlers
