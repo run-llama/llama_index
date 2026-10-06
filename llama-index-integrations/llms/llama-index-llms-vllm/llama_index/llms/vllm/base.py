@@ -63,7 +63,7 @@ class Vllm(LLM):
             model="mistralai/Mistral-7B-Instruct-v0.1",
             tensor_parallel_size=4,
             max_new_tokens=256,
-            vllm_kwargs={"swap_space": 1, "gpu_memory_utilization": 0.5},
+            vllm_kwargs={"gpu_memory_utilization": 0.5},
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
         )
