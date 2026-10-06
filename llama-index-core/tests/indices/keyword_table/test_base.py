@@ -4,10 +4,12 @@ from typing import Any, List
 from unittest.mock import patch
 
 import pytest
+from llama_index.core.data_structs.data_structs import KG, KeywordTable
 from llama_index.core.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
-from llama_index.core.schema import Document
+from llama_index.core.llms import MockLLM
+from llama_index.core.schema import Document, TextNode
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -182,3 +184,39 @@ def test_delete(patch_token_text_splitter) -> None:
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
+
+
+def test_keyword_table_and_kg_empty_node_ids() -> None:
+    """Test KeywordTable and KG node_ids property with empty and populated tables."""
+    # Empty KeywordTable
+    kt_empty = KeywordTable()
+    assert kt_empty.node_ids == set()
+
+    # Populated KeywordTable
+    kt_populated = KeywordTable()
+    kt_populated.table["apple"] = {"node-1", "node-2"}
+    kt_populated.table["banana"] = {"node-2", "node-3"}
+    assert kt_populated.node_ids == {"node-1", "node-2", "node-3"}
+
+    # Empty KG table
+    kg_empty = KG()
+    assert kg_empty.node_ids == set()
+
+    # Populated KG table
+    kg_populated = KG()
+    kg_populated.table["apple"] = {"node-1"}
+    kg_populated.table["banana"] = {"node-2"}
+    assert kg_populated.node_ids == {"node-1", "node-2"}
+
+
+def test_empty_simple_keyword_table_index_node_ids() -> None:
+    """Test SimpleKeywordTableIndex node_ids when created empty and after deleting all nodes."""
+    empty_index = SimpleKeywordTableIndex([], llm=MockLLM())
+    assert empty_index.index_struct.node_ids == set()
+
+    index = SimpleKeywordTableIndex(
+        [TextNode(text="apple banana", id_="node-1")], llm=MockLLM()
+    )
+    assert index.index_struct.node_ids == {"node-1"}
+    index.delete_nodes(["node-1"], delete_from_docstore=True)
+    assert index.index_struct.node_ids == set()
