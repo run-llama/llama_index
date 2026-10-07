@@ -252,3 +252,34 @@ async def test_aget_nodes_calls_async_postprocessor() -> None:
 
     assert postprocessor.called_async is True
     assert postprocessor.called_sync is False
+
+
+class _EmptyRetriever(BaseRetriever):
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        return []
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        return []
+
+
+def _empty_context_engine(fallback_to_llm: bool) -> ContextChatEngine:
+    return ContextChatEngine.from_defaults(
+        _EmptyRetriever(),
+        llm=MockLLM(),
+        system_prompt=SYSTEM_PROMPT,
+        fallback_to_llm=fallback_to_llm,
+    )
+
+
+def test_empty_retrieval_returns_empty_response_by_default():
+    assert str(_empty_context_engine(False).chat("Hello World!")) == "Empty Response"
+
+
+def test_empty_retrieval_calls_llm_when_fallback_enabled():
+    chat_engine = _empty_context_engine(True)
+    response = chat_engine.chat("Hello World!")
+
+    # MockLLM echoes the prompt, so this only passes if the LLM was really called
+    assert "Empty Response" not in str(response)
+    assert SYSTEM_PROMPT in str(response)
+    assert len(chat_engine.chat_history) == 2
