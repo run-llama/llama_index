@@ -27,6 +27,17 @@ documents = reader.load_data(
 )
 ```
 
+By default the reader talks to `https://api.notion.com`. To point it at a proxy or a
+Notion-compatible endpoint (for example a self-hosted mock during testing), pass `base_url`
+or set the `NOTION_BASE_URL` environment variable:
+
+```python
+reader = NotionPageReader(
+    integration_token="<Integration Token>",
+    base_url="https://notion-proxy.internal",  # or set NOTION_BASE_URL
+)
+```
+
 Implementation for Notion reader can be found [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/NotionDemo/)
 
 This loader is designed to be used as a way to load data into
