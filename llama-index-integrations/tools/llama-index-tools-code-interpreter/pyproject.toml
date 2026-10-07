@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-code-interpreter"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index tools code_interpreter integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
@@ -54,6 +54,7 @@ import_path = "llama_index.tools.code_interpreter"
 
 [tool.llamahub.class_authors]
 CodeInterpreterToolSpec = "ajhofmann"
+VettoCodeInterpreterToolSpec = "shleder"
 
 [tool.mypy]
 disallow_untyped_defs = true
