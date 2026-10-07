@@ -220,15 +220,30 @@ class SQLDatabase:
         Preserves CTE (Common Table Expression) names and already
         schema-qualified identifiers so they are not double-prefixed.
         """
+        # Mask strings, quoted identifiers, and comments so we don't modify them
+        masked_store = []
+        mask_pattern = re.compile(
+            r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"|`(?:[^`]|``)*`|--[^\n]*|/\*.*?\*/",
+            re.DOTALL,
+        )
+
+        def _mask_sub(m: re.Match) -> str:
+            masked_store.append(m.group(0))
+            return f"\x00{len(masked_store) - 1}\x00"
+
+        masked_command = mask_pattern.sub(_mask_sub, command)
+
         # Collect CTE names defined in WITH clauses
         cte_names: Set[str] = set()
         # First CTE: WITH [RECURSIVE] name AS (
         for m in re.finditer(
-            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(", command, re.IGNORECASE
+            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(", masked_command, re.IGNORECASE
         ):
             cte_names.add(m.group(1).lower())
         # Subsequent CTEs: ), name AS (
-        for m in re.finditer(r"\)\s*,\s*(\w+)\s+AS\s*\(", command, re.IGNORECASE):
+        for m in re.finditer(
+            r"\)\s*,\s*(\w+)\s+AS\s*\(", masked_command, re.IGNORECASE
+        ):
             cte_names.add(m.group(1).lower())
 
         def _replace(match: re.Match) -> str:
@@ -239,12 +254,18 @@ class SQLDatabase:
                 return match.group(0)
             return f"{keyword}{self._schema}.{table_ref}"
 
-        return re.sub(
+        replaced_command = re.sub(
             r"\b((?:FROM|JOIN)\s+)(\w+(?:\.\w+)?)",
             _replace,
-            command,
+            masked_command,
             flags=re.IGNORECASE,
         )
+
+        # Restore masked parts
+        for i, original_text in enumerate(masked_store):
+            replaced_command = replaced_command.replace(f"\x00{i}\x00", original_text)
+
+        return replaced_command
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """

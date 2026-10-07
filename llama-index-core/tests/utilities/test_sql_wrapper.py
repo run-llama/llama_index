@@ -201,3 +201,34 @@ def test_schema_prefix_case_insensitive(sql_database: SQLDatabase) -> None:
     result = sql_database._add_schema_prefix("select * from users join orders on 1=1")
     assert "from myschema.users" in result
     assert "join myschema.orders" in result
+
+
+def test_schema_prefix_string_literal(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix("SELECT 'FROM users' FROM users")
+    assert result == "SELECT 'FROM users' FROM myschema.users"
+
+
+def test_schema_prefix_escaped_quotes(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix("SELECT 'It''s FROM users' FROM users")
+    assert result == "SELECT 'It''s FROM users' FROM myschema.users"
+
+
+def test_schema_prefix_single_line_comment(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix("-- FROM users\nSELECT * FROM users")
+    assert result == "-- FROM users\nSELECT * FROM myschema.users"
+
+
+def test_schema_prefix_multi_line_comment(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix("/* JOIN table */ SELECT * FROM users")
+    assert result == "/* JOIN table */ SELECT * FROM myschema.users"
+
+
+def test_schema_prefix_quoted_identifiers(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix('SELECT name FROM "users" JOIN `orders`')
+    # Quoted identifiers shouldn't be prefixed by this logic (they didn't before either)
+    assert result == 'SELECT name FROM "users" JOIN `orders`'
