@@ -292,7 +292,9 @@ class PromptHelper(BaseComponent):
         text_splitter = self.get_text_splitter_given_prompt(
             prompt, padding=padding, llm=llm, tools=tools
         )
-        combined_str = "\n\n".join([c.strip() for c in text_chunks if c.strip()])
+        combined_str = "\n\n".join(
+            [c.strip() for c in text_chunks if isinstance(c, str) and c.strip()]
+        )
         return text_splitter.split_text(combined_str)
 
 
