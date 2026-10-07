@@ -1074,3 +1074,118 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+def _make_mock_response(
+    input_tokens: int = 10,
+    output_tokens: int = 20,
+    cache_creation_input_tokens: int = None,
+    cache_read_input_tokens: int = None,
+) -> MagicMock:
+    """Build a minimal mock of the Anthropic non-streaming Message response."""
+    mock_usage = MagicMock()
+    mock_usage.input_tokens = input_tokens
+    mock_usage.output_tokens = output_tokens
+    mock_usage.cache_creation_input_tokens = cache_creation_input_tokens
+    mock_usage.cache_read_input_tokens = cache_read_input_tokens
+
+    mock_response = MagicMock()
+    mock_response.usage = mock_usage
+    mock_response.content = []
+    mock_response.stop_reason = "end_turn"
+    mock_response.role = "assistant"
+    return mock_response
+
+
+def test_chat_attaches_usage_metadata() -> None:
+    """chat() must expose input/output token counts in additional_kwargs["usage"]."""
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = _make_mock_response(
+        input_tokens=100, output_tokens=50
+    )
+
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
+    llm._client = mock_client
+
+    response = llm.chat([ChatMessage(role=MessageRole.USER, content="Hello")])
+
+    usage = response.message.additional_kwargs.get("usage")
+    assert usage is not None, "usage must be present in additional_kwargs"
+    assert usage["input_tokens"] == 100
+    assert usage["output_tokens"] == 50
+
+
+def test_chat_attaches_cache_token_counts() -> None:
+    """chat() must include cache_creation_input_tokens and cache_read_input_tokens."""
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = _make_mock_response(
+        input_tokens=80,
+        output_tokens=40,
+        cache_creation_input_tokens=30,
+        cache_read_input_tokens=10,
+    )
+
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
+    llm._client = mock_client
+
+    response = llm.chat([ChatMessage(role=MessageRole.USER, content="Hello")])
+
+    usage = response.message.additional_kwargs.get("usage")
+    assert usage is not None
+    assert usage["cache_creation_input_tokens"] == 30
+    assert usage["cache_read_input_tokens"] == 10
+
+
+@pytest.mark.asyncio
+async def test_achat_attaches_usage_metadata() -> None:
+    """achat() must expose input/output token counts in additional_kwargs["usage"]."""
+    import asyncio
+
+    mock_client = MagicMock()
+    mock_future = asyncio.get_event_loop().run_in_executor(
+        None, lambda: _make_mock_response(input_tokens=200, output_tokens=75)
+    )
+    mock_response = _make_mock_response(input_tokens=200, output_tokens=75)
+
+    async def async_create(*args, **kwargs):
+        return mock_response
+
+    mock_aclient = MagicMock()
+    mock_aclient.messages.create = async_create
+
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
+    llm._aclient = mock_aclient
+
+    response = await llm.achat([ChatMessage(role=MessageRole.USER, content="Hello")])
+
+    usage = response.message.additional_kwargs.get("usage")
+    assert usage is not None, "usage must be present in additional_kwargs"
+    assert usage["input_tokens"] == 200
+    assert usage["output_tokens"] == 75
+
+
+@pytest.mark.asyncio
+async def test_achat_attaches_cache_token_counts() -> None:
+    """achat() must include cache token counts when Anthropic returns them."""
+    mock_response = _make_mock_response(
+        input_tokens=60,
+        output_tokens=30,
+        cache_creation_input_tokens=20,
+        cache_read_input_tokens=5,
+    )
+
+    async def async_create(*args, **kwargs):
+        return mock_response
+
+    mock_aclient = MagicMock()
+    mock_aclient.messages.create = async_create
+
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
+    llm._aclient = mock_aclient
+
+    response = await llm.achat([ChatMessage(role=MessageRole.USER, content="Hello")])
+
+    usage = response.message.additional_kwargs.get("usage")
+    assert usage is not None
+    assert usage["cache_creation_input_tokens"] == 20
+    assert usage["cache_read_input_tokens"] == 5
