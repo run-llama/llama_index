@@ -278,7 +278,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
         self.exclude_empty = exclude_empty
-        self.required_exts = required_exts
+        self.required_exts = self._get_norm_exts(required_exts)
         self.num_files_limit = num_files_limit
         self.raise_on_error = raise_on_error
         _Path = Path if is_default_fs(self.fs) else PurePosixPath
@@ -300,6 +300,14 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         self.file_extractor = file_extractor or {}
         self.file_metadata = file_metadata or _DefaultFileMetadataFunc(self.fs)
         self.filename_as_id = filename_as_id
+
+    @staticmethod
+    def _get_norm_exts(
+        required_exts: Optional[list[str]] = None,
+    ) -> Optional[list[str]]:
+        if required_exts is not None:
+            return [ext.lower() for ext in required_exts]
+        return None
 
     def is_hidden(self, path: Path | PurePosixPath) -> bool:
         return any(
@@ -389,7 +397,8 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_empty = self.exclude_empty and self.is_empty_file(ref)
             skip_because_bad_ext = (
-                self.required_exts is not None and ref.suffix not in self.required_exts
+                self.required_exts is not None
+                and ref.suffix.lower() not in self.required_exts
             )
             skip_because_excluded = ref in rejected_files
             if not skip_because_excluded:
