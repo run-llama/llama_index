@@ -139,7 +139,7 @@ class PydanticMultiSelector(BaseSelector):
     ) -> SelectorResult:
         # prepare input
         context_list = _build_choices_text(choices)
-        max_outputs = self._max_outputs or len(choices)
+        max_outputs = self._max_outputs if self._max_outputs is not None else len(choices)
 
         # predict
         prediction = self._selector_program(
