@@ -1,6 +1,7 @@
 """Tests for the rate limiter module."""
 
 import asyncio
+import threading
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,7 +15,6 @@ from llama_index.core.rate_limiter import (
     SlidingWindowRateLimiter,
     TokenBucketRateLimiter,
 )
-
 
 # ---------------------------------------------------------------------------
 # BaseRateLimiter contract tests
@@ -179,6 +179,41 @@ async def test_concurrent_async_rate_limiting() -> None:
     tasks = [worker(i) for i in range(20)]
     await asyncio.gather(*tasks)
     assert len(results) == 20
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "limiter",
+    [
+        RateLimiter(requests_per_minute=10),
+        SlidingWindowRateLimiter(requests_per_minute=10),
+    ],
+)
+async def test_async_acquire_does_not_block_on_thread_lock(
+    limiter: BaseRateLimiter,
+) -> None:
+    lock = limiter._lock
+    lock_acquired = threading.Event()
+    release_lock = threading.Event()
+
+    def hold_lock() -> None:
+        with lock:
+            lock_acquired.set()
+            release_lock.wait(timeout=1.0)
+
+    thread = threading.Thread(target=hold_lock)
+    thread.start()
+    assert lock_acquired.wait(timeout=1.0)
+
+    task = asyncio.create_task(limiter.async_acquire())
+    try:
+        await asyncio.sleep(0)
+        release_lock.set()
+        await asyncio.wait_for(task, timeout=0.5)
+    finally:
+        release_lock.set()
+        thread.join(timeout=1.0)
+        assert not thread.is_alive()
 
 
 # ---------------------------------------------------------------------------
