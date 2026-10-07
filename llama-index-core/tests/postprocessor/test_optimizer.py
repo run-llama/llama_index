@@ -143,3 +143,33 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
         [NodeWithScore(node=orig_node)], query
     )[0]
     assert optimized_node.node.get_content() == "world foo bar"
+
+
+@patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
+@patch.object(
+    MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+def test_optimizer_percentile_rounds_to_zero(
+    _mock_embeds: Any, _mock_embed: Any
+) -> None:
+    """
+    A percentile_cutoff that rounds down to zero sentences keeps the best one.
+
+    With 4 sentences and percentile_cutoff=0.2, int(4 * 0.2) == 0. The falsy
+    top-k bug in get_top_k_embeddings used to silently keep ALL sentences here,
+    ignoring the cutoff. Now that a top-k of 0 really returns nothing, the
+    optimizer clamps to at least one sentence instead of erroring out.
+    """
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
+        tokenizer_fn=mock_tokenizer_fn2,
+        percentile_cutoff=0.2,
+        context_before=0,
+        context_after=0,
+    )
+    query = QueryBundle(query_str="foo", embedding=[0, 0, 1, 0, 0])
+    orig_node = TextNode(text="hello,world,foo,bar")
+    optimized_node = optimizer.postprocess_nodes(
+        [NodeWithScore(node=orig_node)], query
+    )[0]
+    assert optimized_node.node.get_content() == "foo"
