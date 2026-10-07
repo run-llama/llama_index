@@ -2,6 +2,8 @@ from typing import Any, Dict, Tuple
 
 import pytest
 from llama_index.core.async_utils import asyncio_run
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.indices.struct_store.sql_retriever import PGVectorSQLParser
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.indices.struct_store.base import default_output_parser
 from llama_index.core.indices.struct_store.sql import SQLStructStoreIndex
@@ -16,7 +18,7 @@ from llama_index.core.objects import (
     ObjectIndex,
     SQLTableSchema,
 )
-from llama_index.core.schema import Document, TextNode
+from llama_index.core.schema import Document, QueryBundle, TextNode
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import (
     Column,
@@ -243,6 +245,15 @@ def test_nl_query_engine_parser(
         nl_query_engine._parse_response_to_sql(response)
         == "SELECT * FROM table WHERE name = ''O''Reilly'';"
     )
+
+
+def test_pgvector_sql_parser_preserves_sql_before_attached_closing_fence() -> None:
+    parser = PGVectorSQLParser(embed_model=MockEmbedding(embed_dim=2))
+    response = "```sql\nSELECT * FROM users```"
+
+    sql = parser.parse_response_to_sql(response, QueryBundle(query_str="query"))
+
+    assert sql == "SELECT * FROM users"
 
 
 def test_sql_table_retriever_query_engine_with_rows_retriever(
