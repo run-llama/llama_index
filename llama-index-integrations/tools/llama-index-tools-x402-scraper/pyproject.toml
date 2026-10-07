@@ -1,0 +1,17 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-tools-x402-scraper"
+version = "0.1.0"
+description = "LlamaIndex tool for extracting markdown from URLs using x402 payment negotiation"
+authors = ["ak10082247-max <ak10082247-max@example.com>"]
+readme = "README.md"
+packages = [{include = "llama_index/"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.10.0"
+requests = "^2.31.0"
+coinbase-sdk = "^1.0.0"
