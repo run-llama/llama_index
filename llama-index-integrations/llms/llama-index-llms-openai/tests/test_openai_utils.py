@@ -28,6 +28,7 @@ from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
     from_openai_completion_logprobs,
+    from_openai_message_dict,
     from_openai_message_dicts,
     from_openai_messages,
     from_openai_token_logprob,
@@ -336,6 +337,26 @@ def test_to_openai_message_dicts_with_content_blocks_with_detail() -> None:
             },
         ],
     }
+
+
+def test_from_openai_message_dict_image_without_detail():
+    """Test converting an image message without optional detail."""
+    openai_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.jpg"},
+            }
+        ],
+    }
+
+    chat_message = from_openai_message_dict(openai_message)
+
+    assert len(chat_message.blocks) == 1
+    assert isinstance(chat_message.blocks[0], ImageBlock)
+    assert str(chat_message.blocks[0].url) == "https://example.com/image.jpg"
+    assert chat_message.blocks[0].detail is None
 
 
 def test_from_openai_token_logprob_none_top_logprob() -> None:

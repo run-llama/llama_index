@@ -973,7 +973,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
                 blocks.append(TextBlock(text=elem.get("text")))
             elif t == "image_url":
                 img = elem["image_url"]["url"]
-                detail = elem["image_url"]["detail"]
+                detail = elem["image_url"].get("detail")
                 if img.startswith("data:"):
                     blocks.append(ImageBlock(image=img, detail=detail))
                 else:
