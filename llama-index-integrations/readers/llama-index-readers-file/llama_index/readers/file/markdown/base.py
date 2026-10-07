@@ -102,7 +102,7 @@ class MarkdownReader(BaseReader):
 
     def remove_images(self, content: str) -> str:
         """Remove images in markdown content but keep the description."""
-        pattern = r"!\[(.*?)\]\((.*?)\)"
+        pattern = r"!\[([\s\S]*?)\]\(((?:[^()]|\([^()]*\))*)\)"
         return re.sub(pattern, r"\1", content)
 
     def remove_hyperlinks(self, content: str) -> str:
@@ -124,10 +124,13 @@ class MarkdownReader(BaseReader):
         fs = fs or LocalFileSystem()
         with fs.open(filepath, encoding="utf-8") as f:
             content = f.read().decode(encoding="utf-8")
-        if self._remove_hyperlinks:
-            content = self.remove_hyperlinks(content)
+        # Remove images before hyperlinks: the hyperlink pattern also matches
+        # the "[alt](url)" part of an image, so running it first would leave
+        # a stray "!" and nothing for remove_images to match.
         if self._remove_images:
             content = self.remove_images(content)
+        if self._remove_hyperlinks:
+            content = self.remove_hyperlinks(content)
         return self.markdown_to_tups(content)
 
     def load_data(

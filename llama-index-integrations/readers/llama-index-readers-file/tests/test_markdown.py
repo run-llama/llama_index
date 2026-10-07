@@ -184,3 +184,45 @@ def test_remove_hyperlinks_keeps_link_text() -> None:
     reader = MarkdownReader()
     content = "See [docs](https://example.com/docs) for details."
     assert reader.remove_hyperlinks(content) == "See docs for details."
+
+
+def test_load_data_default_settings_removes_full_image_syntax(tmp_path) -> None:
+    reader = MarkdownReader()
+    md = tmp_path / "doc.md"
+    md.write_text(
+        "Before ![alt text](https://example.com/cat.png) after, see [docs](http://d).",
+        encoding="utf-8",
+    )
+    docs = reader.load_data(str(md))
+    assert docs[0].text == "Before alt text after, see docs."
+
+
+def test_load_data_keeps_alt_when_hyperlink_removal_disabled(tmp_path) -> None:
+    reader = MarkdownReader(remove_hyperlinks=False)
+    md = tmp_path / "doc.md"
+    md.write_text(
+        "Before ![alt text](https://example.com/cat.png) after, see [docs](http://d).",
+        encoding="utf-8",
+    )
+    docs = reader.load_data(str(md))
+    assert docs[0].text == "Before alt text after, see [docs](http://d)."
+
+
+def test_remove_images_url_with_parentheses() -> None:
+    reader = MarkdownReader()
+    content = "![w](https://en.wikipedia.org/wiki/Foo_(bar).png) tail"
+    assert reader.remove_images(content) == "w tail"
+
+
+def test_remove_images_alt_text_spanning_lines() -> None:
+    reader = MarkdownReader()
+    content = "![multi\nline](u.png) tail"
+    assert reader.remove_images(content) == "multi\nline tail"
+
+
+def test_load_data_regular_links_still_cleaned(tmp_path) -> None:
+    reader = MarkdownReader()
+    md = tmp_path / "doc.md"
+    md.write_text("See [docs](http://d) and [more](http://m).", encoding="utf-8")
+    docs = reader.load_data(str(md))
+    assert docs[0].text == "See docs and more."
