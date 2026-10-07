@@ -41,3 +41,19 @@ def test_split_invalid_json() -> None:
     input_text = Document(text='{"name": "John", "age": 30,}')
     result = json_splitter.get_nodes_from_documents([input_text])
     assert result == []
+
+
+def test_split_scalar_json_raises_clear_error() -> None:
+    """Valid JSON that is not an object/array raises a descriptive error."""
+    import pytest
+
+    json_splitter = JSONNodeParser()
+    with pytest.raises(ValueError, match="must be an object or an array"):
+        json_splitter.get_nodes_from_documents([Document(text="5")])
+
+
+def test_split_empty_object_yields_no_nodes() -> None:
+    """An empty object yields no nodes, consistent with an empty array."""
+    json_splitter = JSONNodeParser()
+    assert json_splitter.get_nodes_from_documents([Document(text="{}")]) == []
+    assert json_splitter.get_nodes_from_documents([Document(text='[{}, {"a": 1}]')])[0].text == "a 1"
