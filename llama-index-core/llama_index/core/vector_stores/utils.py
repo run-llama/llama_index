@@ -23,6 +23,15 @@ DEFAULT_EMBEDDING_KEY = "embedding"
 DEFAULT_DOC_ID_KEY = "doc_id"
 
 
+def _maybe_json_loads(value: Any) -> Any:
+    """Parse JSON when the value is a string; pass through dict/list payloads."""
+    if value in ("", None):
+        return {}
+    if isinstance(value, (dict, list)):
+        return value
+    return json.loads(value)
+
+
 def _validate_is_flat_dict(metadata_dict: dict) -> None:
     """
     Validate that metadata dict is flat,
@@ -209,7 +218,7 @@ def legacy_metadata_dict_to_node(
     if node_info_str == "":
         node_info = {}
     else:
-        node_info = json.loads(node_info_str)
+        node_info = _maybe_json_loads(node_info_str)
 
     # load relationships from json string
     relationships_str = metadata.pop("relationships", "")
@@ -219,7 +228,7 @@ def legacy_metadata_dict_to_node(
     else:
         relationships = {
             NodeRelationship(k): RelatedNodeInfo(node_id=str(v))
-            for k, v in json.loads(relationships_str).items()
+            for k, v in _maybe_json_loads(relationships_str).items()
         }
 
     # remove other known fields
