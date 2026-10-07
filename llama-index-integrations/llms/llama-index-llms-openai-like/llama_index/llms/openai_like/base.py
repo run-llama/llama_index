@@ -41,7 +41,7 @@ class OpenAILike(OpenAI):
             Defaults to False.
         api_key (str):
             The api key to use for the api.
-            Set this to some random string if your API does not require an api key.
+            Set this to some random string if your API does not require an api key. This placeholder only satisfies the OpenAI client; it does not configure provider-specific authentication or payment flows.
         context_window (int):
             The context window to use for the api. Set this to your model's context window for the best experience.
             Defaults to 3900.
