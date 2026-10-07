@@ -7,4 +7,5 @@ def test_is_done_output_parser_uses_custom_predicate() -> None:
         fmt_answer_fn=lambda output: f"formatted: {output}",
     )
 
+    assert parser.parse("abandoned") == (False, "abandoned")
     assert parser.parse("finished") == (True, "formatted: finished")
