@@ -44,3 +44,22 @@ def load_example_spec():
     example_file = current_file_path.parent / "example.json"
     with example_file.open("r", encoding="utf-8") as file:
         return yaml.safe_load(file)
+
+
+def test_load_spec_from_url_sets_timeout(monkeypatch):
+    import requests
+
+    calls = []
+
+    class _Response:
+        text = json.dumps(load_example_spec())
+
+    def fake_get(url, **kwargs):
+        calls.append(kwargs)
+        return _Response()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    OpenAPIToolSpec(url="https://example.com/openapi.yaml")
+
+    assert calls[0].get("timeout")

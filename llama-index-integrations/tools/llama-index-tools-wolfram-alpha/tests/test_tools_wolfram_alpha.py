@@ -26,3 +26,25 @@ def test_api_params_in_url(mock_get: MagicMock) -> None:
     assert "input=test+query" in call_url
     assert "maxchars=1000" in call_url
     assert "units=metric" in call_url
+
+
+def test_wolfram_alpha_query_sets_timeout(monkeypatch):
+    import requests
+    from llama_index.tools.wolfram_alpha import WolframAlphaToolSpec
+
+    calls = []
+
+    class _Response:
+        text = "result"
+
+        def raise_for_status(self):
+            pass
+
+    def fake_get(url, **kwargs):
+        calls.append(kwargs)
+        return _Response()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    assert WolframAlphaToolSpec(app_id="test-id").wolfram_alpha_query("2+2") == "result"
+    assert calls[0].get("timeout")

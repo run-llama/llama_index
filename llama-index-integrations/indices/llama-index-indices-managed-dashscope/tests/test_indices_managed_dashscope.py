@@ -40,3 +40,29 @@ def test_retrieve_sends_query_history_param(mocker):
     assert captured_params["query_history"] == query_history
     assert "query_hisory" not in captured_params
     assert len(nodes) == 1
+
+
+def test_requests_set_timeout(monkeypatch):
+    import requests
+    from llama_index.indices.managed.dashscope import utils
+
+    calls = []
+
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"code": "Success", "id": "1", "status": "COMPLETED"}
+
+    def fake_request(url, **kwargs):
+        calls.append(kwargs)
+        return _Response()
+
+    monkeypatch.setattr(requests, "get", fake_request)
+    monkeypatch.setattr(requests, "post", fake_request)
+
+    utils.post("https://example.com", {}, {})
+    utils.get("https://example.com", {}, {})
+
+    assert len(calls) == 2
+    assert all(call.get("timeout") for call in calls)
