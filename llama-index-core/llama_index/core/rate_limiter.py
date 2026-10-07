@@ -348,6 +348,12 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
                             ts + _SLIDING_WINDOW_SECONDS - now,
                         )
                         break
+                else:
+                    if self._token_usage:
+                        wait = max(
+                            wait,
+                            self._token_usage[-1][0] + _SLIDING_WINDOW_SECONDS - now,
+                        )
         return wait
 
     def _record_usage(self, now: float, num_tokens: int = 0) -> None:
