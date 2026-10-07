@@ -483,6 +483,47 @@ class TestWeaviateSync:
         assert len(results.nodes) == 1
         results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.fixture()
+    def vector_store_with_similar_ref_doc_ids(self, client):
+        # created through WeaviateVectorStore, so the collection uses its schema
+        collection_name = "SimilarRefDocIdsTest"
+        client.collections.delete(collection_name)
+        vector_store = WeaviateVectorStore(
+            weaviate_client=client, index_name=collection_name
+        )
+        vector_store.add(
+            [
+                TextNode(
+                    text=f"Node of {ref_doc_id}",
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=ref_doc_id)
+                    },
+                    embedding=[0.3, 0.0, 0.0],
+                )
+                for ref_doc_id in ["faq", "faq-v2"]
+            ]
+        )
+        yield vector_store
+        client.collections.delete(collection_name)
+
+    def test_delete_matches_ref_doc_id_exactly(
+        self, vector_store_with_similar_ref_doc_ids
+    ):
+        vector_store_with_similar_ref_doc_ids.delete(ref_doc_id="faq")
+
+        results = vector_store_with_similar_ref_doc_ids.query(
+            VectorStoreQuery(query_embedding=[0.3, 0.0, 0.0], similarity_top_k=10)
+        )
+        assert [node.ref_doc_id for node in results.nodes] == ["faq-v2"]
+
+    def test_query_matches_doc_ids_exactly(self, vector_store_with_similar_ref_doc_ids):
+        results = vector_store_with_similar_ref_doc_ids.query(
+            VectorStoreQuery(
+                query_embedding=[0.3, 0.0, 0.0], similarity_top_k=10, doc_ids=["faq"]
+            )
+        )
+        assert [node.ref_doc_id for node in results.nodes] == ["faq"]
+
     @pytest.mark.asyncio
     async def test_async_methods_called_without_async_client(self, vector_store):
         """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
