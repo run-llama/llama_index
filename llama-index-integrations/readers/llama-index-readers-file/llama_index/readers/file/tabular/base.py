@@ -84,7 +84,9 @@ class PandasCSVReader(BaseReader):
             Refer to https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
             for more information.
             Set to empty dict by default, this means pandas will try to figure
-            out the separators, table head, etc. on its own.
+            out the separators, table head, etc. on its own. Cells are read as
+            written, as text, unless `dtype`, `converters` or `parse_dates` is
+            given; then pandas converts them and handles missing values as usual.
 
     """
 
@@ -111,15 +113,30 @@ class PandasCSVReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        # pandas reads a blank cell, and one that says "N/A", "NA" or "NULL",
+        # as NaN, and infers types that drop a leading zero or write 3 as 3.0.
+        # So cells are read as written, unless the caller asks pandas to
+        # convert them.
+        read_kwargs = self._pandas_config
+        if not read_kwargs.keys() & {"dtype", "converters", "parse_dates"}:
+            read_kwargs = {"dtype": str, "keep_default_na": False, **read_kwargs}
         if fs:
             with fs.open(file) as f:
-                df = pd.read_csv(f, **self._pandas_config)
+                df = pd.read_csv(f, **read_kwargs)
         else:
-            df = pd.read_csv(file, **self._pandas_config)
+            df = pd.read_csv(file, **read_kwargs)
 
-        text_list = df.apply(
-            lambda row: (self._col_joiner).join(row.astype(str).tolist()), axis=1
-        ).tolist()
+        # A missing value, NaN or NaT, is left empty rather than written as
+        # "nan" or "NaT". As objects, the values of a row keep their own type,
+        # so an integer next to a float column is not written as 3.0.
+        text_list = (
+            df.astype(object)
+            .where(df.notna(), "")
+            .apply(
+                lambda row: (self._col_joiner).join(row.astype(str).tolist()), axis=1
+            )
+            .tolist()
+        )
 
         if self._concat_rows:
             return [
