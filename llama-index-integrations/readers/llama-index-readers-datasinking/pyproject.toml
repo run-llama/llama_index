@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pytest",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "black[jupyter]>=23.7.0,<=26.5.1",
+    "codespell[toml]>=v2.2.6",
+    "types-requests==2.28.11.8",
+]
+
+[project]
+name = "llama-index-readers-datasinking"
+version = "0.1.0"
+description = "llama-index readers datasinking integration"
+authors = [{ name = "DataSinking", email = "support@datasink.ing" }]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{ name = "heubme2020" }]
+keywords = [
+    "financial reports",
+    "10k",
+    "10q",
+    "annual report",
+    "markdown",
+    "filings",
+    "sec",
+]
+dependencies = [
+    "requests>=2.31.0",
+    "llama-index-core>=0.13.0,<0.15",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.datasinking"
+
+[tool.llamahub.class_authors]
+DataSinkingReader = "heubme2020"
