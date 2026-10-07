@@ -236,6 +236,23 @@ class ErrorToRetry:
     check_fn: Optional[Callable[[Any], bool]] = None
 
 
+def _resolve_check_fn(
+    error_checks: Dict[Type[Exception], Optional[Callable[[Exception], bool]]],
+    exception: Exception,
+) -> Optional[Callable[[Exception], bool]]:
+    """
+    Find the check function registered for an exception, honouring subclasses.
+
+    The `except` clause catches subclasses of every registered class, so the lookup has to as
+    well. Walking the MRO keeps "most specific wins": a subclass registered alongside its base
+    still gets its own check function.
+    """
+    for cls in type(exception).__mro__:
+        if cls in error_checks:
+            return error_checks[cls]
+    return None
+
+
 def retry_on_exceptions_with_backoff(
     lambda_fn: Callable,
     errors_to_retry: List[ErrorToRetry],
@@ -277,7 +294,7 @@ def retry_on_exceptions_with_backoff(
             tries += 1
             if tries >= max_tries:
                 raise
-            check_fn = error_checks.get(e.__class__)
+            check_fn = _resolve_check_fn(error_checks, e)
             if check_fn and not check_fn(e):
                 raise
             time.sleep(backoff_secs)
@@ -325,7 +342,7 @@ async def aretry_on_exceptions_with_backoff(
             tries += 1
             if tries >= max_tries:
                 raise
-            check_fn = error_checks.get(e.__class__)
+            check_fn = _resolve_check_fn(error_checks, e)
             if check_fn and not check_fn(e):
                 raise
             await asyncio.sleep(backoff_secs)
