@@ -1,7 +1,7 @@
 """Document store."""
 
 import asyncio
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
@@ -666,4 +666,30 @@ class KVDocumentStore(BaseDocumentStore):
                 await self._kvstore.aget_all(collection=self._metadata_collection)
             ).items()
             if (doc_hash := doc.get("doc_hash"))
+        }
+
+    def get_all_document_ids(self) -> Set[str]:
+        """
+        Get the ids of all documents that have a stored hash.
+
+        Read straight off the metadata collection so that documents sharing
+        identical content -- and therefore an identical hash -- each keep their
+        own id, which the hash-keyed mapping cannot express.
+        """
+        return {
+            doc_id
+            for doc_id, doc in (
+                self._kvstore.get_all(collection=self._metadata_collection)
+            ).items()
+            if doc.get("doc_hash")
+        }
+
+    async def aget_all_document_ids(self) -> Set[str]:
+        """Async version of ``get_all_document_ids``."""
+        return {
+            doc_id
+            for doc_id, doc in (
+                await self._kvstore.aget_all(collection=self._metadata_collection)
+            ).items()
+            if doc.get("doc_hash")
         }
