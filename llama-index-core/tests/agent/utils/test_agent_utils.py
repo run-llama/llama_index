@@ -17,6 +17,7 @@ from llama_index.core.tools import ToolSelection
 from llama_index.core.agent.utils import (
     messages_to_xml_format,
     generate_structured_response,
+    _structured_content_to_dict,
 )
 
 
@@ -193,3 +194,13 @@ async def test_generate_structured_response(
     assert Structure.model_validate(
         generated_response
     ) == Structure.model_validate_json(structured_response)
+
+
+def test_structured_content_to_dict_accepts_none_and_model() -> None:
+    payload = Structure(hello="test", world=1)
+    assert _structured_content_to_dict(None, payload) == payload.model_dump()
+    assert _structured_content_to_dict({"hello": "x", "world": 2}) == {
+        "hello": "x",
+        "world": 2,
+    }
+    assert _structured_content_to_dict(payload) == payload.model_dump()

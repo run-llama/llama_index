@@ -32,6 +32,21 @@ def messages_to_xml_format(messages: List[ChatMessage]) -> List[ChatMessage]:
     return messages
 
 
+def _structured_content_to_dict(content: Any, raw: Any = None) -> Dict[str, Any]:
+    """Turn structured-LLM chat content into a dict without assuming it is JSON text."""
+    if isinstance(content, dict):
+        return content
+    if isinstance(content, BaseModel):
+        return content.model_dump()
+    if content is None:
+        if isinstance(raw, BaseModel):
+            return raw.model_dump()
+        if isinstance(raw, dict):
+            return raw
+        return {}
+    return cast(Dict[str, Any], json.loads(content))
+
+
 async def generate_structured_response(
     messages: List[ChatMessage], llm: LLM, output_cls: Type[BaseModel]
 ) -> Dict[str, Any]:
@@ -39,4 +54,6 @@ async def generate_structured_response(
     structured_response = await llm.as_structured_llm(
         output_cls,
     ).achat(messages=xml_message)
-    return cast(Dict[str, Any], json.loads(structured_response.message.content))
+    return _structured_content_to_dict(
+        structured_response.message.content, structured_response.raw
+    )
