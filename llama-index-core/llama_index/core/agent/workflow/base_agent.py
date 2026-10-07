@@ -80,6 +80,16 @@ def get_default_llm() -> LLM:
     return Settings.llm
 
 
+def safe_model_dump(raw: Any) -> Any:
+    """Safely extract model dump if raw is a Pydantic BaseModel, else return raw."""
+    try:
+        if isinstance(raw, BaseModel):
+            return raw.model_dump()
+    except Exception:
+        pass
+    return raw
+
+
 class BaseWorkflowAgentMeta(WorkflowMeta, ModelMetaclass):
     """Metaclass for BaseWorkflowAgent that properly combines WorkflowMeta, BaseModel's metaclass, and ABCMeta."""
 
@@ -331,11 +341,7 @@ class BaseWorkflowAgent(
             response_stream = await target_llm.astream_chat(llm_input)
             last_response = None
             async for last_response in response_stream:
-                raw = (
-                    last_response.raw.model_dump()
-                    if isinstance(last_response.raw, BaseModel)
-                    else last_response.raw
-                )
+                raw = safe_model_dump(last_response.raw)
                 if ctx.is_running:
                     ctx.write_event_to_stream(
                         AgentStream(
