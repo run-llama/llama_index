@@ -11,7 +11,7 @@ We've created both tooling and a variety of example projects (all open-source) t
 Resources:
 
 - [create-llama Blog](https://blog.llamaindex.ai/create-llama-a-command-line-tool-to-generate-llamaindex-apps-8f7683021191)
-- [create-llama Repo](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama)
+- [create-llama Repo](https://github.com/run-llama/create-llama)
 - [create-llama Additional Templates](https://github.com/jerryjliu/create_llama_projects)
 
 ## Full-Stack Applications
