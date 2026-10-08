@@ -942,7 +942,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
                 splits.append(cls(**attributes))
             else:
                 split_blocks = await block.asplit(
-                    max_tokens=max_tokens, tokenizer=tokenizer
+                    max_tokens=max_tokens, overlap=overlap, tokenizer=tokenizer
                 )
                 for split_block in split_blocks:
                     attributes = self.model_dump() | {
