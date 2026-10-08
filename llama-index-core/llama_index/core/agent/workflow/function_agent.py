@@ -152,6 +152,7 @@ class FunctionAgent(BaseWorkflowAgent):
         scratchpad: List[ChatMessage] = await ctx.store.get(
             self.scratchpad_key, default=[]
         )
+        return_direct_result: Optional[ToolCallResult] = None
 
         for tool_call_result in results:
             scratchpad.append(
@@ -164,16 +165,22 @@ class FunctionAgent(BaseWorkflowAgent):
 
             if (
                 tool_call_result.return_direct
-                and tool_call_result.tool_name != "handoff"
+                and not tool_call_result.tool_output.is_error
+                and return_direct_result is None
             ):
-                scratchpad.append(
-                    ChatMessage(
-                        role="assistant",
-                        content=str(tool_call_result.tool_output.content),
-                        additional_kwargs={"tool_call_id": tool_call_result.tool_id},
-                    )
+                return_direct_result = tool_call_result
+
+        if (
+            return_direct_result is not None
+            and return_direct_result.tool_name != "handoff"
+        ):
+            scratchpad.append(
+                ChatMessage(
+                    role="assistant",
+                    content=str(return_direct_result.tool_output.content),
+                    additional_kwargs={"tool_call_id": return_direct_result.tool_id},
                 )
-                break
+            )
 
         await ctx.store.set(self.scratchpad_key, scratchpad)
 
