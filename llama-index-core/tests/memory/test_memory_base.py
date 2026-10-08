@@ -2,9 +2,14 @@ import pytest
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    CitableBlock,
+    CitationBlock,
     DocumentBlock,
     ImageBlock,
     AudioBlock,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
     VideoBlock,
 )
 from llama_index.core.memory.memory import Memory
@@ -74,6 +79,60 @@ async def test_estimate_token_count_document(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.document_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_tool_call(memory):
+    """Tool call blocks must count toward the history token budget."""
+    block = ToolCallBlock(
+        tool_call_id="c1",
+        tool_name="search",
+        tool_kwargs={"query": "a very long tool argument " * 10},
+    )
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    # Previously ToolCallBlock was excluded and counted as zero tokens.
+    assert count > 0
+    assert count == len(memory.tokenizer_fn(block.model_dump_json()))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_thinking(memory):
+    """Thinking/reasoning blocks must count toward the history token budget."""
+    block = ThinkingBlock(content="reasoning about the user request")
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn(block.content))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_citable(memory):
+    """Citable blocks must count their inner content, title, and source."""
+    inner = TextBlock(text="cited paragraph content")
+    block = CitableBlock(title="A Title", source="https://example.com", content=[inner])
+    message = ChatMessage(role="user", blocks=[block])
+    count = memory._estimate_token_count(message)
+    expected = len(memory.tokenizer_fn("A Title https://example.com")) + len(
+        memory.tokenizer_fn("cited paragraph content")
+    )
+    assert count == expected
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_citation(memory):
+    """Citation blocks must count their cited content, title, and source."""
+    block = CitationBlock(
+        cited_content=TextBlock(text="cited text"),
+        source="https://example.com/source",
+        title="Source Title",
+        additional_location_info={},
+    )
+    message = ChatMessage(role="user", blocks=[block])
+    count = memory._estimate_token_count(message)
+    expected = len(memory.tokenizer_fn("Source Title https://example.com/source")) + len(
+        memory.tokenizer_fn("cited text")
+    )
+    assert count == expected
 
 
 @pytest.mark.asyncio

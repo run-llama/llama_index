@@ -361,11 +361,12 @@ class Memory(BaseMemory):
                     CitableBlock,
                     CitationBlock,
                     ThinkingBlock,
+                    ToolCallBlock,
                 ]
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -383,7 +384,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -440,6 +441,27 @@ class Memory(BaseMemory):
                 token_count += self.audio_token_size_estimate
             elif isinstance(block, DocumentBlock):
                 token_count += self.document_token_size_estimate
+            elif isinstance(block, ToolCallBlock):
+                # Tool calls carry real prompt content (tool name + serialized
+                # arguments) and must count toward the history token budget.
+                token_count += len(self.tokenizer_fn(block.model_dump_json()))
+            elif isinstance(block, ThinkingBlock):
+                if block.content:
+                    token_count += len(self.tokenizer_fn(block.content))
+                elif block.num_tokens is not None:
+                    token_count += block.num_tokens
+            elif isinstance(block, CitableBlock):
+                token_count += len(
+                    self.tokenizer_fn(f"{block.title} {block.source}")
+                )
+                token_count += self._estimate_token_count(block.content)
+            elif isinstance(block, CitationBlock):
+                token_count += len(
+                    self.tokenizer_fn(f"{block.title} {block.source}")
+                )
+                token_count += self._estimate_token_count(
+                    [block.cited_content]
+                )
 
         return token_count
 
