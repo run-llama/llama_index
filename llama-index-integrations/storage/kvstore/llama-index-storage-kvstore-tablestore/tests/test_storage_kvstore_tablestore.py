@@ -1,6 +1,8 @@
 import os
+from unittest.mock import MagicMock
 
 import pytest
+import tablestore
 from llama_index.core.storage.kvstore.types import BaseKVStore
 
 from llama_index.storage.kvstore.tablestore import TablestoreKVStore
@@ -134,3 +136,66 @@ def test_delete_all() -> None:
 
     kvstore.delete_all()
     assert len(kvstore.get_all()) == 0
+
+
+class _OTSServiceError(Exception):
+    """Stands in for tablestore.OTSServiceError, which needs no live service to raise."""
+
+    def __init__(self, error_code: str, error_message: str) -> None:
+        super().__init__(error_message)
+        self._error_code = error_code
+        self._error_message = error_message
+
+    def get_http_status(self):
+        return 403
+
+    def get_error_code(self):
+        return self._error_code
+
+    def get_error_message(self):
+        return self._error_message
+
+    def get_request_id(self):
+        return "req-0"
+
+
+def _store_with_client(monkeypatch, client):
+    """A TablestoreKVStore wired to a fake client, with collection setup stubbed out."""
+    store = TablestoreKVStore.__new__(TablestoreKVStore)
+    object.__setattr__(store, "_tablestore_client", client)
+    monkeypatch.setattr(
+        TablestoreKVStore,
+        "_create_collection_if_not_exist",
+        lambda self, collection: None,
+    )
+    return store
+
+
+def test_get_returns_none_for_a_missing_row(monkeypatch):
+    client = MagicMock()
+    client.get_row.return_value = (None, None, None)
+
+    assert _store_with_client(monkeypatch, client).get("k") is None
+
+
+def test_get_returns_none_when_the_table_does_not_exist(monkeypatch):
+    """The one service error that genuinely means "nothing stored here"."""
+    client = MagicMock()
+    client.get_row.side_effect = _OTSServiceError(
+        "OTSParameterInvalid", "table not exist: KVStoreCollection"
+    )
+    monkeypatch.setattr(tablestore, "OTSServiceError", _OTSServiceError)
+
+    assert _store_with_client(monkeypatch, client).get("k") is None
+
+
+def test_get_raises_on_any_other_service_error(monkeypatch):
+    """A throttle or an auth failure is a failure to look, not an answer of "no such key"."""
+    client = MagicMock()
+    client.get_row.side_effect = _OTSServiceError(
+        "OTSQuotaExhausted", "Too frequent table operations."
+    )
+    monkeypatch.setattr(tablestore, "OTSServiceError", _OTSServiceError)
+
+    with pytest.raises(_OTSServiceError, match="Too frequent"):
+        _store_with_client(monkeypatch, client).get("k")
