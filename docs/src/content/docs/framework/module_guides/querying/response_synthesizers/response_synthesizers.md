@@ -15,7 +15,7 @@ The following shows the setup for utilizing all kwargs.
 - `streaming` configures whether to return a streaming response object or not
 - `structured_answer_filtering` enables the active filtering of text chunks that are not relevant to a given question
 
-In the `synthesize`/`asyntheszie` functions, you can optionally provide additional source nodes, which will be added to the `response.source_nodes` list.
+In the `synthesize`/`asynthesize` functions, you can optionally provide additional source nodes, which will be added to the `response.source_nodes` list.
 
 ```python
 from llama_index.core.data_structs import Node
