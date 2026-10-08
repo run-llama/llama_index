@@ -96,7 +96,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+DEFAULT_OPENAI_MODEL = "gpt-5.6-terra"
 
 
 def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -170,7 +170,7 @@ class OpenAI(FunctionCallingLLM):
 
         from llama_index.llms.openai import OpenAI
 
-        llm = OpenAI(model="gpt-3.5-turbo")
+        llm = OpenAI(model="gpt-5.6-terra")
 
         stream = llm.stream_complete("Hi, write a short story")
 

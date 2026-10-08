@@ -4,7 +4,7 @@ title: Customizing LLMs within LlamaIndex Abstractions
 
 You can plugin these LLM abstractions within our other modules in LlamaIndex (indexes, retrievers, query engines, agents) which allow you to build advanced workflows over your data.
 
-By default, we use OpenAI's `gpt-3.5-turbo` model. But you may choose to customize
+By default, we use OpenAI's `gpt-5.6-terra` model. But you may choose to customize
 the underlying LLM being used.
 
 ## Example: Changing the underlying LLM
