@@ -69,7 +69,7 @@ class MarkdownReader(BaseReader):
                         header_match.group(1)
                     )  # number of '#' indicates level
                     current_header = header_match.group(2)  # the header text
-                    if headers.get(header_level):
+                    if any(level >= header_level for level in headers):
                         # Add previous section to the list before switching header
                         markdown_tups.append(
                             (
