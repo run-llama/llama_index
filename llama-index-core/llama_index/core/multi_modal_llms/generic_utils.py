@@ -183,8 +183,11 @@ def set_base64_and_mimetype_for_image_docs(
         Sequence[ImageDocument]: ImageDocuments with base64 and detected mimetypes set.
 
     """
-    base64_strings = image_documents_to_base64(image_documents)
-    for image_doc, base64_str in zip(image_documents, base64_strings):
+    for image_doc in image_documents:
+        base64_strings = image_documents_to_base64([image_doc])
+        if not base64_strings:
+            continue
+        base64_str = base64_strings[0]
         image_doc.image = base64_str
         image_doc.image_mimetype = infer_image_mimetype_from_base64(image_doc.image)
         if not image_doc.image_mimetype and image_doc.image_path:

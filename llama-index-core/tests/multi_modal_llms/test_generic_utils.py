@@ -206,3 +206,23 @@ def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
     assert results[0].image == expected_b64
     assert results[0].image_mimetype == "image/jpeg"
     assert results[1].image_mimetype == "image/jpeg"
+
+
+def test_set_base64_and_mimetype_for_image_docs_skips_bad_before_good(
+    tmp_path: Path,
+):
+    """A skipped document must not take the next document's image."""
+    from PIL import Image
+
+    bad_path = tmp_path / "not_an_image.txt"
+    bad_path.write_text("not an image")
+    good_path = tmp_path / "pixel.png"
+    Image.new("RGB", (1, 1)).save(good_path)
+
+    bad_doc = ImageDocument(metadata={"file_path": str(bad_path)})
+    good_doc = ImageDocument(image_path=str(good_path))
+
+    result = set_base64_and_mimetype_for_image_docs([bad_doc, good_doc])
+
+    assert result[0].image is None
+    assert result[1].image == base64.b64encode(good_path.read_bytes()).decode("utf-8")
