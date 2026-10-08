@@ -79,6 +79,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-5": 1000000,
     "anthropic.claude-opus-5-5": 1000000,
     "anthropic.claude-fable-5": 1000000,
+    "anthropic.claude-fable-5-1": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-sonnet-4-6": 1000000,
@@ -117,6 +118,7 @@ BEDROCK_MODELS = {
     "openai.gpt-6-sol": 128000,
     "openai.gpt-6-luna": 128000,
     "openai.gpt-6-astra": 128000,
+    "openai.gpt-6.1-sol": 1000000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
@@ -147,6 +149,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-5",
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -169,6 +172,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
     "openai.gpt-6-astra",
+    "openai.gpt-6.1-sol",
     "deepseek.v3-v1:0",
     "deepseek.v3.2",
 )
@@ -196,6 +200,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-5",
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -214,6 +219,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
     "openai.gpt-6-astra",
+    "openai.gpt-6.1-sol",
     "deepseek.r1-v1:0",
 )
 BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
@@ -229,6 +235,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-5",
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -254,6 +261,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-5",
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -272,6 +280,7 @@ BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-5",
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
@@ -283,15 +292,18 @@ BEDROCK_NO_TEMP_MODELS = (
     "anthropic.claude-opus-5",
     "anthropic.claude-opus-5-5",
     "anthropic.claude-fable-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
     "openai.gpt-6-astra",
+    "openai.gpt-6.1-sol",
 )
 
 BEDROCK_NO_FORCED_TOOL_CALL_MODELS = (
     "anthropic.claude-opus-5-5",
+    "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-5-5",
 )
 

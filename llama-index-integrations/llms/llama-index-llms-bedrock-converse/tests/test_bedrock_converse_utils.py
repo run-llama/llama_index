@@ -207,9 +207,12 @@ def test_gemma_reasoning_model():
         "anthropic.claude-opus-5-5",
         "us.anthropic.claude-opus-5-5",
         "global.anthropic.claude-opus-5-5",
+        "anthropic.claude-fable-5-1",
+        "us.anthropic.claude-fable-5-1",
+        "global.anthropic.claude-fable-5-1",
     ],
 )
-def test_claude_opus_5_5_registered(model_id):
+def test_claude_models_registered(model_id):
     assert bedrock_modelname_to_context_size(model_id) == 1000000
     assert is_bedrock_function_calling_model(model_id) is True
     assert is_reasoning(model_id) is True
