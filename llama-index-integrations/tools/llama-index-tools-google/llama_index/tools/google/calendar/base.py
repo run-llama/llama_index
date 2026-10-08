@@ -232,12 +232,20 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         )
 
         start_time = (
-            datetime.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
+            (
+                start_datetime
+                if isinstance(start_datetime, datetime.datetime)
+                else datetime.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
+            )
             .astimezone()
             .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )
         end_time = (
-            datetime.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
+            (
+                end_datetime
+                if isinstance(end_datetime, datetime.datetime)
+                else datetime.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
+            )
             .astimezone()
             .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )
