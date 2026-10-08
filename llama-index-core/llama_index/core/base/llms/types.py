@@ -389,6 +389,10 @@ class ImageBlock(BaseContentBlock):
 
         if size == 0:
             raise ValueError("resolve_image returned zero bytes")
+        if as_base64 and isinstance(self.image, IOBase):
+            data = data_buffer.read()
+            data_buffer.seek(0)
+            return resolve_binary(raw_bytes=data, as_base64=True)
         return data_buffer
 
     def inline_url(self) -> str:
