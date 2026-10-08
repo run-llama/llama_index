@@ -10,7 +10,7 @@ from functools import partial
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Sequence, Union
+from typing import Any, Generator, List, Optional, Sequence, Tuple, Union
 
 from fsspec import AbstractFileSystem
 
@@ -470,41 +470,82 @@ class IngestionPipeline(BaseModel):
         self,
         nodes: Sequence[BaseNode],
     ) -> Sequence[BaseNode]:
-        """Handle docstore upserts by checking hashes and ids."""
+        """
+        Handle docstore upserts by checking hashes and ids.
+
+        Deletes eagerly. `run` uses `_plan_upserts` instead, so a failing
+        transformation cannot destroy the previous version.
+        """
+        nodes_to_run, ref_doc_ids_to_delete, doc_ids_to_delete = self._plan_upserts(
+            nodes
+        )
+        self._apply_upsert_deletes(ref_doc_ids_to_delete, doc_ids_to_delete)
+        return nodes_to_run
+
+    def _plan_upserts(
+        self,
+        nodes: Sequence[BaseNode],
+    ) -> Tuple[Sequence[BaseNode], List[str], List[str]]:
+        """
+        Find the nodes to run, plus the ref doc ids and doc ids they supersede.
+
+        Nothing is deleted here, so a failed transformation cannot lose the
+        previous version. See `_apply_upsert_deletes`.
+        """
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = []
+        ref_doc_ids_to_delete: List[str] = []
+        superseded: set[str] = set()
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
+            if ref_doc_id in superseded:
+                # deleting used to happen here, so the lookup below missed and
+                # the node was kept; keep it, or sibling nodes get dropped
+                deduped_nodes_to_run.append(node)
+                continue
             existing_hash = self.docstore.get_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
                 deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
-
+                ref_doc_ids_to_delete.append(ref_doc_id)
+                superseded.add(ref_doc_id)
                 deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
 
+        doc_ids_to_delete: List[str] = []
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
             existing_doc_ids_before = set(
                 self.docstore.get_all_document_hashes().values()
             )
-            doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
-            for ref_doc_id in doc_ids_to_delete:
-                self.docstore.delete_document(ref_doc_id)
+            doc_ids_to_delete = list(existing_doc_ids_before - doc_ids_from_nodes)
 
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
+        return deduped_nodes_to_run, ref_doc_ids_to_delete, doc_ids_to_delete
 
-        return deduped_nodes_to_run
+    def _apply_upsert_deletes(
+        self,
+        ref_doc_ids_to_delete: Sequence[str],
+        doc_ids_to_delete: Sequence[str],
+    ) -> None:
+        """Remove data superseded by a successful run."""
+        assert self.docstore is not None
+
+        for ref_doc_id in ref_doc_ids_to_delete:
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+            if self.vector_store is not None:
+                self.vector_store.delete(ref_doc_id)
+
+        for ref_doc_id in doc_ids_to_delete:
+            self.docstore.delete_document(ref_doc_id)
+
+            if self.vector_store is not None:
+                self.vector_store.delete(ref_doc_id)
 
     @staticmethod
     def _node_batcher(
@@ -588,12 +629,18 @@ class IngestionPipeline(BaseModel):
             effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
 
         # check if we need to dedup
+        ref_doc_ids_to_delete: List[str] = []
+        doc_ids_to_delete: List[str] = []
         if self.docstore is not None and self.vector_store is not None:
             if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = self._handle_upserts(input_nodes)
+                (
+                    nodes_to_run,
+                    ref_doc_ids_to_delete,
+                    doc_ids_to_delete,
+                ) = self._plan_upserts(input_nodes)
             elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
                 nodes_to_run = self._handle_duplicates(input_nodes)
             else:
@@ -646,6 +693,10 @@ class IngestionPipeline(BaseModel):
             )
 
         nodes = nodes or []
+
+        # transformations succeeded, so the old data can go
+        if self.docstore is not None:
+            self._apply_upsert_deletes(ref_doc_ids_to_delete, doc_ids_to_delete)
 
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
@@ -706,41 +757,85 @@ class IngestionPipeline(BaseModel):
         nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
     ) -> Sequence[BaseNode]:
-        """Handle docstore upserts by checking hashes and ids."""
+        """
+        Handle docstore upserts by checking hashes and ids.
+
+        Deletes eagerly. `arun` uses `_aplan_upserts` instead, so a failing
+        transformation cannot destroy the previous version.
+        """
+        (
+            nodes_to_run,
+            ref_doc_ids_to_delete,
+            doc_ids_to_delete,
+        ) = await self._aplan_upserts(nodes, store_doc_text=store_doc_text)
+        await self._aapply_upsert_deletes(ref_doc_ids_to_delete, doc_ids_to_delete)
+        return nodes_to_run
+
+    async def _aplan_upserts(
+        self,
+        nodes: Sequence[BaseNode],
+        store_doc_text: bool = True,
+    ) -> Tuple[Sequence[BaseNode], List[str], List[str]]:
+        """
+        Find the nodes to run, plus the ref doc ids and doc ids they supersede.
+
+        Nothing is deleted here, so a failed transformation cannot lose the
+        previous version. See `_aapply_upsert_deletes`.
+        """
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = []
+        ref_doc_ids_to_delete: List[str] = []
+        superseded: set[str] = set()
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
+            if ref_doc_id in superseded:
+                # deleting used to happen here, so the lookup below missed and
+                # the node was kept; keep it, or sibling nodes get dropped
+                deduped_nodes_to_run.append(node)
+                continue
             existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
                 deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
-                await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    await self.vector_store.adelete(ref_doc_id)
-
+                ref_doc_ids_to_delete.append(ref_doc_id)
+                superseded.add(ref_doc_id)
                 deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
 
+        doc_ids_to_delete: List[str] = []
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
             existing_doc_ids_before = set(
                 (await self.docstore.aget_all_document_hashes()).values()
             )
-            doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
-            for ref_doc_id in doc_ids_to_delete:
-                await self.docstore.adelete_document(ref_doc_id)
+            doc_ids_to_delete = list(existing_doc_ids_before - doc_ids_from_nodes)
 
-                if self.vector_store is not None:
-                    await self.vector_store.adelete(ref_doc_id)
+        return deduped_nodes_to_run, ref_doc_ids_to_delete, doc_ids_to_delete
 
-        return deduped_nodes_to_run
+    async def _aapply_upsert_deletes(
+        self,
+        ref_doc_ids_to_delete: Sequence[str],
+        doc_ids_to_delete: Sequence[str],
+    ) -> None:
+        """Remove data superseded by a successful run."""
+        assert self.docstore is not None
+
+        for ref_doc_id in ref_doc_ids_to_delete:
+            await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
+
+            if self.vector_store is not None:
+                await self.vector_store.adelete(ref_doc_id)
+
+        for ref_doc_id in doc_ids_to_delete:
+            await self.docstore.adelete_document(ref_doc_id)
+
+            if self.vector_store is not None:
+                await self.vector_store.adelete(ref_doc_id)
 
     @dispatcher.span
     async def arun(
@@ -795,12 +890,18 @@ class IngestionPipeline(BaseModel):
             effective_strategy = DocstoreStrategy.DUPLICATES_ONLY
 
         # check if we need to dedup
+        ref_doc_ids_to_delete: List[str] = []
+        doc_ids_to_delete: List[str] = []
         if self.docstore is not None and self.vector_store is not None:
             if effective_strategy in (
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = await self._ahandle_upserts(
+                (
+                    nodes_to_run,
+                    ref_doc_ids_to_delete,
+                    doc_ids_to_delete,
+                ) = await self._aplan_upserts(
                     input_nodes, store_doc_text=store_doc_text
                 )
             elif effective_strategy == DocstoreStrategy.DUPLICATES_ONLY:
@@ -866,6 +967,10 @@ class IngestionPipeline(BaseModel):
             nodes = nodes
 
         nodes = nodes or []
+
+        # transformations succeeded, so the old data can go
+        if self.docstore is not None:
+            await self._aapply_upsert_deletes(ref_doc_ids_to_delete, doc_ids_to_delete)
 
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
