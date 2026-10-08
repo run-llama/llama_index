@@ -2,7 +2,6 @@ import asyncio
 import uuid
 from abc import abstractmethod
 from enum import Enum
-from sqlalchemy.ext.asyncio import AsyncEngine
 from typing import (
     Any,
     Callable,
@@ -13,6 +12,7 @@ from typing import (
     Union,
     TypeVar,
     Generic,
+    TYPE_CHECKING,
     cast,
 )
 
@@ -39,9 +39,13 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts import RichPromptTemplate
-from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore
-from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore, MessageStatus
+from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore, MessageStatus
 from llama_index.core.utils import get_tokenizer
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
+
+    from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore
 
 # Define type variable for memory block content
 T = TypeVar("T", str, List[ContentBlock], List[ChatMessage])
@@ -95,8 +99,10 @@ def generate_chat_store_key() -> str:
     return str(uuid.uuid4())
 
 
-def get_default_chat_store() -> SQLAlchemyChatStore:
+def get_default_chat_store() -> "SQLAlchemyChatStore":
     """Get the default chat store."""
+    from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore
+
     return SQLAlchemyChatStore(table_name="llama_index_memory")
 
 
@@ -306,11 +312,13 @@ class Memory(BaseMemory):
         # SQLAlchemyChatStore parameters
         table_name: str = "llama_index_memory",
         async_database_uri: Optional[str] = None,
-        async_engine: Optional[AsyncEngine] = None,
+        async_engine: Optional["AsyncEngine"] = None,
         db_schema: Optional[str] = None,
     ) -> "Memory":
         """Initialize Memory."""
         session_id = session_id or generate_chat_store_key()
+
+        from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore
 
         sql_store = chat_store or SQLAlchemyChatStore(
             table_name=table_name,
