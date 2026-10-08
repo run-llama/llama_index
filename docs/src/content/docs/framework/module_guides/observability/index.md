@@ -751,6 +751,91 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### TraceRoot
+
+[TraceRoot](https://traceroot.ai/) ([GitHub](https://github.com/traceroot-ai/traceroot)) is an observability platform for AI agents that helps teams trace runs, investigate failures, and evaluate changes. Its LlamaIndex integration captures document processing, embeddings, retrieval, and response generation, so you can check which context reached the model and how it affected the answer. The Python SDK uses OpenInference instrumentation to export these traces to TraceRoot Cloud or a self-hosted instance.
+
+#### Usage Pattern
+
+Install the SDK and the packages for this RAG example in a Python 3.11–3.13 environment:
+
+```bash
+pip install traceroot llama-index-core llama-index-llms-openai \
+  llama-index-embeddings-openai
+```
+
+Create a project API key in [TraceRoot](https://app.traceroot.ai/) and set it alongside your OpenAI key:
+
+```bash
+export TRACEROOT_API_KEY="<your-traceroot-api-key>"
+export OPENAI_API_KEY="<your-openai-api-key>"
+```
+
+The SDK sends traces to `https://app.traceroot.ai` by default. For another deployment, set `TRACEROOT_HOST_URL` to its base URL and use an API key created in that same deployment.
+
+Save the following as `example.py`. It builds an index from two short delivery policies and asks a question about express delivery. Initialize tracing once, before importing LlamaIndex; the integration captures the pipeline and the model calls made through LlamaIndex.
+
+```python
+import traceroot
+from traceroot import Integration
+
+traceroot.initialize(integrations=[Integration.LLAMA_INDEX])
+
+from llama_index.core import Document, Settings, VectorStoreIndex
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai import OpenAI
+
+Settings.llm = OpenAI(model="gpt-4o-mini")
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+
+documents = [
+    Document(text="Standard delivery takes three to five business days."),
+    Document(text="Express delivery takes one business day."),
+]
+
+try:
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_query_engine(similarity_top_k=2)
+    print(query_engine.query("How long does express delivery take?"))
+finally:
+    traceroot.flush()
+```
+
+Run the example from the shell where you set the API keys:
+
+```bash
+python example.py
+```
+
+The answer should explain that express delivery takes one business day. `flush()` sends buffered spans before the script exits.
+
+#### Inspect the Trace
+
+Open your TraceRoot project and select the `RetrieverQueryEngine.query` trace. Expand the trace tree to follow retrieval and response synthesis:
+
+- Select `VectorIndexRetriever.retrieve` to inspect the retrieved documents and their similarity scores.
+- Select `OpenAI.chat` to compare the context sent to the model with its answer and token usage.
+- Switch to the [Timeline view](https://traceroot.ai/docs/tracing/timeline) to see how much time was spent on retrieval and response generation.
+
+If an answer is incorrect, the retrieved text and model input help you distinguish missing context from a model that did not use the supplied context correctly.
+
+#### Troubleshooting
+
+- If an embedding or model request fails, check `OPENAI_API_KEY` and your access to the models used in the example.
+- If the query succeeds but no trace appears, check that `TRACEROOT_API_KEY` belongs to the project you are viewing. For another deployment, confirm that the key and `TRACEROOT_HOST_URL` refer to the same deployment.
+- Initialize tracing before running the pipeline, and call `traceroot.flush()` before a short-lived script exits.
+
+#### Learn More
+
+Once traces are arriving, you can use them with other TraceRoot features:
+
+- [Detectors](https://traceroot.ai/docs/detectors/introduction): Check incoming traces for problems you define, with configurable sampling and notifications.
+- [AI-assisted debugging](https://traceroot.ai/docs/ai-agent/overview): Investigate failures using traces and a connected GitHub repository.
+- [Evaluations](https://traceroot.ai/docs/evals/introduction): Run your pipeline against a dataset and score each result to compare changes.
+- [CLI](https://traceroot.ai/docs/cli/get-started): Inspect and export traces from your terminal or coding agent.
+
+See the [LlamaIndex integration guide](https://traceroot.ai/docs/integrations/llamaindex) and [Python SDK reference](https://traceroot.ai/docs/tracing/python-sdk) for more configuration options.
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
