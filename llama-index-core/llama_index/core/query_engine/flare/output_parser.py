@@ -30,7 +30,7 @@ class IsDoneOutputParser(BaseOutputParser):
 
     def parse(self, output: str) -> Any:
         """Parse output."""
-        is_done = default_parse_is_done_fn(output)
+        is_done = self._is_done_fn(output)
         if is_done:
             return True, self._fmt_answer_fn(output)
         else:
