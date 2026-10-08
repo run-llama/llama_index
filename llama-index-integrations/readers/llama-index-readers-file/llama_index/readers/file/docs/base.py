@@ -105,13 +105,14 @@ class DocxReader(BaseReader):
 
     def load_data(
         self,
-        file: Path,
+        file: Union[Path, PurePosixPath],
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
-        if not isinstance(file, Path):
-            file = Path(file)
+        _Path = Path if fs is None or is_default_fs(fs) else PurePosixPath
+        if not isinstance(file, (Path, PurePosixPath)):
+            file = _Path(file)
 
         try:
             import docx2txt
