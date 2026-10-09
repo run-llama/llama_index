@@ -21,3 +21,18 @@ llm = OpenAILike(
     is_function_calling_model=False,
 )
 ```
+
+For example, TokenLab provides an OpenAI-compatible `/v1` endpoint:
+
+```python
+from llama_index.llms.openai_like import OpenAILike
+
+llm = OpenAILike(
+    model="claude-sonnet-5",
+    api_base="https://api.tokenlab.sh/v1",
+    api_key="your-tokenlab-api-key",
+    context_window=200000,
+    is_chat_model=True,
+    is_function_calling_model=True,
+)
+```
