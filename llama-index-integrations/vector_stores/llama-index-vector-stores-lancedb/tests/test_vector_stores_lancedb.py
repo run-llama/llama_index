@@ -278,6 +278,78 @@ def test_delete(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
+def test_delete_ref_doc_id_with_embedded_quote(
+    tmp_path: Path, embed_model: BaseEmbedding
+) -> None:
+    # given: a ref_doc_id containing a single quote — regression test for
+    # the double-quoted SQL predicate bug (lancedb>=0.38 parses double
+    # quotes as identifiers, not string literals; see lancedb#3825).
+    node = TextNode(
+        text="test",
+        id_="44444444-4444-4444-4444-444444444444",
+        relationships={
+            NodeRelationship.SOURCE: RelatedNodeInfo(node_id="o'brien's-doc")
+        },
+    )
+    node.embedding = embed_model.get_text_embedding(node.text)
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    vector_store.add([node])
+
+    # when
+    vector_store.delete(ref_doc_id="o'brien's-doc")
+
+    # then
+    assert vector_store._table.count_rows() == 0
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_node_ids_with_quotes_are_escaped(
+    tmp_path: Path, embed_model: BaseEmbedding
+) -> None:
+    # given: nodes whose ids contain quotes, plus an injection-shaped id
+    nodes = [
+        TextNode(
+            text=t,
+            id_=i,
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"doc-{i}")
+            },
+        )
+        for t, i in [("a", "o'brien"), ("b", "plain"), ("c", "keep-me")]
+    ]
+    for n in nodes:
+        n.embedding = embed_model.get_text_embedding(n.text)
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    vector_store.add(nodes)
+
+    # when/then: get_nodes only matches the exact ids
+    assert [n.id_ for n in vector_store.get_nodes(node_ids=["o'brien"])] == ["o'brien"]
+    assert vector_store.get_nodes(node_ids=["x' OR '1'='1"]) == []
+    assert vector_store.get_nodes(node_ids=[]) == []
+
+    # when/then: injection-shaped ids delete nothing
+    vector_store.delete_nodes(node_ids=["x' OR '1'='1"])
+    vector_store.delete_nodes(node_ids=[])
+    vector_store.delete(ref_doc_id="x' OR '1'='1")
+    assert vector_store._table.count_rows() == 3
+
+    # when/then: quoted ids are deleted precisely
+    vector_store.delete(ref_doc_id="doc-o'brien")
+    vector_store.delete_nodes(node_ids=["plain"])
+    assert vector_store._table.count_rows() == 1
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
 def test_delete_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     # given
     vector_store = LanceDBVectorStore(
