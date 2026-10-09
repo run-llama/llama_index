@@ -25,6 +25,20 @@ def test_llm_single_selector(mock_llm, monkeypatch) -> None:
     assert mock_complete.call_args.args[0].count("Here is an example") <= 1
 
 
+def test_llm_multi_selector_format_instructions_added_once(mock_llm) -> None:
+    selector = LLMMultiSelector.from_defaults(llm=mock_llm)
+
+    with patch.object(
+        type(mock_llm),
+        "complete",
+        return_value=CompletionResponse(text=_mock_single_select()),
+    ) as mock_complete:
+        selector.select(choices=["apple", "pear"], query="what is the best fruit?")
+
+    mock_complete.assert_called_once()
+    assert mock_complete.call_args.args[0].count("Here is an example") == 1
+
+
 def test_llm_multi_selector(patch_llm_predictor) -> None:
     selector = LLMMultiSelector.from_defaults()
 
