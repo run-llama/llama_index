@@ -217,7 +217,11 @@ def test_filter_conditions():
     assert filter_and_not.must[1].must_not is not None
     assert len(filter_and_not.must[1].must_not) == 1
     assert filter_and_not.must[1].must_not[0].key == "price"
-    assert filter_and_not.must[1].must_not[0].match.value == 50
+    # A numeric EQ is a degenerate range, so it reaches int and float
+    # payloads alike.
+    assert filter_and_not.must[1].must_not[0].match is None
+    assert filter_and_not.must[1].must_not[0].range.gte == 50
+    assert filter_and_not.must[1].must_not[0].range.lte == 50
 
 
 def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
@@ -249,6 +253,151 @@ def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
         )
     )
     assert len(results) == 1
+
+
+def test_numeric_eq_and_ne_filter_conditions():
+    """Test that int and float EQ/NE values translate to numeric conditions."""
+    mock_client = MagicMock(spec=QdrantClient)
+    vector_store = QdrantVectorStore(
+        collection_name="test_collection",
+        client=mock_client,
+    )
+
+    # An int EQ goes through the same degenerate range as a float EQ, so it
+    # reaches a float payload too.
+    eq_int = vector_store._build_subfilter(
+        MetadataFilters(
+            filters=[MetadataFilter(key="rate", value=10, operator=FilterOperator.EQ)]
+        )
+    )
+    assert eq_int.must is not None
+    assert len(eq_int.must) == 1
+    assert eq_int.must[0].key == "rate"
+    assert eq_int.must[0].range.gte == 10
+    assert eq_int.must[0].range.lte == 10
+    assert eq_int.must[0].match is None
+
+    # A numeric NE excludes through a must_not range: MatchExcept rejects
+    # floats and an exact match would miss the other numeric spelling.
+    ne_float = vector_store._build_subfilter(
+        MetadataFilters(
+            filters=[MetadataFilter(key="rate", value=10.0, operator=FilterOperator.NE)]
+        )
+    )
+    assert ne_float.must is not None
+    assert len(ne_float.must) == 1
+    assert isinstance(ne_float.must[0], Filter)
+    assert ne_float.must[0].must_not is not None
+    assert len(ne_float.must[0].must_not) == 1
+    assert ne_float.must[0].must_not[0].key == "rate"
+    assert ne_float.must[0].must_not[0].range.gte == 10.0
+    assert ne_float.must[0].must_not[0].range.lte == 10.0
+
+    # A string NE keeps the exact match exclusion.
+    ne_str = vector_store._build_subfilter(
+        MetadataFilters(
+            filters=[MetadataFilter(key="name", value="a", operator=FilterOperator.NE)]
+        )
+    )
+    assert ne_str.must is not None
+    assert len(ne_str.must) == 1
+    assert ne_str.must[0].match.except_ == ["a"]
+
+
+def test_numeric_eq_and_ne_match_float_payloads() -> None:
+    """An int filter value reaches a float payload and excludes it on NE."""
+    client = QdrantClient(":memory:")
+    vector_store = QdrantVectorStore("test_float", client=client)
+    vector_store.add(
+        [
+            TextNode(text="a", embedding=[1.0, 0.0], metadata={"rate": 10.0}),
+            TextNode(text="b", embedding=[0.0, 1.0], metadata={"rate": 20.0}),
+        ]
+    )
+
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="rate", value=10, operator=FilterOperator.EQ)]
+        )
+    )
+    assert len(results) == 1
+    assert results[0].get_content() == "a"
+
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="rate", value=10.0, operator=FilterOperator.EQ)]
+        )
+    )
+    assert len(results) == 1
+
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="rate", value=10, operator=FilterOperator.NE)]
+        )
+    )
+    assert len(results) == 1
+    assert results[0].get_content() == "b"
+
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="rate", value=10.0, operator=FilterOperator.NE)]
+        )
+    )
+    assert len(results) == 1
+    assert results[0].get_content() == "b"
+
+
+def test_numeric_eq_and_ne_large_int_precision() -> None:
+    """
+    Ints at or beyond 2**53 keep the exact match: a range would coerce them to float.
+
+    Covers both magnitudes and both signs: on the server, range bounds and stored
+    integers are compared through float64, so 2**53 and 2**53+1 collapse into one
+    value there while the exact match distinguishes them.
+    """
+    client = QdrantClient(":memory:")
+    vector_store = QdrantVectorStore("test_large_int", client=client)
+    big, other = 9007199254740993, 9007199254740992  # 2**53 + 1 and 2**53
+    vector_store.add(
+        [
+            TextNode(text="a", embedding=[1.0, 0.0], metadata={"id": big}),
+            TextNode(text="b", embedding=[0.0, 1.0], metadata={"id": other}),
+            TextNode(text="c", embedding=[0.0, 0.0], metadata={"id": -big}),
+            TextNode(text="d", embedding=[0.0, 0.0], metadata={"id": -other}),
+        ]
+    )
+
+    def eq_ids(value):
+        results = vector_store.get_nodes(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="id", value=value, operator=FilterOperator.EQ)
+                ]
+            )
+        )
+        return sorted(node.get_content() for node in results)
+
+    def ne_ids(value):
+        results = vector_store.get_nodes(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="id", value=value, operator=FilterOperator.NE)
+                ]
+            )
+        )
+        return sorted(node.get_content() for node in results)
+
+    # Exact match at and beyond the boundary distinguishes adjacent integers
+    # on both signs, including the reverse lookups at 2**53 itself.
+    assert eq_ids(big) == ["a"]
+    assert eq_ids(other) == ["b"]
+    assert eq_ids(-big) == ["c"]
+    assert eq_ids(-other) == ["d"]
+
+    assert ne_ids(big) == ["b", "c", "d"]
+    assert ne_ids(other) == ["a", "c", "d"]
+    assert ne_ids(-big) == ["a", "b", "d"]
+    assert ne_ids(-other) == ["a", "b", "c"]
 
 
 def test_hybrid_vector_store_query(

@@ -76,6 +76,23 @@ def _requires_idf(model_name: Optional[str]) -> bool:
     return bool(model_config and model_config.get("requires_idf"))
 
 
+def _goes_through_range(value: float) -> bool:
+    """
+    Whether a numeric EQ/NE value should translate to a degenerate range.
+
+    Qdrant's exact match compares the stored payload type, so an int filter value misses a float payload; a
+    degenerate range covers both spellings. `Range` stores its bounds as float, and the server compares
+    stored integers through the same float64 conversion, so an int at or beyond 2**53 both loses precision
+    in the bound and collapses with its neighbor on the payload side; such ints keep the exact match. bool
+    is an int subclass but is stored and matched as a bool.
+    """
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, float):
+        return True
+    return isinstance(value, int) and abs(value) < 2**53
+
+
 class QdrantVectorStore(BasePydanticVectorStore):
     """
     Qdrant Vector Store.
@@ -1395,7 +1412,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             # Handle MetadataFilter with operators
             if not subfilter.operator or subfilter.operator == FilterOperator.EQ:
-                if isinstance(subfilter.value, float):
+                if _goes_through_range(subfilter.value):
                     conditions.append(
                         FieldCondition(
                             key=subfilter.key,
@@ -1451,12 +1468,29 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     )
                 )
             elif subfilter.operator == FilterOperator.NE:
-                conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchExcept(**{"except": [subfilter.value]}),
+                # MatchExcept only accepts strings and integers and compares the stored payload type, so a
+                # numeric NE goes through a must_not range instead.
+                if _goes_through_range(subfilter.value):
+                    conditions.append(
+                        Filter(
+                            must_not=[
+                                FieldCondition(
+                                    key=subfilter.key,
+                                    range=Range(
+                                        gte=subfilter.value,
+                                        lte=subfilter.value,
+                                    ),
+                                )
+                            ]
+                        )
                     )
-                )
+                else:
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchExcept(**{"except": [subfilter.value]}),
+                        )
+                    )
             elif subfilter.operator == FilterOperator.IN:
                 # match any of the values
                 # https://qdrant.tech/documentation/concepts/filtering/#match-any
