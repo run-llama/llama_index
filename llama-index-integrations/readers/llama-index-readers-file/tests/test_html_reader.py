@@ -83,3 +83,44 @@ def test_html_tag_reader(html_str: str) -> None:
     assert docs[2].metadata["tag_id"] is None
 
     os.remove(temp_file.name)
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("Visible<!-- hidden comment -->Text", "Visible\nText"),
+        ("<span>Visible<!-- hidden comment -->Text</span>", "VisibleText"),
+        ("<!-- hidden comment -->", ""),
+        ("Visible<span>Text</span>", "Visible\nText"),
+    ],
+)
+def test_html_tag_reader_excludes_comments(
+    tmp_path: Path, content: str, expected: str
+) -> None:
+    file = tmp_path / "comments.html"
+    file.write_text(f'<section id="main">{content}</section>', encoding="utf-8")
+
+    docs = HTMLTagReader().load_data(file, extra_info={"source": "fixture"})
+
+    assert len(docs) == 1
+    assert docs[0].text == expected
+    assert docs[0].metadata == {
+        "tag": "section",
+        "tag_id": "main",
+        "file_path": str(file),
+        "source": "fixture",
+    }
+
+
+def test_html_tag_reader_comments_with_custom_tag(tmp_path: Path) -> None:
+    file = tmp_path / "comments.html"
+    file.write_text(
+        '<div id="main">Before<!-- hidden --><div id="child">Child</div>After</div>'
+        "<div><!-- hidden -->Ignored</div>",
+        encoding="utf-8",
+    )
+
+    docs = HTMLTagReader(tag="div", ignore_no_id=True).load_data(file)
+
+    assert [doc.text for doc in docs] == ["Before\nAfter", "Child"]
+    assert [doc.metadata["tag_id"] for doc in docs] == ["main", "child"]
