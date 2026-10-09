@@ -245,7 +245,13 @@ class GoogleGenAI(FunctionCallingLLM):
 
         # only get model meta data if max_tokens or context_window is not specified
         if max_tokens is None or context_window is None:
-            model_meta = client.models.get(model=model)
+            try:
+                model_meta = client.models.get(model=model)
+            except Exception:
+                # Some endpoints (e.g. Google Cloud MaaS) do not expose the
+                # models.get API; fall back to None so callers must supply
+                # max_tokens and context_window explicitly.
+                model_meta = None
         else:
             model_meta = None
 
