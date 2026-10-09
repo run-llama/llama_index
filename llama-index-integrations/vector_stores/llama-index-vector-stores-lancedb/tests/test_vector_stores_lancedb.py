@@ -2,7 +2,11 @@ from typing import Any
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.core import VectorStoreIndex
-from llama_index.vector_stores.lancedb.base import TableNotFoundError, VectorStoreQuery
+from llama_index.vector_stores.lancedb.base import (
+    TableNotFoundError,
+    VectorStoreQuery,
+    _to_lance_filter,
+)
 import pytest
 import pytest
 from llama_index.core import VectorStoreIndex
@@ -278,6 +282,32 @@ def test_delete(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
+def test_delete_escapes_ref_doc_id(
+    tmp_path: Path, text_node_list: list[TextNode]
+) -> None:
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    quoted_ref_doc_id = 'customer\'s "draft"'
+    quoted_node = TextNode(
+        text="quoted document",
+        id_="quoted-ref-doc-node",
+        embedding=[0.1, 0.2, 0.3],
+        relationships={
+            NodeRelationship.SOURCE: RelatedNodeInfo(node_id=quoted_ref_doc_id)
+        },
+    )
+    vector_store.add([*text_node_list, quoted_node])
+
+    vector_store.delete(ref_doc_id=quoted_ref_doc_id)
+
+    assert vector_store._table.count_rows() == len(text_node_list)
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
 def test_delete_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     # given
     vector_store = LanceDBVectorStore(
@@ -290,6 +320,29 @@ def test_delete_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
 
     # then
     assert vector_store._table.count_rows() == len(text_node_list) - 2
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_delete_nodes_escapes_node_ids(
+    tmp_path: Path, text_node_list: list[TextNode]
+) -> None:
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+    quoted_node_id = 'node\'s "draft"'
+    quoted_node = TextNode(
+        text="quoted node",
+        id_=quoted_node_id,
+        embedding=[0.1, 0.2, 0.3],
+    )
+    vector_store.add([*text_node_list, quoted_node])
+
+    vector_store.delete_nodes(node_ids=[quoted_node_id])
+
+    assert vector_store._table.count_rows() == len(text_node_list)
 
 
 @pytest.mark.skipif(
@@ -513,3 +566,125 @@ def test_filter_fixes(tmp_path: Path, embed_model) -> None:
     assert len(res_int) == 2
     ids_int = sorted([n.text for n in res_int])
     assert ids_int == ["node1", "node3"]
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+@pytest.mark.parametrize(
+    ("operator", "value", "expected"),
+    [
+        (FilterOperator.EQ, "it's", "metadata.category = 'it''s'"),
+        (FilterOperator.EQ, 'say "hi"', "metadata.category = 'say \"hi\"'"),
+        (FilterOperator.TEXT_MATCH, "it's", "metadata.category LIKE '%it''s%'"),
+        (FilterOperator.NE, "it's", "metadata.category NOT LIKE '%it''s%'"),
+        (
+            FilterOperator.IN,
+            ["it's", "o''brien"],
+            "metadata.category IN ('it''s','o''''brien')",
+        ),
+    ],
+)
+def test_to_lance_filter_escapes_string_values(
+    operator: FilterOperator, value: Any, expected: str
+) -> None:
+    """String values are single-quoted with embedded apostrophes doubled."""
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="category", value=value, operator=operator)]
+    )
+
+    assert _to_lance_filter(filters, None) == expected
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+@pytest.mark.parametrize(
+    ("key", "value", "expected"),
+    [
+        ("year", 2000, "metadata.year = 2000"),
+        ("score", 1.5, "metadata.score = 1.5"),
+    ],
+)
+def test_to_lance_filter_leaves_non_string_values_unquoted(
+    key: str, value: Any, expected: str
+) -> None:
+    """Numeric values must not be turned into string literals."""
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key=key, value=value, operator=FilterOperator.EQ)]
+    )
+
+    assert _to_lance_filter(filters, None) == expected
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_to_lance_filter_numeric_list_values_stay_unquoted() -> None:
+    """Numeric members of a list value must not be turned into string literals."""
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="year", value=[2000, 2020], operator=FilterOperator.IN)
+        ]
+    )
+
+    assert _to_lance_filter(filters, None) == "metadata.year IN (2000,2020)"
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_get_nodes_with_quoted_metadata_values(tmp_path: Path, embed_model) -> None:
+    """Metadata values containing apostrophes are matched, not mis-parsed."""
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb_quoted_metadata"), mode="overwrite"
+    )
+    nodes = [
+        TextNode(
+            text="node1",
+            metadata={"category": "it's a book"},
+            embedding=embed_model.get_text_embedding("node1"),
+        ),
+        TextNode(
+            text="node2",
+            metadata={"category": "article"},
+            embedding=embed_model.get_text_embedding("node2"),
+        ),
+    ]
+    vector_store.add(nodes)
+
+    eq_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="category", value="it's a book", operator=FilterOperator.EQ
+            )
+        ]
+    )
+    res_eq = vector_store.get_nodes(filters=eq_filters)
+    assert [n.text for n in res_eq] == ["node1"]
+
+    in_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="category",
+                value=["it's a book", "missing"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+    res_in = vector_store.get_nodes(filters=in_filters)
+    assert [n.text for n in res_in] == ["node1"]
+
+    text_match_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="category", value="it's a", operator=FilterOperator.TEXT_MATCH
+            )
+        ]
+    )
+    res_text = vector_store.get_nodes(filters=text_match_filters)
+    assert [n.text for n in res_text] == ["node1"]
