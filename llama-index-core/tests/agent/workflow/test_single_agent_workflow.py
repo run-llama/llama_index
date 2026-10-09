@@ -3,15 +3,19 @@ from typing import List
 import pytest
 
 from llama_index.core.agent.workflow import FunctionAgent, ReActAgent, AgentInput
+from llama_index.core.agent.workflow.base_agent import apply_state_to_last_user_message
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ImageBlock,
     MessageRole,
 )
 from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow.errors import WorkflowRuntimeError
+from workflows import Context
 
 
 def _response_generator_from_list(responses: List[ChatMessage]):
@@ -560,3 +564,98 @@ async def test_run_id_default(function_agent: FunctionAgent) -> None:
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_state_prompt_does_not_leak_into_memory() -> None:
+    """
+    The state is added to the LLM prompt only, never to the stored user message.
+
+    https://github.com/run-llama/llama_index/issues/23234
+    """
+    llm_inputs: List[List[ChatMessage]] = []
+
+    async def bump(ctx: Context) -> str:
+        state = await ctx.store.get("state")
+        state["counter"] += 1
+        await ctx.store.set("state", state)
+        return "bumped"
+
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        llm_inputs.append(messages)
+        if len(llm_inputs) == 1:
+            return ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="calling the tool",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(tool_id="1", tool_name="bump", tool_kwargs={})
+                    ]
+                },
+            )
+        return ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[bump],
+        llm=MockFunctionCallingLLM(response_generator=generator),
+        initial_state={"counter": 0},
+    )
+    memory = ChatMemoryBuffer.from_defaults()
+
+    await agent.run(user_msg="hello", memory=memory)
+
+    # the message kept in memory is the one the user sent
+    stored_user_msgs = [m for m in memory.get() if m.role == MessageRole.USER]
+    assert [m.content for m in stored_user_msgs] == ["hello"]
+
+    # every LLM call sees the current state exactly once
+    assert len(llm_inputs) == 2
+    for call_index, messages in enumerate(llm_inputs):
+        user_msgs = [m for m in messages if m.role == MessageRole.USER]
+        assert len(user_msgs) == 1
+        content = user_msgs[0].content
+        assert content.count("Current state:") == 1
+        assert content.endswith("Current message:\nhello\n")
+        assert f"'counter': {call_index}" in content
+
+
+def test_apply_state_to_last_user_message() -> None:
+    state_prompt = PromptTemplate("state={state} msg={msg}")
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="first"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="answer"),
+        ChatMessage(role=MessageRole.USER, content="second"),
+        ChatMessage(role=MessageRole.TOOL, content="tool result"),
+    ]
+
+    result = apply_state_to_last_user_message(messages, state_prompt, {"a": 1})
+
+    # only the last user message carries the state
+    assert [m.content for m in result] == [
+        "first",
+        "answer",
+        "state={'a': 1} msg=second",
+        "tool result",
+    ]
+    # the messages that were passed in are left untouched
+    assert [m.content for m in messages] == ["first", "answer", "second", "tool result"]
+
+
+def test_apply_state_to_last_user_message_without_text_to_format() -> None:
+    state_prompt = PromptTemplate("state={state} msg={msg}")
+
+    no_user = [ChatMessage(role=MessageRole.ASSISTANT, content="hi")]
+    assert apply_state_to_last_user_message(no_user, state_prompt, {"a": 1}) == no_user
+
+    image_only = [
+        ChatMessage(
+            role=MessageRole.USER,
+            blocks=[ImageBlock(url="https://example.com/image.png")],
+        )
+    ]
+    assert (
+        apply_state_to_last_user_message(image_only, state_prompt, {"a": 1})
+        == image_only
+    )
