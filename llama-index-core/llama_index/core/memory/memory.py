@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 from abc import abstractmethod
+from dataclasses import dataclass, field
 from enum import Enum
 from sqlalchemy.ext.asyncio import AsyncEngine
 from typing import (
@@ -9,6 +10,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
     TypeVar,
@@ -34,6 +36,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
+    PrivateAttr,
     model_validator,
     ConfigDict,
 )
@@ -185,6 +188,16 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
         return None
 
 
+@dataclass
+class _PendingFlush:
+    """One fixed batch and its in-process delivery acknowledgements."""
+
+    messages: List[ChatMessage]
+    blocks: List[BaseMemoryBlock]
+    delivered: Set[int] = field(default_factory=set)
+    archived_count: Optional[int] = None
+
+
 class Memory(BaseMemory):
     """
     A memory module that waterfalls into memory blocks.
@@ -195,7 +208,14 @@ class Memory(BaseMemory):
     - various parameters (pressure size, token limit, etc.)
 
     When the FIFO queue reaches the token limit, the oldest messages within the pressure size are ejected from the FIFO queue.
-    The messages are then processed by each memory block.
+    The messages are then processed by each memory block, and archived only after all
+    blocks return successfully. Failed flushes retain a fixed batch and retry only
+    unacknowledged blocks on this Memory instance, even if new messages arrive.
+
+    Delivery acknowledgements are in-process only: they are not serialized or shared
+    across Memory instances. Use one Memory instance to mutate a session's history.
+    A block that performs a side effect and then raises or is cancelled can still
+    receive that batch again; this is not an exactly-once delivery guarantee.
 
     When pulling messages from this memory, the memory blocks are processed in order, and the messages are injected into the system message or the latest user message.
     """
@@ -256,6 +276,10 @@ class Memory(BaseMemory):
         default_factory=generate_chat_store_key,
         description="The key to use for storing messages in the chat store.",
     )
+
+    _queue_lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
+    _pending_flush: Optional[_PendingFlush] = PrivateAttr(default=None)
+    _history_replacement_failed: bool = PrivateAttr(default=False)
 
     @classmethod
     def class_name(cls) -> str:
@@ -669,16 +693,96 @@ class Memory(BaseMemory):
             chat_history, memory_content, chat_message_data
         )
 
+    async def _flush_pending(self) -> None:
+        """Deliver the pending batch, retaining successful acknowledgements on error."""
+        pending = self._pending_flush
+        if pending is None:
+            return
+
+        async def deliver(index: int, block: BaseMemoryBlock) -> None:
+            # BaseMemoryBlock adds session metadata and blocks may mutate messages.
+            # Keep the batch snapshot intact, including across retries.
+            await block.aput(
+                [message.model_copy(deep=True) for message in pending.messages],
+                from_short_term_memory=True,
+                session_id=self.session_id,
+            )
+            pending.delivered.add(index)
+
+        results = await asyncio.gather(
+            *[
+                deliver(index, block)
+                for index, block in enumerate(pending.blocks)
+                if index not in pending.delivered
+            ],
+            return_exceptions=True,
+        )
+        # Wait for every sibling to settle before releasing the queue lock. A
+        # successful sibling must not still be running when a retry starts.
+        for result in results:
+            if isinstance(result, BaseException):
+                raise result
+
+        if await self._pending_was_archived():
+            self._pending_flush = None
+            return
+
+        archived = await self.sql_store.archive_oldest_messages(
+            self.session_id, n=len(pending.messages)
+        )
+        if len(archived) != len(pending.messages):
+            raise RuntimeError("The pending memory batch was not fully archived.")
+        self._pending_flush = None
+
+    async def _pending_was_archived(self) -> bool:
+        """Recognize an archive that committed before raising or being cancelled."""
+        pending = self._pending_flush
+        if pending is None:
+            return False
+
+        archived_count = await self.sql_store.count_messages(
+            self.session_id, status=MessageStatus.ARCHIVED
+        )
+        if pending.archived_count is None:
+            pending.archived_count = archived_count
+        elif archived_count == pending.archived_count + len(pending.messages):
+            return True
+        elif archived_count != pending.archived_count:
+            # The chat-store interface has no row IDs or transactional batch key.
+            # Fail closed if another writer or a partial archive changed history.
+            raise RuntimeError(
+                "Archived history changed while a memory flush was pending. "
+                "Use one Memory instance to mutate a session's history."
+            )
+        return False
+
+    def _check_history_replacement(self) -> None:
+        if self._history_replacement_failed:
+            raise RuntimeError(
+                "Chat history replacement did not complete. Retry aset() or "
+                "areset() for active history before adding or flushing messages."
+            )
+
     async def _manage_queue(self) -> None:
+        """Serialize flushes and resume any pending batch before selecting another."""
+        async with self._queue_lock:
+            await self._manage_queue_locked()
+
+    async def _manage_queue_locked(self) -> None:
         """
-        Manage the FIFO queue.
+        Manage the FIFO queue while holding the queue lock.
 
         This function manages the memory queue using a waterfall approach:
         1. If the queue exceeds the token limit, it removes oldest messages first
-        2. Removed messages are archived and passed to memory blocks
+        2. Removed messages are passed to memory blocks, then archived
         3. It ensures conversation integrity by keeping related messages together
         4. It maintains at least one complete conversation turn
         """
+        self._check_history_replacement()
+        # Finish exactly the original batch before recalculating boundaries or
+        # token pressure; newly appended messages belong to subsequent batches.
+        await self._flush_pending()
+
         # Calculate if we need to waterfall
         current_queue = await self.sql_store.get_messages(
             self.session_id, status=MessageStatus.ACTIVE
@@ -778,23 +882,15 @@ class Memory(BaseMemory):
                             reversed_queue = turn_messages[::-1] + reversed_queue
                         # else: No user message found - queue may remain empty (defensive)
 
-                # Archive the flushed messages
                 if messages_to_flush:
-                    await self.sql_store.archive_oldest_messages(
-                        self.session_id, n=len(messages_to_flush)
+                    self._pending_flush = _PendingFlush(
+                        messages=[
+                            message.model_copy(deep=True)
+                            for message in messages_to_flush
+                        ],
+                        blocks=list(self.memory_blocks),
                     )
-
-                    # Waterfall the flushed messages to memory blocks
-                    await asyncio.gather(
-                        *[
-                            block.aput(
-                                messages_to_flush,
-                                from_short_term_memory=True,
-                                session_id=self.session_id,
-                            )
-                            for block in self.memory_blocks
-                        ]
-                    )
+                    await self._flush_pending()
 
                 # Recalculate remaining tokens
                 chronological_view = reversed_queue[::-1]
@@ -810,29 +906,33 @@ class Memory(BaseMemory):
 
     async def aput(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
-        # Add the message to the chat store
-        await self.sql_store.add_message(
-            self.session_id, message, status=MessageStatus.ACTIVE
-        )
-
-        # Ensure the active queue is managed
-        await self._manage_queue()
+        async with self._queue_lock:
+            self._check_history_replacement()
+            await self.sql_store.add_message(
+                self.session_id, message, status=MessageStatus.ACTIVE
+            )
+            await self._manage_queue_locked()
 
     async def aput_messages(self, messages: List[ChatMessage]) -> None:
         """Add a list of messages to the chat store and process waterfall logic if needed."""
-        # Add the messages to the chat store
-        await self.sql_store.add_messages(
-            self.session_id, messages, status=MessageStatus.ACTIVE
-        )
-
-        # Ensure the active queue is managed
-        await self._manage_queue()
+        async with self._queue_lock:
+            self._check_history_replacement()
+            await self.sql_store.add_messages(
+                self.session_id, messages, status=MessageStatus.ACTIVE
+            )
+            await self._manage_queue_locked()
 
     async def aset(self, messages: List[ChatMessage]) -> None:
-        """Set the chat history."""
-        await self.sql_store.set_messages(
-            self.session_id, messages, status=MessageStatus.ACTIVE
-        )
+        """Set the chat history, discarding any pending flush of replaced messages."""
+        async with self._queue_lock:
+            # A custom store can replace some/all history before reporting an
+            # error. Do not apply old acknowledgements to that uncertain history.
+            self._history_replacement_failed = True
+            await self.sql_store.set_messages(
+                self.session_id, messages, status=MessageStatus.ACTIVE
+            )
+            self._pending_flush = None
+            self._history_replacement_failed = False
 
     async def aget_all(
         self, status: Optional[MessageStatus] = None
@@ -842,7 +942,21 @@ class Memory(BaseMemory):
 
     async def areset(self, status: Optional[MessageStatus] = None) -> None:
         """Reset the memory."""
-        await self.sql_store.delete_messages(self.session_id, status=status)
+        async with self._queue_lock:
+            pending = self._pending_flush
+            if status != MessageStatus.ARCHIVED:
+                self._history_replacement_failed = True
+                await self.sql_store.delete_messages(self.session_id, status=status)
+                self._pending_flush = None
+                self._history_replacement_failed = False
+            else:
+                if pending is not None and pending.archived_count is not None:
+                    if await self._pending_was_archived():
+                        self._pending_flush = None
+                    # Re-read the baseline even if deleting archived history
+                    # commits before raising. Active deliveries are unaffected.
+                    pending.archived_count = None
+                await self.sql_store.delete_messages(self.session_id, status=status)
 
     # ---- Sync method wrappers ----
 
