@@ -50,9 +50,7 @@ def _sql_str(value: Any) -> str:
 
 
 def _id_in(node_ids: List[str]) -> str:
-    """Build an `id IN (...)` predicate; an empty list matches nothing."""
-    if not node_ids:
-        return "1 = 0"
+    """Build an `id IN (...)` predicate. `node_ids` must not be empty."""
     return f"id IN ({', '.join(_sql_str(n) for n in node_ids)})"
 
 
@@ -440,7 +438,10 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             node_ids (List[str]): The list of node_ids to delete.
 
         """
-        self.table.delete(_id_in(node_ids))
+        table = self.table  # raises TableNotFoundError if the table is missing
+        if not node_ids:
+            return
+        table.delete(_id_in(node_ids))
 
     def get_nodes(
         self,
@@ -466,6 +467,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             where = kwargs.pop("where", None)
 
         if node_ids is not None:
+            if not node_ids:
+                return []
             where = _id_in(node_ids)
 
         results = self.table.search().where(where).to_pandas()
