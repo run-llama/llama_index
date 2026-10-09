@@ -34,7 +34,7 @@ class FeedlyRssReader(BaseReader):
 
         if not auth_file.exists() or overwrite:
             auth = self.bearer_token
-            auth_file.write_text(auth.strip())
+            auth_file.write_text(auth.strip(), encoding="utf-8")
 
     def load_data(self, category_name, max_count=100):
         """Get the entries from a feedly category."""
