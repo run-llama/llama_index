@@ -223,6 +223,53 @@ def test_list_delete(documents: List[Document], patch_token_text_splitter) -> No
     assert nodes[2].get_content() == "This is a test v2."
 
 
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.asyncio
+async def test_list_delete_ref_doc_from_docstore(
+    patch_token_text_splitter, use_async: bool
+) -> None:
+    """Every node of a multi-node document leaves both the index and the docstore."""
+    new_documents = [
+        Document(text="Hello world.\nThis is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+        Document(text="This is a test v2.", id_="test_id_3"),
+    ]
+    summary_index = SummaryIndex.from_documents(new_documents)
+    assert len(summary_index.docstore.get_ref_doc_info("test_id_1").node_ids) == 2
+
+    if use_async:
+        await summary_index.adelete_ref_doc("test_id_1", delete_from_docstore=True)
+    else:
+        summary_index.delete_ref_doc("test_id_1", delete_from_docstore=True)
+
+    assert len(summary_index.index_struct.nodes) == 2
+    nodes = summary_index.docstore.get_nodes(summary_index.index_struct.nodes)
+    assert [node.ref_doc_id for node in nodes] == ["test_id_2", "test_id_3"]
+    assert summary_index.docstore.get_ref_doc_info("test_id_1") is None
+
+
+def test_list_update_ref_doc(patch_token_text_splitter) -> None:
+    """Updating a multi-node document leaves no node that the docstore lacks."""
+    new_documents = [
+        Document(text="Hello world.\nThis is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    summary_index = SummaryIndex.from_documents(new_documents)
+
+    summary_index.update_ref_doc(
+        Document(text="Hello again.\nThis is still a test.", id_="test_id_1")
+    )
+
+    nodes = summary_index.docstore.get_nodes(summary_index.index_struct.nodes)
+    assert [node.get_content() for node in nodes] == [
+        "This is another test.",
+        "Hello again.",
+        "This is still a test.",
+    ]
+    retrieved = summary_index.as_retriever().retrieve("test")
+    assert len(retrieved) == 3
+
+
 def test_as_retriever(documents: List[Document]) -> None:
     summary_index = SummaryIndex.from_documents(documents)
     default_retriever = summary_index.as_retriever(
