@@ -214,9 +214,9 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         ] * (flipped_eval_result.score == 1.0)
 
         if votes_1 > votes_2:
-            return voters_1[0]  # return any voter for answer_1
+            result = voters_1[0]  # return any voter for answer_1
         elif votes_2 > votes_1:
-            return voters_2[0]  # return any vote for answer_2
+            result = voters_2[0]  # return any vote for answer_2
         else:
             if (
                 eval_result.score == 0.5
@@ -232,6 +232,17 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
                     feedback="",
                     pairwise_source=EvaluationSource.NEITHER,
                 )
+
+        if result.pairwise_source == EvaluationSource.FLIPPED and (
+            result.score is not None
+        ):
+            # The flipped judge saw the answers in swapped order, so its
+            # score/passing are in the flipped frame. Convert them back so the
+            # returned result keeps the original-frame meaning.
+            result.score = 1.0 - result.score
+            result.passing = result.score == 1.0
+
+        return result
 
     async def aevaluate(
         self,
