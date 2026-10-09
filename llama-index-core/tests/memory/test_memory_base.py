@@ -337,3 +337,63 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_preserves_system_message():
+    """
+    Regression test for: system message is silently evicted once the token
+    limit is reached (GitHub issue #23144).
+
+    The system message must survive the FIFO waterfall because:
+    1. The main flush loop must not pop it out of reversed_queue.
+    2. The boundary-enforcement loop must not flush it to make room for a
+       user message at the head.
+    3. archive_oldest_messages must skip it at the DB level.
+    """
+    # Low limits so the flush triggers after just a few exchanges.
+    # token_limit * chat_history_token_ratio = 200 * 0.5 = 100 tokens.
+    memory = Memory(
+        token_limit=200,
+        token_flush_size=80,
+        chat_history_token_ratio=0.5,
+        session_id="test_system_message_preserved",
+    )
+
+    system_msg = ChatMessage(role="system", content="You are a helpful assistant.")
+
+    # Seed system message first (oldest in the store).
+    await memory.aput_messages([system_msg])
+
+    # Add enough user/assistant turns to exceed the token limit and trigger a flush.
+    for i in range(4):
+        await memory.aput_messages(
+            [
+                ChatMessage(role="user", content=f"user turn {i} " + "x " * 15),
+                ChatMessage(role="assistant", content=f"assistant turn {i} ok"),
+            ]
+        )
+
+    cur_messages = await memory.aget()
+
+    assert len(cur_messages) > 0, "Queue must not be empty after flush"
+
+    roles = [m.role for m in cur_messages]
+    assert "system" in roles, (
+        f"System message was evicted from the active queue. Remaining roles: {roles}"
+    )
+
+    # System message should be at the head (oldest active message).
+    assert cur_messages[0].role == "system", (
+        f"System message must remain at the head of the queue, "
+        f"but first role is '{cur_messages[0].role}'"
+    )
+
+    # Verify the system message was NOT archived in the DB.
+    archived = await memory.sql_store.get_messages(
+        memory.session_id, status=MessageStatus.ARCHIVED
+    )
+    archived_roles = [m.role for m in archived]
+    assert "system" not in archived_roles, (
+        f"System message must not be archived; found in archived: {archived_roles}"
+    )
