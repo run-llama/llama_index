@@ -45,3 +45,27 @@ def test_cache_clear() -> None:
 
     cache.clear()
     assert cache.get(hash) is None
+
+
+def test_transformation_hash_distinguishes_node_boundaries() -> None:
+    """
+    Distinct node splits of the same text must not share a transformation-cache entry.
+
+    `get_transformation_hash` joined node contents without a separator, so `["ab", "c"]` and
+    `["a", "bc"]` both joined to `"abc"` and hashed identically: one input could be served the
+    other's cached nodes, which carry their own `id_`/`ref_doc_id`.
+    """
+    from llama_index.core.ingestion.pipeline import get_transformation_hash
+    from llama_index.core.node_parser import SentenceSplitter
+    from llama_index.core.schema import TextNode
+
+    splitter = SentenceSplitter(chunk_size=2, chunk_overlap=0)
+    two_and_one = [TextNode(text="ab", id_="a1"), TextNode(text="c", id_="a2")]
+    one_and_two = [TextNode(text="a", id_="b1"), TextNode(text="bc", id_="b2")]
+
+    assert "".join(node.text for node in two_and_one) == "".join(
+        node.text for node in one_and_two
+    )
+    assert get_transformation_hash(two_and_one, splitter) != get_transformation_hash(
+        one_and_two, splitter
+    )
