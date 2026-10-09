@@ -66,6 +66,12 @@ nodes = parser.get_nodes_from_documents(markdown_docs)
 
 Splits raw code-text based on the language it is written in.
 
+Note: `CodeSplitter` enforces `chunk_lines`, including its default of 40, and
+counts overlap toward that limit. Existing configurations may produce different
+chunk boundaries; regenerate indexed nodes and embeddings when upgrading to keep
+an index consistent. Set `chunk_lines` explicitly to control the limit.
+`chunk_lines_overlap` must satisfy `0 <= chunk_lines_overlap < chunk_lines`.
+
 Check the full list of [supported languages here](https://github.com/grantjenks/py-tree-sitter-languages#license).
 
 ```python
