@@ -196,7 +196,15 @@ class CodeSplitter(TextSplitter):
                 if len(current_chunk) > 0:
                     new_chunks.append(current_chunk)
                 current_chunk = ""
-                new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
+                if child.children:
+                    new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
+                else:
+                    # Leaf node bigger than the limit (e.g. a long string
+                    # literal or comment). It has no sub-structure to recurse
+                    # into, so hard-split its text to preserve the content
+                    # instead of silently dropping it.
+                    leaf_text = text_bytes[last_end : child.end_byte].decode("utf-8")
+                    new_chunks.extend(self._split_oversized_leaf(leaf_text, max_size))
             else:
                 # Calculate what adding this child would do to current chunk size
                 new_chunk_text = current_chunk + text_bytes[
@@ -224,6 +232,47 @@ class CodeSplitter(TextSplitter):
         if len(current_chunk) > 0:
             new_chunks.append(current_chunk)
         return new_chunks
+
+    def _split_oversized_leaf(self, text: str, max_size: int) -> List[str]:
+        """
+        Hard-split text from a leaf node that exceeds the size limit.
+
+        A leaf AST node (such as a long string literal or comment) has no
+        children to recurse into, so its text is split directly to keep the
+        content within the size limit instead of dropping it.
+
+        Args:
+            text (str): The leaf node text to split.
+            max_size (int): The maximum chunk size, in characters or tokens
+                depending on ``count_mode``.
+
+        Returns:
+            List[str]: Chunks that respect ``max_size`` where possible. A piece
+                that cannot be reduced further (e.g. a single character whose
+                token count already exceeds ``max_size``) is kept as-is rather
+                than dropped.
+
+        """
+        if not text:
+            return []
+
+        if self.count_mode == "char":
+            return [text[i : i + max_size] for i in range(0, len(text), max_size)]
+
+        # Token mode: greedily accumulate characters while staying within the
+        # token budget. This keeps the split reversible (decoding token ids is
+        # not guaranteed for an arbitrary tokenizer).
+        chunks: List[str] = []
+        current = ""
+        for char in text:
+            if current and len(self._tokenizer(current + char)) > max_size:
+                chunks.append(current)
+                current = char
+            else:
+                current += char
+        if current:
+            chunks.append(current)
+        return chunks
 
     def split_text(self, text: str) -> List[str]:
         """

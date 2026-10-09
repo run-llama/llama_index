@@ -474,21 +474,21 @@ class IngestionPipeline(BaseModel):
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
-        deduped_nodes_to_run = {}
+        deduped_nodes_to_run = []
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
             existing_hash = self.docstore.get_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                deduped_nodes_to_run[ref_doc_id] = node
+                deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
                 self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-                deduped_nodes_to_run[ref_doc_id] = node
+                deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
 
@@ -504,7 +504,7 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-        return list(deduped_nodes_to_run.values())
+        return deduped_nodes_to_run
 
     @staticmethod
     def _node_batcher(
@@ -710,21 +710,21 @@ class IngestionPipeline(BaseModel):
         assert self.docstore is not None
 
         doc_ids_from_nodes = set()
-        deduped_nodes_to_run = {}
+        deduped_nodes_to_run = []
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
             doc_ids_from_nodes.add(ref_doc_id)
             existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                deduped_nodes_to_run[ref_doc_id] = node
+                deduped_nodes_to_run.append(node)
             elif existing_hash and existing_hash != node.hash:
                 await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
 
                 if self.vector_store is not None:
                     await self.vector_store.adelete(ref_doc_id)
 
-                deduped_nodes_to_run[ref_doc_id] = node
+                deduped_nodes_to_run.append(node)
             else:
                 continue  # document exists and is unchanged, so skip it
 
@@ -740,7 +740,7 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     await self.vector_store.adelete(ref_doc_id)
 
-        return list(deduped_nodes_to_run.values())
+        return deduped_nodes_to_run
 
     @dispatcher.span
     async def arun(

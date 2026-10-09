@@ -41,5 +41,6 @@ jobs:
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref=${{ github.event.pull_request.base.ref }} \
+            --clean \
             --cov \
             --cov-fail-under=${{ env.COV_FAIL_UNDER }}

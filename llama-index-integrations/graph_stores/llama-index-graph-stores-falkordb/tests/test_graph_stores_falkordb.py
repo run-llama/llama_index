@@ -1,64 +1,66 @@
-import time
-import docker
-import unittest
-from llama_index.graph_stores.falkordb.base import FalkorDBGraphStore
+from typing import Iterator
 
-# Set up Docker client
-docker_client = docker.from_env()
+import pytest
 
-
-class TestFalkorDBGraphStore(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Setup method called once for the entire test class."""
-        # Start FalkorDB container
-        try:
-            cls.container = docker_client.containers.run(
-                "falkordb/falkordb:latest",
-                detach=True,
-                name="falkordb_test_instance",
-                ports={"6379/tcp": 6379},
-            )
-            time.sleep(2)  # Allow time for the container to initialize
-        except Exception as e:
-            print(f"Error starting FalkorDB container: {e}")
-            raise
-
-        # Set up the FalkorDB Graph store
-        cls.graph_store = FalkorDBGraphStore(url="redis://localhost:6379")
-
-    @classmethod
-    def tearDownClass(cls):
-        """Teardown method called once after all tests are done."""
-        try:
-            cls.container.stop()
-            cls.container.remove()
-        except Exception as e:
-            print(f"Error stopping/removing container: {e}")
-
-    def test_base_graph(self):
-        self.graph_store.upsert_triplet("node1", "related_to", "node2")
-
-        # Check if the data has been inserted correctly
-        result = self.graph_store.get("node1")
-        expected_result = [
-            "RELATED_TO",
-            "node2",
-        ]  # Expected data
-        self.assertIn(expected_result, result)
-
-        result = self.graph_store.get_rel_map(["node1"], 1)
-        self.assertIn(expected_result, result["node1"])
-
-        self.graph_store.delete("node1", "related_to", "node2")
-
-        result = self.graph_store.get("node1")
-        expected_result = []  # Expected data
-        self.assertEqual(expected_result, result)
-
-        self.graph_store.switch_graph("new_graph")
-        self.graph_store.refresh_schema()
+from llama_index.core.graph_stores.types import GraphStore
+from llama_index.graph_stores.falkordb import FalkorDBGraphStore
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_class() -> None:
+    names_of_base_classes = [b.__name__ for b in FalkorDBGraphStore.__mro__]
+    assert GraphStore.__name__ in names_of_base_classes
+
+
+@pytest.fixture()
+def graph_store(falkordb_url: str, graph_name: str) -> Iterator[FalkorDBGraphStore]:
+    store = FalkorDBGraphStore(url=falkordb_url, database=graph_name)
+    store.query("MATCH (n) DETACH DELETE n")
+    yield store
+    store.close()
+
+
+def test_upsert_and_get(graph_store: FalkorDBGraphStore) -> None:
+    graph_store.upsert_triplet("node1", "related_to", "node2")
+
+    assert ["RELATED_TO", "node2"] in graph_store.get("node1")
+    assert ["RELATED_TO", "node2"] in graph_store.get_rel_map(["node1"], 1)["node1"]
+
+
+def test_delete_removes_orphaned_entities(graph_store: FalkorDBGraphStore) -> None:
+    """Regression: `check_edges` used to be truthy for a count of 0."""
+    graph_store.upsert_triplet("node1", "related_to", "node2")
+    graph_store.delete("node1", "related_to", "node2")
+
+    assert graph_store.get("node1") == []
+    assert graph_store.query("MATCH (n) RETURN count(n)")[0][0] == 0
+
+
+def test_delete_keeps_entities_with_remaining_edges(
+    graph_store: FalkorDBGraphStore,
+) -> None:
+    graph_store.upsert_triplet("node1", "related_to", "node2")
+    graph_store.upsert_triplet("node1", "knows", "node3")
+    graph_store.delete("node1", "related_to", "node2")
+
+    # node1 still has the `knows` edge, node2 is now orphaned
+    ids = {row[0] for row in graph_store.query("MATCH (n) RETURN n.id")}
+    assert ids == {"node1", "node3"}
+
+
+def test_index_is_created(graph_store: FalkorDBGraphStore) -> None:
+    indexes = graph_store.query("CALL db.indexes()")
+    assert any(row[0] == "Entity" for row in indexes)
+
+
+def test_switch_graph_creates_index(
+    graph_store: FalkorDBGraphStore, graph_name: str
+) -> None:
+    graph_store.switch_graph(f"{graph_name}_switched")
+    indexes = graph_store.query("CALL db.indexes()")
+    assert any(row[0] == "Entity" for row in indexes)
+
+
+def test_refresh_schema(graph_store: FalkorDBGraphStore) -> None:
+    graph_store.upsert_triplet("node1", "related_to", "node2")
+    schema = graph_store.get_schema(refresh=True)
+    assert "RELATED_TO" in schema

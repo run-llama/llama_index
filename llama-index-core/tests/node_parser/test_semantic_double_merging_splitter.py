@@ -144,3 +144,15 @@ def test_embed_model_single_sentence_document() -> None:
     nodes = splitter.get_nodes_from_documents([single_doc])
     assert len(nodes) == 1
     assert nodes[0].get_content() == "Only one sentence here."
+
+
+def test_clean_text_advanced() -> None:
+    """Test that _clean_text_advanced properly filters out stopwords from a string."""
+    from llama_index.core.utils import globals_helper
+
+    splitter = SemanticDoubleMergingSplitterNodeParser()
+    splitter.language_config.stopwords = set(globals_helper.stopwords)
+    cleaned = splitter._clean_text_advanced(
+        "this is a test text containing some stopwords like the and a"
+    )
+    assert cleaned == "test text containing stopwords like"

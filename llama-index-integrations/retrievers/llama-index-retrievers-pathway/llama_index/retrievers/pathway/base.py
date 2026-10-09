@@ -144,7 +144,7 @@ class PathwayRetriever(BaseRetriever):
         items = [
             NodeWithScore(
                 node=TextNode(text=ret["text"], extra_info=ret["metadata"]),
-                # Transform cosine distance into a similairty score
+                # Transform cosine distance into a similarity score
                 # (higher is more similar)
                 score=1 - ret["dist"],
             )
