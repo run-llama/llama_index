@@ -945,3 +945,9 @@ def test_thinking_dict_disabled_no_budget():
     td: ThinkingDict = {"type": "disabled"}
     assert td["type"] == "disabled"
     assert "budget_tokens" not in td
+
+
+def test_thinking_dict_between_tools_no_budget():
+    td: ThinkingDict = {"type": "between_tools"}
+    assert td["type"] == "between_tools"
+    assert "budget_tokens" not in td
