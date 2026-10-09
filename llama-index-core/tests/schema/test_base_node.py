@@ -170,3 +170,12 @@ def test_get_embedding(MyNode):
 def test_as_related_node_info(MyNode):
     n = MyNode(id_="test_node")
     assert n.as_related_node_info().node_id == "test_node"
+
+
+def test_ref_doc_id_constructor_and_setter(MyNode):
+    n = MyNode(ref_doc_id="source")
+    assert n.ref_doc_id == "source"
+    n.ref_doc_id = "updated"
+    assert n.source_node.node_id == "updated"
+    n.source_node = None
+    assert n.ref_doc_id is None
