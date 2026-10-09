@@ -562,10 +562,9 @@ class BedrockConverse(FunctionCallingLLM):
                     content = join_two_dicts(content, content_delta)
 
                     thinking_delta_value = None
-                    if "reasoningContent" in content_delta:
+                    if reasoning_content := content_delta.get("reasoningContent"):
                         # For ConverseStream (streaming) requests, reasoning text, signature,
                         # redacted content are stored within `reasoningContent`.
-                        reasoning_content = content_delta.get("reasoningContent", {})
                         reasoning_text = reasoning_content.get("text", "")
                         thinking += reasoning_text
                         thinking_delta_value = reasoning_text
@@ -604,7 +603,7 @@ class BedrockConverse(FunctionCallingLLM):
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
-                    if thinking != "":
+                    if thinking != "" or thinking_signature != "":
                         blocks.insert(
                             0,
                             ThinkingBlock(
@@ -661,7 +660,7 @@ class BedrockConverse(FunctionCallingLLM):
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
-                    if thinking != "":
+                    if thinking != "" or thinking_signature != "":
                         blocks.insert(
                             0,
                             ThinkingBlock(
@@ -708,7 +707,7 @@ class BedrockConverse(FunctionCallingLLM):
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                             TextBlock(text=content.get("text", ""))
                         ]
-                        if thinking != "":
+                        if thinking != "" or thinking_signature != "":
                             blocks.insert(
                                 0,
                                 ThinkingBlock(
@@ -854,10 +853,9 @@ class BedrockConverse(FunctionCallingLLM):
                     content = join_two_dicts(content, content_delta)
 
                     thinking_delta_value = None
-                    if "reasoningContent" in content_delta:
+                    if reasoning_content := content_delta.get("reasoningContent"):
                         # For ConverseStream (streaming) requests, reasoning text, signature,
                         # redacted content are stored within `reasoningContent`.
-                        reasoning_content = content_delta.get("reasoningContent", {})
                         reasoning_text = reasoning_content.get("text", "")
                         thinking += reasoning_text
                         thinking_delta_value = reasoning_text
@@ -895,7 +893,7 @@ class BedrockConverse(FunctionCallingLLM):
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
-                    if thinking != "":
+                    if thinking != "" or thinking_signature != "":
                         blocks.insert(
                             0,
                             ThinkingBlock(
@@ -953,7 +951,7 @@ class BedrockConverse(FunctionCallingLLM):
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
-                    if thinking != "":
+                    if thinking != "" or thinking_signature != "":
                         blocks.insert(
                             0,
                             ThinkingBlock(
@@ -1000,7 +998,7 @@ class BedrockConverse(FunctionCallingLLM):
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                             TextBlock(text=content.get("text", ""))
                         ]
-                        if thinking != "":
+                        if thinking != "" or thinking_signature != "":
                             blocks.insert(
                                 0,
                                 ThinkingBlock(
