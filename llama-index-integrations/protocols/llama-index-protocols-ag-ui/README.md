@@ -8,6 +8,42 @@ The `llama-index-protocols-ag-ui` package provides a factory function for creati
 
 Using this package, you can quickly create a FastAPI app that can be used to communicate with AG-UI compatible frameworks like [CopilotKit](https://docs.copilotkit.ai/).
 
+### AG-UI 1.0 content migration
+
+This integration requires `ag-ui-protocol>=1.0.0,<2` and
+`llama-index-core>=0.14.1,<0.15`. Run-start events declare the SDK's
+`PROTOCOL_VERSION` in the wire `protocolVersion` field.
+
+User messages accept strings or AG-UI `ContentPart` arrays. Use `TextPart`,
+`ImagePart`, `AudioPart`, `VideoPart`, and `DocumentPart` with `DataSource` or
+`UrlSource` for media. The deprecated `BinaryInputContent` converter has been
+removed. Before sending older persisted messages to this endpoint, migrate each
+`type: "binary"` part to its media type (`image`, `audio`, `video`, or `document`)
+and move its `url` or base64 `data` into a `source`, for example:
+
+```json
+{
+  "type": "image",
+  "source": {
+    "type": "data",
+    "value": "<base64 image bytes>",
+    "mimeType": "image/png"
+  }
+}
+```
+
+Opaque provider handles use `FileSource` (`type: "file"`). The generic
+LlamaIndex media blocks used here cannot forward these handles, so such parts
+are skipped with a warning. Handles are never fetched or interpreted as URLs;
+use a supported data or URL source when the model needs the media.
+
+Tool messages accept strings or `ContentPart` arrays. This adapter's tool-result
+path is text-only: text fragments are concatenated in order without trimming or
+inserting separators, and media parts are skipped with a warning. Empty or
+media-only results become an empty string. Message and tool-call IDs are
+preserved, and snapshots emit the resulting text. User-message media conversion
+and the state markers used to restore existing LlamaIndex sessions are unchanged.
+
 ### Usage
 
 The `get_ag_ui_workflow_router` function is a factory function that creates a FastAPI router that can be used to communicate with AG-UI compatible frameworks like [CopilotKit](https://docs.copilotkit.ai/).
