@@ -4,6 +4,8 @@
 
 This package is a thin wrapper around the OpenAI API. It is designed to be used with the OpenAI API, but can be used with any OpenAI-compatible API.
 
+For x402-enabled endpoints that require payment signing, see the standalone [BlockRun integration](https://github.com/BlockRunAI/blockrun-llm/tree/main/integrations/llama-index-llms-blockrun). `OpenAILike` does not handle x402 payments.
+
 ## Usage
 
 ```python
