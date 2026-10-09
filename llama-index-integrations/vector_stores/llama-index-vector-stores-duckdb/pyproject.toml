@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-duckdb"
-version = "0.7.0"
+version = "0.7.1"
 description = "llama-index vector_stores duckdb integration"
 authors = [
     {name = "Adithya Krishnan", email = "me@krishadi.com"},
@@ -38,7 +38,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "krish-adi"}]
 dependencies = [
-    "duckdb>=0.10.1,<1.4.0",
+    "duckdb>=0.10.1,<2.0.0",
     "llama-index-core>=0.13.0,<0.15",
     "pyarrow>=20.0.0",
 ]
