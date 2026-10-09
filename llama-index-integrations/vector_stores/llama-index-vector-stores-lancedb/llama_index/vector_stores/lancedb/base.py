@@ -69,12 +69,13 @@ def _to_lance_filter(
             filter.operator == FilterOperator.TEXT_MATCH
             or filter.operator == FilterOperator.NE
         ):
-            filters.append(f"{key}{operator}{_sql_str(f'%{filter.value}%')}")
+            filters.append(f"{key}{operator}'%{filter.value}%'")
         elif isinstance(filter.value, list):
             processed_values = []
             for v in filter.value:
                 if isinstance(v, str):
-                    processed_values.append(_sql_str(v))
+                    safe_v = v.replace("'", "''")
+                    processed_values.append(f"'{safe_v}'")
                 else:
                     processed_values.append(str(v))
             val = ",".join(processed_values)
@@ -82,7 +83,7 @@ def _to_lance_filter(
         elif isinstance(filter.value, (int, float)):
             filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(f"{key}{operator}{_sql_str(filter.value)}")
+            filters.append(f"{key}{operator}'{filter.value!s}'")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:

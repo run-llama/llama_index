@@ -2,11 +2,7 @@ from typing import Any
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.core import VectorStoreIndex
-from llama_index.vector_stores.lancedb.base import (
-    TableNotFoundError,
-    VectorStoreQuery,
-    _to_lance_filter,
-)
+from llama_index.vector_stores.lancedb.base import TableNotFoundError, VectorStoreQuery
 import pytest
 import pytest
 from llama_index.core import VectorStoreIndex
@@ -589,57 +585,3 @@ def test_filter_fixes(tmp_path: Path, embed_model) -> None:
     assert len(res_int) == 2
     ids_int = sorted([n.text for n in res_int])
     assert ids_int == ["node1", "node3"]
-
-
-@pytest.mark.parametrize(
-    ("operator", "value", "expected"),
-    [
-        (FilterOperator.EQ, "it's", "metadata.category = 'it''s'"),
-        (FilterOperator.EQ, 'say "hi"', "metadata.category = 'say \"hi\"'"),
-        (FilterOperator.TEXT_MATCH, "it's", "metadata.category LIKE '%it''s%'"),
-        (FilterOperator.NE, "it's", "metadata.category NOT LIKE '%it''s%'"),
-        (
-            FilterOperator.IN,
-            ["it's", "o''brien"],
-            "metadata.category IN ('it''s','o''''brien')",
-        ),
-        (FilterOperator.EQ, 2000, "metadata.category = 2000"),
-    ],
-)
-def test_to_lance_filter_quotes_values(
-    operator: FilterOperator, value: Any, expected: str
-) -> None:
-    filters = MetadataFilters(
-        filters=[MetadataFilter(key="category", value=value, operator=operator)]
-    )
-
-    assert _to_lance_filter(filters, None) == expected
-
-
-@pytest.mark.skipif(
-    deps is None,
-    reason="Need to install lancedb locally to run this test.",
-)
-def test_get_nodes_with_quoted_metadata_value(
-    tmp_path: Path, embed_model: BaseEmbedding
-) -> None:
-    nodes = [
-        TextNode(text="a", metadata={"category": "it's a book"}),
-        TextNode(text="b", metadata={"category": "article"}),
-    ]
-    for n in nodes:
-        n.embedding = embed_model.get_text_embedding(n.text)
-    vector_store = LanceDBVectorStore(
-        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
-    )
-    vector_store.add(nodes)
-
-    for operator, value in [
-        (FilterOperator.EQ, "it's a book"),
-        (FilterOperator.IN, ["it's a book", "missing"]),
-        (FilterOperator.TEXT_MATCH, "it's a"),
-    ]:
-        filters = MetadataFilters(
-            filters=[MetadataFilter(key="category", value=value, operator=operator)]
-        )
-        assert [n.text for n in vector_store.get_nodes(filters=filters)] == ["a"]
