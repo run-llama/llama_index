@@ -3,15 +3,20 @@ from unittest.mock import AsyncMock, MagicMock
 from typing import Any, Sequence
 
 
-from llama_index.core.agent.workflow import SimpleAgentContext
+from llama_index.core.agent.workflow import (
+    AgentWorkflow,
+    FunctionAgent,
+    SimpleAgentContext,
+)
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, ToolCallBlock
 from llama_index.core.llms import ChatMessage, LLMMetadata
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.tools import ToolOutput
-from llama_index.core.memory import BaseMemory
+from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 
 
 @pytest.fixture()
@@ -172,7 +177,8 @@ async def test_code_act_agent_tool_handling(
 
 
 @pytest.mark.asyncio
-async def test_code_act_agent_workflow_integration():
+@pytest.mark.parametrize("streaming", [True, False])
+async def test_code_act_agent_workflow_integration(streaming):
     """
     Integration test that runs the agent through the full workflow,
     verifying proper integration with the workflows library.
@@ -206,6 +212,7 @@ async def test_code_act_agent_workflow_integration():
     agent = CodeActAgent(
         code_execute_fn=execute_code,
         llm=mock_llm,
+        streaming=streaming,
     )
 
     # Run the agent through the full workflow
@@ -215,3 +222,62 @@ async def test_code_act_agent_workflow_integration():
     # Verify we got an AgentOutput
     assert isinstance(result, AgentOutput)
     assert result.response.content == "The answer is 4."
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("streaming", [True, False])
+@pytest.mark.parametrize("tool_call_format", ["blocks", "additional_kwargs"])
+async def test_code_act_agent_handoff_preserves_transcript(
+    streaming, tool_call_format, mock_code_execute_fn
+):
+    tool_kwargs = {"to_agent": "receiver", "reason": "delegate"}
+    handoff_message = ChatMessage(role="assistant")
+    if tool_call_format == "blocks":
+        handoff_message.blocks = [
+            ToolCallBlock(
+                tool_call_id="handoff-1",
+                tool_name="handoff",
+                tool_kwargs=tool_kwargs,
+            )
+        ]
+    else:
+        handoff_message.additional_kwargs["tool_calls"] = [
+            ToolSelection(
+                tool_id="handoff-1",
+                tool_name="handoff",
+                tool_kwargs=tool_kwargs,
+            )
+        ]
+
+    def receiver_response(messages: Sequence[ChatMessage], **kwargs) -> ChatMessage:
+        assistant_message, tool_message = messages[-2:]
+        assert assistant_message.role == "assistant"
+        assert tool_message.role == "tool"
+        assert tool_message.additional_kwargs["tool_call_id"] == "handoff-1"
+        # A provider must receive the tool call before its matching tool result.
+        assert assistant_message == handoff_message
+        return ChatMessage(role="assistant", content="Received handoff.")
+
+    code_agent = CodeActAgent(
+        name="coder",
+        code_execute_fn=mock_code_execute_fn,
+        llm=MockFunctionCallingLLM(
+            response_generator=lambda messages, **kwargs: handoff_message
+        ),
+        can_handoff_to=["receiver"],
+        streaming=streaming,
+    )
+    receiver = FunctionAgent(
+        name="receiver",
+        description="Receives delegated tasks.",
+        llm=MockFunctionCallingLLM(response_generator=receiver_response),
+        can_handoff_to=[],
+        streaming=streaming,
+    )
+    workflow = AgentWorkflow(agents=[code_agent, receiver], root_agent="coder")
+    memory = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda text: text.split())
+
+    result = await workflow.run(user_msg="Delegate this task.", memory=memory)
+
+    assert result.response.content == "Received handoff."
+    assert memory.get_all()[1] == handoff_message

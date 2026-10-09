@@ -331,7 +331,7 @@ class CodeActAgent(BaseWorkflowAgent):
             tool_calls.extend(extra_tool_calls)
 
         # Add the response to the scratchpad
-        message = ChatMessage(role="assistant", content=full_response_text)
+        message = chat_response.message
         scratchpad.append(message)
         await ctx.store.set(self.scratchpad_key, scratchpad)
 
