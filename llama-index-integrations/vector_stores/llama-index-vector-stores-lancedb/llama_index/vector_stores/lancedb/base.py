@@ -34,7 +34,6 @@ from pandas import DataFrame
 
 import lancedb
 import lancedb.remote.table  # type: ignore
-from lancedb.expr import col, lit
 
 _logger = logging.getLogger(__name__)
 
@@ -43,6 +42,18 @@ from .util import sql_operator_mapper
 
 class TableNotFoundError(Exception):
     """Raised when the specified table does not exist."""
+
+
+def _sql_str(value: Any) -> str:
+    """Render a value as a single-quoted SQL string literal, escaping quotes."""
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def _id_in(node_ids: List[str]) -> str:
+    """Build an `id IN (...)` predicate; an empty list matches nothing."""
+    if not node_ids:
+        return "1 = 0"
+    return f"id IN ({', '.join(_sql_str(n) for n in node_ids)})"
 
 
 def _to_lance_filter(
@@ -60,13 +71,12 @@ def _to_lance_filter(
             filter.operator == FilterOperator.TEXT_MATCH
             or filter.operator == FilterOperator.NE
         ):
-            filters.append(f"{key}{operator}'%{filter.value}%'")
+            filters.append(f"{key}{operator}{_sql_str(f'%{filter.value}%')}")
         elif isinstance(filter.value, list):
             processed_values = []
             for v in filter.value:
                 if isinstance(v, str):
-                    safe_v = v.replace("'", "''")
-                    processed_values.append(f"'{safe_v}'")
+                    processed_values.append(_sql_str(v))
                 else:
                     processed_values.append(str(v))
             val = ",".join(processed_values)
@@ -74,7 +84,7 @@ def _to_lance_filter(
         elif isinstance(filter.value, (int, float)):
             filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(f"{key}{operator}'{filter.value!s}'")
+            filters.append(f"{key}{operator}{_sql_str(filter.value)}")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:
@@ -420,7 +430,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self.table.delete(col(self.doc_id_key) == lit(ref_doc_id))
+        self.table.delete(f"{self.doc_id_key} = {_sql_str(ref_doc_id)}")
 
     def delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
         """
@@ -430,7 +440,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             node_ids (List[str]): The list of node_ids to delete.
 
         """
-        self.table.delete(col("id").isin(node_ids))
+        self.table.delete(_id_in(node_ids))
 
     def get_nodes(
         self,
@@ -456,7 +466,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             where = kwargs.pop("where", None)
 
         if node_ids is not None:
-            where = col("id").isin(node_ids)
+            where = _id_in(node_ids)
 
         results = self.table.search().where(where).to_pandas()
 
