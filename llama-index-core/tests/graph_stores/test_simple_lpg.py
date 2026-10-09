@@ -1,5 +1,7 @@
+import json
 import os
 import tempfile
+from pathlib import Path
 
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
@@ -144,3 +146,57 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_relation_keys_do_not_collide(tmp_path: Path) -> None:
+    g = SimplePropertyGraphStore()
+    relations = [
+        Relation(label="C", source_id="A_B", target_id="D", properties={"fact": 1}),
+        Relation(label="B", source_id="A", target_id="C_D", properties={"fact": 2}),
+    ]
+    g.upsert_relations(relations)
+
+    def assert_relations(store: SimplePropertyGraphStore) -> None:
+        assert len(store.graph.relations) == 2
+        for relation in relations:
+            triplets = store.get_triplets(ids=[relation.source_id])
+            assert len(triplets) == 1
+            source, actual_relation, target = triplets[0]
+            assert source.id == relation.source_id
+            assert actual_relation == relation
+            assert target.id == relation.target_id
+
+    assert_relations(g)
+    persist_path = str(tmp_path / "graph.json")
+    g.persist(persist_path)
+    loaded = SimplePropertyGraphStore.from_persist_path(persist_path)
+    assert_relations(loaded)
+
+    loaded.delete(ids=["A_B"])
+    assert loaded.get_triplets(ids=["A"])[0][1] == relations[1]
+
+
+def test_legacy_relation_keys_load_and_accept_colliding_relation(
+    tmp_path: Path,
+) -> None:
+    g = SimplePropertyGraphStore()
+    original = Relation(label="C", source_id="A_B", target_id="D")
+    g.upsert_relations([original])
+    legacy_data = g.to_dict()
+    legacy_data["relations"] = {"A_B_C_D": original.model_dump()}
+    legacy_data["triplets"] = list(legacy_data["triplets"])
+    persist_path = tmp_path / "legacy_graph.json"
+    persist_path.write_text(json.dumps(legacy_data), encoding="utf-8")
+
+    loaded = SimplePropertyGraphStore.from_persist_path(str(persist_path))
+    assert loaded.get_triplets(ids=["A_B"])[0][1] == original
+
+    added = Relation(label="B", source_id="A", target_id="C_D")
+    loaded.upsert_relations([added])
+    assert loaded.get_triplets(ids=["A_B"])[0][1] == original
+    assert loaded.get_triplets(ids=["A"])[0][1] == added
+
+    loaded.persist(str(persist_path))
+    reloaded = SimplePropertyGraphStore.from_persist_path(str(persist_path))
+    assert reloaded.get_triplets(ids=["A_B"])[0][1] == original
+    assert reloaded.get_triplets(ids=["A"])[0][1] == added
