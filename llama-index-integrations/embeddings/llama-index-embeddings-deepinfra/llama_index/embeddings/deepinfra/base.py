@@ -132,6 +132,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
                     },
                     headers=self._get_headers(),
                 ) as resp:
+                    resp.raise_for_status()
                     response = await resp.json()
                     embeddings.extend(response["embeddings"])
         return embeddings
