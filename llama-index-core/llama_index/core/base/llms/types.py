@@ -47,6 +47,8 @@ from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPU
 from llama_index.core.schema import ImageDocument
 from llama_index.core.utils import get_tokenizer, resolve_binary
 
+_TO_DICT_METHOD = "to_dict"
+
 _logger = logging.getLogger(__name__)
 
 
@@ -1252,6 +1254,9 @@ class ChatMessage(BaseRecursiveContentBlock):
         if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
+        to_dict = getattr(type(value), _TO_DICT_METHOD, None)
+        if callable(to_dict):
+            return self._recursive_serialization(to_dict(value))
         if isinstance(value, dict):
             return {
                 key: self._recursive_serialization(value)

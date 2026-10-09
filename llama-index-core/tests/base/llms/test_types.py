@@ -1,4 +1,5 @@
 import base64
+import json
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
@@ -31,6 +32,10 @@ from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
+
+TOOL_CALLS_KEY = "tool_calls"
+TOOL_NAME_KEY = "name"
+TOOL_NAME = "lookup"
 
 
 @pytest.fixture()
@@ -175,6 +180,22 @@ def test_chat_message_serializer():
             "some_object": {"some_field": ""},
         },
         "blocks": [{"block_type": "text", "text": "test content"}],
+    }
+
+
+def test_chat_message_serializer_with_class_level_to_dict():
+    class ProtoMessage:
+        @classmethod
+        def to_dict(cls, value):
+            return {TOOL_NAME_KEY: value.name}
+
+        def __init__(self, name: str):
+            self.name = name
+
+    message = ChatMessage(additional_kwargs={TOOL_CALLS_KEY: [ProtoMessage(TOOL_NAME)]})
+
+    assert json.loads(message.model_dump_json())["additional_kwargs"] == {
+        TOOL_CALLS_KEY: [{TOOL_NAME_KEY: TOOL_NAME}]
     }
 
 
