@@ -1,5 +1,6 @@
 """SharePoint files reader."""
 
+import hashlib
 import html
 import logging
 import os
@@ -435,8 +436,13 @@ class SharePointReader(
             str: The path of the downloaded file in the temporary directory.
 
         """
-        # Get the download URL for the file.
-        file_name = item["name"]
+        # Stage by Graph driveItem id so same-named files in different folders
+        # do not overwrite each other. Original filename is kept in metadata
+        # via _extract_metadata_for_file (file_name). Preserve the extension so
+        # SimpleDirectoryReader can select the correct file parser.
+        file_suffix = Path(item["name"]).suffix
+        item_digest = hashlib.sha256(item["id"].encode("utf-8")).hexdigest()
+        file_name = f"{item_digest}{file_suffix}"
 
         content = self._get_file_content_by_url(item)
 
