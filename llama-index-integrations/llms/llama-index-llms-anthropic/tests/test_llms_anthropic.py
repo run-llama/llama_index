@@ -415,12 +415,13 @@ def test_prepare_chat_with_tools_tool_required():
         ("us.anthropic.claude-sonnet-5-5", "auto"),
         ("eu.anthropic.claude-opus-5-5", "auto"),
         ("claude-opus-5", "any"),
+        ("claude-fable-5", "any"),
         ("claude-sonnet-5", "any"),
         ("claude-sonnet-4-5", "any"),
     ],
 )
 def test_chat_with_tools_tool_required_forced_tool_support(model, expected_type):
-    """Opus 5.5 and Sonnet 5.5 reject a forced tool_choice, so tool_required falls back to auto."""
+    """Opus 5.5, Sonnet 5.5 and Fable 5.1 reject a forced tool_choice, so tool_required falls back to auto."""
     llm = Anthropic(model=model)
     mock_client = MagicMock()
     mock_client.messages.create.side_effect = RuntimeError("request captured")

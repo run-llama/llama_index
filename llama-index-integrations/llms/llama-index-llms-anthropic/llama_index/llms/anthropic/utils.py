@@ -160,6 +160,7 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
 ANTHROPIC_NO_FORCED_TOOL_CALL_MODELS: Tuple[str, ...] = (
     "claude-opus-5-5",
     "claude-sonnet-5-5",
+    "claude-fable-5-1",
 )
 
 
