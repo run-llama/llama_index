@@ -1940,6 +1940,10 @@
 
 ## [2026-05-14]
 
+### llama-index-core
+
+- fix(core): preserve sibling links and document offsets when re-splitting nodes (#23224)
+
 ### llama-index-agent-agentmesh [0.2.0]
 
 - mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
