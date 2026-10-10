@@ -91,7 +91,6 @@ A `RouterQueryEngine` is composed on top of other query engines as tools.
 ```python
 from llama_index.core.query_engine import RouterQueryEngine
 from llama_index.core.selectors import PydanticSingleSelector
-from llama_index.core.selectors.pydantic_selectors import Pydantic
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core import VectorStoreIndex, SummaryIndex
 
