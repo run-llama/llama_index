@@ -1,9 +1,12 @@
 import pytest
+from typing import Any, AsyncGenerator, Generator
 from unittest.mock import patch
 
 from llama_index.core import PromptHelper
+from llama_index.core.base.response.schema import PydanticResponse
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.indices.prompt_helper import ChatPromptHelper
-from llama_index.core.llms.mock import MockLLMWithChatMemoryOfLastCall
+from llama_index.core.llms.mock import MockLLM, MockLLMWithChatMemoryOfLastCall
 from llama_index.core.prompts.chat_prompts import (
     CHAT_CONTENT_QA_PROMPT,
     CHAT_CONTENT_REFINE_PROMPT,
@@ -16,6 +19,38 @@ from llama_index.core.response_synthesizers.refine import Refine
 from llama_index.core.response_synthesizers.compact_and_refine import CompactAndRefine
 from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
 from llama_index.core.utilities.token_counting import TokenCounter
+
+
+class Foo(BaseModel):
+    """Structured output class without an `answer` field."""
+
+    name: str
+    age: int
+
+
+class StructuredOutputFakeLLM(MockLLM):
+    """Returns Foo(name="bob", age=3) for every structured call, streaming or not."""
+
+    def structured_predict(self, output_cls: Any, prompt: Any, **kwargs: Any) -> Any:
+        return Foo(name="bob", age=3)
+
+    async def astructured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> Any:
+        return Foo(name="bob", age=3)
+
+    def stream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> Generator[Any, None, None]:
+        yield Foo(name="bob", age=3)
+
+    async def astream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
+        async def gen() -> AsyncGenerator[Any, None]:
+            yield Foo(name="bob", age=3)
+
+        return gen()
 
 
 @pytest.fixture()
@@ -266,6 +301,28 @@ class TestCompactAndRefine:
             "context",
             "information2",
         ]
+
+    def test_synthesize__streaming_with_output_cls_returns_pydantic_response(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        """A user output_cls has no `answer` field, so its structured output must not be dropped."""
+        synthesizer = CompactAndRefine(
+            llm=StructuredOutputFakeLLM(), output_cls=Foo, streaming=True
+        )
+        response = synthesizer.synthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, PydanticResponse)
+        assert response.response == Foo(name="bob", age=3)
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_with_output_cls_returns_pydantic_response(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        synthesizer = CompactAndRefine(
+            llm=StructuredOutputFakeLLM(), output_cls=Foo, streaming=True
+        )
+        response = await synthesizer.asynthesize(query="test", nodes=nodes)
+        assert isinstance(response, PydanticResponse)
+        assert response.response == Foo(name="bob", age=3)
 
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal(
