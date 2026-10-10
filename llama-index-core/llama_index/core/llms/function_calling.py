@@ -111,17 +111,23 @@ class FunctionCallingLLM(LLM):
         response_gen = self.stream_chat(**chat_kwargs)
 
         def gen() -> ChatResponseGen:
+            # streamed responses accumulate, so the last response carries the
+            # full message and can get the same validation as the non-streaming
+            # path. We only know a response is the last one once the stream is
+            # exhausted, so hold back one response: earlier responses are
+            # yielded as soon as the next one arrives, and the final response is
+            # validated before it is yielded. Consumers therefore never see an
+            # unvalidated final response (e.g. tool calls that
+            # force_single_tool_call would drop), and a raising validator
+            # surfaces before the final response is emitted.
             last_response: Optional[ChatResponse] = None
-            for last_response in response_gen:
-                yield last_response
+            for response in response_gen:
+                if last_response is not None:
+                    yield last_response
+                last_response = response
 
-            # streamed responses accumulate, so once the stream is exhausted the
-            # last response carries the full message and can get the same
-            # validation as the non-streaming path. Validation is expected to
-            # mutate the response in place (e.g. force_single_tool_call), which
-            # consumers holding a reference to the final response will observe.
             if last_response is not None:
-                self._validate_chat_with_tools_response(
+                yield self._validate_chat_with_tools_response(
                     last_response,
                     tools,
                     allow_parallel_tool_calls=allow_parallel_tool_calls,
@@ -153,14 +159,16 @@ class FunctionCallingLLM(LLM):
         response_gen = await self.astream_chat(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
+            # see stream_chat_with_tools: hold back one response so the fully
+            # accumulated final response is validated before it is yielded
             last_response: Optional[ChatResponse] = None
-            async for last_response in response_gen:
-                yield last_response
+            async for response in response_gen:
+                if last_response is not None:
+                    yield last_response
+                last_response = response
 
-            # see stream_chat_with_tools: validate the fully accumulated
-            # response once the stream is exhausted
             if last_response is not None:
-                self._validate_chat_with_tools_response(
+                yield self._validate_chat_with_tools_response(
                     last_response,
                     tools,
                     allow_parallel_tool_calls=allow_parallel_tool_calls,

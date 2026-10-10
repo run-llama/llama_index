@@ -1,7 +1,9 @@
 from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Sequence, Union
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.agent.workflow.workflow_events import AgentStream
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -14,6 +16,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import FunctionTool, get_function_tool
 from llama_index.core.tools.types import BaseTool
+from llama_index.core.workflow import Context
 from pydantic import BaseModel, Field
 
 
@@ -138,6 +141,35 @@ class MockStreamingFunctionCallingLLM(MockFunctionCallingLLM):
         self._validated.append(response)
         # mimic in-place normalization such as force_single_tool_call
         response.message.additional_kwargs["validated"] = True
+        return response
+
+
+class MockStreamingToolCallLLM(MockStreamingFunctionCallingLLM):
+    """
+    Mock LLM whose tool calls live on the streamed message, and whose validation
+    drops all but the first tool call when parallel calls are disallowed
+    (mimicking force_single_tool_call).
+    """
+
+    def get_tool_calls_from_response(
+        self,
+        response: ChatResponse,
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        return list(response.message.additional_kwargs.get("tool_calls", []))
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: Sequence["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        self._validated.append(response)
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if not allow_parallel_tool_calls and len(tool_calls) > 1:
+            response.message.additional_kwargs["tool_calls"] = tool_calls[:1]
         return response
 
 
@@ -269,12 +301,12 @@ def test_stream_chat_with_tools_empty_stream(
     assert llm._validated == []
 
 
-def test_stream_chat_with_tools_validation_error_raised_at_stream_end(
+def test_stream_chat_with_tools_validation_error_raised_before_final_response(
     person_tool: FunctionTool,
     person_tool_selection: ToolSelection,
     stream_responses: List[ChatResponse],
 ) -> None:
-    """Test that a raising validator surfaces the error when the stream ends."""
+    """Test that a raising validator surfaces before the final response is yielded."""
     llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
 
     with patch.object(
@@ -283,11 +315,85 @@ def test_stream_chat_with_tools_validation_error_raised_at_stream_end(
         side_effect=ValueError("invalid tool call"),
     ):
         response_gen = llm.stream_chat_with_tools(tools=[person_tool])
-        chunks = [next(response_gen), next(response_gen)]
+        chunks = [next(response_gen)]
         with pytest.raises(ValueError, match="invalid tool call"):
             next(response_gen)
 
-    assert chunks == stream_responses
+    # only intermediate responses escape; the unvalidated final one never does
+    assert chunks == stream_responses[:-1]
+
+
+@pytest.fixture()
+def parallel_tool_call_stream_responses(
+    person_tool: FunctionTool,
+) -> List[ChatResponse]:
+    # the final cumulative response carries two tool calls, the intermediate
+    # one only the first
+    first = ToolSelection(
+        tool_id="call_1", tool_name=person_tool.metadata.name, tool_kwargs={}
+    )
+    second = ToolSelection(
+        tool_id="call_2", tool_name=person_tool.metadata.name, tool_kwargs={}
+    )
+    return [
+        ChatResponse(
+            message=ChatMessage(
+                role="assistant", additional_kwargs={"tool_calls": [first]}
+            ),
+            delta="",
+        ),
+        ChatResponse(
+            message=ChatMessage(
+                role="assistant", additional_kwargs={"tool_calls": [first, second]}
+            ),
+            delta="",
+        ),
+    ]
+
+
+def test_stream_chat_with_tools_yields_validated_final_response(
+    person_tool: FunctionTool,
+    parallel_tool_call_stream_responses: List[ChatResponse],
+) -> None:
+    """Test that consumers see the validated tool calls when the final response is yielded."""
+    llm = MockStreamingToolCallLLM([], parallel_tool_call_stream_responses)
+
+    # snapshot tool calls at yield time, like FunctionAgent does when it
+    # publishes AgentStream events
+    seen = []
+    for chunk in llm.stream_chat_with_tools(
+        tools=[person_tool], allow_parallel_tool_calls=False
+    ):
+        seen.append([t.tool_id for t in llm.get_tool_calls_from_response(chunk)])
+        final = chunk
+
+    assert seen == [["call_1"], ["call_1"]]
+    assert [t.tool_id for t in llm.get_tool_calls_from_response(final)] == ["call_1"]
+
+
+@pytest.mark.asyncio
+async def test_function_agent_stream_matches_validated_tool_calls(
+    person_tool: FunctionTool,
+    parallel_tool_call_stream_responses: List[ChatResponse],
+) -> None:
+    """Test that the last AgentStream event agrees with the tool calls take_step executes."""
+    llm = MockStreamingToolCallLLM([], parallel_tool_call_stream_responses)
+    agent = FunctionAgent(
+        llm=llm, tools=[person_tool], streaming=True, allow_parallel_tool_calls=False
+    )
+
+    ctx = AsyncMock(spec=Context)
+    stream_events = []
+    ctx.write_event_to_stream.side_effect = stream_events.append
+
+    last_chat_response = await agent._get_streaming_response(
+        ctx, [ChatMessage(role="user", content="test")], [person_tool]
+    )
+
+    agent_streams = [e for e in stream_events if isinstance(e, AgentStream)]
+    executed = llm.get_tool_calls_from_response(last_chat_response)
+    assert [t.tool_id for t in executed] == ["call_1"]
+    assert [t.tool_id for t in agent_streams[-1].tool_calls] == ["call_1"]
 
 
 def test_tool_required_compatibility_without_support(
