@@ -10,7 +10,12 @@ from llama_index.core.agent.workflow import (
 )
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
-from llama_index.core.base.llms.types import ChatResponse, ToolCallBlock
+from llama_index.core.base.llms.types import (
+    ChatResponse,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
+)
 from llama_index.core.llms import ChatMessage, LLMMetadata
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
@@ -83,8 +88,9 @@ def mock_memory():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("split_chunks", [False, True])
 async def test_code_act_agent_basic_execution(
-    mock_llm, mock_code_execute_fn, mock_memory
+    split_chunks, mock_llm, mock_code_execute_fn, mock_memory
 ):
     # Setup mock response
     mock_response = ChatResponse(
@@ -95,6 +101,14 @@ async def test_code_act_agent_basic_execution(
         delta="Let me calculate that for you.\n<execute>\nprint('Hello World')\n</execute>",
     )
     mock_llm._responses = [mock_response]  # Set the responses to be yielded
+    if split_chunks:
+        text = mock_response.message.content
+        mock_llm._responses = [
+            ChatResponse(
+                message=ChatMessage(role="assistant", content=chunk), delta=chunk
+            )
+            for chunk in [text[:20], text[20:]]
+        ]
 
     # Create agent
     agent = CodeActAgent(
@@ -115,6 +129,8 @@ async def test_code_act_agent_basic_execution(
 
     # Verify output
     assert isinstance(output, AgentOutput)
+    assert output.response.content == mock_response.message.content
+    assert (await ctx.store.get("scratchpad"))[0] == output.response
     assert len(output.tool_calls) == 1
     assert output.tool_calls[0].tool_name == "execute"
     assert "print('Hello World')" in output.tool_calls[0].tool_kwargs["code"]
@@ -225,10 +241,12 @@ async def test_code_act_agent_workflow_integration(streaming):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("streaming", [True, False])
+@pytest.mark.parametrize(
+    ("streaming", "split_chunks"), [(True, False), (False, False), (True, True)]
+)
 @pytest.mark.parametrize("tool_call_format", ["blocks", "additional_kwargs"])
 async def test_code_act_agent_handoff_preserves_transcript(
-    streaming, tool_call_format, mock_code_execute_fn
+    streaming, split_chunks, tool_call_format, mock_code_execute_fn
 ):
     tool_kwargs = {"to_agent": "receiver", "reason": "delegate"}
     handoff_message = ChatMessage(role="assistant")
@@ -249,20 +267,46 @@ async def test_code_act_agent_handoff_preserves_transcript(
             )
         ]
 
+    expected_message = handoff_message
+    if split_chunks:
+        handoff_message = handoff_message.model_copy(
+            update={
+                "blocks": [
+                    TextBlock(text="handoff"),
+                    ThinkingBlock(content="Delegate to the receiver."),
+                    *handoff_message.blocks,
+                ]
+            }
+        )
+        expected_message = handoff_message.model_copy(
+            update={
+                "blocks": [
+                    TextBlock(text="before handoff"),
+                    *handoff_message.blocks[1:],
+                ]
+            }
+        )
+
+    async def handoff_chunks(messages: Sequence[ChatMessage], **kwargs):
+        yield ChatMessage(role="assistant", content="before ")
+        yield handoff_message
+
     def receiver_response(messages: Sequence[ChatMessage], **kwargs) -> ChatMessage:
         assistant_message, tool_message = messages[-2:]
         assert assistant_message.role == "assistant"
         assert tool_message.role == "tool"
         assert tool_message.additional_kwargs["tool_call_id"] == "handoff-1"
         # A provider must receive the tool call before its matching tool result.
-        assert assistant_message == handoff_message
+        assert assistant_message == expected_message
         return ChatMessage(role="assistant", content="Received handoff.")
 
     code_agent = CodeActAgent(
         name="coder",
         code_execute_fn=mock_code_execute_fn,
         llm=MockFunctionCallingLLM(
-            response_generator=lambda messages, **kwargs: handoff_message
+            response_generator=handoff_chunks
+            if split_chunks
+            else lambda messages, **kwargs: handoff_message
         ),
         can_handoff_to=["receiver"],
         streaming=streaming,
@@ -280,4 +324,6 @@ async def test_code_act_agent_handoff_preserves_transcript(
     result = await workflow.run(user_msg="Delegate this task.", memory=memory)
 
     assert result.response.content == "Received handoff."
-    assert memory.get_all()[1] == handoff_message
+    assert memory.get_all()[1] == expected_message
+    if split_chunks:
+        assert handoff_message.content == "handoff"
