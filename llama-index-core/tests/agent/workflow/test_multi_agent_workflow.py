@@ -726,3 +726,80 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_chat_history_no_user_messages(
+    calculator_agent: ReActAgent, retriever_agent: FunctionAgent
+) -> None:
+    """Test that multi-agent workflow with only assistant messages in chat_history does not raise IndexError."""
+    workflow = AgentWorkflow(
+        agents=[calculator_agent, retriever_agent],
+        root_agent="retriever",
+    )
+    chat_history = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Hello! Can I help calculate 5 + 3?",
+        )
+    ]
+    response = await workflow.run(chat_history=chat_history)
+    assert response is not None
+    assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_system_and_assistant_history(
+    calculator_agent: ReActAgent, retriever_agent: FunctionAgent
+) -> None:
+    """Test that multi-agent workflow with system and assistant messages falls back to the assistant message."""
+    workflow = AgentWorkflow(
+        agents=[calculator_agent, retriever_agent],
+        root_agent="retriever",
+    )
+    chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content="System prompt"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Assistant greeting",
+        ),
+    ]
+    response = await workflow.run(chat_history=chat_history)
+    assert response is not None
+    assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_user_and_assistant_history(
+    calculator_agent: ReActAgent, retriever_agent: FunctionAgent
+) -> None:
+    """Test that multi-agent workflow with user messages in chat_history prioritizes the user message."""
+    workflow = AgentWorkflow(
+        agents=[calculator_agent, retriever_agent],
+        root_agent="retriever",
+    )
+    chat_history = [
+        ChatMessage(role=MessageRole.USER, content="Can you add 5 and 3?"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Initial response"),
+    ]
+    response = await workflow.run(chat_history=chat_history)
+    assert response is not None
+    assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_init_run_with_system_only_history_raises_value_error(
+    calculator_agent: ReActAgent, retriever_agent: FunctionAgent
+) -> None:
+    """Test that multi-agent workflow with only system messages in chat_history raises ValueError."""
+    workflow = AgentWorkflow(
+        agents=[calculator_agent, retriever_agent],
+        root_agent="retriever",
+    )
+    chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content="Only a system message"),
+    ]
+    with pytest.raises(
+        ValueError, match="Must provide either user_msg or chat_history"
+    ):
+        await workflow.run(chat_history=chat_history)
