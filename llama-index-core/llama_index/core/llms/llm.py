@@ -811,14 +811,16 @@ class LLM(BaseLLM):
         from llama_index.core.tools import adapt_to_async_tool
         from llama_index.core.tools.calling import call_tool_with_selection
 
-        agent = ReActAgent(
-            tools=tools,
-            llm=self,
-            verbose=verbose,
-            formatter=kwargs.get("react_chat_formatter"),
-            output_parser=kwargs.get("output_parser"),
-            tool_retriever=kwargs.get("tool_retriever"),
-        )
+        agent_kwargs = {
+            agent_arg: kwargs[llm_arg]
+            for llm_arg, agent_arg in (
+                ("react_chat_formatter", "formatter"),
+                ("output_parser", "output_parser"),
+                ("tool_retriever", "tool_retriever"),
+            )
+            if llm_arg in kwargs
+        }
+        agent = ReActAgent(tools=tools, llm=self, verbose=verbose, **agent_kwargs)
 
         memory = kwargs.get("memory", Memory.from_defaults())
 
@@ -882,14 +884,16 @@ class LLM(BaseLLM):
         from llama_index.core.tools import adapt_to_async_tool
         from llama_index.core.tools.calling import acall_tool_with_selection
 
-        agent = ReActAgent(
-            tools=tools,
-            llm=self,
-            verbose=verbose,
-            formatter=kwargs.get("react_chat_formatter"),
-            output_parser=kwargs.get("output_parser"),
-            tool_retriever=kwargs.get("tool_retriever"),
-        )
+        agent_kwargs = {
+            agent_arg: kwargs[llm_arg]
+            for llm_arg, agent_arg in (
+                ("react_chat_formatter", "formatter"),
+                ("output_parser", "output_parser"),
+                ("tool_retriever", "tool_retriever"),
+            )
+            if llm_arg in kwargs
+        }
+        agent = ReActAgent(tools=tools, llm=self, verbose=verbose, **agent_kwargs)
 
         memory = kwargs.get("memory", Memory.from_defaults())
 
