@@ -49,8 +49,8 @@ code_interpreter_spec = AzureCodeInterpreterToolSpec(
     pool_management_endpoint=os.getenv("AZURE_POOL_MANAGEMENT_ENDPOINT")
 )
 
-agent = ReActAgent.from_tools(
-    code_interpreter_spec.to_tool_list(), llm=llm, verbose=True
+agent = ReActAgent(
+    tools=code_interpreter_spec.to_tool_list(), llm=llm
 )
 ```
 
