@@ -121,10 +121,18 @@ class FunctionCallingLLM(LLM):
             # force_single_tool_call would drop), and a raising validator
             # surfaces before the final response is emitted.
             last_response: Optional[ChatResponse] = None
-            for response in response_gen:
-                if last_response is not None:
-                    yield last_response
-                last_response = response
+            try:
+                for response in response_gen:
+                    if last_response is not None:
+                        yield last_response
+                    last_response = response
+            finally:
+                # closing this generator early (e.g. the consumer stops after a
+                # provisional response) must also close the provider stream so
+                # its transport is released; plain iterators have no close()
+                close = getattr(response_gen, "close", None)
+                if close is not None:
+                    close()
 
             if last_response is not None:
                 yield self._validate_chat_with_tools_response(
@@ -162,10 +170,17 @@ class FunctionCallingLLM(LLM):
             # see stream_chat_with_tools: hold back one response so the fully
             # accumulated final response is validated before it is yielded
             last_response: Optional[ChatResponse] = None
-            async for response in response_gen:
-                if last_response is not None:
-                    yield last_response
-                last_response = response
+            try:
+                async for response in response_gen:
+                    if last_response is not None:
+                        yield last_response
+                    last_response = response
+            finally:
+                # aclose() on this generator does not close the provider stream
+                # it iterates over, so close it explicitly
+                aclose = getattr(response_gen, "aclose", None)
+                if aclose is not None:
+                    await aclose()
 
             if last_response is not None:
                 yield self._validate_chat_with_tools_response(

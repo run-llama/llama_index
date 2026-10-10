@@ -1,4 +1,14 @@
-from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Sequence, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Coroutine,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -113,23 +123,35 @@ class MockStreamingFunctionCallingLLM(MockFunctionCallingLLM):
         super().__init__(tool_selection)
         self._stream_responses = stream_responses
         self._validated: List[ChatResponse] = []
+        # the provider stream is held here (as a client/transport would be), so
+        # it is not finalized merely because the wrapper drops its reference
+        self._upstream: Any = None
+        self._upstream_closed = False
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         def gen() -> ChatResponseGen:
-            yield from self._stream_responses
+            try:
+                yield from self._stream_responses
+            finally:
+                self._upstream_closed = True
 
-        return gen()
+        self._upstream = gen()
+        return self._upstream
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         async def gen() -> ChatResponseAsyncGen:
-            for response in self._stream_responses:
-                yield response
+            try:
+                for response in self._stream_responses:
+                    yield response
+            finally:
+                self._upstream_closed = True
 
-        return gen()
+        self._upstream = gen()
+        return self._upstream
 
     def _validate_chat_with_tools_response(
         self,
@@ -286,6 +308,63 @@ def test_stream_chat_with_tools_partial_consumption_skips_validation(
 
     response_gen = llm.stream_chat_with_tools(tools=[person_tool])
     next(response_gen)
+    response_gen.close()
+
+    assert llm._validated == []
+
+
+def test_stream_chat_with_tools_early_close_closes_upstream(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that closing the stream early also closes the provider stream."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    response_gen = llm.stream_chat_with_tools(tools=[person_tool])
+    assert next(response_gen) is stream_responses[0]
+    assert not llm._upstream_closed
+    response_gen.close()
+
+    assert llm._upstream_closed
+    assert llm._validated == []
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_with_tools_early_close_closes_upstream(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that aclose() on the stream also closes the provider stream."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    response_gen = await llm.astream_chat_with_tools(tools=[person_tool])
+    assert await response_gen.__anext__() is stream_responses[0]
+    assert not llm._upstream_closed
+    await response_gen.aclose()
+
+    assert llm._upstream_closed
+    assert llm._validated == []
+
+
+def test_stream_chat_with_tools_early_close_plain_iterator(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that early close works when the provider stream has no close()."""
+
+    class PlainIteratorLLM(MockStreamingFunctionCallingLLM):
+        def stream_chat(  # type: ignore[override]
+            self, messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> Iterator[ChatResponse]:
+            return iter(self._stream_responses)
+
+    llm = PlainIteratorLLM([person_tool_selection], stream_responses)
+
+    response_gen = llm.stream_chat_with_tools(tools=[person_tool])
+    assert next(response_gen) is stream_responses[0]
     response_gen.close()
 
     assert llm._validated == []
