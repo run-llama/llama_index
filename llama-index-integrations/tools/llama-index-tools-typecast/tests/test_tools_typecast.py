@@ -27,47 +27,46 @@ def test_initialization():
 
 @patch("llama_index.tools.typecast.base.Typecast")
 def test_get_voices_success(mock_typecast):
-    """Test successful voice retrieval (V2 API)"""
-    # Mock response with V2 structure
+    """Test successful voice retrieval (V3 API)"""
     mock_voice = Mock()
     mock_voice.model_dump.return_value = {
         "voice_id": "tc_123",
-        "voice_name": "Test Voice",
+        "voice_name": {"eng": "Test Voice", "kor": "테스트 보이스"},
         "models": [{"version": "ssfm-v21", "emotions": ["normal", "happy"]}],
         "gender": "female",
         "age": "young_adult",
         "use_cases": ["Audiobook", "Podcast"],
     }
-    mock_typecast.return_value.voices_v2.return_value = [mock_voice]
+    mock_typecast.return_value.voices_v3.return_value = [mock_voice]
 
     tool = TypecastToolSpec(api_key="test-key")
     voices = tool.get_voices()
 
     assert len(voices) == 1
-    assert voices[0]["voice_name"] == "Test Voice"
+    assert voices[0]["voice_name"]["eng"] == "Test Voice"
     assert voices[0]["models"][0]["version"] == "ssfm-v21"
-    mock_typecast.return_value.voices_v2.assert_called_once_with(filter=None)
+    mock_typecast.return_value.voices_v3.assert_called_once_with(filter=None)
 
 
 @patch("llama_index.tools.typecast.base.Typecast")
 @patch("llama_index.tools.typecast.base.VoicesV2Filter")
 def test_get_voices_with_filters(mock_filter, mock_typecast):
-    """Test voice retrieval with V2 filters"""
+    """Test voice retrieval with V3 filters"""
     mock_voice = Mock()
     mock_voice.model_dump.return_value = {
         "voice_id": "tc_123",
-        "voice_name": "Test Voice",
+        "voice_name": {"eng": "Test Voice", "kor": "테스트 보이스"},
         "models": [{"version": "ssfm-v30", "emotions": ["normal", "happy"]}],
         "gender": "female",
         "age": "young_adult",
     }
-    mock_typecast.return_value.voices_v2.return_value = [mock_voice]
+    mock_typecast.return_value.voices_v3.return_value = [mock_voice]
 
     tool = TypecastToolSpec(api_key="test-key")
     voices = tool.get_voices(model="ssfm-v30", gender="female", age="young_adult")
 
     assert len(voices) == 1
-    mock_typecast.return_value.voices_v2.assert_called_once()
+    mock_typecast.return_value.voices_v3.assert_called_once()
 
 
 @patch("llama_index.tools.typecast.base.Typecast")
@@ -75,7 +74,7 @@ def test_get_voices_failure(mock_typecast):
     """Test voice retrieval failure handling"""
     from typecast.exceptions import TypecastError
 
-    mock_typecast.return_value.voices_v2.side_effect = TypecastError("API Error")
+    mock_typecast.return_value.voices_v3.side_effect = TypecastError("API Error")
 
     tool = TypecastToolSpec(api_key="test-key")
 
@@ -87,12 +86,11 @@ def test_get_voices_failure(mock_typecast):
 
 @patch("llama_index.tools.typecast.base.Typecast")
 def test_get_voice_success(mock_typecast):
-    """Test successful single voice retrieval (V2 API)"""
-    # Mock response with V2 structure
+    """Test successful single voice retrieval (V3 API)"""
     mock_voice = Mock()
     mock_voice.model_dump.return_value = {
         "voice_id": "tc_123",
-        "voice_name": "Test Voice",
+        "voice_name": {"eng": "Test Voice", "kor": "테스트 보이스"},
         "models": [
             {"version": "ssfm-v21", "emotions": ["normal", "happy", "sad"]},
             {"version": "ssfm-v30", "emotions": ["normal", "happy", "sad", "whisper"]},
@@ -101,13 +99,13 @@ def test_get_voice_success(mock_typecast):
         "age": "young_adult",
         "use_cases": ["Audiobook", "Podcast"],
     }
-    mock_typecast.return_value.voice_v2.return_value = mock_voice
+    mock_typecast.return_value.voice_v3.return_value = mock_voice
 
     tool = TypecastToolSpec(api_key="test-key")
     voice = tool.get_voice("tc_123")
 
     assert voice["voice_id"] == "tc_123"
-    assert voice["voice_name"] == "Test Voice"
+    assert voice["voice_name"]["eng"] == "Test Voice"
     assert len(voice["models"]) == 2
     assert "happy" in voice["models"][0]["emotions"]
 
@@ -117,7 +115,7 @@ def test_get_voice_not_found(mock_typecast):
     """Test voice not found handling"""
     from typecast.exceptions import NotFoundError
 
-    mock_typecast.return_value.voice_v2.side_effect = NotFoundError("Voice not found")
+    mock_typecast.return_value.voice_v3.side_effect = NotFoundError("Voice not found")
 
     tool = TypecastToolSpec(api_key="test-key")
 
