@@ -38,6 +38,41 @@ def test_init(sql_database: SQLDatabase) -> None:
     assert isinstance(sql_database.metadata_obj, MetaData)
 
 
+@pytest.mark.parametrize(
+    ("ignore_tables", "expected_tables"),
+    [
+        (None, {"records", "events"}),
+        ([], {"records", "events"}),
+        (["records"], {"events"}),
+        (["records", "events"], set()),
+    ],
+)
+def test_reflection_respects_ignored_tables(
+    ignore_tables: list[str] | None, expected_tables: set[str]
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    try:
+        with engine.begin() as connection:
+            connection.exec_driver_sql("CREATE TABLE records (id INTEGER)")
+            connection.exec_driver_sql("CREATE TABLE events (id INTEGER)")
+
+        database = SQLDatabase(engine, ignore_tables=ignore_tables)
+        assert set(database.get_usable_table_names()) == expected_tables
+        assert set(database.metadata_obj.tables) == expected_tables
+    finally:
+        engine.dispose()
+
+
+def test_reflection_with_empty_database() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    try:
+        database = SQLDatabase(engine)
+        assert list(database.get_usable_table_names()) == []
+        assert not database.metadata_obj.tables
+    finally:
+        engine.dispose()
+
+
 # NOTE: Test is failing after removing langchain for some reason.
 # # Test from_uri method
 # def test_from_uri(mocker: MockerFixture) -> None:
