@@ -27,7 +27,7 @@ class Message:
 
 
 data_file = sys.argv[1]
-with open(data_file, "r") as f:
+with open(data_file, "r", encoding="utf-8") as f:
     data = json.load(f)
 
 messages = {}
@@ -74,7 +74,7 @@ for msg in messages.values():
         if is_thread:
             convo_docs.append({"thread": convo, "metadata": metadata})
 
-with open("conversation_docs.json", "w") as f:
+with open("conversation_docs.json", "w", encoding="utf-8") as f:
     json.dump(convo_docs, f)
 
 print("Done! Written to conversation_docs.json")
