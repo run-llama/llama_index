@@ -202,3 +202,24 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+def test_seven_hash_line_is_not_a_heading() -> None:
+    """ATX headings only go to level 6 (CommonMark §4.2 Example 63)."""
+    markdown_parser = MarkdownNodeParser()
+    text = "# Root\nBody\n####### Not a heading\nStill body\n## Child\nChild body"
+    splits = markdown_parser.get_nodes_from_documents([Document(text=text)])
+    assert len(splits) == 2
+    assert splits[0].text == "# Root\nBody\n####### Not a heading\nStill body"
+    assert splits[1].text == "## Child\nChild body"
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[1].metadata == {"header_path": "/Root/"}
+
+
+def test_six_hash_heading_still_splits() -> None:
+    markdown_parser = MarkdownNodeParser()
+    text = "# Root\nBody\n###### Level six\nSix body"
+    splits = markdown_parser.get_nodes_from_documents([Document(text=text)])
+    assert len(splits) == 2
+    assert splits[0].text == "# Root\nBody"
+    assert splits[1].text == "###### Level six\nSix body"
