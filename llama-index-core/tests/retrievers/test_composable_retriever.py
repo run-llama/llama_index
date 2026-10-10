@@ -1,11 +1,14 @@
 import pytest
 
 from llama_index.core import MockEmbedding, VectorStoreIndex
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices import SummaryIndex
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.schema import (
     Document,
     IndexNode,
+    NodeWithScore,
+    QueryBundle,  # noqa: F401 — used inside nested class _retrieve signatures
     TextNode,
 )
 
@@ -61,6 +64,43 @@ async def test_query_engine_object_metadata_preserved_async() -> None:
     retriever = _build_retriever_with_query_engine_object()
     nodes = await retriever.aretrieve("Capital of France?")
     assert nodes[0].node.metadata
+
+
+def test_recursive_retriever_preserves_zero_score_sync() -> None:
+    """Regression: score=0.0 must not be converted to 1.0 (#23429)."""
+
+    class ZeroScoreRetriever(BaseRetriever):
+        def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
+            return [NodeWithScore(node=TextNode(text="child", id_="child"), score=0.0)]
+
+    index_node = IndexNode(
+        text="index", id_="idx", index_id="child_idx", obj=ZeroScoreRetriever()
+    )
+    retriever = SummaryIndex(nodes=[], objects=[index_node]).as_retriever()
+    results = retriever.retrieve("q")
+    assert results, "expected at least one result"
+    assert results[0].score == 0.0, (
+        f"score should be 0.0, got {results[0].score} — zero was treated as falsy"
+    )
+
+
+@pytest.mark.asyncio
+async def test_recursive_retriever_preserves_zero_score_async() -> None:
+    """Regression: score=0.0 must not be converted to 1.0 (async path, #23429)."""
+
+    class ZeroScoreRetriever(BaseRetriever):
+        def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
+            return [NodeWithScore(node=TextNode(text="child", id_="child"), score=0.0)]
+
+    index_node = IndexNode(
+        text="index", id_="idx2", index_id="child_idx2", obj=ZeroScoreRetriever()
+    )
+    retriever = SummaryIndex(nodes=[], objects=[index_node]).as_retriever()
+    results = await retriever.aretrieve("q")
+    assert results, "expected at least one result"
+    assert results[0].score == 0.0, (
+        f"score should be 0.0, got {results[0].score} — zero was treated as falsy"
+    )
 
 
 @pytest.mark.asyncio
