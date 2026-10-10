@@ -7,6 +7,7 @@ import pytest
 from llama_index.core.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
+from llama_index.core.llms import MockLLM
 from llama_index.core.schema import Document
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
@@ -19,6 +20,12 @@ def documents() -> List[Document]:
         "Hello world.\nThis is a test.\nThis is another test.\nThis is a test v2."
     )
     return [Document(text=doc_text)]
+
+
+def test_empty_index_has_no_node_ids() -> None:
+    index = SimpleKeywordTableIndex([], llm=MockLLM())
+
+    assert index.index_struct.node_ids == set()
 
 
 @patch(
