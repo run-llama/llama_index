@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.base.llms.types import ChatMessage, MessageRole, ChatResponse
 from llama_index.core.program.function_program import FunctionTool
@@ -29,6 +31,33 @@ def test_predict_and_call_via_react_agent() -> None:
         tools=[FunctionTool.from_defaults(fn=tool)],
         react_chat_formatter=ReActChatFormatter.from_defaults(),
         output_parser=ReActOutputParser(),
+        user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
+        chat_history=[],
+    )
+    assert response.response == "hello!!"
+    assert len(response.sources) == 1
+    assert response.sources[0].content == "hello!!"
+
+
+def test_predict_and_call_default_react_chat_formatter() -> None:
+    """Ensure calls without formatter/output_parser kwargs still work."""
+    llm = _ReActDrivingLLM()
+    response = llm.predict_and_call(
+        tools=[FunctionTool.from_defaults(fn=tool)],
+        user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
+        chat_history=[],
+    )
+    assert response.response == "hello!!"
+    assert len(response.sources) == 1
+    assert response.sources[0].content == "hello!!"
+
+
+@pytest.mark.asyncio
+async def test_apredict_and_call_default_react_chat_formatter() -> None:
+    """Ensure calls without formatter/output_parser kwargs still work."""
+    llm = _ReActDrivingLLM()
+    response = await llm.apredict_and_call(
+        tools=[FunctionTool.from_defaults(fn=tool)],
         user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
         chat_history=[],
     )
