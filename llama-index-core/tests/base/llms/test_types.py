@@ -994,6 +994,30 @@ def test_legacy_image_additional_kwargs(png_1px_b64: bytes):
     assert msg.blocks[0].image == png_1px_b64
 
 
+def test_legacy_image_additional_kwargs_roundtrip(png_1px_b64: bytes):
+    image_doc = ImageDocument(image=png_1px_b64)
+    msg = ChatMessage(content="test content", additional_kwargs={"images": [image_doc]})
+
+    roundtripped_msg = ChatMessage.model_validate(msg.model_dump())
+
+    assert roundtripped_msg.blocks == msg.blocks
+    assert roundtripped_msg.blocks[1].image == png_1px_b64
+
+
+def test_legacy_image_additional_kwargs_migration_is_idempotent(png_1px_b64: bytes):
+    msg = ChatMessage.model_validate(
+        {
+            "role": MessageRole.USER,
+            "blocks": [TextBlock(text="test content")],
+            "additional_kwargs": {"images": [ImageDocument(image=png_1px_b64)]},
+        }
+    )
+
+    assert [type(block) for block in msg.blocks] == [TextBlock, ImageBlock]
+    assert msg.blocks[1].image == png_1px_b64
+    assert msg.additional_kwargs == {}
+
+
 @pytest.mark.asyncio
 async def test_image_block_aestimate_tokens(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)

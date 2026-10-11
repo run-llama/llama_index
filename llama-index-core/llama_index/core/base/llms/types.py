@@ -1191,6 +1191,7 @@ class ChatMessage(BaseRecursiveContentBlock):
             for doc in documents:
                 img_base64_bytes = doc.resolve_image(as_base64=True).read()
                 self.blocks.append(ImageBlock(image=img_base64_bytes))
+            del self.additional_kwargs["images"]
         return self
 
     @classmethod
