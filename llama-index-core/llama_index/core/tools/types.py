@@ -136,7 +136,7 @@ class ToolOutput(BaseModel):
         super().__init__(
             tool_name=tool_name,
             blocks=blocks,
-            raw_input=raw_input,
+            raw_input=raw_input or {},
             raw_output=raw_output,
             is_error=is_error,
         )
