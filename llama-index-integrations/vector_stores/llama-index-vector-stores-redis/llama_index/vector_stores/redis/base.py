@@ -318,7 +318,6 @@ class RedisVectorStore(BasePydanticVectorStore):
         # Check to see if empty document list was passed
         if len(nodes) == 0:
             return []
-        await self.async_index_exists()
 
         # Now check for the scenario where user is trying to index embeddings that don't align with schema
         embedding_len = len(nodes[0].get_embedding())
@@ -330,6 +329,8 @@ class RedisVectorStore(BasePydanticVectorStore):
                 "Please review the Redis integration example to learn how to customize schema. "
                 ""
             )
+
+        await self.async_index_exists()
 
         data: List[Dict[str, Any]] = []
         for node in nodes:

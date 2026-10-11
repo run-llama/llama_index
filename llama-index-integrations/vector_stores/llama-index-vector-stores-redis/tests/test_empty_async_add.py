@@ -60,6 +60,25 @@ def test_empty_sync_add_remains_a_noop(store_and_index):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("already_created", [False, True])
+@pytest.mark.parametrize("embedding", [[0.25], [0.25, -0.5, 1.0, 0.0]])
+async def test_invalid_dimension_async_add_does_not_initialize_or_load(
+    store_and_index, already_created, embedding
+):
+    store, _, index = store_and_index
+    store.created_async_index = already_created
+
+    with pytest.raises(
+        ValueError, match="doesn't match the index schema expectation of 3"
+    ):
+        await store.async_add([TextNode(text="bad", embedding=embedding)])
+
+    index.create.assert_not_awaited()
+    index.load.assert_not_awaited()
+    assert store.created_async_index is already_created
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("already_created", [False, True])
 async def test_nonempty_async_add_still_initializes_and_loads(
     store_and_index, already_created
 ):
