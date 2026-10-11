@@ -6,6 +6,8 @@ from anthropic.types.beta import (
     BetaToolUseBlockParam,
 )
 from llama_index.core.base.llms.types import (
+    CacheControl,
+    CachePoint,
     ChatMessage,
     DocumentBlock,
     ImageBlock,
@@ -458,3 +460,79 @@ def test_sonnet_5_5_has_1m_context_window(model: str) -> None:
     assert anthropic_modelname_to_contextsize(model) == 1000000
     assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
     assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
+
+
+def test_system_prompt_without_cache_control_is_plain_string() -> None:
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are helpful."),
+        ChatMessage(role=MessageRole.SYSTEM, content="Be brief."),
+        ChatMessage(role=MessageRole.USER, content="Hi"),
+    ]
+
+    _, system_prompt = messages_to_anthropic_messages(messages)
+
+    assert system_prompt == "You are helpful.\nBe brief."
+
+
+def test_system_prompt_keeps_cache_control_from_additional_kwargs() -> None:
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content="A long system prompt.",
+            additional_kwargs={"cache_control": {"type": "ephemeral"}},
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hi"),
+    ]
+
+    _, system_prompt = messages_to_anthropic_messages(messages)
+
+    assert system_prompt == [
+        {
+            "type": "text",
+            "text": "A long system prompt.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
+def test_system_prompt_keeps_cache_control_from_cache_idx() -> None:
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="A long system prompt."),
+        ChatMessage(role=MessageRole.USER, content="Hi"),
+    ]
+
+    ant_messages, system_prompt = messages_to_anthropic_messages(messages, cache_idx=0)
+
+    assert system_prompt == [
+        {
+            "type": "text",
+            "text": "A long system prompt.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+    assert "cache_control" not in ant_messages[0]["content"][0]
+
+
+def test_system_prompt_keeps_cache_point() -> None:
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text="Static instructions."),
+                CachePoint(cache_control=CacheControl(type="ephemeral", ttl="1h")),
+                TextBlock(text="Dynamic instructions."),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hi"),
+    ]
+
+    _, system_prompt = messages_to_anthropic_messages(messages)
+
+    assert system_prompt == [
+        {
+            "type": "text",
+            "text": "Static instructions.",
+            "cache_control": {"type": "ephemeral", "ttl": "1h"},
+        },
+        {"type": "text", "text": "Dynamic instructions."},
+    ]

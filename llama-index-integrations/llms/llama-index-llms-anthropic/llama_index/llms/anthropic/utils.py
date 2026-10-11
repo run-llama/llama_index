@@ -353,7 +353,7 @@ def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
     cache_idx: Optional[int] = None,
     model: Optional[str] = None,
-) -> Tuple[Sequence[MessageParam], str]:
+) -> Tuple[Sequence[MessageParam], Union[str, List[TextBlockParam]]]:
     """
     Converts a list of generic ChatMessages to anthropic messages.
 
@@ -365,11 +365,12 @@ def messages_to_anthropic_messages(
     Returns:
         Tuple of:
         - List of anthropic messages
-        - System prompt
+        - System prompt (a list of text blocks if any of them has cache_control)
 
     """
     anthropic_messages = []
     system_prompt = []
+    system_blocks: List[AnthropicContentBlock] = []
     for idx, message in enumerate(messages):
         # inject cache_control for all messages up to and including the cache_idx
         if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
@@ -379,6 +380,16 @@ def messages_to_anthropic_messages(
         if message.role == MessageRole.SYSTEM:
             system_prompt.extend(
                 [block.text for block in message.blocks if isinstance(block, TextBlock)]
+            )
+            system_blocks.extend(
+                blocks_to_anthropic_blocks(
+                    [
+                        block
+                        for block in message.blocks
+                        if isinstance(block, (TextBlock, CachePoint))
+                    ],
+                    {"cache_control": message.additional_kwargs.get("cache_control")},
+                )
             )
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             anthropic_blocks = blocks_to_anthropic_blocks(
@@ -404,9 +415,13 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
 
-    return cast(
+    merged_messages = cast(
         Sequence[MessageParam], __merge_common_role_msgs(anthropic_messages)
-    ), "\n".join(system_prompt)
+    )
+    # a plain string cannot carry cache_control, so only then send text blocks
+    if any("cache_control" in block for block in system_blocks):
+        return merged_messages, cast(List[TextBlockParam], system_blocks)
+    return merged_messages, "\n".join(system_prompt)
 
 
 def blocks_to_anthropic_beta_blocks(
