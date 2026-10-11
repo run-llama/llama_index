@@ -1005,17 +1005,32 @@ def test_legacy_image_additional_kwargs_roundtrip(png_1px_b64: bytes):
 
 
 def test_legacy_image_additional_kwargs_migration_is_idempotent(png_1px_b64: bytes):
-    msg = ChatMessage.model_validate(
-        {
-            "role": MessageRole.USER,
-            "blocks": [TextBlock(text="test content")],
-            "additional_kwargs": {"images": [ImageDocument(image=png_1px_b64)]},
-        }
+    msg = ChatMessage(
+        content="test content",
+        additional_kwargs={"images": [ImageDocument(image=png_1px_b64)]},
+    )
+    assert "images" not in msg.additional_kwargs
+
+    revalidated_msg = ChatMessage(
+        role=msg.role, blocks=msg.blocks, additional_kwargs=msg.additional_kwargs
     )
 
-    assert [type(block) for block in msg.blocks] == [TextBlock, ImageBlock]
-    assert msg.blocks[1].image == png_1px_b64
-    assert msg.additional_kwargs == {}
+    assert [type(block) for block in revalidated_msg.blocks] == [TextBlock, ImageBlock]
+
+
+def test_legacy_image_additional_kwargs_skips_serialized_documents(png_1px_b64: bytes):
+    image_doc = ImageDocument(image=png_1px_b64)
+    msg = ChatMessage(content="test content", additional_kwargs={"images": [image_doc]})
+    data = msg.model_dump()
+    # a message persisted before the kwarg was consumed keeps the serialized
+    # documents next to the image blocks they were already migrated into
+    data["additional_kwargs"]["images"] = [image_doc.model_dump()]
+
+    restored_msg = ChatMessage.model_validate(data)
+
+    assert [type(block) for block in restored_msg.blocks] == [TextBlock, ImageBlock]
+    assert restored_msg.blocks[1].image == png_1px_b64
+    assert "images" not in restored_msg.additional_kwargs
 
 
 @pytest.mark.asyncio

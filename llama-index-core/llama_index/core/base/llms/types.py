@@ -1187,10 +1187,10 @@ class ChatMessage(BaseRecursiveContentBlock):
         of ImageDocument and convert them into image blocks.
         """
         if documents := self.additional_kwargs.get("images"):
-            documents = cast(list[ImageDocument], documents)
             for doc in documents:
-                img_base64_bytes = doc.resolve_image(as_base64=True).read()
-                self.blocks.append(ImageBlock(image=img_base64_bytes))
+                if isinstance(doc, ImageDocument):
+                    img_base64_bytes = doc.resolve_image(as_base64=True).read()
+                    self.blocks.append(ImageBlock(image=img_base64_bytes))
             del self.additional_kwargs["images"]
         return self
 
