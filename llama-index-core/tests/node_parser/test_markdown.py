@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.core.schema import Document
 
@@ -202,3 +204,33 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+@pytest.mark.parametrize("hash_count", [7, 8])
+@pytest.mark.parametrize("separator", [" ", "\t"])
+def test_more_than_six_hashes_remain_section_text(
+    hash_count: int, separator: str
+) -> None:
+    ordinary_line = "#" * hash_count + separator + "Not a heading"
+    text = f"# Root\nBody\n{ordinary_line}\nStill body\n## Child\nChild body"
+
+    splits = MarkdownNodeParser().get_nodes_from_documents([Document(text=text)])
+
+    assert [node.text for node in splits] == [
+        f"# Root\nBody\n{ordinary_line}\nStill body",
+        "## Child\nChild body",
+    ]
+    assert [node.metadata for node in splits] == [
+        {"header_path": "/"},
+        {"header_path": "/Root/"},
+    ]
+
+
+@pytest.mark.parametrize("level", range(1, 7))
+def test_heading_levels_one_to_six_still_split(level: int) -> None:
+    heading = "#" * level + " Heading"
+    splits = MarkdownNodeParser().get_nodes_from_documents(
+        [Document(text=f"Introduction\n{heading}\nBody")]
+    )
+
+    assert [node.text for node in splits] == ["Introduction", f"{heading}\nBody"]
