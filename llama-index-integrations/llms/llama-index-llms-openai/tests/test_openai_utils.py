@@ -417,6 +417,13 @@ def test_is_json_schema_supported_supported_models() -> None:
         assert is_json_schema_supported(model), f"Model {model} should be supported"
 
 
+@pytest.mark.parametrize("model", ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna"])
+def test_gpt_6_models_registered(model: str) -> None:
+    assert openai_modelname_to_contextsize(model) == 1050000
+    assert is_function_calling_model(model)
+    assert is_json_schema_supported(model)
+
+
 def test_is_json_schema_supported_o1_mini_excluded() -> None:
     """Test that o1-mini models are explicitly excluded."""
     o1_mini_models = [
