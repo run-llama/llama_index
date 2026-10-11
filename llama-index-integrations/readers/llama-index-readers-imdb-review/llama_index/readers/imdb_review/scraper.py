@@ -90,9 +90,9 @@ def scrape_data(revs):
     except NoSuchElementException:
         rating = 0.0
 
-    re.sub("\n", " ", contents)
-    re.sub("\t", " ", contents)
-    contents.replace("//", "")
+    contents = re.sub("\n", " ", contents)
+    contents = re.sub("\t", " ", contents)
+    contents = contents.replace("//", "")
     date = revs.find_element(By.CLASS_NAME, "review-date").text
     contents = clean_text(contents)
     return date, contents, rating, title, link, spoiler
