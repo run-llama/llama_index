@@ -39,6 +39,7 @@ from llama_index.core.bridge.pydantic import (
     ConfigDict,
     Field,
     FilePath,
+    ValidationError,
     field_serializer,
     field_validator,
     model_validator,
@@ -1184,14 +1185,50 @@ class ChatMessage(BaseRecursiveContentBlock):
         Provided for backward compatibility.
 
         If `additional_kwargs` contains an `images` key, assume the value is a list
-        of ImageDocument and convert them into image blocks.
+        of ImageDocument and convert them into image blocks. Serialized documents
+        (plain dicts, e.g. a JSON import or a store persisted with the leftover
+        kwarg) are reconstructed so their image survives; entries that cannot be
+        converted are kept in place instead of being silently dropped.
         """
         if documents := self.additional_kwargs.get("images"):
+            remaining: List[Any] = []
             for doc in documents:
-                if isinstance(doc, ImageDocument):
+                if isinstance(doc, dict):
+                    # MediaResource.data is excluded from dumps, so a serialized
+                    # document without a path/url can only be the already
+                    # migrated leftover of a persisted message — keep it only
+                    # when no image block exists to have been its migration, and
+                    # keep anything that does not reconstruct into a non-empty
+                    # image at all
+                    try:
+                        reconstructed = ImageDocument.model_validate(doc)
+                        img_base64_bytes = reconstructed.resolve_image(
+                            as_base64=True
+                        ).read()
+                    except (ValidationError, ValueError, OSError):
+                        img_base64_bytes = None
+                    if not img_base64_bytes:
+                        if not any(
+                            isinstance(block, ImageBlock) for block in self.blocks
+                        ):
+                            remaining.append(doc)
+                        continue
+                    if any(
+                        isinstance(block, ImageBlock)
+                        and block.image == img_base64_bytes
+                        for block in self.blocks
+                    ):
+                        continue
+                    self.blocks.append(ImageBlock(image=img_base64_bytes))
+                elif isinstance(doc, ImageDocument):
                     img_base64_bytes = doc.resolve_image(as_base64=True).read()
                     self.blocks.append(ImageBlock(image=img_base64_bytes))
-            del self.additional_kwargs["images"]
+                else:
+                    remaining.append(doc)
+            if remaining:
+                self.additional_kwargs["images"] = remaining
+            else:
+                del self.additional_kwargs["images"]
         return self
 
     @classmethod

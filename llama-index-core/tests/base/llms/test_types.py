@@ -1033,6 +1033,51 @@ def test_legacy_image_additional_kwargs_skips_serialized_documents(png_1px_b64: 
     assert "images" not in restored_msg.additional_kwargs
 
 
+def test_legacy_image_additional_kwargs_reconstructs_serialized_documents_without_blocks(
+    png_1px_b64: bytes, tmp_path: Path
+):
+    # a serialized document with a resolvable image (here: a path) is
+    # reconstructed instead of being dropped
+    png_file = tmp_path / "1px.png"
+    png_file.write_bytes(base64.b64decode(png_1px_b64))
+    incoming = {
+        "role": "user",
+        "blocks": [],
+        "additional_kwargs": {"images": [{"image_resource": {"path": str(png_file)}}]},
+    }
+
+    msg = ChatMessage.model_validate(incoming)
+
+    assert [type(block) for block in msg.blocks] == [ImageBlock]
+    assert msg.blocks[0].image == base64.b64encode(base64.b64decode(png_1px_b64))
+    assert "images" not in msg.additional_kwargs
+
+
+def test_legacy_image_additional_kwargs_keeps_unresolvable_dict_entries(
+    png_1px_b64: bytes,
+):
+    # MediaResource.data is excluded from dumps, so a serialized document that
+    # only carried inline image bytes loses them; the entry itself is kept in
+    # place rather than silently discarded
+    husk = ImageDocument(image=png_1px_b64).model_dump()
+    unknown = {"not": "an image document"}
+    incoming = {
+        "role": "user",
+        "blocks": [],
+        "additional_kwargs": {"images": [husk, unknown]},
+    }
+
+    msg = ChatMessage.model_validate(incoming)
+
+    assert msg.additional_kwargs["images"] == [husk, unknown]
+    assert msg.blocks == []
+
+    # re-validating the round trip keeps both entries and adds nothing
+    restored_msg = ChatMessage.model_validate(msg.model_dump())
+    assert restored_msg.additional_kwargs["images"] == [husk, unknown]
+    assert restored_msg.blocks == []
+
+
 @pytest.mark.asyncio
 async def test_image_block_aestimate_tokens(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)
