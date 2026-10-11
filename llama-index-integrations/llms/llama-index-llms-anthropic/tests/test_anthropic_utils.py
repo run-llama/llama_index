@@ -577,3 +577,34 @@ def test_system_prompt_cache_control_stays_before_uncached_system_message() -> N
         },
         {"type": "text", "text": "Dynamic instructions."},
     ]
+
+
+def test_system_prompt_keeps_cache_controls_with_different_ttl() -> None:
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content="Stable instructions.",
+            additional_kwargs={"cache_control": {"type": "ephemeral", "ttl": "1h"}},
+        ),
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content="Short-lived context.",
+            additional_kwargs={"cache_control": {"type": "ephemeral"}},
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hi"),
+    ]
+
+    _, system_prompt = messages_to_anthropic_messages(messages)
+
+    assert system_prompt == [
+        {
+            "type": "text",
+            "text": "Stable instructions.",
+            "cache_control": {"type": "ephemeral", "ttl": "1h"},
+        },
+        {
+            "type": "text",
+            "text": "Short-lived context.",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]

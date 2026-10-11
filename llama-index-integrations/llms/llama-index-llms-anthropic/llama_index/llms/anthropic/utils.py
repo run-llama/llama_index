@@ -392,12 +392,17 @@ def messages_to_anthropic_messages(
                 {"cache_control": system_cache_control},
             )
             if system_cache_control and message_blocks:
-                # A breakpoint caches every system block before it, so only the
-                # last message-level one is kept: one per system message would
-                # exceed Anthropic's limit of 4 blocks with cache_control.
-                if cached_system_block is not None:
+                # A breakpoint caches every system block before it, so of
+                # consecutive identical message-level ones only the last is kept:
+                # one per system message would exceed Anthropic's limit of 4
+                # blocks with cache_control. A different one (another ttl) is a
+                # separate breakpoint and stays.
+                last_block = message_blocks[-1]
+                if cached_system_block is not None and cached_system_block.get(
+                    "cache_control"
+                ) == last_block.get("cache_control"):
                     cached_system_block.pop("cache_control", None)
-                cached_system_block = message_blocks[-1]
+                cached_system_block = last_block
             system_blocks.extend(message_blocks)
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             anthropic_blocks = blocks_to_anthropic_blocks(
