@@ -536,3 +536,44 @@ def test_system_prompt_keeps_cache_point() -> None:
         },
         {"type": "text", "text": "Dynamic instructions."},
     ]
+
+
+def test_system_prompt_keeps_one_cache_control_across_system_messages() -> None:
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content=f"Instruction {i}")
+        for i in range(5)
+    ] + [ChatMessage(role=MessageRole.USER, content="Hi")]
+
+    _, system_prompt = messages_to_anthropic_messages(messages, cache_idx=4)
+
+    assert system_prompt == [
+        *[{"type": "text", "text": f"Instruction {i}"} for i in range(4)],
+        {
+            "type": "text",
+            "text": "Instruction 4",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]
+
+
+def test_system_prompt_cache_control_stays_before_uncached_system_message() -> None:
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content="Static instructions.",
+            additional_kwargs={"cache_control": {"type": "ephemeral"}},
+        ),
+        ChatMessage(role=MessageRole.SYSTEM, content="Dynamic instructions."),
+        ChatMessage(role=MessageRole.USER, content="Hi"),
+    ]
+
+    _, system_prompt = messages_to_anthropic_messages(messages)
+
+    assert system_prompt == [
+        {
+            "type": "text",
+            "text": "Static instructions.",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {"type": "text", "text": "Dynamic instructions."},
+    ]

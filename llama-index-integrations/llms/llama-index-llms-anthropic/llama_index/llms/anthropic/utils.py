@@ -371,6 +371,7 @@ def messages_to_anthropic_messages(
     anthropic_messages = []
     system_prompt = []
     system_blocks: List[AnthropicContentBlock] = []
+    cached_system_block: Optional[AnthropicContentBlock] = None
     for idx, message in enumerate(messages):
         # inject cache_control for all messages up to and including the cache_idx
         if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
@@ -381,16 +382,23 @@ def messages_to_anthropic_messages(
             system_prompt.extend(
                 [block.text for block in message.blocks if isinstance(block, TextBlock)]
             )
-            system_blocks.extend(
-                blocks_to_anthropic_blocks(
-                    [
-                        block
-                        for block in message.blocks
-                        if isinstance(block, (TextBlock, CachePoint))
-                    ],
-                    {"cache_control": message.additional_kwargs.get("cache_control")},
-                )
+            system_cache_control = message.additional_kwargs.get("cache_control")
+            message_blocks = blocks_to_anthropic_blocks(
+                [
+                    block
+                    for block in message.blocks
+                    if isinstance(block, (TextBlock, CachePoint))
+                ],
+                {"cache_control": system_cache_control},
             )
+            if system_cache_control and message_blocks:
+                # A breakpoint caches every system block before it, so only the
+                # last message-level one is kept: one per system message would
+                # exceed Anthropic's limit of 4 blocks with cache_control.
+                if cached_system_block is not None:
+                    cached_system_block.pop("cache_control", None)
+                cached_system_block = message_blocks[-1]
+            system_blocks.extend(message_blocks)
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             anthropic_blocks = blocks_to_anthropic_blocks(
                 message.blocks, message.additional_kwargs
