@@ -402,6 +402,18 @@ storage_context = StorageContext.from_defaults(persist_dir="./storage")
 index = load_index_from_storage(storage_context)
 ```
 
+#### Persisted relation keys and upgrades
+
+`SimplePropertyGraphStore` stores relations in `LabelledPropertyGraph.relations` using a JSON-encoded array of the source ID, relation label, and target ID as each dictionary key. For example, `A_B --C--> D` uses `["A_B", "C", "D"]`, while `A --B--> C_D` uses `["A", "B", "C_D"]`. These keys keep distinct facts separate even when IDs or labels contain underscores.
+
+Older persisted graphs use underscore-joined keys such as `A_B_C_D`. When loading these files, the graph rebuilds each key from the stored relation's `source_id`, `label`, and `target_id`. No manual key conversion is needed. The next normal persistence operation writes the new keys.
+
+Before saving a graph that is shared across applications, upgrade every reader to a version that supports the JSON-encoded keys. Older readers cannot look up relations in newly saved files using their underscore-joined keys. Keep a copy of the original persisted graph if you need to roll back to an older reader.
+
+Code that accesses `graph.relations` directly must also account for the new key representation. Prefer the graph store's `get_triplets()` method when retrieving facts instead of constructing dictionary keys by hand. Relation fields and the returned triplet structure are unchanged.
+
+Key migration preserves the relation objects present in the file. It cannot restore a relation or its properties if a previous key collision already overwrote them; rebuild affected facts from their original source data. This storage-format change applies to `SimplePropertyGraphStore` and its underlying `LabelledPropertyGraph`, rather than graph database integrations that manage their own relation storage.
+
 ### Saving and Loading with Integrations
 
 Integrations typically save automatically. Some graph stores will support vectors, others might not. You can always combine a graph store with an external vector db as well.
