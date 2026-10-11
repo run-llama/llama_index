@@ -1,10 +1,15 @@
 import inspect
 import json
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.tools.function_tool import FunctionTool
-from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools.types import (
+    AsyncBaseTool,
+    BaseTool,
+    ToolOutput,
+    adapt_to_async_tool,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -24,6 +29,41 @@ def _function_tool_accepts_kwargs(tool: FunctionTool, arguments: dict) -> bool:
     return True
 
 
+def _tool_entrypoint(tool: BaseTool, async_call: bool) -> Any:
+    """Return the callable that actually receives the tool arguments."""
+    if isinstance(tool, AsyncBaseTool):
+        return tool.acall if async_call else tool.call
+    # plain BaseTool: invoked through __call__, also by the async adapter
+    return tool
+
+
+def _entrypoint_needs_kwargs(fn: Any) -> bool:
+    """
+    Check whether a tool entry point can only take its input as kwargs.
+
+    Non-FunctionTool tools all declare ``(*args, **kwargs)``, so there is no
+    user function signature to bind against. What can be inspected is the
+    tool's own call method: a keyword-only declaration
+    (``def call(self, *, input)``) is how such a tool says it needs kwargs.
+    Anything else takes the positional call, and a failure there is a genuine
+    tool error, not a calling-convention mismatch worth retrying.
+    """
+    try:
+        signature = inspect.signature(fn)
+    except (TypeError, ValueError):
+        # cannot inspect: kwargs is the one convention every tool accepts
+        return True
+    return not any(
+        parameter.kind
+        in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.VAR_POSITIONAL,
+        )
+        for parameter in signature.parameters.values()
+    )
+
+
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments."""
     try:
@@ -36,11 +76,9 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return tool(**arguments)
                 return tool(single_arg)
-            try:
-                return tool(single_arg)
-            except Exception:
-                # some tools will REQUIRE kwargs, so try it
+            if _entrypoint_needs_kwargs(_tool_entrypoint(tool, async_call=False)):
                 return tool(**arguments)
+            return tool(single_arg)
         else:
             return tool(**arguments)
     except Exception as e:
@@ -67,11 +105,9 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return await async_tool.acall(**arguments)
                 return await async_tool.acall(single_arg)
-            try:
-                return await async_tool.acall(single_arg)
-            except Exception:
-                # some tools will REQUIRE kwargs, so try it
+            if _entrypoint_needs_kwargs(_tool_entrypoint(tool, async_call=True)):
                 return await async_tool.acall(**arguments)
+            return await async_tool.acall(single_arg)
         else:
             return await async_tool.acall(**arguments)
     except Exception as e:

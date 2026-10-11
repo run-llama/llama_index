@@ -262,11 +262,11 @@ class BaseToolAsyncAdapter(AsyncBaseTool):
     def metadata(self) -> ToolMetadata:
         return self.base_tool.metadata
 
-    def call(self, input: Any) -> ToolOutput:
-        return self.base_tool(input)
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        return self.base_tool(*args, **kwargs)
 
-    async def acall(self, input: Any) -> ToolOutput:
-        return await asyncio.to_thread(self.call, input)
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        return await asyncio.to_thread(self.call, *args, **kwargs)
 
 
 def adapt_to_async_tool(tool: BaseTool) -> AsyncBaseTool:
