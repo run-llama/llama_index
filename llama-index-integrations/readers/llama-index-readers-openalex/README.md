@@ -20,7 +20,7 @@ documents = openalex_reader.load_data(query, full_text=False)
 
 ## What can it do?
 
-As shown in [demo.ipynb](demo.ipynb) we can get answers with citations.
+As shown in [demo.ipynb](examples/demo.ipynb) we can get answers with citations.
 
 ```python
 query = "biases in large language models"
