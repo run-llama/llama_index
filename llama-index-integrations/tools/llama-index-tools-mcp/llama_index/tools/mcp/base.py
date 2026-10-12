@@ -12,12 +12,17 @@ from llama_index.core.tools.types import ToolMetadata
 from llama_index.tools.mcp.tool_spec_mixins import (
     TypeResolutionMixin,
     TypeCreationMixin,
+    ConfigDictExtractionMixin,
     FieldExtractionMixin,
 )
 
 
 class McpToolSpec(
-    BaseToolSpec, TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
+    BaseToolSpec,
+    TypeResolutionMixin,
+    TypeCreationMixin,
+    ConfigDictExtractionMixin,
+    FieldExtractionMixin,
 ):
     """
     MCPToolSpec will get the tools from MCP Client (only need to implement ClientSession) and convert them to LlamaIndex's FunctionTool objects.
@@ -238,7 +243,8 @@ class McpToolSpec(
             return self.properties_cache[model_name]
 
         fields = self._extract_fields(schema, defs)
-        model = create_model(model_name, **fields)
+        config = self._extract_config(schema)
+        model = create_model(model_name, __config__=config, **fields)
         self.properties_cache[model_name] = model
         return model
 
