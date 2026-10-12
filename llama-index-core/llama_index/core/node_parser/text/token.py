@@ -193,6 +193,26 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 new_splits.extend(self._split(split, chunk_size=chunk_size))
         return new_splits
 
+    def _leading_strip_delta(self, split: str) -> int:
+        """
+        Tokens gained when a chunk's first split loses its leading whitespace.
+
+        Splits carry their leading separator, so a chunk is budgeted from splits
+        like `" jumps"` but emitted as `"jumps"` once `.strip()` runs. Those do not
+        always cost the same: with the default tokenizer `" jumps"` is one token
+        and `"jumps"` is two, so a chunk budgeted at exactly `chunk_size` can be
+        emitted one token over it. Counting that difference up front keeps the
+        budget measuring the text this actually emits.
+        """
+        if self.keep_whitespaces:
+            return 0
+
+        stripped = split.lstrip()
+        if stripped == split:
+            return 0
+
+        return len(self._tokenizer(stripped)) - len(self._tokenizer(split))
+
     def _merge(self, splits: List[str], chunk_size: int) -> List[str]:
         """
         Merge splits into chunks.
@@ -207,6 +227,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         cur_chunk: List[str] = []
         cur_len = 0
+        head_delta = 0
         for split in splits:
             split_len = len(self._tokenizer(split))
             if split_len > chunk_size:
@@ -217,7 +238,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if cur_len + split_len > chunk_size:
+            if cur_len + head_delta + split_len > chunk_size:
                 # end the previous chunk
                 chunk = (
                     "".join(cur_chunk)
@@ -232,11 +253,18 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 #   1. the current chunk length is less than chunk overlap
                 #   2. the total length is less than chunk size
                 while cur_chunk and (
-                    cur_len > self.chunk_overlap or cur_len + split_len > chunk_size
+                    cur_len + head_delta > self.chunk_overlap
+                    or cur_len + head_delta + split_len > chunk_size
                 ):
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
                     cur_len -= len(self._tokenizer(first_chunk))
+                    head_delta = (
+                        self._leading_strip_delta(cur_chunk[0]) if cur_chunk else 0
+                    )
+
+            if not cur_chunk:
+                head_delta = self._leading_strip_delta(split)
 
             cur_chunk.append(split)
             cur_len += split_len
