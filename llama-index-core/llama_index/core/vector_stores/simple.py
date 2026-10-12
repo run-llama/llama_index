@@ -112,24 +112,14 @@ class SimpleVectorStore(BasePydanticVectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> Dict[str, BasePydanticVectorStore]:
         """Load from namespaced persist dir."""
-        listing_fn = os.listdir if fs is None else fs.listdir
-
         vector_stores: Dict[str, BasePydanticVectorStore] = {}
 
         try:
-            for fname in listing_fn(persist_dir):
-                if fname.endswith(DEFAULT_PERSIST_FNAME):
-                    namespace = fname.split(NAMESPACE_SEP)[0]
-
-                    # handle backwards compatibility with stores that were persisted
-                    if namespace == DEFAULT_PERSIST_FNAME:
-                        vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
-                            persist_dir=persist_dir, fs=fs
-                        )
-                    else:
-                        vector_stores[namespace] = cls.from_persist_dir(
-                            persist_dir=persist_dir, namespace=namespace, fs=fs
-                        )
+            files = (
+                os.listdir(persist_dir)
+                if fs is None
+                else fs.listdir(persist_dir, detail=False)
+            )
         except Exception:
             # failed to listdir, so assume there is only one store
             try:
@@ -141,6 +131,22 @@ class SimpleVectorStore(BasePydanticVectorStore):
                 vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
                     persist_dir=persist_dir, fs=fs
                 )
+            return vector_stores
+
+        for path in files:
+            fname = os.path.basename(path)
+            if fname.endswith(DEFAULT_PERSIST_FNAME):
+                namespace = fname.split(NAMESPACE_SEP)[0]
+
+                # handle backwards compatibility with stores that were persisted
+                if namespace == DEFAULT_PERSIST_FNAME:
+                    vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
+                        persist_dir=persist_dir, fs=fs
+                    )
+                else:
+                    vector_stores[namespace] = cls.from_persist_dir(
+                        persist_dir=persist_dir, namespace=namespace, fs=fs
+                    )
 
         return vector_stores
 
@@ -343,7 +349,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         with fs.open(persist_path, "rb") as f:
             data_dict = json.load(f)
             data = SimpleVectorStoreData.from_dict(data_dict)
-        return cls(data)
+        return cls(data, fs=fs)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> "SimpleVectorStore":
