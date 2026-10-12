@@ -68,9 +68,11 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-4-6-v1:0": 1000000,
     "anthropic.claude-sonnet-4-6": 1000000,
     "anthropic.claude-sonnet-5": 1000000,
+    "anthropic.claude-sonnet-5-5": 1000000,
     "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-opus-4-8": 1000000,
     "anthropic.claude-opus-5": 1000000,
+    "anthropic.claude-opus-5-5": 1000000,
     "anthropic.claude-fable-5": 1000000,
 }
 
@@ -88,9 +90,11 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-4-6": 1000000,
     "claude-sonnet-4-6": 1000000,
     "claude-sonnet-5": 1000000,
+    "claude-sonnet-5-5": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
     "claude-opus-5": 1000000,
+    "claude-opus-5-5": 1000000,
     "claude-fable-5": 1000000,
 }
 
@@ -119,9 +123,11 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-6": 1000000,
     "claude-sonnet-4-6": 1000000,
     "claude-sonnet-5": 1000000,
+    "claude-sonnet-5-5": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
     "claude-opus-5": 1000000,
+    "claude-opus-5-5": 1000000,
     "claude-fable-5": 1000000,
 }
 
@@ -140,10 +146,14 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
     "claude-opus-4-8",
     "anthropic.claude-opus-5",
     "claude-opus-5",
+    "anthropic.claude-opus-5-5",
+    "claude-opus-5-5",
     "anthropic.claude-fable-5",
     "claude-fable-5",
     "anthropic.claude-sonnet-5",
     "claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
+    "claude-sonnet-5-5",
 )
 
 
@@ -586,6 +596,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude Opus 5.5
+    "claude-opus-5-5",
     # Claude Opus 5
     "claude-opus-5",
     # Claude 4.5 Opus
@@ -598,6 +610,10 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-opus-4-20250514",
     "claude-opus-4-0",
     "claude-4-opus-20250514",
+    # Claude Sonnet 5.5
+    "claude-sonnet-5-5",
+    # Claude Sonnet 5
+    "claude-sonnet-5",
     # Claude 4.5 Sonnet
     "claude-sonnet-4-5-20250929",
     "claude-sonnet-4-5",
@@ -627,6 +643,7 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
 )
 
 STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
+    "claude-opus-5-5",
     "claude-opus-5",
     "claude-opus-4-1-20250805",
     "claude-opus-4-1",
@@ -637,6 +654,8 @@ STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
     "claude-opus-4-5-20251101",
     "claude-opus-4-5",
     "claude-sonnet-4-6",
+    "claude-sonnet-5",
+    "claude-sonnet-5-5",
     "claude-opus-4-6",
 )
 

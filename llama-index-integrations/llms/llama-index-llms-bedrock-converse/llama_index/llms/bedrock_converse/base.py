@@ -44,6 +44,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelec
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
+    BEDROCK_NO_FORCED_TOOL_CALL_MODELS,
     BEDROCK_NO_TEMP_MODELS,
     HAS_AIOBOTO3,
     ThinkingDict,
@@ -278,6 +279,9 @@ class BedrockConverse(FunctionCallingLLM):
                 "Thinking will be disabled.",
                 UserWarning,
             )
+
+        if any(m in model for m in BEDROCK_NO_FORCED_TOOL_CALL_MODELS):
+            supports_forced_tool_calls = False
 
         super().__init__(
             temperature=temperature,

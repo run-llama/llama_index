@@ -102,24 +102,51 @@ except ImportError:
     from langchain.tools import BaseTool, StructuredTool, Tool
 
 # Models
-from langchain_community.chat_models import (
-    ChatAnyscale,
-    ChatOpenAI,
-    ChatFireworks,
-)
-from langchain_community.embeddings import (
-    HuggingFaceBgeEmbeddings,
-    HuggingFaceEmbeddings,
-)
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    try:
+        from langchain_community.chat_models import ChatOpenAI
+    except (ImportError, AttributeError):
+        ChatOpenAI = None  # type: ignore[assignment, misc]
+
+try:
+    from langchain_fireworks import ChatFireworks
+except ImportError:
+    try:
+        from langchain_community.chat_models import ChatFireworks
+    except (ImportError, AttributeError):
+        ChatFireworks = None  # type: ignore[assignment, misc]
+
+try:
+    from langchain_community.chat_models import ChatAnyscale
+except (ImportError, AttributeError):
+    ChatAnyscale = None  # type: ignore[assignment, misc]
+
+try:
+    from langchain_community.embeddings import (
+        HuggingFaceBgeEmbeddings,
+        HuggingFaceEmbeddings,
+    )
+except (ImportError, AttributeError):
+    HuggingFaceBgeEmbeddings = None  # type: ignore[assignment, misc]
+    HuggingFaceEmbeddings = None  # type: ignore[assignment, misc]
 
 # LLMs
-from langchain_community.llms import (
-    AI21,
-    BaseLLM,
-    Cohere,
-    FakeListLLM,
-    OpenAI,
-)
+try:
+    from langchain_community.llms import (
+        AI21,
+        BaseLLM,
+        Cohere,
+        FakeListLLM,
+        OpenAI,
+    )
+except (ImportError, AttributeError):
+    AI21 = None  # type: ignore[assignment, misc]
+    BaseLLM = None  # type: ignore[assignment, misc]
+    Cohere = None  # type: ignore[assignment, misc]
+    FakeListLLM = None  # type: ignore[assignment, misc]
+    OpenAI = None  # type: ignore[assignment, misc]
 
 __all__ = [
     "langchain",
