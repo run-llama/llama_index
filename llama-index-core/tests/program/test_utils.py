@@ -1,9 +1,15 @@
 """Test program utils."""
 
+import json
 import pytest
-from typing import List, Optional
+from typing import Any, List, Optional
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    CompletionResponse,
+    MessageRole,
+)
 from llama_index.core.llms import MockFunctionCallingLLM
 from llama_index.core.program.utils import (
     _repair_incomplete_json,
@@ -33,6 +39,82 @@ def test_repair_incomplete_json() -> None:
     # Test already valid JSON
     valid_json = '{"name": "John", "age": 30}'
     assert _repair_incomplete_json(valid_json) == valid_json
+
+
+@pytest.mark.parametrize(
+    ("partial_json", "expected"),
+    [
+        # unclosed arrays are closed in the order they were opened
+        ('{"songs": [', {"songs": []}),
+        ('{"tags": ["a", "b', {"tags": ["a", "b"]}),
+        (
+            '{"songs": [{"title": "Intro"',
+            {"songs": [{"title": "Intro"}]},
+        ),
+        (
+            '{"songs": [{"title": "Intro"}, {"title": "Ou',
+            {"songs": [{"title": "Intro"}, {"title": "Ou"}]},
+        ),
+        # escaped quotes do not end the string
+        ('{"artist": "The \\"Quoted', {"artist": 'The "Quoted'}),
+        ('{"artist": "The \\"Quoted\\" Band', {"artist": 'The "Quoted" Band'}),
+        # brackets inside strings are not structural
+        ('{"title": "Intro {live', {"title": "Intro {live"}),
+        ('{"title": "a]b', {"title": "a]b"}),
+        ('{"title": "a}b"', {"title": "a}b"}),
+        # a dangling escape character is dropped before closing the string
+        ('{"path": "C:\\', {"path": "C:"}),
+        # an escaped backslash is kept and does not escape the closing quote
+        ('{"path": "C:\\\\', {"path": "C:\\"}),
+        # a trailing comma between members/items is dropped
+        ('{"name": "Echoes",', {"name": "Echoes"}),
+        ('{"tags": ["a", ', {"tags": ["a"]}),
+    ],
+)
+def test_repair_incomplete_json_produces_valid_json(
+    partial_json: str, expected: Any
+) -> None:
+    """Repaired partial JSON should parse to the content streamed so far."""
+    assert json.loads(_repair_incomplete_json(partial_json)) == expected
+
+
+def test_process_streaming_objects_streams_list_items_incrementally() -> None:
+    """Items of a list field should show up while the list is still streaming."""
+
+    class Song(BaseModel):
+        title: str
+        length_seconds: int
+
+    class Album(BaseModel):
+        name: str
+        songs: List[Song]
+
+    full_json = json.dumps(
+        {
+            "name": "Echoes",
+            "songs": [
+                {"title": "Intro", "length_seconds": 61},
+                {"title": "Outro", "length_seconds": 200},
+            ],
+        }
+    )
+
+    # Mirror LLMTextCompletionProgram.stream_call: feed every incomplete prefix
+    # of the response and thread the previous result back in as `cur_objects`.
+    cur_objects = None
+    song_counts = []
+    for end in range(1, len(full_json)):
+        result = process_streaming_objects(
+            CompletionResponse(text=full_json[:end]), Album, cur_objects=cur_objects
+        )
+        cur_objects = [result]
+        song_counts.append(len(getattr(result, "songs", None) or []))
+
+    # The first song must be visible before the second one finishes streaming,
+    # instead of the whole list appearing only once the JSON is complete.
+    assert 1 in song_counts
+    assert song_counts.index(1) < song_counts.index(2)
+    assert song_counts == sorted(song_counts)
 
 
 def test_process_streaming_objects() -> None:

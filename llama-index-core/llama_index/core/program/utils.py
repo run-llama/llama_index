@@ -1,6 +1,7 @@
 """Program utils."""
 
 import logging
+import re
 from typing import Any, List, Type, Sequence, Union, Optional, Dict
 
 from llama_index.core.bridge.pydantic import (
@@ -18,6 +19,8 @@ from llama_index.core.types import BasePydanticProgram, Model, PydanticProgramMo
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 
 _logger = logging.getLogger(__name__)
+
+_NON_BRACKETS_RE = re.compile(r"[^{}\[\]]+")
 
 
 class FlexibleModel(BaseModel):
@@ -139,6 +142,11 @@ def _repair_incomplete_json(json_str: str) -> str:
     """
     Attempt to repair incomplete JSON strings.
 
+    Closes an unterminated string and any objects or arrays that are still open,
+    in the reverse order they were opened. Quotes and brackets inside string
+    values (including escaped quotes) are ignored, and a trailing comma left
+    between two members or items is dropped.
+
     Args:
         json_str (str): Potentially incomplete JSON string
 
@@ -149,17 +157,32 @@ def _repair_incomplete_json(json_str: str) -> str:
     if not json_str.strip():
         return "{}"
 
-    # Add missing quotes
-    quote_count = json_str.count('"')
-    if quote_count % 2 == 1:
+    # Once escaped backslashes and quotes are removed, every remaining quote
+    # opens or closes a string, so splitting on quotes alternates between JSON
+    # structure (even parts) and string contents (odd parts). An even number of
+    # parts means the last string is still open.
+    parts = json_str.replace("\\\\", "").replace('\\"', "").split('"')
+    in_string = len(parts) % 2 == 0
+
+    closers: List[str] = []
+    for bracket in _NON_BRACKETS_RE.sub("", "".join(parts[::2])):
+        if bracket == "{":
+            closers.append("}")
+        elif bracket == "[":
+            closers.append("]")
+        elif closers and closers[-1] == bracket:
+            closers.pop()
+
+    if in_string:
+        # An odd run of trailing backslashes ends in a dangling escape, which
+        # would otherwise escape the closing quote.
+        if (len(json_str) - len(json_str.rstrip("\\"))) % 2 == 1:
+            json_str = json_str[:-1]
         json_str += '"'
+    elif json_str.rstrip().endswith(","):
+        json_str = json_str.rstrip()[:-1]
 
-    # Add missing braces
-    brace_count = json_str.count("{") - json_str.count("}")
-    if brace_count > 0:
-        json_str += "}" * brace_count
-
-    return json_str
+    return json_str + "".join(reversed(closers))
 
 
 def process_streaming_objects(
