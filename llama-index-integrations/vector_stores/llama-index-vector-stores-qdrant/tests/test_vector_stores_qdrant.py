@@ -400,6 +400,57 @@ def test_numeric_eq_and_ne_large_int_precision() -> None:
     assert ne_ids(-other) == ["a", "b", "c"]
 
 
+def test_numeric_eq_and_ne_range_guard_boundary() -> None:
+    """
+    The largest ints still routed through the range keep integer identity.
+
+    2**50 - 1 is the largest magnitude the range path serves; on a real server
+    the REST float-formatted bounds lose identity from roughly 2**51 upward,
+    which is why the guard sits a power of two below that.
+    """
+    client = QdrantClient(":memory:")
+    vector_store = QdrantVectorStore("test_range_guard_boundary", client=client)
+    top, under = 2**50 - 1, 2**50 - 2
+    vector_store.add(
+        [
+            TextNode(text="a", embedding=[1.0, 0.0], metadata={"id": top}),
+            TextNode(text="b", embedding=[0.0, 1.0], metadata={"id": under}),
+            TextNode(text="c", embedding=[0.0, 0.0], metadata={"id": -top}),
+            TextNode(text="d", embedding=[0.0, 0.0], metadata={"id": -under}),
+        ]
+    )
+
+    def eq_ids(value):
+        results = vector_store.get_nodes(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="id", value=value, operator=FilterOperator.EQ)
+                ]
+            )
+        )
+        return sorted(node.get_content() for node in results)
+
+    def ne_ids(value):
+        results = vector_store.get_nodes(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="id", value=value, operator=FilterOperator.NE)
+                ]
+            )
+        )
+        return sorted(node.get_content() for node in results)
+
+    assert eq_ids(top) == ["a"]
+    assert eq_ids(under) == ["b"]
+    assert eq_ids(-top) == ["c"]
+    assert eq_ids(-under) == ["d"]
+
+    assert ne_ids(top) == ["b", "c", "d"]
+    assert ne_ids(under) == ["a", "c", "d"]
+    assert ne_ids(-top) == ["a", "b", "d"]
+    assert ne_ids(-under) == ["a", "b", "c"]
+
+
 def test_hybrid_vector_store_query(
     hybrid_vector_store: QdrantVectorStore,
 ) -> None:
