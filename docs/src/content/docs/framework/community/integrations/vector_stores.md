@@ -35,7 +35,7 @@ as the storage backend for `VectorStoreIndex`.
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
-- MariaDB (`MariaDBVectorStore`). [MariaDB Vector Overview](https://mariadb.com/kb/en/vector-overview/)
+- MariaDB (`MariaDBVectorStore`). [MariaDB Vector Overview]([https://mariadb.com/kb/en/vector-overview/](https://mariadb.com/docs/server/reference/sql-structure/vectors/vector-overview))
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
