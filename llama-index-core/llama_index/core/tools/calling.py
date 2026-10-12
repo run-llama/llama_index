@@ -36,11 +36,9 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return tool(**arguments)
                 return tool(single_arg)
-            try:
-                return tool(single_arg)
-            except Exception:
-                # some tools will REQUIRE kwargs, so try it
-                return tool(**arguments)
+
+            return tool(single_arg)
+
         else:
             return tool(**arguments)
     except Exception as e:
@@ -67,11 +65,7 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return await async_tool.acall(**arguments)
                 return await async_tool.acall(single_arg)
-            try:
-                return await async_tool.acall(single_arg)
-            except Exception:
-                # some tools will REQUIRE kwargs, so try it
-                return await async_tool.acall(**arguments)
+            return await async_tool.acall(single_arg)
         else:
             return await async_tool.acall(**arguments)
     except Exception as e:
