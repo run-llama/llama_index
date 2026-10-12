@@ -80,9 +80,10 @@ embed_model = BedrockEmbedding(
 This integration supports both Cohere v3 and v4 embedding models, including the new multimodal `cohere.embed-v4:0` model. The integration automatically detects and handles different response formats (v3 and v4), maintaining full backward compatibility.
 
 ```python
-# Using Cohere v4 model
+# Using Cohere v4 model with custom parameters
 embed_model = BedrockEmbedding(
     model_name="cohere.embed-v4:0",
+    additional_kwargs={"output_dimension": 512},
     region_name="us-east-1",
 )
 
