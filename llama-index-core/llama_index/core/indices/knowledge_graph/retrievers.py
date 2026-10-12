@@ -263,7 +263,7 @@ class KGTableRetriever(BaseRetriever):
                 embedding_ids=all_rel_texts,
             )
             logger.debug(
-                f"Found the following rel_texts+query similarites: {similarities!s}"
+                f"Found the following rel_texts+query similarities: {similarities!s}"
             )
             logger.debug(f"Found the following top_k rel_texts: {rel_texts!s}")
             rel_texts.extend(top_rel_texts)
