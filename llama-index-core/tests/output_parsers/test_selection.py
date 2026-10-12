@@ -1,5 +1,8 @@
 import pytest
-from llama_index.core.output_parsers.base import StructuredOutput
+from llama_index.core.output_parsers.base import (
+    OutputParserException,
+    StructuredOutput,
+)
 from llama_index.core.output_parsers.selection import SelectionOutputParser
 
 
@@ -80,3 +83,10 @@ def test_failed_parse(output_parser: SelectionOutputParser) -> None:
     )
     with pytest.raises(ValueError, match="Failed to convert*") as exc_info:
         output_parser.parse(output=no_json_in_response)
+
+
+def test_truncated_parse(output_parser: SelectionOutputParser) -> None:
+    truncated_response = 'Here is the result: [{"choice": 1, "reason": "because'
+    with pytest.raises(OutputParserException) as exc_info:
+        output_parser.parse(output=truncated_response)
+    assert '[{"choice": 1, "reason": "because' in str(exc_info.value)
