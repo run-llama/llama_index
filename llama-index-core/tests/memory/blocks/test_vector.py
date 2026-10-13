@@ -1,5 +1,6 @@
 import pytest
 from typing import Any, Dict, List, Sequence
+from unittest.mock import AsyncMock, patch
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.embeddings import MockEmbedding
@@ -153,6 +154,59 @@ async def test_vector_memory_block_get(vector_memory_block: VectorMemoryBlock):
     # Check that we got a result
     assert result != ""
     assert "capital of France is Paris" in result
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("similarities", [None, [0.9, 0.0]])
+async def test_retrieval_with_optional_similarities(
+    vector_memory_block: VectorMemoryBlock, similarities
+):
+    nodes = [
+        TextNode(text="Paris is in France."),
+        TextNode(text="Berlin is in Germany."),
+    ]
+    query_result = VectorStoreQueryResult(nodes=nodes, similarities=similarities)
+    vector_memory_block.node_postprocessors = [MockNodePostprocessor()]
+
+    with (
+        patch.object(MockVectorStore, "aquery", AsyncMock(return_value=query_result)),
+        patch.object(
+            MockNodePostprocessor,
+            "_postprocess_nodes",
+            autospec=True,
+            side_effect=MockNodePostprocessor._postprocess_nodes,
+        ) as postprocess,
+    ):
+        result = await vector_memory_block.aget(
+            messages=[
+                ChatMessage(role="user", content="Tell me about European cities.")
+            ]
+        )
+
+    assert (
+        result == "PROCESSED: Paris is in France.\n\nPROCESSED: Berlin is in Germany."
+    )
+    postprocess.assert_called_once()
+    retrieved_nodes = postprocess.call_args.args[1]
+    assert [node.node for node in retrieved_nodes] == nodes
+    assert [node.score for node in retrieved_nodes] == (
+        similarities if similarities is not None else [None, None]
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("nodes", [None, []])
+async def test_retrieval_without_nodes(vector_memory_block: VectorMemoryBlock, nodes):
+    with patch.object(
+        MockVectorStore,
+        "aquery",
+        AsyncMock(return_value=VectorStoreQueryResult(nodes=nodes)),
+    ):
+        result = await vector_memory_block.aget(
+            messages=[ChatMessage(role="user", content="Tell me about Paris.")]
+        )
+
+    assert result == ""
 
 
 @pytest.mark.asyncio
