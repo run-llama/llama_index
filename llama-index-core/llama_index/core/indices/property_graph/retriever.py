@@ -7,6 +7,7 @@ from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BasePGRetriever,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.settings import Settings
 
 
 class PGRetriever(BaseRetriever):
@@ -37,6 +38,15 @@ class PGRetriever(BaseRetriever):
         self.use_async = use_async
         self.num_workers = num_workers
         self.show_progress = show_progress
+
+        callback_manager = kwargs.get("callback_manager")
+        if callback_manager is None:
+            callback_manager = Settings.callback_manager
+        super().__init__(
+            callback_manager=callback_manager,
+            object_map=kwargs.get("object_map"),
+            verbose=kwargs.get("verbose", False),
+        )
 
     def _deduplicate(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         seen = set()
