@@ -63,8 +63,9 @@ class Cerebras(OpenAILike):
     def _get_model_kwargs(self, **kwargs: Any) -> dict[str, Any]:
         model_kwargs = super()._get_model_kwargs(**kwargs)
         if self.max_completion_tokens is not None:
-            model_kwargs.pop("max_tokens", None)
             model_kwargs["max_completion_tokens"] = self.max_completion_tokens
+        if model_kwargs.get("max_completion_tokens") is not None:
+            model_kwargs.pop("max_tokens", None)
         if self.reasoning_effort is not None:
             model_kwargs["reasoning_effort"] = self.reasoning_effort
         return model_kwargs

@@ -21,6 +21,33 @@ def test_max_completion_tokens_is_preserved_without_alias():
     assert "max_tokens" not in params
 
 
+def test_max_completion_tokens_in_additional_kwargs_removes_alias():
+    llm = Cerebras(
+        model="gpt-oss-120b",
+        api_key="test-key",
+        max_tokens=32,
+        additional_kwargs={"max_completion_tokens": 64},
+    )
+
+    params = llm._get_model_kwargs()
+
+    assert params["max_completion_tokens"] == 64
+    assert "max_tokens" not in params
+
+
+def test_per_call_max_completion_tokens_removes_alias():
+    llm = Cerebras(
+        model="gpt-oss-120b",
+        api_key="test-key",
+        max_tokens=32,
+    )
+
+    params = llm._get_model_kwargs(max_completion_tokens=96)
+
+    assert params["max_completion_tokens"] == 96
+    assert "max_tokens" not in params
+
+
 def test_reasoning_effort_is_forwarded_for_cerebras_models():
     llm = Cerebras(
         model="gemma-4-31b",
