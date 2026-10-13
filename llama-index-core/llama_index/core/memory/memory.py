@@ -455,6 +455,8 @@ class Memory(BaseMemory):
         block_input = chat_history
         if isinstance(input, str):
             block_input = [*chat_history, ChatMessage(role="user", content=input)]
+        elif isinstance(input, ChatMessage):
+            block_input = [*chat_history, input]
 
         # Process memory blocks in priority order
         for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
