@@ -23,6 +23,14 @@ class PGRetriever(BaseRetriever):
             Whether to use async retrieval. Defaults to True.
         show_progress (bool, optional):
             Whether to show progress bars. Defaults to False.
+        callback_manager (CallbackManager, optional):
+            Passed via kwargs. Defaults to Settings.callback_manager.
+        object_map (dict, optional):
+            Passed via kwargs. Maps index ids to objects used to resolve
+            IndexNodes returned by the sub-retrievers.
+        verbose (bool, optional):
+            Passed via kwargs. Whether to print recursive retrieval steps.
+            Defaults to False.
 
     """
 
@@ -39,6 +47,9 @@ class PGRetriever(BaseRetriever):
         self.num_workers = num_workers
         self.show_progress = show_progress
 
+        # as_retriever forwards the same kwargs to every sub-retriever, so keep
+        # **kwargs and read only the keys BaseRetriever understands. Default to
+        # Settings.callback_manager, which is what retrieve() fell back to before.
         callback_manager = kwargs.get("callback_manager")
         if callback_manager is None:
             callback_manager = Settings.callback_manager
