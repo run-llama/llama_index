@@ -107,7 +107,7 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
             return f(self, *args, **kwargs)
 
         retry = create_retry_decorator(
-            max_retries=max_retries,
+            max_retries=0,  # SDK retries handled by tenacity decorator; avoid retrying non-retriable errors like AuthenticationError
             random_exponential=True,
             stop_after_delay_seconds=60,
             min_seconds=1,
@@ -208,7 +208,7 @@ class OpenAI(FunctionCallingLLM):
     )
     max_retries: int = Field(
         default=3,
-        description="The maximum number of API retries.",
+        description="The maximum number of retries (handled by tenacity). The underlying OpenAI SDK client is always initialized with max_retries=0 to prevent retrying non-retriable errors like AuthenticationError.",
         ge=0,
     )
     timeout: float = Field(
@@ -317,7 +317,7 @@ class OpenAI(FunctionCallingLLM):
             temperature=temperature,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
-            max_retries=max_retries,
+            max_retries=0,  # SDK retries handled by tenacity decorator; avoid retrying non-retriable errors like AuthenticationError
             callback_manager=callback_manager,
             api_key=api_key,
             api_version=api_version,
