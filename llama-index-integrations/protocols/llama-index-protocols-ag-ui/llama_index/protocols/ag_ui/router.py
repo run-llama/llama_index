@@ -23,6 +23,8 @@ from llama_index.protocols.ag_ui.events import (
     RunFinishedWorkflowEvent,
     RunErrorWorkflowEvent,
     CustomWorkflowEvent,
+    ActivitySnapshotWorkflowEvent,
+    ActivityDeltaWorkflowEvent,
 )
 from llama_index.protocols.ag_ui.utils import (
     timestamp,
@@ -42,6 +44,8 @@ AG_UI_EVENTS = (
     TextMessageChunkWorkflowEvent,
     ToolCallChunkWorkflowEvent,
     CustomWorkflowEvent,
+    ActivitySnapshotWorkflowEvent,
+    ActivityDeltaWorkflowEvent,
 )
 
 
