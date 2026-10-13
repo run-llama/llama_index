@@ -2,20 +2,22 @@
 title: LlamaCloudIndex + LlamaCloudRetriever
 ---
 
-LlamaCloud is a new generation of managed parsing, ingestion, and retrieval services, designed to bring production-grade context-augmentation to your LLM and RAG applications.
+`LlamaCloudIndex` connects this framework to the first version of Index, the managed ingestion and retrieval service in [LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team. LlamaParse was previously called LlamaCloud, which is where the class and package names below come from.
 
-Currently, LlamaCloud supports
+:::caution[This integration targets the earlier version of Index]
+`LlamaCloudIndex` ships in `llama-cloud-services`, a package that is deprecated and no longer updated, and it talks to the first version of Index. Installing it pins an old release of `llama-cloud`, so it cannot share an environment with the current `llama-cloud` SDK. For new projects, use [Index v2](/llamaparse/cloud-index-v2/getting_started/) through the `llama-cloud` SDK.
+:::
 
-- Managed Ingestion API, handling parsing and document management
-- Managed Retrieval API, configuring optimal retrieval for your RAG system
+Index gives you
 
-For additional documentation on LlamaCloud and this integration in particular, please reference our [official LlamaCloud docs](https://docs.cloud.llamaindex.ai/llamacloud/guides/framework_integration).
+- Managed ingestion: parsing, chunking, embedding and document management, kept in sync with your data sources
+- Managed retrieval: a retrieval endpoint tuned for your RAG system, used here as a LlamaIndex retriever or query engine
+
+For the service itself, see the [documentation for that version of Index](/llamaparse/deprecated/cloud-index/getting_started/).
 
 ## Access
 
-We are opening up a private beta to a limited set of enterprise partners for the managed ingestion and retrieval API. If you’re interested in centralizing your data pipelines and spending more time working on your actual RAG use cases, come [talk to us.](https://www.llamaindex.ai/contact)
-
-If you have access to LlamaCloud, you can visit [LlamaCloud](https://cloud.llamaindex.ai) to sign in and get an API key.
+[Sign up for LlamaParse](https://cloud.llamaindex.ai) to get an API key, then create an index from the dashboard or with the code below. Talk to us about [enterprise plans](https://www.llamaindex.ai/contact) if you need self-hosting or a dedicated region.
 
 ## Setup
 
@@ -26,7 +28,7 @@ pip uninstall llama-index  # run this if upgrading from v0.9.x or older
 pip install -U llama-index --upgrade --no-cache-dir --force-reinstall
 ```
 
-The `llama-cloud-services` package is included with the above install, but you can also install directly
+Then install the integration package, which is not included with `llama-index`:
 
 ```
 pip install -U llama-cloud-services

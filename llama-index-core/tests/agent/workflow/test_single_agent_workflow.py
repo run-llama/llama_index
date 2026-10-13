@@ -179,6 +179,53 @@ async def test_single_function_agent(function_agent):
 
 
 @pytest.mark.asyncio
+async def test_function_agent_streams_empty_tool_arguments() -> None:
+    async def run_agent(streaming: bool) -> str:
+        call_count = 0
+
+        def empty_tool() -> str:
+            nonlocal call_count
+            call_count += 1
+            return "empty tool result"
+
+        responses = [
+            ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="calling empty tool",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(
+                            tool_id="empty-call", tool_name="empty_tool", tool_kwargs={}
+                        )
+                    ]
+                },
+            ),
+            ChatMessage(role=MessageRole.ASSISTANT, content="finished"),
+        ]
+        agent = FunctionAgent(
+            name="agent",
+            description="test",
+            tools=[empty_tool],
+            llm=MockFunctionCallingLLM(
+                response_generator=_response_generator_from_list(responses)
+            ),
+            streaming=streaming,
+        )
+
+        handler = agent.run(user_msg="Run the empty tool")
+        async for _ in handler.stream_events():
+            pass
+        response = await handler
+
+        assert call_count == 1
+        return response.response.content or ""
+
+    streamed_response = await run_agent(streaming=True)
+    assert streamed_response == "finished"
+    assert streamed_response == await run_agent(streaming=False)
+
+
+@pytest.mark.asyncio
 async def test_single_react_agent(calculator_agent):
     """Verify execution of basic ReAct single agent."""
     memory = ChatMemoryBuffer.from_defaults()
