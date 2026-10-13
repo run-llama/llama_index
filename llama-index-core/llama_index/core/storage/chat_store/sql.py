@@ -249,6 +249,9 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         status: MessageStatus = MessageStatus.ACTIVE,
     ) -> None:
         """Add a list of messages in batch for the specified key and status (async)."""
+        if not messages:
+            return
+
         session_factory, table = await self._initialize()
 
         async with session_factory() as session:
