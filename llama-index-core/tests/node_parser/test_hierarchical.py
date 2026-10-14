@@ -80,9 +80,13 @@ def test_hierarchical_nodes_have_sibling_relationships_and_document_offsets() ->
     ).get_nodes_from_documents([doc])
     non_root = [node for node in nodes if NodeRelationship.PARENT in node.relationships]
 
-    assert sum(NodeRelationship.NEXT in node.relationships for node in non_root) == sum(
+    next_count = sum(NodeRelationship.NEXT in node.relationships for node in non_root)
+    previous_count = sum(
         NodeRelationship.PREVIOUS in node.relationships for node in non_root
     )
+    assert next_count > 0
+    assert previous_count > 0
+    assert next_count == previous_count
     for node in non_root:
         if isinstance(node, TextNode):
             assert node.start_char_idx is not None
@@ -102,9 +106,13 @@ def test_pipeline_resplitting_preserves_sibling_relationships_and_offsets() -> N
         ]
     ).run(documents=[doc])
 
-    assert sum(NodeRelationship.NEXT in node.relationships for node in nodes) == sum(
+    next_count = sum(NodeRelationship.NEXT in node.relationships for node in nodes)
+    previous_count = sum(
         NodeRelationship.PREVIOUS in node.relationships for node in nodes
     )
+    assert next_count > 0
+    assert previous_count > 0
+    assert next_count == previous_count
     for node in nodes:
         assert isinstance(node, TextNode)
         assert node.start_char_idx is not None
