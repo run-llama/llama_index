@@ -61,12 +61,14 @@ class HTMLTagReader(BaseReader):
 
     def _extract_text_from_tag(self, tag: "Tag") -> str:
         try:
-            from bs4 import NavigableString
+            from bs4 import Comment, NavigableString
         except ImportError:
             raise ImportError("bs4 is required to read HTML files.")
 
         texts = []
         for elem in tag.children:
+            if isinstance(elem, Comment):
+                continue
             if isinstance(elem, NavigableString):
                 if elem.strip():
                     texts.append(elem.strip())
