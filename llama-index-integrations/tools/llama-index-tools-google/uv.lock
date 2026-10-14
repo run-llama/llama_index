@@ -2111,7 +2111,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-google"
-version = "0.7.1"
+version = "0.8.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
