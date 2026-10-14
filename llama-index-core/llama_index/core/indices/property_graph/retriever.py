@@ -7,6 +7,7 @@ from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BasePGRetriever,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.settings import Settings
 
 
 class PGRetriever(BaseRetriever):
@@ -22,6 +23,14 @@ class PGRetriever(BaseRetriever):
             Whether to use async retrieval. Defaults to True.
         show_progress (bool, optional):
             Whether to show progress bars. Defaults to False.
+        callback_manager (CallbackManager, optional):
+            Passed via kwargs. Defaults to Settings.callback_manager.
+        object_map (dict, optional):
+            Passed via kwargs. Maps index ids to objects used to resolve
+            IndexNodes returned by the sub-retrievers.
+        verbose (bool, optional):
+            Passed via kwargs. Whether to print recursive retrieval steps.
+            Defaults to False.
 
     """
 
@@ -37,6 +46,18 @@ class PGRetriever(BaseRetriever):
         self.use_async = use_async
         self.num_workers = num_workers
         self.show_progress = show_progress
+
+        # as_retriever forwards the same kwargs to every sub-retriever, so keep
+        # **kwargs and read only the keys BaseRetriever understands. Default to
+        # Settings.callback_manager, which is what retrieve() fell back to before.
+        callback_manager = kwargs.get("callback_manager")
+        if callback_manager is None:
+            callback_manager = Settings.callback_manager
+        super().__init__(
+            callback_manager=callback_manager,
+            object_map=kwargs.get("object_map"),
+            verbose=kwargs.get("verbose", False),
+        )
 
     def _deduplicate(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         seen = set()
