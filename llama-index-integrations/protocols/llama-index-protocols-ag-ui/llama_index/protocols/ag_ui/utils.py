@@ -108,6 +108,14 @@ AG_UI_PARTS_KEY = "ag_ui_parts"
 #: user-authored block that happens to contain ``<state>`` markup.
 AG_UI_STATE_BLOCK_KEY = "ag_ui_injected_state_block"
 
+#: additional_kwargs keys marking the workflow's ``system_prompt``: either a
+#: system message the workflow inserted, or the text block it appended to the
+#: client's own system message (always the last block). Neither is sent back
+#: in ``MESSAGES_SNAPSHOT``: clients adopt the snapshot and send it on the next
+#: run, where the prompt would be injected again.
+AG_UI_SYSTEM_PROMPT_MESSAGE_KEY = "ag_ui_injected_system_prompt_message"
+AG_UI_SYSTEM_PROMPT_BLOCK_KEY = "ag_ui_injected_system_prompt_block"
+
 
 def agui_content_to_blocks(
     content: Union[str, List[ContentPart]],
@@ -278,7 +286,10 @@ def llama_index_message_to_ag_ui_message(
 ) -> Message:
     msg_id = message.additional_kwargs.get("id", str(uuid.uuid4()))
     if message.role.value == "system":
-        return SystemMessage(id=msg_id, content=message.content, role="system")
+        content = message.content
+        if message.additional_kwargs.get(AG_UI_SYSTEM_PROMPT_BLOCK_KEY):
+            content = ChatMessage(role="system", blocks=message.blocks[:-1]).content
+        return SystemMessage(id=msg_id, content=content, role="system")
     elif (
         message.role.value == "user" and "tool_call_id" not in message.additional_kwargs
     ):
