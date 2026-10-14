@@ -577,7 +577,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                 raise ValueError("Invalid tool_call object")
             if tool_call.type != "function":
                 raise ValueError(
-                    "Invalid tool type. Only `function` is supported but `{tool_call.type}` was received."
+                    f"Invalid tool type. Only `function` is supported but `{tool_call.type}` was received."
                 )
             argument_dict = json.loads(tool_call.function.arguments)
 

@@ -11,6 +11,7 @@ import pytest
 from azure.ai.inference.models import (
     ChatChoice,
     ChatCompletions,
+    ChatCompletionsToolCall,
     ChatCompletionsToolChoicePreset,
     ChatResponseMessage,
     ModelInfo,
@@ -458,3 +459,22 @@ def test_prepare_chat_with_tools_tool_not_required():
     assert result["tool_choice"] == ChatCompletionsToolChoicePreset.AUTO
     assert len(result["tools"]) == 1
     assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_get_tool_calls_from_response_reports_unsupported_tool_type():
+    with mock.patch(
+        "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
+    ):
+        llm = AzureAICompletionsModel(
+            endpoint="https://my-endpoint.inference.ai.azure.com",
+            credential="my-api-key",
+        )
+    tool_call = ChatCompletionsToolCall(
+        id="abc0dF1gh", function={"name": "echo", "arguments": "{}"}
+    )
+    tool_call.type = "not_a_function"
+    response = mock.MagicMock()
+    response.message.additional_kwargs = {"tool_calls": [tool_call]}
+
+    with pytest.raises(ValueError, match="`not_a_function` was received"):
+        llm.get_tool_calls_from_response(response)
