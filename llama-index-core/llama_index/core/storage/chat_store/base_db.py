@@ -88,8 +88,18 @@ class AsyncDBChatStore(BaseModel):
         """Delete the oldest n messages for a key and return them (async)."""
 
     @abstractmethod
-    async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
-        """Archive the oldest n messages for a key and return them (async)."""
+    async def archive_oldest_messages(
+        self,
+        key: str,
+        n: int,
+        exclude_roles: Optional[List[str]] = None,
+    ) -> List[ChatMessage]:
+        """
+        Archive the oldest n messages for a key and return them (async).
+
+        Messages whose role appears in ``exclude_roles`` are skipped so they
+        are never archived (e.g. ``["system"]`` keeps system prompts alive).
+        """
 
     @abstractmethod
     async def get_keys(self) -> List[str]:
