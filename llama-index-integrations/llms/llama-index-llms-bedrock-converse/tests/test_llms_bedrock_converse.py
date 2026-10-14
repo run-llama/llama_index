@@ -271,22 +271,26 @@ def test_init_adaptive_thinking_opus_46(mock_boto3_session):
 
 
 @pytest.mark.parametrize(
-    ("model", "sends_temperature"),
+    ("model", "context_window", "sends_temperature"),
     [
-        ("us.openai.gpt-6-sol", False),
-        ("global.openai.gpt-6-sol", False),
-        ("us.openai.gpt-6-luna", False),
-        ("global.openai.gpt-6-luna", False),
-        ("us.openai.gpt-6-astra", False),
-        ("global.openai.gpt-6-astra", False),
-        ("openai.gpt-oss-120b-1:0", True),
+        ("us.openai.gpt-6-sol", 128000, False),
+        ("global.openai.gpt-6-sol", 128000, False),
+        ("us.openai.gpt-6-luna", 128000, False),
+        ("global.openai.gpt-6-luna", 128000, False),
+        ("us.openai.gpt-6-astra", 128000, False),
+        ("global.openai.gpt-6-astra", 128000, False),
+        ("us.openai.gpt-6.1-sol", 1000000, False),
+        ("global.openai.gpt-6.1-sol", 1000000, False),
+        ("openai.gpt-oss-120b-1:0", 128000, True),
     ],
 )
-def test_init_openai_models(mock_boto3_session, model, sends_temperature):
+def test_init_openai_models(
+    mock_boto3_session, model, context_window, sends_temperature
+):
     """GPT-6 Sol/Luna/Astra are inference-profile only and reject the temperature field."""
     llm = BedrockConverse(model=model, temperature=0.5)
 
-    assert llm.metadata.context_window == 128000
+    assert llm.metadata.context_window == context_window
     assert llm.metadata.is_function_calling_model is True
     assert ("temperature" in llm._model_kwargs) is sends_temperature
 
@@ -862,6 +866,9 @@ def test_prepare_chat_with_tools_tool_not_required(bedrock_converse):
         ("us.anthropic.claude-opus-5-5", {"auto": {}}),
         ("global.anthropic.claude-opus-5-5", {"auto": {}}),
         ("us.anthropic.claude-opus-5", {"any": {}}),
+        ("us.anthropic.claude-fable-5-1", {"auto": {}}),
+        ("global.anthropic.claude-fable-5-1", {"auto": {}}),
+        ("us.anthropic.claude-fable-5", {"any": {}}),
     ],
 )
 def test_prepare_chat_with_tools_tool_required_forced_tool_support(
