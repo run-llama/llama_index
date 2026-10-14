@@ -77,7 +77,9 @@ reranked_nodes = reranker.postprocess_nodes(
 
 ### 🔧 Dependencies
 
-Currently, RankLLM rerankers require `CUDA` and for `rank-llm` to be installed (`pip install rank-llm`). The built-in retriever, which uses [Pyserini](https://github.com/castorini/pyserini), requires `JDK11`, `PyTorch`, and `Faiss`.
+`RankLLMRerank` defers loading RankLLM model backends until reranking begins, so importing and configuring the postprocessor does not load vLLM or other model backend code.
+
+RankLLM 0.25.7 still declares `vllm` as an installation dependency. That upstream requirement can prevent installation on platforms without vLLM wheels, including macOS; deferred loading does not change that installation limitation. When reranking, install the dependencies required by the selected RankLLM backend. The built-in retriever, which uses [Pyserini](https://github.com/castorini/pyserini), requires `JDK11`, `PyTorch`, and `Faiss`.
 
 ### `castorini/rank_llm`
 
