@@ -58,7 +58,7 @@ class Vllm(LLM):
             model="mistralai/Mistral-7B-Instruct-v0.1",
             tensor_parallel_size=4,
             max_new_tokens=256,
-            vllm_kwargs={"swap_space": 1, "gpu_memory_utilization": 0.5},
+            vllm_kwargs={"gpu_memory_utilization": 0.5},
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
         )
@@ -247,14 +247,15 @@ class Vllm(LLM):
             "n": self.n,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
-            "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
             "logprobs": self.logprobs,
             "top_k": self.top_k,
             "top_p": self.top_p,
         }
-        return {**base_kwargs}
+        if self.best_of is not None:
+            base_kwargs["best_of"] = self.best_of
+        return base_kwargs
 
     @atexit.register
     def close():
