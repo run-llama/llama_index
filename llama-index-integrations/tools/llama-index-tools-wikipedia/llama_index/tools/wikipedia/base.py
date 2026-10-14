@@ -39,6 +39,7 @@ class WikipediaToolSpec(BaseToolSpec):
         """
         import wikipedia
 
+        wikipedia.set_lang(lang)
         pages = wikipedia.search(query)
         if len(pages) == 0:
             return "No search results."
