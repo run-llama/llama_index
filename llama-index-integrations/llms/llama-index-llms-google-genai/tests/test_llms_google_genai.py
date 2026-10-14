@@ -990,20 +990,31 @@ def test_temperature_defaults() -> None:
         )
 
         # 1. Non-Gemini 3 models should get DEFAULT_TEMPERATURE (0.1)
-        llm_legacy = GoogleGenAI(
-            model="gemini-2.5-flash",
-            api_key="test-key",
-        )
-        assert llm_legacy.temperature == DEFAULT_TEMPERATURE
-        assert llm_legacy._generation_config["temperature"] == DEFAULT_TEMPERATURE
+        for legacy_model in (
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+        ):
+            llm_legacy = GoogleGenAI(
+                model=legacy_model,
+                api_key="test-key",
+            )
+            assert llm_legacy.temperature == DEFAULT_TEMPERATURE
+            assert llm_legacy._generation_config["temperature"] == DEFAULT_TEMPERATURE
 
-        # 2. Gemini 3 models should leave temperature as None
-        llm_gemini3 = GoogleGenAI(
-            model="gemini-3-flash-preview",
-            api_key="test-key",
-        )
-        assert llm_gemini3.temperature is None
-        assert llm_gemini3._generation_config["temperature"] is None
+        # 2. Gemini 3+ models should leave temperature as None
+        for modern_model in (
+            "gemini-3.1-pro-preview",
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+            "gemini-3.8-flash",
+            "gemini-flash-latest",
+        ):
+            llm_gemini3 = GoogleGenAI(
+                model=modern_model,
+                api_key="test-key",
+            )
+            assert llm_gemini3.temperature is None
+            assert llm_gemini3._generation_config["temperature"] is None
 
 
 def test_temperature_explicitly_set() -> None:
