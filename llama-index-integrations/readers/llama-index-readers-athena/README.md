@@ -19,7 +19,7 @@ Here's an example usage of the AthenaReader.
 ```
 import os
 import dotenv
-from llama_index.core import SQLDatabase,ServiceContext
+from llama_index.core import SQLDatabase
 from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.athena import AthenaReader
@@ -41,16 +41,12 @@ engine = AthenaReader.create_athena_engine(
     workgroup=WORKGROUP
 )
 
-service_context = ServiceContext.from_defaults(
-  llm=llm
-)
-
 sql_database = SQLDatabase(engine, include_tables=[TABLE])
 
 query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database,
     tables=[TABLE],
-    service_context=service_context
+    llm=llm
 )
 query_str = (
     "Which blocknumber has the most transactions?"
