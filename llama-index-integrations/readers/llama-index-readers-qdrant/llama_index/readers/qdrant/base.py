@@ -162,9 +162,9 @@ class QdrantReader(BaseReader):
             if rang_search_mapping
         ]
         should_search_conditions.extend(rang_search_conditions)
-        response = self._client.search(
+        response = self._client.query_points(
             collection_name=collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             query_filter=Filter(
                 must=must_search_conditions,
                 must_not=must_not_search_conditions,
@@ -176,7 +176,7 @@ class QdrantReader(BaseReader):
         )
 
         documents = []
-        for point in response:
+        for point in response.points:
             payload = cast(Payload, point.payload)
             try:
                 vector = cast(List[float], point.vector)
