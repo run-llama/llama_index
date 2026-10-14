@@ -44,6 +44,11 @@ class TableNotFoundError(Exception):
     """Raised when the specified table does not exist."""
 
 
+def _quote_lance_string(value: str) -> str:
+    """Return a safely quoted Lance SQL string literal."""
+    return "'" + value.replace("'", "''") + "'"
+
+
 def _to_lance_filter(
     standard_filters: MetadataFilters,
     metadata_keys: Optional[list],
@@ -59,13 +64,13 @@ def _to_lance_filter(
             filter.operator == FilterOperator.TEXT_MATCH
             or filter.operator == FilterOperator.NE
         ):
-            filters.append(f"{key}{operator}'%{filter.value}%'")
+            pattern = _quote_lance_string(f"%{filter.value!s}%")
+            filters.append(f"{key}{operator}{pattern}")
         elif isinstance(filter.value, list):
             processed_values = []
             for v in filter.value:
                 if isinstance(v, str):
-                    safe_v = v.replace("'", "''")
-                    processed_values.append(f"'{safe_v}'")
+                    processed_values.append(_quote_lance_string(v))
                 else:
                     processed_values.append(str(v))
             val = ",".join(processed_values)
@@ -73,7 +78,7 @@ def _to_lance_filter(
         elif isinstance(filter.value, (int, float)):
             filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(f"{key}{operator}'{filter.value!s}'")
+            filters.append(f"{key}{operator}{_quote_lance_string(str(filter.value))}")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:
@@ -419,7 +424,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self.table.delete(f'{self.doc_id_key} = "' + ref_doc_id + '"')
+        self.table.delete(f"{self.doc_id_key} = {_quote_lance_string(ref_doc_id)}")
 
     def delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
         """
@@ -429,7 +434,12 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             node_ids (List[str]): The list of node_ids to delete.
 
         """
-        self.table.delete('id in ("' + '","'.join(node_ids) + '")')
+        table = self.table
+        if not node_ids:
+            return
+
+        ids = ",".join(_quote_lance_string(node_id) for node_id in node_ids)
+        table.delete(f"id in ({ids})")
 
     def get_nodes(
         self,
