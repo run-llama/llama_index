@@ -8,7 +8,10 @@ instead of a tool call.
 """
 
 import asyncio
+import inspect
 from typing import Any, List, Tuple
+
+import pytest
 
 from ag_ui.core import (
     AssistantMessage,
@@ -26,7 +29,6 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ToolCallBlock,
 )
-from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.protocols.ag_ui.agent import AGUIChatWorkflow
 from llama_index.protocols.ag_ui.events import MessagesSnapshotWorkflowEvent
 from llama_index.protocols.ag_ui.utils import (
@@ -78,6 +80,23 @@ def test_tool_results_become_tool_messages() -> None:
     assert message.additional_kwargs["tool_call_id"] == "call_1"
 
 
+def test_tool_result_content_parts_become_text_in_a_tool_message() -> None:
+    message = ag_ui_message_to_llama_index_message(
+        ToolMessage(
+            id="t2",
+            role="tool",
+            tool_call_id="call_1",
+            content=[
+                {"type": "text", "text": '{"temp_c":'},
+                {"type": "text", "text": "18}"},
+            ],
+        )
+    )
+    assert message.role == MessageRole.TOOL
+    assert message.content == '{"temp_c":18}'
+    assert message.additional_kwargs["tool_call_id"] == "call_1"
+
+
 def test_unparseable_arguments_are_kept_as_sent() -> None:
     call = AssistantMessage(
         id="a2",
@@ -102,6 +121,16 @@ def test_conversion_round_trips() -> None:
 
 
 def run(messages: List[Message]) -> Tuple[List[ChatMessage], List[Message]]:
+    # MockFunctionCallingLLM(response_generator=...) needs llama-index-core
+    # 0.14.12; the converter tests above run down to the package's floor (0.14.5).
+    mock = pytest.importorskip("llama_index.core.llms.mock")
+    MockFunctionCallingLLM = getattr(mock, "MockFunctionCallingLLM", None)
+    if MockFunctionCallingLLM is None or (
+        "response_generator"
+        not in inspect.signature(MockFunctionCallingLLM.__init__).parameters
+    ):
+        pytest.skip("MockFunctionCallingLLM(response_generator=...) needs core 0.14.12")
+
     seen: List[ChatMessage] = []
 
     def respond(chat: List[ChatMessage], **kwargs: Any) -> ChatMessage:
