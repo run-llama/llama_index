@@ -37,6 +37,10 @@ from llama_index.core.evaluation.retrieval.metrics import (
     RetrievalMetricResult,
     resolve_metrics,
 )
+from llama_index.core.evaluation.retrieval.segmented_evaluator import (
+    SegmentedRetrievalEvalResult,
+    SegmentedRetrieverEvaluator,
+)
 from llama_index.core.evaluation.semantic_similarity import (
     SemanticSimilarityEvaluator,
 )
@@ -64,6 +68,8 @@ __all__ = [
     "RetrievalEvalResult",
     "RetrieverEvaluator",
     "MultiModalRetrieverEvaluator",
+    "SegmentedRetrieverEvaluator",
+    "SegmentedRetrievalEvalResult",
     "RetrievalMetricResult",
     "resolve_metrics",
     "HitRate",

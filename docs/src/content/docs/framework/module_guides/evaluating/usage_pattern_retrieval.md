@@ -24,6 +24,32 @@ retriever_evaluator.evaluate(
 )
 ```
 
+## Breaking results down by segment
+
+`SegmentedRetrieverEvaluator` wraps a `RetrieverEvaluator` and additionally computes every metric per segment, e.g. per source format, language or document collection. `segment_fn` labels each retrieved node, and `expected_segments` labels the expected ids, usually built once from the nodes the index was built from.
+
+```python
+from llama_index.core.evaluation import SegmentedRetrieverEvaluator
+
+segmented_evaluator = SegmentedRetrieverEvaluator.from_metric_names(
+    ["mrr", "hit_rate", "recall"],
+    base_evaluator=retriever_evaluator,
+    segment_fn=lambda node: node.metadata["format"],
+    segments=["table", "prose"],
+    expected_segments={
+        node.node_id: node.metadata["format"] for node in nodes
+    },
+)
+
+result = segmented_evaluator.evaluate(
+    query="query", expected_ids=["node_id1", "node_id2"]
+)
+result.segment_metric_vals_dict  # metrics per segment
+result.not_applicable_segments  # segments without relevant expected ids
+```
+
+Each segment is scored against its own expected ids. A segment with relevant expected ids but no retrieved nodes scores 0.0, while a segment without any relevant expected ids is listed in `not_applicable_segments` instead of being scored, so it does not distort averages across queries. Ranks are counted within each segment, not across the full result list.
+
 ## Building an Evaluation Dataset
 
 You can manually curate a retrieval evaluation dataset of questions + node id's. We also offer synthetic dataset generation over an existing text corpus with our `generate_question_context_pairs` function:
