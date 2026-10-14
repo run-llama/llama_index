@@ -148,7 +148,7 @@ class SQLDatabase:
 
     def get_table_columns(self, table_name: str) -> List[Any]:
         """Get table columns."""
-        return self._inspector.get_columns(table_name)
+        return self._inspector.get_columns(table_name, schema=self._schema)
 
     def get_single_table_info(self, table_name: str) -> str:
         """Get table info for a single table."""
