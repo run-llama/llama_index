@@ -150,6 +150,10 @@ class TablestoreKVStore(BaseKVStore):
                 and "table not exist" in e.get_error_message()
             ):
                 return None
+            # Every other service error - throttling, auth, a 5xx - is a failure to look,
+            # not an answer. Falling out of the handler here returned None implicitly, which
+            # the caller cannot tell from "no such key".
+            raise
 
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
