@@ -10,7 +10,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 
 ## Agent Tools
 
-Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
+In-repository agent tool packages live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools). New integration packages are maintained independently rather than added to this repository, as described in the [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md#what-can-you-work-on). To suggest an independently maintained tool for this page, submit a docs-only pull request with a link; listing proposals are reviewed by maintainers. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use tools with LlamaIndex.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
 
