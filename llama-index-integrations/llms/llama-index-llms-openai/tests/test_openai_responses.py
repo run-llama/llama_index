@@ -114,7 +114,9 @@ def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
         assert "reasoning" not in kwargs
 
 
-@pytest.mark.parametrize("model", ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna"])
+@pytest.mark.parametrize(
+    "model", ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol"]
+)
 def test_get_model_kwargs_excludes_temperature_for_gpt_6(model):
     with patch("llama_index.llms.openai.responses.SyncOpenAI"):
         with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
