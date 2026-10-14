@@ -124,7 +124,8 @@ class BedrockEmbedding(BaseEmbedding):
         description="The ARN of an application inference profile to use when calling Bedrock. If provided, make sure that the model_name argument refers to the same model of the application inference profile."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the bedrock client."
+        default_factory=dict,
+        description="Additional model-specific parameters to include in the invoke_model request body.",
     )
 
     _config: Any = PrivateAttr()
@@ -527,12 +528,25 @@ class BedrockEmbedding(BaseEmbedding):
             }
             payload = [payload] if isinstance(payload, str) else payload
             payload = [p[:2048] if len(p) > 2048 else p for p in payload]
-            request_body = json.dumps(
-                {
-                    "texts": payload,
-                    "input_type": input_types[input_type],
-                }
-            )
+
+            # Forward user-supplied kwargs, preserving core fields as authoritative
+            cohere_body_request: Dict[str, Any] = {**self.additional_kwargs}
+            cohere_body_request["texts"] = payload
+            cohere_body_request["input_type"] = input_types[input_type]
+
+            # Only float embeddings can be parsed by BaseEmbedding / _parse_cohere_response
+            embedding_types = cohere_body_request.get("embedding_types")
+            if embedding_types is not None:
+                if (
+                    not isinstance(embedding_types, (list, tuple))
+                    or "float" not in embedding_types
+                ):
+                    raise ValueError(
+                        "BedrockEmbedding only supports 'float' embeddings; "
+                        "'embedding_types' in additional_kwargs must be a list or tuple including 'float'."
+                    )
+
+            request_body = json.dumps(cohere_body_request)
         else:
             raise ValueError("Provider not supported")
         return request_body

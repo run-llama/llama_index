@@ -1,7 +1,8 @@
+import json
 import boto3
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.embeddings.bedrock import BedrockEmbedding
+from llama_index.embeddings.bedrock import BedrockEmbedding, Models
 
 
 def test_class():
@@ -125,3 +126,123 @@ def test_get_provider(model_name, expected_provider):
         client=bedrock_client,
     )
     assert embedding._get_provider() == expected_provider
+
+
+def test_cohere_additional_kwargs_output_dimension():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={"output_dimension": 256},
+    )
+    body = json.loads(embedding._get_request_body("cohere", ["hello"], "text"))
+    assert body == {
+        "output_dimension": 256,
+        "texts": ["hello"],
+        "input_type": "search_document",
+    }
+
+
+def test_cohere_additional_kwargs_truncate():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={"truncate": "RIGHT"},
+    )
+    body = json.loads(embedding._get_request_body("cohere", ["hello"], "text"))
+    assert body == {
+        "truncate": "RIGHT",
+        "texts": ["hello"],
+        "input_type": "search_document",
+    }
+
+
+def test_cohere_query_path_additional_kwargs():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={"output_dimension": 512},
+    )
+    body = json.loads(embedding._get_request_body("cohere", "test query", "query"))
+    assert body == {
+        "output_dimension": 512,
+        "texts": ["test query"],
+        "input_type": "search_query",
+    }
+
+
+def test_cohere_core_fields_authoritative():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={
+            "texts": ["corrupt"],
+            "input_type": "bad",
+            "output_dimension": 1024,
+        },
+    )
+    body = json.loads(embedding._get_request_body("cohere", ["legit"], "text"))
+    assert body == {
+        "output_dimension": 1024,
+        "texts": ["legit"],
+        "input_type": "search_document",
+    }
+
+
+def test_cohere_embedding_types_validation():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={"embedding_types": ["int8"]},
+    )
+    with pytest.raises(
+        ValueError,
+        match="BedrockEmbedding only supports 'float' embeddings",
+    ):
+        embedding._get_request_body("cohere", ["hello"], "text")
+
+
+def test_cohere_embedding_types_string_rejected():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={"embedding_types": "float"},
+    )
+    with pytest.raises(
+        ValueError,
+        match="BedrockEmbedding only supports 'float' embeddings",
+    ):
+        embedding._get_request_body("cohere", ["hello"], "text")
+
+
+def test_cohere_embedding_types_valid_float():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+        additional_kwargs={"embedding_types": ["float", "int8"]},
+    )
+    body = json.loads(embedding._get_request_body("cohere", ["hello"], "text"))
+    assert body == {
+        "embedding_types": ["float", "int8"],
+        "texts": ["hello"],
+        "input_type": "search_document",
+    }
+
+
+def test_cohere_empty_kwargs_baseline():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=Models.COHERE_EMBED_V4,
+        client=bedrock_client,
+    )
+    body = json.loads(embedding._get_request_body("cohere", ["hello"], "text"))
+    assert body == {
+        "texts": ["hello"],
+        "input_type": "search_document",
+    }
