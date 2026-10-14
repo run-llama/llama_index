@@ -1,13 +1,16 @@
 """Test keyword table index."""
 
+from pathlib import Path
 from typing import Any, List
 from unittest.mock import patch
 
 import pytest
+from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
-from llama_index.core.schema import Document
+from llama_index.core.llms import MockLLM
+from llama_index.core.schema import Document, TextNode
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -182,3 +185,41 @@ def test_delete(patch_token_text_splitter) -> None:
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
+
+
+@pytest.mark.parametrize("delete_last_node", [False, True])
+@pytest.mark.parametrize("persisted", [False, True])
+def test_empty_keyword_table_node_ids(
+    delete_last_node: bool, persisted: bool, tmp_path: Path
+) -> None:
+    nodes = [TextNode(text="apple banana", id_="node-1")] if delete_last_node else []
+    index = SimpleKeywordTableIndex(nodes, llm=MockLLM())
+    if delete_last_node:
+        index.delete_nodes(["node-1"], delete_from_docstore=True)
+
+    if persisted:
+        index.storage_context.persist(persist_dir=str(tmp_path))
+        storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
+        index_struct = load_index_from_storage(
+            storage_context, llm=MockLLM()
+        ).index_struct
+    else:
+        index_struct = index.index_struct
+
+    assert index_struct.table == {}
+    assert index_struct.node_ids == set()
+
+
+def test_keyword_table_node_ids_are_distinct_from_keyword_sets() -> None:
+    index = SimpleKeywordTableIndex(
+        [
+            TextNode(text="apple banana", id_="node-1"),
+            TextNode(text="apple cherry", id_="node-2"),
+        ],
+        llm=MockLLM(),
+    )
+
+    node_ids = index.index_struct.node_ids
+    assert node_ids == {"node-1", "node-2"}
+    node_ids.clear()
+    assert index.index_struct.node_ids == {"node-1", "node-2"}
