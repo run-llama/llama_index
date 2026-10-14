@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import contextvars
 import inspect
 from typing import (
@@ -42,6 +43,55 @@ AsyncCallable = Callable[..., Awaitable[Any]]
 def _is_context_param(param_annotation: Any) -> bool:
     """Check if a parameter annotation is Context or Context[SomeType]."""
     return param_annotation == Context or (get_origin(param_annotation) is Context)
+
+
+def _get_mcp_is_error(raw_output: Any) -> Optional[bool]:
+    """
+    Return an MCP ``CallToolResult`` error flag when present, else ``None``.
+
+    Reads both spellings: ``isError`` (the wire/serialization alias) and
+    ``is_error`` (the attribute name on ``mcp>=2.x`` pydantic models), from an
+    object attribute or a dict key.
+    """
+    if isinstance(raw_output, dict):
+        for key in ("isError", "is_error"):
+            value = raw_output.get(key)
+            if isinstance(value, bool):
+                return value
+        return None
+    for attr in ("isError", "is_error"):
+        value = getattr(raw_output, attr, None)
+        if isinstance(value, bool):
+            return value
+    return None
+
+
+def _get_mcp_content(raw_output: Any) -> Optional[List[Any]]:
+    """Return an MCP ``CallToolResult`` content list when present, else ``None``."""
+    if isinstance(raw_output, dict):
+        content = raw_output.get("content")
+    else:
+        content = getattr(raw_output, "content", None)
+    return content if isinstance(content, list) else None
+
+
+def _get_mcp_field(item: Any, wire_name: str, python_name: Optional[str] = None) -> Any:
+    """Read a field from an MCP wire dictionary or structural content object."""
+    python_name = python_name or wire_name
+    if isinstance(item, dict):
+        if wire_name in item:
+            return item[wire_name]
+        return item.get(python_name)
+    value = getattr(item, python_name, None)
+    return value if value is not None else getattr(item, wire_name, None)
+
+
+def _decode_base64(data: str) -> Optional[bytes]:
+    """Decode base64 content, returning ``None`` when it is not decodable."""
+    try:
+        return base64.b64decode(data)
+    except Exception:
+        return None
 
 
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
@@ -288,8 +338,50 @@ class FunctionTool(AsyncBaseTool):
 
         return self._real_fn
 
+    def _parse_mcp_content(self, content: List[Any]) -> List[ContentBlock]:
+        """
+        Map MCP ``CallToolResult`` content items onto content blocks.
+
+        Handled structurally so that core does not take a hard dependency on
+        the ``mcp`` package.
+        """
+        blocks: List[ContentBlock] = []
+        for item in content:
+            text = _get_mcp_field(item, "text")
+            if isinstance(text, str):
+                blocks.append(TextBlock(text=text))
+                continue
+            item_type = _get_mcp_field(item, "type")
+            data = _get_mcp_field(item, "data")
+            if item_type in ("image", "audio") and isinstance(data, str):
+                raw_bytes = _decode_base64(data)
+                if raw_bytes is not None:
+                    mime = _get_mcp_field(item, "mimeType", "mime_type")
+                    if item_type == "image":
+                        blocks.append(ImageBlock(image=raw_bytes, image_mimetype=mime))
+                        continue
+                    audio_format = (
+                        mime.split("/")[-1]
+                        if isinstance(mime, str) and "/" in mime
+                        else mime
+                    )
+                    blocks.append(AudioBlock(audio=raw_bytes, format=audio_format))
+                    continue
+            # EmbeddedResource with text, or anything else we do not model:
+            # fall back to the item's own text rendering.
+            resource = _get_mcp_field(item, "resource")
+            resource_text = _get_mcp_field(resource, "text")
+            if isinstance(resource_text, str):
+                blocks.append(TextBlock(text=resource_text))
+            else:
+                blocks.append(TextBlock(text=str(item)))
+        return blocks or [TextBlock(text="")]
+
     def _parse_tool_output(self, raw_output: Any) -> List[ContentBlock]:
         """Parse tool output into content blocks."""
+        mcp_content = _get_mcp_content(raw_output)
+        if mcp_content is not None and _get_mcp_is_error(raw_output) is not None:
+            return self._parse_mcp_content(mcp_content)
         if isinstance(
             raw_output,
             (

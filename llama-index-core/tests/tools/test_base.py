@@ -2,11 +2,17 @@
 
 import contextvars
 import json
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
+from llama_index.core.llms import (
+    AudioBlock,
+    DocumentBlock,
+    ImageBlock,
+    TextBlock,
+    VideoBlock,
+)
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
@@ -144,6 +150,210 @@ async def test_function_tool_async_defaults() -> None:
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+class _MCPTextContent:
+    """Stand-in for ``mcp.types.TextContent`` (``type`` + ``text``)."""
+
+    def __init__(self, text: str) -> None:
+        self.type = "text"
+        self.text = text
+
+
+class _MCPImageContent:
+    def __init__(self, data: str, mime_type: str) -> None:
+        self.type = "image"
+        self.data = data
+        self.mimeType = mime_type
+
+
+class _MCPAudioContent:
+    def __init__(self, data: str, mime_type: str) -> None:
+        self.type = "audio"
+        self.data = data
+        self.mimeType = mime_type
+
+
+class _MCPResource:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+class _MCPEmbeddedResource:
+    def __init__(self, text: str) -> None:
+        self.type = "resource"
+        self.resource = _MCPResource(text)
+
+
+class _MCPCallToolResult:
+    """
+    Stand-in for ``mcp.types.CallToolResult``.
+
+    Mirrors the fields ``McpToolSpec._create_tool_fn`` hands to ``FunctionTool``:
+    a ``content`` list plus the ``isError`` flag. Kept structural because
+    ``llama-index-core`` does not depend on ``mcp``.
+    """
+
+    def __init__(self, content: List[object], is_error: bool = False) -> None:
+        self.content = content
+        self.isError = is_error
+        self.structuredContent = None
+        self.meta = None
+
+
+async def _mcp_result_async(*_args: object, **_kwargs: object) -> _MCPCallToolResult:
+    return _MCPCallToolResult([_MCPTextContent("The answer is 42.")])
+
+
+@pytest.mark.asyncio
+async def test_function_tool_parses_mcp_call_tool_result_text() -> None:
+    """
+    An MCP result must reach the caller as its text, not as a repr.
+
+    ``McpToolSpec`` returns the raw ``CallToolResult`` from the tool function,
+    so a successful MCP call used to be handed to the LLM as
+    ``str(CallToolResult(...))``.
+    """
+    function_tool = FunctionTool.from_defaults(
+        async_fn=_mcp_result_async, name="lookup", description="bar"
+    )
+
+    output = await function_tool.acall()
+
+    assert [block.text for block in output.blocks] == ["The answer is 42."]
+
+
+@pytest.mark.asyncio
+async def test_function_tool_parses_mcp_embedded_resource_text() -> None:
+    """
+    An embedded resource with text maps to a text block, not a repr.
+    """
+    result = _MCPCallToolResult([_MCPEmbeddedResource("file body")])
+
+    async def call() -> _MCPCallToolResult:
+        return result
+
+    function_tool = FunctionTool.from_defaults(
+        async_fn=call, name="read", description="bar"
+    )
+
+    output = await function_tool.acall()
+
+    assert [block.text for block in output.blocks] == ["file body"]
+
+
+def test_function_tool_leaves_plain_strings_alone() -> None:
+    """A bare string result keeps going through the normal str() path."""
+
+    def call() -> str:
+        return "plain"
+
+    function_tool = FunctionTool.from_defaults(fn=call, name="echo", description="bar")
+
+    assert function_tool.call().blocks[0].text == "plain"  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_function_tool_parses_mcp_result_with_dict_content() -> None:
+    """
+    A dict-shaped MCP payload keeps its text instead of collapsing to a repr.
+    """
+    result = {"content": [{"type": "text", "text": "from dict"}], "isError": False}
+
+    async def call() -> Dict[str, object]:
+        return result
+
+    function_tool = FunctionTool.from_defaults(
+        async_fn=call, name="dicttool", description="bar"
+    )
+
+    output = await function_tool.acall()
+
+    assert [block.text for block in output.blocks] == ["from dict"]
+
+
+@pytest.mark.parametrize(
+    ("content", "expected_type", "expected_value"),
+    [
+        ({"type": "text", "text": "from dict"}, TextBlock, "from dict"),
+        (
+            {"type": "image", "data": "aW1hZ2U=", "mimeType": "image/png"},
+            ImageBlock,
+            "image/png",
+        ),
+        (
+            {"type": "audio", "data": "YXVkaW8=", "mimeType": "audio/wav"},
+            AudioBlock,
+            "wav",
+        ),
+        (
+            {"type": "resource", "resource": {"text": "file body"}},
+            TextBlock,
+            "file body",
+        ),
+    ],
+    ids=["text", "image", "audio", "embedded-resource"],
+)
+@pytest.mark.asyncio
+async def test_function_tool_parses_dict_mcp_content(
+    content: Dict[str, object], expected_type: type, expected_value: str
+) -> None:
+    result = {"content": [content], "isError": False}
+
+    async def call() -> Dict[str, object]:
+        return result
+
+    function_tool = FunctionTool.from_defaults(
+        async_fn=call, name="dicttool", description="bar"
+    )
+
+    output = await function_tool.acall()
+    block = output.blocks[0]
+
+    assert isinstance(block, expected_type)
+    if isinstance(block, TextBlock):
+        assert block.text == expected_value
+    elif isinstance(block, ImageBlock):
+        assert block.image_mimetype == expected_value
+        assert block.image == b"aW1hZ2U="
+    elif isinstance(block, AudioBlock):
+        assert block.format == expected_value
+        assert block.audio == b"YXVkaW8="
+
+
+@pytest.mark.parametrize(
+    ("content", "expected_type", "expected_value"),
+    [
+        (_MCPTextContent("from object"), TextBlock, "from object"),
+        (_MCPImageContent("aW1hZ2U=", "image/png"), ImageBlock, "image/png"),
+        (_MCPAudioContent("YXVkaW8=", "audio/wav"), AudioBlock, "wav"),
+        (_MCPEmbeddedResource("file body"), TextBlock, "file body"),
+    ],
+    ids=["text", "image", "audio", "embedded-resource"],
+)
+@pytest.mark.asyncio
+async def test_function_tool_keeps_object_mcp_content_compatibility(
+    content: object, expected_type: type, expected_value: str
+) -> None:
+    async def call() -> _MCPCallToolResult:
+        return _MCPCallToolResult([content])
+
+    function_tool = FunctionTool.from_defaults(
+        async_fn=call, name="objecttool", description="bar"
+    )
+
+    output = await function_tool.acall()
+    block = output.blocks[0]
+
+    assert isinstance(block, expected_type)
+    if isinstance(block, TextBlock):
+        assert block.text == expected_value
+    elif isinstance(block, ImageBlock):
+        assert block.image_mimetype == expected_value
+        assert block.image == b"aW1hZ2U="
+    elif isinstance(block, AudioBlock):
+        assert block.format == expected_value
+        assert block.audio == b"YXVkaW8="
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
