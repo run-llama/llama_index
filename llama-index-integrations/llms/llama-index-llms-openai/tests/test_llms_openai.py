@@ -50,7 +50,7 @@ def test_resolve_tool_choice_utility():
 
 def test_prepare_chat_with_tools_tool_required():
     """Test that tool_required=True is correctly passed to the API request."""
-    llm = OpenAI(api_key="test-key")
+    llm = OpenAI(model="gpt-4o-mini", api_key="test-key")
 
     result = llm._prepare_chat_with_tools(
         tools=[search_tool], user_msg="Search for Python tutorials", tool_required=True
@@ -83,7 +83,7 @@ def test_prepare_chat_with_tools_tool_not_required():
 
 def test_prepare_chat_with_tools_default_behavior():
     """Test default behavior when tool_required is not specified (should default to False/auto)."""
-    llm = OpenAI(api_key="test-key")
+    llm = OpenAI(model="gpt-4o-mini", api_key="test-key")
 
     result = llm._prepare_chat_with_tools(
         tools=[search_tool], user_msg="Search for Python tutorials"
@@ -101,7 +101,7 @@ def test_prepare_chat_with_tools_default_behavior():
 
 def test_prepare_chat_with_tools_allow_parallel_tool_calls():
     """Test that allow_parallel_tool_calls is forwarded for OpenAI chat completions."""
-    llm = OpenAI(api_key="test-key")
+    llm = OpenAI(model="gpt-4o-mini", api_key="test-key")
 
     result = llm._prepare_chat_with_tools(
         tools=[search_tool],
