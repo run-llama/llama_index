@@ -1220,3 +1220,22 @@ async def test_aevent_no_propagation():
     assert len(parent_handler.events) == 0
     assert child_handler.async_calls == 1
     assert parent_handler.async_calls == 0
+
+
+def test_dispatcher_default_handlers_are_not_shared():
+    first = Dispatcher()
+    second = Dispatcher()
+
+    assert first.event_handlers == []
+    assert second.event_handlers == []
+    assert len(first.span_handlers) == 1
+    assert len(second.span_handlers) == 1
+    assert first.event_handlers is not second.event_handlers
+    assert first.span_handlers is not second.span_handlers
+    assert first.span_handlers[0] is not second.span_handlers[0]
+
+    first.event_handlers.append(_TestEventHandler())
+    first.span_handlers.clear()
+
+    assert second.event_handlers == []
+    assert len(second.span_handlers) == 1
