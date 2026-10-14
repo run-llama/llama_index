@@ -1,8 +1,8 @@
-import logging
 from abc import ABC
 from typing import Any, Dict, Optional
 
 from azure.cosmos import CosmosClient, DatabaseProxy, ContainerProxy
+from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.storage.kvstore.types import (
     BaseKVStore,
@@ -11,9 +11,6 @@ from llama_index.core.storage.kvstore.types import (
 
 DEFAULT_CHAT_DATABASE = "KVStoreDB"
 DEFAULT_CHAT_CONTAINER = "KVStoreContainer"
-
-
-logger = logging.getLogger(__name__)
 
 
 class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
@@ -166,13 +163,18 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
             key (str): key
             collection (str): collection name
 
+        Returns:
+            The stored value, or None if no item with that key exists.
+
         """
-        response = self._container.read_item(key)
-        if response is not None:
-            messages = response.get("messages")
-        else:
-            messages = {}
-        return messages
+        # partition_key is a required argument. The documents written by put() carry only
+        # "id" and "messages", so the container is partitioned on /id and the key is the
+        # partition key value.
+        try:
+            response = self._container.read_item(key, partition_key=key)
+        except CosmosResourceNotFoundError:
+            return None
+        return response.get("messages")
 
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
@@ -213,12 +215,23 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
         raise NotImplementedError
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """
+        Delete a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        Returns:
+            True if the item was deleted, False if no item with that key existed.
+            Any other failure is raised rather than reported as an absent key.
+
+        """
         try:
-            self._container.delete_item(key)
-            return True
-        except Exception as e:
-            logger.error(f"Error deleting item {e} with key {key}")
+            self._container.delete_item(key, partition_key=key)
+        except CosmosResourceNotFoundError:
             return False
+        return True
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """
