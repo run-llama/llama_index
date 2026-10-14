@@ -228,6 +228,20 @@ class HierarchicalNodeParser(NodeParser):
 
         return all_nodes
 
+    async def aget_nodes_from_documents(
+        self,
+        documents: Sequence[Document],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        """Parse document into nodes."""
+        # Delegate to the sync implementation so async entry points
+        # (aget_nodes_from_documents, acall, IngestionPipeline.arun) build the
+        # same hierarchy instead of returning the input documents unchanged.
+        return self.get_nodes_from_documents(
+            documents, show_progress=show_progress, **kwargs
+        )
+
     # Unused abstract method
     def _parse_nodes(
         self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
