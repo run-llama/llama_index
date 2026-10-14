@@ -460,6 +460,21 @@ def test_sonnet_5_5_has_1m_context_window(model: str) -> None:
     assert anthropic_modelname_to_contextsize(model) == 1000000
     assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
     assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
+    assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-haiku-5-5",
+        "anthropic.claude-haiku-5-5",
+    ],
+)
+def test_haiku_5_5_has_1m_context_window(model: str) -> None:
+    """Haiku 5.5 is registered with a 1M context window"""
+    assert anthropic_modelname_to_contextsize(model) == 1000000
+    assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
+    assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
 
 
 def test_system_prompt_without_cache_control_is_plain_string() -> None:
