@@ -954,3 +954,13 @@ def test_thinking_dict_between_tools_no_budget():
     td: ThinkingDict = {"type": "between_tools"}
     assert td["type"] == "between_tools"
     assert "budget_tokens" not in td
+
+
+def test_thinking_dict_block_binding_no_budget():
+    td: ThinkingDict = {
+        "type": "adaptive",
+        "block_binding": {"prefix_mismatch_behavior": "drop_block"},
+    }
+    assert td["type"] == "adaptive"
+    assert td["block_binding"] == {"prefix_mismatch_behavior": "drop_block"}
+    assert "budget_tokens" not in td

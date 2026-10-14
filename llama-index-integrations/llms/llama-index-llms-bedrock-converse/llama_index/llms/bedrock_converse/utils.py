@@ -86,6 +86,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-sonnet-5": 1000000,
     "anthropic.claude-sonnet-5-5": 1000000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
+    "anthropic.claude-haiku-5-5": 1000000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -156,6 +157,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-haiku-5-5",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
@@ -207,6 +209,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-haiku-5-5",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
     "meta.llama3-2-1b-instruct-v1:0",
@@ -242,6 +245,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-haiku-5-5",
     "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
@@ -268,6 +272,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-haiku-5-5",
     "deepseek.r1-v1:0",
     "deepseek.v3-v1:0",
     "google.gemma-3-12b-it",
@@ -284,6 +289,7 @@ BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
+    "anthropic.claude-haiku-5-5",
 )
 
 BEDROCK_NO_TEMP_MODELS = (
@@ -295,6 +301,7 @@ BEDROCK_NO_TEMP_MODELS = (
     "anthropic.claude-fable-5-1",
     "anthropic.claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
+    "anthropic.claude-haiku-5-5",
     "openai.gpt-6-sol",
     "openai.gpt-6-luna",
     "openai.gpt-6-astra",
@@ -1111,3 +1118,4 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 class ThinkingDict(TypedDict):
     type: Literal["enabled", "adaptive", "disabled", "between_tools"]
     budget_tokens: NotRequired[int]
+    block_binding: NotRequired[dict[str, Any]]
