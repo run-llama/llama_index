@@ -18,7 +18,11 @@ from duckdb import (
     CaseExpression,
     Expression,
 )
-from duckdb.typing import FLOAT, INTEGER, VARCHAR, SQLNULL
+try:
+    # duckdb >= 1.4.0 renamed the `duckdb.typing` submodule to `duckdb.sqltypes`
+    from duckdb.typing import FLOAT, INTEGER, VARCHAR, SQLNULL
+except ModuleNotFoundError:
+    from duckdb.sqltypes import FLOAT, INTEGER, VARCHAR, SQLNULL
 from collections.abc import Sequence
 from llama_index.core.bridge.pydantic import (
     PrivateAttr,
@@ -71,6 +75,19 @@ filter_value_type_to_duckdb_type = {
     str: VARCHAR,
     None: SQLNULL,
 }
+
+
+def _execute_to_pylist(
+    conn: duckdb.DuckDBPyConnection, command: str
+) -> list[dict[str, Any]]:
+    """Execute a SQL command and return the results as a list of dicts.
+
+    duckdb >= 1.5.0 renamed `DuckDBPyConnection.fetch_arrow_table()` to
+    `to_arrow_table()`; the old name still works but is deprecated.
+    """
+    result = conn.execute(command)
+    to_arrow_table = getattr(result, "to_arrow_table", result.fetch_arrow_table)
+    return to_arrow_table().to_pylist()
 
 
 class DuckDBTableIncorrectColumnsError(Exception):
@@ -349,7 +366,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = outer_query.sql_query()
 
-        rows = self.client.execute(command).arrow().to_pylist()
+        rows = _execute_to_pylist(self.client, command)
 
         return self._arrow_row_to_query_result(rows)
 
@@ -391,7 +408,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = self.table.filter(filter_expression).sql_query()
 
-        rows = self.client.execute(command).arrow().to_pylist()
+        rows = _execute_to_pylist(self.client, command)
 
         return [self._arrow_row_to_node(row) for row in rows]
 
