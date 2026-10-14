@@ -42,7 +42,7 @@ def messages_to_prompt(
 
     for message in messages:
         role = message.role
-        content = message.content
+        content = message.content or ""
 
         if role == MessageRole.USER:
             string_messages.append(f"{B_USER}{content} {END}")
