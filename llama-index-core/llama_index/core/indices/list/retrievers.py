@@ -188,6 +188,27 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             callback_manager=callback_manager, object_map=object_map, verbose=verbose
         )
 
+    def _select_nodes(
+        self, raw_response: str, node_ids_batch: List[str], num_nodes: int
+    ) -> List[NodeWithScore]:
+        """Parse the LLM answer for one batch into scored nodes."""
+        raw_choices, relevances = self._parse_choice_select_answer_fn(
+            raw_response, num_nodes
+        )
+        choice_node_ids = []
+        for choice in raw_choices:
+            choice_node_ids.append(node_ids_batch[int(choice) - 1])
+
+        choice_nodes = self._index.docstore.get_nodes(choice_node_ids)
+        if not relevances:
+            relevances = []
+            for _ in choice_nodes:
+                relevances.append(1.0)
+        selected = []
+        for node, relevance in zip(choice_nodes, relevances):
+            selected.append(NodeWithScore(node=node, score=relevance))
+        return selected
+
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes."""
         node_ids = self._index.index_struct.nodes
@@ -204,20 +225,29 @@ class SummaryIndexLLMRetriever(BaseRetriever):
                 context_str=fmt_batch_str,
                 query_str=query_str,
             )
-
-            raw_choices, relevances = self._parse_choice_select_answer_fn(
-                raw_response, len(nodes_batch)
-            )
-            choice_idxs = [int(choice) - 1 for choice in raw_choices]
-            choice_node_ids = [node_ids_batch[idx] for idx in choice_idxs]
-
-            choice_nodes = self._index.docstore.get_nodes(choice_node_ids)
-            relevances = relevances or [1.0 for _ in choice_nodes]
             results.extend(
-                [
-                    NodeWithScore(node=node, score=relevance)
-                    for node, relevance in zip(choice_nodes, relevances)
-                ]
+                self._select_nodes(raw_response, node_ids_batch, len(nodes_batch))
+            )
+        return results
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Retrieve nodes without blocking the event loop on the LLM call."""
+        node_ids = self._index.index_struct.nodes
+        results = []
+        for idx in range(0, len(node_ids), self._choice_batch_size):
+            node_ids_batch = node_ids[idx : idx + self._choice_batch_size]
+            nodes_batch = self._index.docstore.get_nodes(node_ids_batch)
+
+            query_str = query_bundle.query_str
+            fmt_batch_str = self._format_node_batch_fn(nodes_batch)
+            # call each batch independently
+            raw_response = await self._llm.apredict(
+                self._choice_select_prompt,
+                context_str=fmt_batch_str,
+                query_str=query_str,
+            )
+            results.extend(
+                self._select_nodes(raw_response, node_ids_batch, len(nodes_batch))
             )
         return results
 
