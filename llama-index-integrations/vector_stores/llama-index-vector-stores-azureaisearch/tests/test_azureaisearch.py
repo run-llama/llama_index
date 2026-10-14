@@ -557,3 +557,99 @@ def test_default_index_mapping_preserves_falsy_metadata_values() -> None:
     assert index_doc["active_field"] is False
     assert index_doc["tag_field"] == ""
     assert "missing_field" not in index_doc
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_odata_filter_generation() -> None:
+    from llama_index.core.vector_stores.types import (
+        FilterCondition,
+        FilterOperator,
+        MetadataFilter,
+        MetadataFilters,
+    )
+
+    search_client = mock_client_with_user_agent("search")
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys={
+            "author": ("author_field", MetadataIndexFieldType.STRING),
+            "is_public": ("is_public_field", MetadataIndexFieldType.BOOLEAN),
+            "views": ("views_field", MetadataIndexFieldType.INT32),
+        },
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+    )
+
+    # 1. NOT condition with single filter
+    not_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(key="author", value="Alice", operator=FilterOperator.EQ)
+        ],
+        condition=FilterCondition.NOT,
+    )
+    assert (
+        vector_store._create_odata_filter(not_filter) == "not (author_field eq 'Alice')"
+    )
+
+    # 2. NOT condition with multiple filters
+    not_multi_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(key="author", value="Alice", operator=FilterOperator.EQ),
+            MetadataFilter(key="views", value=100, operator=FilterOperator.GT),
+        ],
+        condition=FilterCondition.NOT,
+    )
+    assert (
+        vector_store._create_odata_filter(not_multi_filter)
+        == "not (author_field eq 'Alice' and views_field gt 100)"
+    )
+
+    # 3. NOT condition with empty filters
+    empty_not_filter = MetadataFilters(filters=[], condition=FilterCondition.NOT)
+    assert vector_store._create_odata_filter(empty_not_filter) == ""
+
+    # 4. None condition defaults to AND
+    none_cond_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(key="author", value="Alice", operator=FilterOperator.EQ),
+            MetadataFilter(key="views", value=50, operator=FilterOperator.GTE),
+        ],
+        condition=None,
+    )
+    assert (
+        vector_store._create_odata_filter(none_cond_filter)
+        == "author_field eq 'Alice' and views_field ge 50"
+    )
+
+    # 5. String and integer formatting
+    comp_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(key="author", value="Bob", operator=FilterOperator.NE),
+            MetadataFilter(key="views", value=200, operator=FilterOperator.LT),
+        ],
+        condition=FilterCondition.AND,
+    )
+    assert (
+        vector_store._create_odata_filter(comp_filter)
+        == "author_field ne 'Bob' and views_field lt 200"
+    )
+
+    # 6. IN operator with strings
+    in_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value=["Alice", "Bob"], operator=FilterOperator.IN
+            ),
+        ]
+    )
+    assert (
+        vector_store._create_odata_filter(in_filter)
+        == "author_field/any(t: t eq 'Alice' or t eq 'Bob')"
+    )
