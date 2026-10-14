@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from typing import Dict, List, Optional
 from fsspec import AbstractFileSystem
@@ -8,7 +7,12 @@ from llama_index.core.schema import Document
 
 
 class IPYNBReader(BaseReader):
-    """Image parser."""
+    """
+    Read code and Markdown from Jupyter notebooks.
+
+    Documents follow notebook cell boundaries unless ``concatenate=True``.
+    Code cells do not need to be executed before reading.
+    """
 
     def __init__(
         self,
@@ -26,20 +30,40 @@ class IPYNBReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
-        if file.name.endswith(".ipynb"):
-            try:
-                import nbconvert
-            except ImportError:
-                raise ImportError("Please install nbconvert 'pip install nbconvert' ")
+        try:
+            import nbconvert
+            import nbformat
+            from traitlets.config import Config
+        except ImportError:
+            raise ImportError("Please install nbconvert 'pip install nbconvert' ")
+
         if fs:
             with fs.open(file, encoding="utf-8") as f:
-                string = nbconvert.exporters.ScriptExporter().from_file(f)[0]
+                notebook = nbformat.read(f, as_version=4)
         else:
-            string = nbconvert.exporters.ScriptExporter().from_file(file)[0]
-        # split each In[] cell into a separate string
-        splits = re.split(r"In\[\d+\]:", string)
-        # remove the first element, which is empty
-        splits.pop(0)
+            notebook = nbformat.read(file, as_version=4)
+
+        exporter = nbconvert.exporters.ScriptExporter(
+            config=Config({"TemplateExporter": {"exclude_input_prompt": True}})
+        )
+        cells = notebook.cells
+        notebook.cells = []
+        header = exporter.from_notebook_node(notebook)[0]
+        splits = []
+        for cell in cells:
+            if not cell.source.strip():
+                continue
+            # Export actual cells so prompt-like text in their source is preserved.
+            notebook.cells = [cell]
+            text = exporter.from_notebook_node(notebook)[0].removeprefix(header)
+            if (
+                cell.cell_type == "markdown"
+                and not text.strip()
+                and not cell.metadata.get("transient", {}).get("remove_source", False)
+            ):
+                text = cell.source
+            if text.strip():
+                splits.append(text)
 
         if self._concatenate:
             docs = [Document(text="\n\n".join(splits), metadata=extra_info or {})]
