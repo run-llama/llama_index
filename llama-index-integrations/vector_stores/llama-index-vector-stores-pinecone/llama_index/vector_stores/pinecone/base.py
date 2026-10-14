@@ -418,20 +418,25 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 **delete_kwargs,
             )
         except Exception:
-            # fallback to deleting by prefix for serverless
-            # TODO: this is a bit of a hack, we should find a better way to handle this
+            # Fall back to prefix listing, then check document metadata. The ID
+            # delimiter alone is ambiguous when document IDs contain '#'.
             # pinecone<9 yields pages of ids, pinecone>=9 yields pages of entries
-            ids_to_delete = [
-                entry if isinstance(entry, str) else entry.id
-                for page in self._pinecone_index.list(
-                    prefix=ref_doc_id, namespace=self.namespace
-                )
-                for entry in page
-            ]
-            if ids_to_delete:
-                self._pinecone_index.delete(
-                    ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
-                )
+            for page in self._pinecone_index.list(
+                prefix=f"{ref_doc_id}#", namespace=self.namespace
+            ):
+                ids = [entry if isinstance(entry, str) else entry.id for entry in page]
+                if not ids:
+                    continue
+                response = self._pinecone_index.fetch(ids=ids, namespace=self.namespace)
+                ids_to_delete = [
+                    node_id
+                    for node_id, vector in response.vectors.items()
+                    if vector.metadata and vector.metadata.get("doc_id") == ref_doc_id
+                ]
+                if ids_to_delete:
+                    self._pinecone_index.delete(
+                        ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
+                    )
 
     def delete_nodes(
         self,
