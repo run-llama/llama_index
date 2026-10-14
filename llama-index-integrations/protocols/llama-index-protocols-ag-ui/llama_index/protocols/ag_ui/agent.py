@@ -3,7 +3,7 @@ import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from ag_ui.core import RunAgentInput, Tool as AGUITool
+from ag_ui.core import Context as AGUIContext, RunAgentInput, Tool as AGUITool
 
 from llama_index.core import Settings
 from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
@@ -126,6 +126,35 @@ def _apply_state_prompt(chat_history: List[ChatMessage], state: Any) -> None:
         break
 
 
+def _render_context(context: Optional[List[AGUIContext]]) -> str:
+    """Render ``RunAgentInput.context`` as one ``## description`` section per item."""
+    return "\n\n".join(f"## {item.description}\n{item.value}" for item in context or [])
+
+
+def _with_context(chat_history: List[ChatMessage], context: str) -> List[ChatMessage]:
+    """
+    The messages to send to the LLM: ``chat_history`` with the run's context
+    added to the leading system message (or a new one in front).
+
+    ``chat_history`` itself is left untouched, so the context never reaches
+    ``MESSAGES_SNAPSHOT``: the client sends it again on every run, and a
+    snapshot copy would be sent back as part of the thread.
+    """
+    if not context:
+        return chat_history
+    if chat_history and chat_history[0].role.value == "system":
+        first = chat_history[0]
+        return [
+            ChatMessage(
+                role=first.role,
+                blocks=[*first.blocks, TextBlock(text=context)],
+                additional_kwargs=dict(first.additional_kwargs),
+            ),
+            *chat_history[1:],
+        ]
+    return [ChatMessage(role="system", content=context), *chat_history]
+
+
 class InputEvent(StartEvent):
     input_data: RunAgentInput
 
@@ -244,6 +273,7 @@ class AGUIChatWorkflow(Workflow):
                     )
 
             await ctx.store.set("chat_history", chat_history)
+            await ctx.store.set("run_context", _render_context(ev.input_data.context))
         else:
             chat_history = await ctx.store.get("chat_history")
 
@@ -269,7 +299,9 @@ class AGUIChatWorkflow(Workflow):
 
         resp_gen = await self.llm.astream_chat_with_tools(
             tools=tools,
-            chat_history=chat_history,
+            chat_history=_with_context(
+                chat_history, await ctx.store.get("run_context", default="")
+            ),
             allow_parallel_tool_calls=True,
         )
 
