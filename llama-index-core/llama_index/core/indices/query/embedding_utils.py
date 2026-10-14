@@ -114,6 +114,10 @@ def get_top_k_mmr_embeddings(
     A mmr_threshold of 0 will strongly avoid similarity to previous results.
     A mmr_threshold of 1 will check similarity the query and ignore previous results.
 
+    A similarity_cutoff drops candidates whose similarity to the query is not
+    strictly greater than the cutoff before the MMR selection runs, matching
+    get_top_k_embeddings. A cutoff of None keeps every candidate.
+
     """
     threshold = mmr_threshold if mmr_threshold is not None else 0.5
     similarity_fn = similarity_fn or default_similarity_fn
@@ -121,13 +125,16 @@ def get_top_k_mmr_embeddings(
     if embedding_ids is None or embedding_ids == []:
         embedding_ids = list(range(len(embeddings)))
     full_embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
-    embed_map = full_embed_map.copy()
+    embed_map = {}
     embed_similarity = {}
     score: float = -math.inf
     high_score_id = None
 
     for i, emb in enumerate(embeddings):
         similarity = similarity_fn(query_embedding, emb)
+        if similarity_cutoff is not None and similarity <= similarity_cutoff:
+            continue
+        embed_map[embedding_ids[i]] = i
         embed_similarity[embedding_ids[i]] = similarity
         if similarity * threshold > score:
             high_score_id = embedding_ids[i]
@@ -137,7 +144,8 @@ def get_top_k_mmr_embeddings(
 
     embedding_length = len(embeddings or [])
     similarity_top_k_count = similarity_top_k or embedding_length
-    while len(results) < min(similarity_top_k_count, embedding_length):
+    candidate_count = len(embed_map)
+    while len(results) < min(similarity_top_k_count, candidate_count):
         # Calculate the similarity score the for the leading one.
         results.append((score, high_score_id))
 
