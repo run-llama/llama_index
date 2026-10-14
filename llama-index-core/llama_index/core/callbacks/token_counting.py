@@ -63,14 +63,16 @@ def get_tokens_from_response(
 
     prompt_tokens = 0
     for input_key in possible_input_keys:
-        if input_key in usage:
-            prompt_tokens = usage[input_key]
+        token_count = usage.get(input_key)
+        if token_count is not None:
+            prompt_tokens = token_count
             break
 
     completion_tokens = 0
     for output_key in possible_output_keys:
-        if output_key in usage:
-            completion_tokens = usage[output_key]
+        token_count = usage.get(output_key)
+        if token_count is not None:
+            completion_tokens = token_count
             break
 
     return prompt_tokens, completion_tokens
