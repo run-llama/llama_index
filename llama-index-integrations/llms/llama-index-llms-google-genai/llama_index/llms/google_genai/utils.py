@@ -174,8 +174,13 @@ def chat_from_gemini_response(
         )
         additional_kwargs["total_tokens"] = response.usage_metadata.total_token_count
 
+        if response.usage_metadata.cached_content_token_count:
+            additional_kwargs["cached_content_tokens"] = (
+                response.usage_metadata.cached_content_token_count
+            )
         if response.usage_metadata.thoughts_token_count:
             thought_tokens = response.usage_metadata.thoughts_token_count
+            additional_kwargs["thoughts_tokens"] = thought_tokens
 
     if hasattr(response, "cached_content") and response.cached_content:
         raw["cached_content"] = response.cached_content
@@ -190,15 +195,31 @@ def chat_from_gemini_response(
         for part in parts:
             if part.text:
                 if part.thought:
-                    content_blocks.append(
-                        ThinkingBlock(
-                            content=part.text,
-                            additional_information=part.model_dump(exclude={"text"}),
+                    if len(content_blocks) > 0 and isinstance(
+                        content_blocks[-1], ThinkingBlock
+                    ):
+                        content_blocks[-1].content = (
+                            content_blocks[-1].content or ""
+                        ) + part.text
+                        if part.thought_signature:
+                            content_blocks[-1].additional_information[
+                                "thought_signature"
+                            ] = part.thought_signature
+                            additional_kwargs["thought_signatures"][-1] = (
+                                part.thought_signature
+                            )
+                    else:
+                        content_blocks.append(
+                            ThinkingBlock(
+                                content=part.text,
+                                additional_information=part.model_dump(
+                                    exclude={"text"}
+                                ),
+                            )
                         )
-                    )
-                    additional_kwargs["thought_signatures"].append(
-                        part.thought_signature
-                    )
+                        additional_kwargs["thought_signatures"].append(
+                            part.thought_signature
+                        )
                 else:
                     if len(content_blocks) > 0 and isinstance(
                         content_blocks[-1], TextBlock
@@ -261,14 +282,16 @@ def chat_from_gemini_response(
             for i, block in enumerate(content_blocks)
             if isinstance(block, ThinkingBlock)
         ]
-        if len(thinking_blocks) == 1:
-            content_blocks[thinking_blocks[0]].num_tokens = thought_tokens
-        elif len(thinking_blocks) > 1:
-            content_blocks[thinking_blocks[-1]].additional_information.update(
-                {"total_thinking_tokens": thought_tokens}
-            )
+        if len(thinking_blocks) >= 1:
+            content_blocks[thinking_blocks[-1]].num_tokens = thought_tokens
+            if len(thinking_blocks) > 1:
+                content_blocks[thinking_blocks[-1]].additional_information.update(
+                    {"total_thinking_tokens": thought_tokens}
+                )
 
-    role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
+    role = ROLES_FROM_GEMINI[
+        (top_candidate.content.role if top_candidate.content else None) or "model"
+    ]
     return ChatResponse(
         message=ChatMessage(
             role=role, blocks=content_blocks, additional_kwargs=additional_kwargs

@@ -14,6 +14,13 @@ from llama_index.llms.vertex.gemini_utils import (
 
 def test_is_gemini_model():
     assert is_gemini_model("gemini-2.0-flash") is True
+    assert is_gemini_model("au.gemini-3.5-flash") is True
+    assert is_gemini_model("eu.gemini-3.5-pro") is True
+    assert is_gemini_model("us.gemini-2.5-pro") is True
+    assert is_gemini_model("models/gemini-2.5-flash") is True
+    assert is_gemini_model("publishers/google/models/gemini-3.5-flash") is True
+    assert is_gemini_model("publishers/google/models/au.gemini-3.5-pro") is True
+    assert is_gemini_model("au.gemma-3-27b") is False
     assert is_gemini_model("chat-bison") is False
 
 
