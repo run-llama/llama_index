@@ -316,7 +316,6 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         """
         # Check to see if empty document list was passed
-        await self.async_index_exists()
         if len(nodes) == 0:
             return []
 
@@ -330,6 +329,8 @@ class RedisVectorStore(BasePydanticVectorStore):
                 "Please review the Redis integration example to learn how to customize schema. "
                 ""
             )
+
+        await self.async_index_exists()
 
         data: List[Dict[str, Any]] = []
         for node in nodes:
