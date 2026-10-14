@@ -608,3 +608,38 @@ def test_system_prompt_keeps_cache_controls_with_different_ttl() -> None:
             "cache_control": {"type": "ephemeral"},
         },
     ]
+
+
+def test_system_prompt_cache_control_does_not_exceed_breakpoint_limit() -> None:
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="A long system prompt."),
+        ChatMessage(role=MessageRole.USER, content="Question 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Answer 1"),
+        ChatMessage(role=MessageRole.USER, content="Question 2"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Answer 2"),
+    ]
+
+    ant_messages, system_prompt = messages_to_anthropic_messages(messages, cache_idx=-1)
+
+    # the four message breakpoints already cache the system prompt
+    assert system_prompt == "A long system prompt."
+    assert all("cache_control" in message["content"][-1] for message in ant_messages)
+
+
+def test_system_prompt_cache_control_kept_within_breakpoint_limit() -> None:
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="A long system prompt."),
+        ChatMessage(role=MessageRole.USER, content="Question 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Answer 1"),
+        ChatMessage(role=MessageRole.USER, content="Question 2"),
+    ]
+
+    _, system_prompt = messages_to_anthropic_messages(messages, cache_idx=-1)
+
+    assert system_prompt == [
+        {
+            "type": "text",
+            "text": "A long system prompt.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
