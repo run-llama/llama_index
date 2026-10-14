@@ -24,7 +24,7 @@ def md_to_df(md_str: str) -> Any:
 
     # Remove the first and last second char of the line (the pipes, transformed to ",")
     lines = md_str.split("\n")
-    md_str = "\n".join([line[2:-2] for line in lines])
+    md_str = "\n".join([line.rstrip()[2:-2] for line in lines])
 
     # Check if the table is empty
     if len(md_str) == 0:
