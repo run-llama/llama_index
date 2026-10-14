@@ -100,7 +100,10 @@ async def test_tool_retriever_router_aquery_does_not_block_event_loop():
     tool_b = _make_query_engine_tool("b")
 
     retriever = MagicMock()
-    retriever.retrieve = MagicMock(return_value=[tool_a, tool_b])
+    retriever.retrieve = MagicMock(
+        side_effect=AssertionError("aquery must not use synchronous retrieval")
+    )
+    retriever.aretrieve = AsyncMock(return_value=[tool_a, tool_b])
 
     router = ToolRetrieverRouterQueryEngine(
         retriever=retriever,
@@ -110,5 +113,7 @@ async def test_tool_retriever_router_aquery_does_not_block_event_loop():
 
     await _assert_not_blocked(router.aquery("test query"))
 
+    retriever.retrieve.assert_not_called()
+    retriever.aretrieve.assert_awaited_once()
     assert tool_a.query_engine.aquery.call_count == 1
     assert tool_b.query_engine.aquery.call_count == 1
