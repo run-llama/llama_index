@@ -34,7 +34,7 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "span-marker>=1.5.0",
+    "span-marker>=1.8.1",
     "huggingface-hub>=0.23.0",
     "llama-index-core>=0.13.0,<0.15",
 ]

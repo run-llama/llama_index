@@ -36,6 +36,7 @@ maintainers = [{name = "atroyn"}]
 dependencies = [
     "chromadb>=0.4.22,<0.5",
     "llama-index-core>=0.13.0,<0.15",
+    "onnxruntime>=1.17,<1.24; python_version < '3.11'",
 ]
 
 [tool.codespell]
