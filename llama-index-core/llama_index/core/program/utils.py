@@ -19,6 +19,9 @@ from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 
 _logger = logging.getLogger(__name__)
 
+# Every byte except quotes and brackets, for bytes.translate() to delete.
+_NOT_QUOTES_OR_BRACKETS = bytes(b for b in range(256) if b not in b'"{}[]')
+
 
 class FlexibleModel(BaseModel):
     model_config = ConfigDict(extra="allow")
@@ -139,6 +142,11 @@ def _repair_incomplete_json(json_str: str) -> str:
     """
     Attempt to repair incomplete JSON strings.
 
+    Closes an unterminated string and any objects or arrays that are still open,
+    in the reverse order they were opened. Quotes and brackets inside string
+    values (including escaped quotes) are ignored, and a trailing comma left
+    between two members or items is dropped.
+
     Args:
         json_str (str): Potentially incomplete JSON string
 
@@ -149,17 +157,53 @@ def _repair_incomplete_json(json_str: str) -> str:
     if not json_str.strip():
         return "{}"
 
-    # Add missing quotes
-    quote_count = json_str.count('"')
-    if quote_count % 2 == 1:
+    # Once escaped backslashes and quotes are removed, every remaining quote
+    # opens or closes a string. Only quotes and brackets (all ASCII) matter
+    # after that, so keep just those. Two adjacent quotes then have no brackets
+    # between them, so dropping them changes nothing and leaves less to split.
+    quotes_and_brackets = (
+        json_str.replace("\\\\", "")
+        .replace('\\"', "")
+        .encode("ascii", "ignore")
+        .translate(None, _NOT_QUOTES_OR_BRACKETS)
+        .replace(b'""', b"")
+    )
+    # Splitting on quotes alternates between brackets outside strings (even
+    # parts) and inside strings (odd parts). An even number of parts means the
+    # last string is still open.
+    parts = quotes_and_brackets.split(b'"')
+    in_string = len(parts) % 2 == 0
+    brackets = b"".join(parts[::2])
+
+    # A bracket directly followed by its closer leaves nothing open. Drop such
+    # pairs while that removes at least a quarter of what is left, which keeps
+    # these passes within a few times the length, and walk the rest below.
+    while brackets:
+        shorter = brackets.replace(b"{}", b"").replace(b"[]", b"")
+        removed_enough = len(shorter) * 4 <= len(brackets) * 3
+        brackets = shorter
+        if not removed_enough:
+            break
+
+    closers: List[str] = []
+    for bracket in brackets.decode():
+        if bracket == "{":
+            closers.append("}")
+        elif bracket == "[":
+            closers.append("]")
+        elif closers and closers[-1] == bracket:
+            closers.pop()
+
+    if in_string:
+        # An odd run of trailing backslashes ends in a dangling escape, which
+        # would otherwise escape the closing quote.
+        if (len(json_str) - len(json_str.rstrip("\\"))) % 2 == 1:
+            json_str = json_str[:-1]
         json_str += '"'
+    elif json_str.rstrip().endswith(","):
+        json_str = json_str.rstrip()[:-1]
 
-    # Add missing braces
-    brace_count = json_str.count("{") - json_str.count("}")
-    if brace_count > 0:
-        json_str += "}" * brace_count
-
-    return json_str
+    return json_str + "".join(reversed(closers))
 
 
 def process_streaming_objects(
