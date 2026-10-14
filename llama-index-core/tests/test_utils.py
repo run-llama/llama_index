@@ -1,6 +1,8 @@
 """Test utils."""
 
 from pathlib import Path
+import sys
+from types import ModuleType
 from typing import Optional, Type, Union
 from unittest import mock
 import os
@@ -18,6 +20,7 @@ from llama_index.core.utils import (
     get_color_mapping,
     get_retry_on_exceptions_with_backoff_decorator,
     get_tokenizer,
+    infer_torch_device,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
@@ -353,3 +356,14 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_infer_torch_device_detects_xpu(monkeypatch) -> None:
+    torch_mock = ModuleType("torch")
+    torch_mock.cuda = mock.Mock()
+    torch_mock.cuda.is_available.return_value = False
+    torch_mock.xpu = mock.Mock()
+    torch_mock.xpu.is_available.return_value = True
+    monkeypatch.setitem(sys.modules, "torch", torch_mock)
+
+    assert infer_torch_device() == "xpu"
