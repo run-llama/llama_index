@@ -108,8 +108,41 @@ class FunctionCallingLLM(LLM):
             tool_required=tool_required,
             **kwargs,
         )
-        # TODO: no validation for streaming outputs
-        return self.stream_chat(**chat_kwargs)
+        response_gen = self.stream_chat(**chat_kwargs)
+
+        def gen() -> ChatResponseGen:
+            # streamed responses accumulate, so the last response carries the
+            # full message and can get the same validation as the non-streaming
+            # path. We only know a response is the last one once the stream is
+            # exhausted, so hold back one response: earlier responses are
+            # yielded as soon as the next one arrives, and the final response is
+            # validated before it is yielded. Consumers therefore never see an
+            # unvalidated final response (e.g. tool calls that
+            # force_single_tool_call would drop), and a raising validator
+            # surfaces before the final response is emitted.
+            last_response: Optional[ChatResponse] = None
+            try:
+                for response in response_gen:
+                    if last_response is not None:
+                        yield last_response
+                    last_response = response
+            finally:
+                # closing this generator early (e.g. the consumer stops after a
+                # provisional response) must also close the provider stream so
+                # its transport is released; plain iterators have no close()
+                close = getattr(response_gen, "close", None)
+                if close is not None:
+                    close()
+
+            if last_response is not None:
+                yield self._validate_chat_with_tools_response(
+                    last_response,
+                    tools,
+                    allow_parallel_tool_calls=allow_parallel_tool_calls,
+                    **kwargs,
+                )
+
+        return gen()
 
     async def astream_chat_with_tools(
         self,
@@ -131,8 +164,33 @@ class FunctionCallingLLM(LLM):
             tool_required=tool_required,
             **kwargs,
         )
-        # TODO: no validation for streaming outputs
-        return await self.astream_chat(**chat_kwargs)
+        response_gen = await self.astream_chat(**chat_kwargs)
+
+        async def gen() -> ChatResponseAsyncGen:
+            # see stream_chat_with_tools: hold back one response so the fully
+            # accumulated final response is validated before it is yielded
+            last_response: Optional[ChatResponse] = None
+            try:
+                async for response in response_gen:
+                    if last_response is not None:
+                        yield last_response
+                    last_response = response
+            finally:
+                # aclose() on this generator does not close the provider stream
+                # it iterates over, so close it explicitly
+                aclose = getattr(response_gen, "aclose", None)
+                if aclose is not None:
+                    await aclose()
+
+            if last_response is not None:
+                yield self._validate_chat_with_tools_response(
+                    last_response,
+                    tools,
+                    allow_parallel_tool_calls=allow_parallel_tool_calls,
+                    **kwargs,
+                )
+
+        return gen()
 
     def _prepare_chat_with_tools_compat(
         self,
