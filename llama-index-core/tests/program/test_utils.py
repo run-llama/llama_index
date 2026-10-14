@@ -62,6 +62,14 @@ def test_repair_incomplete_json() -> None:
         ('{"title": "Intro {live', {"title": "Intro {live"}),
         ('{"title": "a]b', {"title": "a]b"}),
         ('{"title": "a}b"', {"title": "a}b"}),
+        ('{"a": "]", "b": "[", "c": [', {"a": "]", "b": "[", "c": []}),
+        # closed objects and arrays do not affect what is left open
+        (
+            '{"a": [[], {}], "b": [{"c": [1, [2]], "d": {}}, {"e": [',
+            {"a": [[], {}], "b": [{"c": [1, [2]], "d": {}}, {"e": []}]},
+        ),
+        # non-ASCII text next to quotes and brackets
+        ('{"name": "Über [live", "tags": ["é', {"name": "Über [live", "tags": ["é"]}),
         # a dangling escape character is dropped before closing the string
         ('{"path": "C:\\', {"path": "C:"}),
         # an escaped backslash is kept and does not escape the closing quote
