@@ -365,24 +365,21 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     else:
                         rejected_files.add(_Path(str(file)))
 
-        file_refs: list[Union[Path, PurePosixPath]] = []
         limit = (
             self.num_files_limit
             if self.num_files_limit is not None and self.num_files_limit > 0
             else None
         )
-        c = 0
         depth = 1000 if self.recursive else 1
-        for root, _, files in self.fs.walk(
-            str(input_dir), topdown=True, maxdepth=depth
-        ):
-            for file in files:
-                c += 1
-                if limit and c > limit:
-                    break
-                file_refs.append(_Path(root, file))
 
-        for ref in file_refs:
+        def walk_files() -> Generator[Union[Path, PurePosixPath], None, None]:
+            for root, _, files in self.fs.walk(
+                str(input_dir), topdown=True, maxdepth=depth
+            ):
+                for file in files:
+                    yield _Path(root, file)
+
+        for ref in walk_files():
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
             is_dir = self._is_directory(ref)
@@ -418,6 +415,8 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 continue
             else:
                 all_files.add(ref)
+                if limit is not None and len(all_files) >= limit:
+                    break
 
         new_input_files = sorted(all_files)
 
