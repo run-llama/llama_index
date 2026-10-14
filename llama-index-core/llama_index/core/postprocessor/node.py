@@ -202,6 +202,8 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
+        # Neighbor expansion must not replace an original retrieval result or its score.
+        all_nodes.update({node.node_id: node for node in nodes})
         all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
         sorted_nodes: List[NodeWithScore] = []
         for node in all_nodes_values:
