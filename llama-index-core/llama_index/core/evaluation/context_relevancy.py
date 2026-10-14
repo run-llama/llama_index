@@ -57,7 +57,10 @@ def _default_parser_function(output_str: str) -> Tuple[Optional[float], Optional
     if result:
         # Assuming there's only one match in the text, extract feedback and response
         feedback, score = result.groups()
-        score = float(score) if score is not None else score
+        try:
+            score = float(score) if score is not None else score
+        except ValueError:
+            return None, None
         return score, feedback.strip()
     else:
         return None, None
