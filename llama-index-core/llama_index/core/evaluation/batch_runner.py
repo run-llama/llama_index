@@ -78,7 +78,7 @@ class BatchEvalRunner:
 
     Args:
         evaluators (Dict[str, BaseEvaluator]): Dictionary of evaluators.
-        workers (int): Number of workers to use for parallelization.
+        workers (int): Positive number of workers to use for parallelization.
             Defaults to 2.
         show_progress (bool): Whether to show progress bars. Defaults to False.
 
@@ -90,6 +90,8 @@ class BatchEvalRunner:
         workers: int = 2,
         show_progress: bool = False,
     ):
+        if workers <= 0:
+            raise ValueError("workers must be greater than 0")
         self.evaluators = evaluators
         self.workers = workers
         self.semaphore = asyncio.Semaphore(self.workers)
