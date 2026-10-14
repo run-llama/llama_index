@@ -1,9 +1,10 @@
 import copy
 import json
 import uuid
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from ag_ui.core import RunAgentInput, Tool as AGUITool
+from pydantic import BaseModel, ConfigDict, create_model
 
 from llama_index.core import Settings
 from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
@@ -27,6 +28,25 @@ from llama_index.protocols.ag_ui.utils import (
 )
 
 
+class _ClientToolSchema(BaseModel):
+    """
+    ``fn_schema`` for a tool defined by the AG-UI client.
+
+    Its JSON Schema is the one the client sent, unchanged, so the LLM sees the
+    real parameter types, enums, bounds and nested objects. Both the
+    ``ToolMetadata.get_parameters_dict()`` path and integrations that convert
+    ``fn_schema`` themselves go through ``model_json_schema()``. Extra fields
+    are allowed because the arguments are validated by the client, not here.
+    """
+
+    model_config = ConfigDict(extra="allow")
+    client_json_schema: ClassVar[Dict[str, Any]] = {}
+
+    @classmethod
+    def model_json_schema(cls, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return copy.deepcopy(cls.client_json_schema)
+
+
 def _ag_ui_tool_to_llama_index(tool: AGUITool) -> BaseTool:
     """
     Convert an AG-UI Tool definition to a LlamaIndex FunctionTool.
@@ -35,35 +55,18 @@ def _ag_ui_tool_to_llama_index(tool: AGUITool) -> BaseTool:
     tools (pass-through) so they are never executed server-side. The LLM sees
     the tool schema, calls it, and the AG-UI middleware handles execution.
     """
-    from pydantic import Field, create_model
-
     tool_name = tool.name
     tool_description = tool.description or tool.name
 
-    # Build a Pydantic model from the AG-UI tool's JSON schema so that
-    # LlamaIndex generates the correct OpenAI function-call schema with
-    # top-level parameter names (e.g. `a2ui_json`) rather than wrapping
-    # everything under a `kwargs` key.
-    params = tool.parameters or {}
-    properties = params.get("properties", {})
-    required_fields = set(params.get("required", []))
+    # Keep the client's JSON Schema as-is (top-level parameter names such as
+    # `a2ui_json`, plus types, enums and nested objects) instead of rebuilding
+    # it as a model of string fields.
+    parameters = copy.deepcopy(tool.parameters or {})
+    parameters.setdefault("type", "object")
+    parameters.setdefault("properties", {})
 
-    pydantic_fields: Dict[str, Any] = {}
-    for prop_name, prop_schema in properties.items():
-        field_description = prop_schema.get("description", prop_name)
-        if prop_name in required_fields:
-            pydantic_fields[prop_name] = (str, Field(description=field_description))
-        else:
-            pydantic_fields[prop_name] = (
-                Optional[str],
-                Field(default=None, description=field_description),
-            )
-
-    fn_schema = (
-        create_model(f"{tool_name}_schema", **pydantic_fields)
-        if pydantic_fields
-        else create_model(f"{tool_name}_schema")
-    )
+    fn_schema = create_model(f"{tool_name}_schema", __base__=_ClientToolSchema)
+    fn_schema.client_json_schema = parameters
 
     def _noop(**kwargs: Any) -> str:
         return ""
