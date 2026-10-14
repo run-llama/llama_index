@@ -1,3 +1,4 @@
+import pytest
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.llms.llamafile import Llamafile
 from pytest import MonkeyPatch
@@ -214,3 +215,14 @@ def test_stream_chat(monkeypatch: MonkeyPatch) -> None:
         buff.write(chunk.delta)
 
     assert buff.getvalue() == "the quick"
+
+
+def test_streaming_chunk_content_only_strips_the_data_prefix():
+    llm = Llamafile()
+    assert llm._get_streaming_chunk_content('data: {"content":" They"}') == {
+        "content": " They"
+    }
+    # `lstrip("data: ")` would also eat the leading "t" of a bare JSON literal
+    assert llm._get_streaming_chunk_content("data: true") is True
+    with pytest.raises(ValueError):
+        llm._get_streaming_chunk_content("not an sse line")
