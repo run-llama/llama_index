@@ -2,6 +2,7 @@ import asyncio
 import unicodedata
 from pathlib import Path
 from typing import Callable, Dict, List, Literal, Optional
+from urllib.parse import unquote, urlsplit
 
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.readers.base import BaseReader
@@ -13,6 +14,26 @@ path = Path(__file__).parent / "Readability.js"
 
 def nfkc_normalize(text: str) -> str:
     return unicodedata.normalize("NFKC", text)
+
+
+def proxy_settings(proxy: str) -> Dict[str, str]:
+    """
+    Playwright proxy settings for a proxy URL.
+
+    Playwright does not read credentials from ``server``, so a proxy written
+    as ``http://user:pass@host:port`` would connect without them. They are
+    moved into ``username`` and ``password``, percent-decoded.
+    """
+    parts = urlsplit(proxy if "://" in proxy else f"http://{proxy}")
+    if parts.username is None and parts.password is None:
+        return {"server": proxy}
+    settings = {
+        "server": f"{parts.scheme}://{parts.netloc.rpartition('@')[2]}",
+        "username": unquote(parts.username or ""),
+    }
+    if parts.password is not None:
+        settings["password"] = unquote(parts.password)
+    return settings
 
 
 def async_to_sync(awaitable):
@@ -31,7 +52,7 @@ class ReadabilityWebPageReader(BaseReader):
     2. Inject Readability.js to extract the main content.
 
     Args:
-        proxy (Optional[str], optional): Proxy server. Defaults to None.
+        proxy (Optional[str], optional): Proxy server, e.g. ``http://user:pass@host:port``. Defaults to None.
         wait_until (Optional[Literal["commit", "domcontentloaded", "load", "networkidle"]], optional): Wait until the page is loaded. Defaults to "domcontentloaded".
         text_splitter (TextSplitter, optional): Text splitter. Defaults to None.
         normalizer (Optional[Callable[[str], str]], optional): Text normalizer. Defaults to nfkc_normalize.
@@ -52,9 +73,7 @@ class ReadabilityWebPageReader(BaseReader):
         }
         self._wait_until = wait_until
         if proxy:
-            self._launch_options["proxy"] = {
-                "server": proxy,
-            }
+            self._launch_options["proxy"] = proxy_settings(proxy)
         self._text_splitter = text_splitter
         self._normalize = normalize
         self._readability_js = None
