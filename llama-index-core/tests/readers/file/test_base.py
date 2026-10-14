@@ -258,3 +258,15 @@ def test_SimpleDirectoryReader_iter_data(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, recursive=True)
     docs = list(r.iter_data())
     assert len(docs) == 5
+
+
+def test_required_exts_is_case_insensitive(tmp_path):
+    (tmp_path / "lower.txt").write_text("lower")
+    (tmp_path / "UPPER.TXT").write_text("upper")
+    (tmp_path / "other.md").write_text("other")
+
+    reader = SimpleDirectoryReader(input_dir=str(tmp_path), required_exts=[".txt"])
+    assert sorted(f.name for f in reader.input_files) == ["UPPER.TXT", "lower.txt"]
+
+    reader = SimpleDirectoryReader(input_dir=str(tmp_path), required_exts=[".TXT"])
+    assert sorted(f.name for f in reader.input_files) == ["UPPER.TXT", "lower.txt"]

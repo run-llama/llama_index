@@ -227,8 +227,8 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             False by default.
         filename_as_id (bool): Whether to use the filename as the document id.
             False by default.
-        required_exts (Optional[List[str]]): List of required extensions.
-            Default is None.
+        required_exts (Optional[List[str]]): List of required extensions
+            (e.g. ".pdf"), matched case-insensitively. Default is None.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that file
             to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
@@ -371,6 +371,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             if self.num_files_limit is not None and self.num_files_limit > 0
             else None
         )
+        required_exts = (
+            {ext.lower() for ext in self.required_exts}
+            if self.required_exts is not None
+            else None
+        )
         c = 0
         depth = 1000 if self.recursive else 1
         for root, _, files in self.fs.walk(
@@ -389,7 +394,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_empty = self.exclude_empty and self.is_empty_file(ref)
             skip_because_bad_ext = (
-                self.required_exts is not None and ref.suffix not in self.required_exts
+                required_exts is not None and ref.suffix.lower() not in required_exts
             )
             skip_because_excluded = ref in rejected_files
             if not skip_because_excluded:
