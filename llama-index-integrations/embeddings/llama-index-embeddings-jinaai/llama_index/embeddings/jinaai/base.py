@@ -279,7 +279,8 @@ class JinaEmbedding(MultiModalEmbedding):
             input = [{"bytes": get_bytes_str(img_file_path)}]
         else:
             input = [{"url": img_file_path}]
-        return await self._api.aget_embeddings(input=input)[0]
+        embeddings = await self._api.aget_embeddings(input=input)
+        return embeddings[0]
 
     def _get_image_embeddings(
         self, img_file_paths: List[ImageType]
