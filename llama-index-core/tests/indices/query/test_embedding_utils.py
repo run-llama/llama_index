@@ -108,3 +108,15 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_with_zero_norm_embedding() -> None:
+    """A zero vector must not displace a valid result with a NaN cosine score."""
+    similarities, ids = get_top_k_embeddings(
+        [1.0, 0.0],
+        [[1.0, 0.0], [0.5, 0.5], [0.0, 0.0]],
+        similarity_top_k=2,
+    )
+
+    assert ids == [0, 1]
+    assert np.allclose(similarities, [1.0, 1 / np.sqrt(2)])

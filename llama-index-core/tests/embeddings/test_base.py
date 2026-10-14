@@ -4,7 +4,7 @@ from typing import Any, List
 from unittest.mock import patch
 import pytest
 
-from llama_index.core.base.embeddings.base import SimilarityMode, mean_agg
+from llama_index.core.base.embeddings.base import SimilarityMode, mean_agg, similarity
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
 
@@ -72,6 +72,20 @@ def test_embedding_similarity() -> None:
     query_embedding = [0.0, 1.0, 0.0]
     cosine = embed_model.similarity(query_embedding, text_embedding)
     assert cosine == 0.8
+
+
+@pytest.mark.parametrize(
+    ("embedding1", "embedding2"),
+    [
+        ([0.0, 0.0], [1.0, 0.0]),
+        ([1.0, 0.0], [0.0, 0.0]),
+    ],
+)
+def test_embedding_similarity_zero_norm(
+    embedding1: List[float], embedding2: List[float]
+) -> None:
+    """Zero-norm embeddings have no cosine similarity."""
+    assert similarity(embedding1, embedding2) == 0.0
 
 
 def test_embedding_similarity_euclidean() -> None:
