@@ -36,6 +36,108 @@ def test_delete() -> None:
     assert len(g.graph.get_triplets()) == 0
 
 
+def test_delete_shared_endpoint_keeps_other_triplet() -> None:
+    """Deleting one endpoint of a shared node must not drop the other triplet."""
+    g = SimplePropertyGraphStore()
+
+    alice = EntityNode(name="Alice")
+    bob = EntityNode(name="Bob")
+    carol = EntityNode(name="Carol")
+    knows = Relation(label="knows", source_id=alice.id, target_id=bob.id)
+    likes = Relation(label="likes", source_id=alice.id, target_id=carol.id)
+
+    g.upsert_nodes([alice, bob, carol])
+    g.upsert_relations([knows, likes])
+    g.delete(ids=["Bob"])
+
+    assert "Alice" in g.graph.nodes
+    assert "Carol" in g.graph.nodes
+    assert "Bob" not in g.graph.nodes
+    triplets = g.graph.get_triplets()
+    assert len(triplets) == 1
+    assert triplets[0][0].id == "Alice"
+    assert triplets[0][1].id == "likes"
+    assert triplets[0][2].id == "Carol"
+
+
+def test_delete_empty_selectors_leave_graph_unchanged() -> None:
+    """Empty id selectors must not wipe the graph."""
+    g = SimplePropertyGraphStore()
+
+    alice = EntityNode(name="Alice")
+    bob = EntityNode(name="Bob")
+    carol = EntityNode(name="Carol")
+    knows = Relation(label="knows", source_id=alice.id, target_id=bob.id)
+    likes = Relation(label="likes", source_id=alice.id, target_id=carol.id)
+
+    g.upsert_nodes([alice, bob, carol])
+    g.upsert_relations([knows, likes])
+
+    g.delete(ids=[])
+
+    assert set(g.graph.nodes) == {"Alice", "Bob", "Carol"}
+    assert len(g.graph.relations) == 2
+    assert len(g.graph.get_triplets()) == 2
+
+    g.delete_llama_nodes(node_ids=["missing-id"])
+
+    assert set(g.graph.nodes) == {"Alice", "Bob", "Carol"}
+    assert len(g.graph.relations) == 2
+    assert len(g.graph.get_triplets()) == 2
+
+
+def test_delete_entity_names_keeps_unrelated_triplet() -> None:
+    """Deleting an entity removes that entity and its triplets only."""
+    g = SimplePropertyGraphStore()
+
+    alice = EntityNode(name="Alice")
+    bob = EntityNode(name="Bob")
+    carol = EntityNode(name="Carol")
+    dave = EntityNode(name="Dave")
+    knows = Relation(label="knows", source_id=alice.id, target_id=bob.id)
+    likes = Relation(label="likes", source_id=carol.id, target_id=bob.id)
+
+    g.upsert_nodes([alice, bob, carol, dave])
+    g.upsert_relations([knows, likes])
+    g.delete(entity_names=["Alice"])
+
+    assert "Alice" not in g.graph.nodes
+    assert "Bob" in g.graph.nodes
+    assert "Carol" in g.graph.nodes
+    assert "Dave" in g.graph.nodes
+    triplets = g.graph.get_triplets()
+    assert len(triplets) == 1
+    assert triplets[0][0].id == "Carol"
+    assert triplets[0][1].id == "likes"
+    assert triplets[0][2].id == "Bob"
+
+
+def test_delete_relation_names_keeps_referenced_nodes() -> None:
+    """Deleting a relation removes those triplets and unreferenced endpoints."""
+    g = SimplePropertyGraphStore()
+
+    alice = EntityNode(name="Alice")
+    bob = EntityNode(name="Bob")
+    carol = EntityNode(name="Carol")
+    dave = EntityNode(name="Dave")
+    knows = Relation(label="knows", source_id=alice.id, target_id=bob.id)
+    likes = Relation(label="likes", source_id=alice.id, target_id=carol.id)
+
+    g.upsert_nodes([alice, bob, carol, dave])
+    g.upsert_relations([knows, likes])
+    g.delete(relation_names=["knows"])
+
+    triplets = g.graph.get_triplets()
+    assert len(triplets) == 1
+    assert triplets[0][0].id == "Alice"
+    assert triplets[0][1].id == "likes"
+    assert triplets[0][2].id == "Carol"
+    # Bob was only used by "knows"; Alice and Carol are still linked.
+    assert set(g.graph.nodes) == {"Alice", "Carol", "Dave"}
+    assert "Alice_knows_Bob" not in g.graph.relations
+    assert "Alice_likes_Carol" in g.graph.relations
+
+
 def test_get() -> None:
     g = SimplePropertyGraphStore()
 
