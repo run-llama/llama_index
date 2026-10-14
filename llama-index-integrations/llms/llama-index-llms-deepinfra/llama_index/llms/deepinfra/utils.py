@@ -27,7 +27,7 @@ def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
 
     """
     if data and data.startswith(b"data: "):
-        data = data.decode("utf-8").strip("data: ")
+        data = data.decode("utf-8").removeprefix("data: ")
         try:
             return json.loads(data)
         except json.JSONDecodeError:

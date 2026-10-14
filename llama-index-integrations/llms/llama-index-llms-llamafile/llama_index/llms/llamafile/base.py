@@ -270,7 +270,7 @@ class Llamafile(CustomLLM):
         field
         """
         if chunk.startswith("data:"):
-            cleaned = chunk.lstrip("data: ")
+            cleaned = chunk.removeprefix("data:")
             return json.loads(cleaned)
         else:
             raise ValueError(
