@@ -2,14 +2,13 @@ import base64
 
 from ag_ui.core import UserMessage
 from ag_ui.core.types import (
-    AudioInputContent,
-    BinaryInputContent,
-    DocumentInputContent,
-    ImageInputContent,
-    InputContentDataSource,
-    InputContentUrlSource,
-    TextInputContent,
-    VideoInputContent,
+    AudioPart,
+    DocumentPart,
+    ImagePart,
+    DataSource,
+    UrlSource,
+    TextPart,
+    VideoPart,
 )
 from llama_index.core.base.llms.types import (
     AudioBlock,
@@ -45,10 +44,10 @@ def test_image_data_part_becomes_image_block_with_bytes() -> None:
     msg = ag_ui_message_to_llama_index_message(
         user_message(
             [
-                TextInputContent(type="text", text="what is in this image?"),
-                ImageInputContent(
+                TextPart(type="text", text="what is in this image?"),
+                ImagePart(
                     type="image",
-                    source=InputContentDataSource(
+                    source=DataSource(
                         type="data", value=PNG_B64, mime_type="image/png"
                     ),
                 ),
@@ -67,11 +66,9 @@ def test_image_url_part_becomes_image_block_with_url() -> None:
     msg = ag_ui_message_to_llama_index_message(
         user_message(
             [
-                ImageInputContent(
+                ImagePart(
                     type="image",
-                    source=InputContentUrlSource(
-                        type="url", value="https://example.com/cat.png"
-                    ),
+                    source=UrlSource(type="url", value="https://example.com/cat.png"),
                 )
             ]
         )
@@ -84,23 +81,23 @@ def test_audio_video_and_document_parts_convert() -> None:
     msg = ag_ui_message_to_llama_index_message(
         user_message(
             [
-                AudioInputContent(
+                AudioPart(
                     type="audio",
-                    source=InputContentDataSource(
+                    source=DataSource(
                         type="data", value=PNG_B64, mime_type="audio/mpeg"
                     ),
                 ),
-                VideoInputContent(
+                VideoPart(
                     type="video",
-                    source=InputContentUrlSource(
+                    source=UrlSource(
                         type="url",
                         value="https://example.com/clip.mp4",
                         mime_type="video/mp4",
                     ),
                 ),
-                DocumentInputContent(
+                DocumentPart(
                     type="document",
-                    source=InputContentUrlSource(
+                    source=UrlSource(
                         type="url",
                         value="https://example.com/report.pdf",
                         mime_type="application/pdf",
@@ -120,11 +117,9 @@ def test_audio_video_and_document_parts_convert() -> None:
 def test_audio_format_roundtrips_to_mime() -> None:
     original = user_message(
         [
-            AudioInputContent(
+            AudioPart(
                 type="audio",
-                source=InputContentDataSource(
-                    type="data", value=PNG_B64, mime_type="audio/mpeg"
-                ),
+                source=DataSource(type="data", value=PNG_B64, mime_type="audio/mpeg"),
             )
         ]
     )
@@ -143,15 +138,15 @@ def test_base64_lookalike_payload_is_not_double_decoded() -> None:
     msg = ag_ui_message_to_llama_index_message(
         user_message(
             [
-                DocumentInputContent(
+                DocumentPart(
                     type="document",
-                    source=InputContentDataSource(
+                    source=DataSource(
                         type="data", value=encoded, mime_type="text/plain"
                     ),
                 ),
-                ImageInputContent(
+                ImagePart(
                     type="image",
-                    source=InputContentDataSource(
+                    source=DataSource(
                         type="data", value=encoded, mime_type="image/png"
                     ),
                 ),
@@ -166,37 +161,13 @@ def test_base64_lookalike_payload_is_not_double_decoded() -> None:
     assert base64.b64decode(back.content[1].source.value) == payload
 
 
-def test_deprecated_binary_part_routes_by_mime() -> None:
-    blocks = agui_content_to_blocks(
-        [
-            BinaryInputContent(
-                type="binary", mime_type="image/jpeg", data=PNG_B64, filename="a.jpg"
-            )
-        ]
-    )
-    assert [type(b) for b in blocks] == [ImageBlock]
-
-
-def test_unreadable_parts_are_skipped_not_stringified() -> None:
-    blocks = agui_content_to_blocks(
-        [
-            TextInputContent(type="text", text="hi"),
-            # id-only binary part: nothing to read, so it must be skipped.
-            BinaryInputContent(type="binary", mime_type="image/png", id="file-123"),
-        ]
-    )
-    assert [type(b) for b in blocks] == [TextBlock]
-
-
 def test_roundtrip_multimodal_user_message() -> None:
     original = user_message(
         [
-            TextInputContent(type="text", text="describe this"),
-            ImageInputContent(
+            TextPart(type="text", text="describe this"),
+            ImagePart(
                 type="image",
-                source=InputContentDataSource(
-                    type="data", value=PNG_B64, mime_type="image/png"
-                ),
+                source=DataSource(type="data", value=PNG_B64, mime_type="image/png"),
             ),
         ]
     )
@@ -218,8 +189,8 @@ def test_text_only_user_message_roundtrips_as_string() -> None:
 def test_text_only_parts_array_roundtrips_as_parts() -> None:
     original = user_message(
         [
-            TextInputContent(type="text", text="alpha"),
-            TextInputContent(type="text", text="beta"),
+            TextPart(type="text", text="alpha"),
+            TextPart(type="text", text="beta"),
         ]
     )
     back = llama_index_message_to_ag_ui_message(
@@ -246,9 +217,9 @@ def test_parameterized_audio_mime_maps_to_bare_format() -> None:
     msg = ag_ui_message_to_llama_index_message(
         user_message(
             [
-                AudioInputContent(
+                AudioPart(
                     type="audio",
-                    source=InputContentDataSource(
+                    source=DataSource(
                         type="data", value=PNG_B64, mime_type="audio/wav; codecs=1"
                     ),
                 )
@@ -261,14 +232,10 @@ def test_parameterized_audio_mime_maps_to_bare_format() -> None:
 def test_user_authored_state_markup_survives_parts_roundtrip() -> None:
     original = user_message(
         [
-            TextInputContent(
-                type="text", text="explain before <state>ready</state> after"
-            ),
-            ImageInputContent(
+            TextPart(type="text", text="explain before <state>ready</state> after"),
+            ImagePart(
                 type="image",
-                source=InputContentUrlSource(
-                    type="url", value="https://example.com/xml.png"
-                ),
+                source=UrlSource(type="url", value="https://example.com/xml.png"),
             ),
         ]
     )
@@ -281,7 +248,7 @@ def test_user_authored_state_markup_survives_parts_roundtrip() -> None:
 
 
 def test_single_element_text_array_keeps_shape_and_whitespace() -> None:
-    original = user_message([TextInputContent(type="text", text="    code()\n")])
+    original = user_message([TextPart(type="text", text="    code()\n")])
     back = llama_index_message_to_ag_ui_message(
         ag_ui_message_to_llama_index_message(original)
     )
@@ -299,14 +266,11 @@ def test_empty_parts_array_roundtrips_empty() -> None:
 def test_mime_types_are_case_insensitive() -> None:
     blocks = agui_content_to_blocks(
         [
-            AudioInputContent(
+            AudioPart(
                 type="audio",
-                source=InputContentDataSource(
-                    type="data", value=PNG_B64, mime_type="Audio/MPEG"
-                ),
+                source=DataSource(type="data", value=PNG_B64, mime_type="Audio/MPEG"),
             ),
-            BinaryInputContent(type="binary", mime_type="Image/PNG", data=PNG_B64),
         ]
     )
-    assert [type(b) for b in blocks] == [AudioBlock, ImageBlock]
+    assert [type(b) for b in blocks] == [AudioBlock]
     assert blocks[0].format == "mp3"
