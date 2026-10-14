@@ -53,7 +53,7 @@ os.environ["VECTARA_CORPUS_KEY"] = "<YOUR_VECTARA_CORPUS_KEY>"
 Then construct the Vectara Index and query it as follows:
 
 ```python
-from llama_index.core import ManagedIndex, SimpleDirectoryReade
+from llama_index.core import ManagedIndex, SimpleDirectoryReader
 from llama_index.indices.managed.vectara import VectaraIndex
 
 # Load documents and build index

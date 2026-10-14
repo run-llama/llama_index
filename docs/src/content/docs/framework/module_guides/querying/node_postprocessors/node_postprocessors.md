@@ -179,7 +179,7 @@ This postprocessor returns the top K nodes sorted by date. This assumes there is
 from llama_index.core.postprocessor import FixedRecencyPostprocessor
 
 postprocessor = FixedRecencyPostprocessor(
-    tok_k=1, date_key="date"  # the key in the metadata to find the date
+    top_k=1, date_key="date"  # the key in the metadata to find the date
 )
 
 postprocessor.postprocess_nodes(nodes)

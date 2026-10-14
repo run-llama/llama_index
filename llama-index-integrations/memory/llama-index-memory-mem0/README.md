@@ -103,7 +103,7 @@ llm = OpenAI(model="gpt-4o")
 ### SimpleChatEngine
 
 ```python
-from llama_index.core import SimpleChatEngine
+from llama_index.core.chat_engine import SimpleChatEngine
 
 chat_engine = SimpleChatEngine.from_defaults(
     llm=llm, memory=memory  # set you memory here

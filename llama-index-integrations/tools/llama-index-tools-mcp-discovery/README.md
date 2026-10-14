@@ -61,7 +61,7 @@ tool_spec = MCPDiscoveryTool(
 tools = tool_spec.to_tool_list()
 
 # Create an agent with the discovery tool
-agent = ReActAgent.from_tools(tools, verbose=True)
+agent = ReActAgent(tools=tools)
 
 # The agent can now use the 'discover_tools' function to find MCP servers it needs
 agent.chat("Find me a server that can send Slack notifications")
