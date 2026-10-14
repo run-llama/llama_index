@@ -77,7 +77,7 @@ class HTMLNodeParser(NodeParser):
 
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         soup = BeautifulSoup(text, "html.parser")
-        html_nodes = []
+        html_nodes: List[TextNode] = []
         last_tag = None
         current_section = ""
 
@@ -93,7 +93,10 @@ class HTMLNodeParser(NodeParser):
                 if current_section.strip():
                     html_nodes.append(
                         self._build_node_from_split(
-                            current_section.strip(), node, {"tag": last_tag}
+                            current_section.strip(),
+                            node,
+                            {"tag": last_tag},
+                            len(html_nodes),
                         )
                     )
                 if isinstance(tag, Tag):
@@ -103,7 +106,7 @@ class HTMLNodeParser(NodeParser):
         if current_section.strip():
             html_nodes.append(
                 self._build_node_from_split(
-                    current_section.strip(), node, {"tag": last_tag}
+                    current_section.strip(), node, {"tag": last_tag}, len(html_nodes)
                 )
             )
 
@@ -136,9 +139,14 @@ class HTMLNodeParser(NodeParser):
         text_split: str,
         node: BaseNode,
         metadata: dict,
+        node_index: int = 0,
     ) -> TextNode:
         """Build node from single text split."""
-        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+        node = build_nodes_from_splits(
+            [text_split],
+            node,
+            id_func=lambda i, doc: self.id_func(node_index, doc),
+        )[0]
 
         if self.include_metadata:
             node.metadata = {**node.metadata, **metadata}
