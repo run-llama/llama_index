@@ -811,14 +811,21 @@ class LLM(BaseLLM):
         from llama_index.core.tools import adapt_to_async_tool
         from llama_index.core.tools.calling import call_tool_with_selection
 
-        agent = ReActAgent(
-            tools=tools,
-            llm=self,
-            verbose=verbose,
-            formatter=kwargs.get("react_chat_formatter"),
-            output_parser=kwargs.get("output_parser"),
-            tool_retriever=kwargs.get("tool_retriever"),
-        )
+        # Only pass optional params to the agent when the caller provided them,
+        # otherwise pass through e.g. the default ReActChatFormatter of the agent.
+        agent_kwargs: Dict[str, Any] = {
+            "tools": tools,
+            "llm": self,
+            "verbose": verbose,
+        }
+        if kwargs.get("react_chat_formatter") is not None:
+            agent_kwargs["formatter"] = kwargs["react_chat_formatter"]
+        if kwargs.get("output_parser") is not None:
+            agent_kwargs["output_parser"] = kwargs["output_parser"]
+        if kwargs.get("tool_retriever") is not None:
+            agent_kwargs["tool_retriever"] = kwargs["tool_retriever"]
+
+        agent = ReActAgent(**agent_kwargs)
 
         memory = kwargs.get("memory", Memory.from_defaults())
 
@@ -882,14 +889,21 @@ class LLM(BaseLLM):
         from llama_index.core.tools import adapt_to_async_tool
         from llama_index.core.tools.calling import acall_tool_with_selection
 
-        agent = ReActAgent(
-            tools=tools,
-            llm=self,
-            verbose=verbose,
-            formatter=kwargs.get("react_chat_formatter"),
-            output_parser=kwargs.get("output_parser"),
-            tool_retriever=kwargs.get("tool_retriever"),
-        )
+        # Only pass optional params to the agent when the caller provided them,
+        # otherwise pass through e.g. the default ReActChatFormatter of the agent.
+        agent_kwargs: Dict[str, Any] = {
+            "tools": tools,
+            "llm": self,
+            "verbose": verbose,
+        }
+        if kwargs.get("react_chat_formatter") is not None:
+            agent_kwargs["formatter"] = kwargs["react_chat_formatter"]
+        if kwargs.get("output_parser") is not None:
+            agent_kwargs["output_parser"] = kwargs["output_parser"]
+        if kwargs.get("tool_retriever") is not None:
+            agent_kwargs["tool_retriever"] = kwargs["tool_retriever"]
+
+        agent = ReActAgent(**agent_kwargs)
 
         memory = kwargs.get("memory", Memory.from_defaults())
 
