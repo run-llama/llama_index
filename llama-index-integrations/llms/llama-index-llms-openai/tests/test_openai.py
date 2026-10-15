@@ -921,3 +921,79 @@ def test_from_openai_message_without_reasoning_content() -> None:
     assert len(thinking_blocks) == 0
     assert len(result.blocks) == 1
     assert result.blocks[0].text == "Hello!"
+
+
+def _make_single_chunk_parallel_tool_call_stream() -> list[ChatCompletionChunk]:
+    """Simulate a provider that sends both parallel tool calls in one chunk."""
+    return [
+        _make_chunk({"role": "assistant"}),
+        _make_chunk(
+            {
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_a",
+                        "type": "function",
+                        "function": {
+                            "name": "get_weather",
+                            "arguments": '{"city": "Paris"}',
+                        },
+                    },
+                    {
+                        "index": 1,
+                        "id": "call_b",
+                        "type": "function",
+                        "function": {
+                            "name": "get_weather",
+                            "arguments": '{"city": "Tokyo"}',
+                        },
+                    },
+                ]
+            }
+        ),
+        _make_chunk({}, finish_reason="tool_calls"),
+    ]
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_multiple_tool_calls_in_one_chunk(
+    MockSyncOpenAI: MagicMock,
+) -> None:
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = iter(
+            _make_single_chunk_parallel_tool_call_stream()
+        )
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+        tool_calls = llm.get_tool_calls_from_response(responses[-1])
+        assert [tc.tool_id for tc in tool_calls] == ["call_a", "call_b"]
+        assert [tc.tool_kwargs for tc in tool_calls] == [
+            {"city": "Paris"},
+            {"city": "Tokyo"},
+        ]
+
+
+@pytest.mark.asyncio()
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_astream_chat_multiple_tool_calls_in_one_chunk(
+    MockAsyncOpenAI: MagicMock,
+) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+
+    async def mock_async_stream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        for chunk in _make_single_chunk_parallel_tool_call_stream():
+            yield chunk
+
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_async_stream()
+    mock_instance.chat.completions.create = create_fn
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response_gen = await llm.astream_chat([ChatMessage(role="user", content="test")])
+    responses = [r async for r in response_gen]
+
+    tool_calls = llm.get_tool_calls_from_response(responses[-1])
+    assert [tc.tool_id for tc in tool_calls] == ["call_a", "call_b"]
