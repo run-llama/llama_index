@@ -12,6 +12,10 @@ from llama_index.indices.managed.lancedb.retriever import LanceDBRetriever
 from llama_index.indices.managed.lancedb.query_engine import LanceDBRetrieverQueryEngine
 from llama_index.indices.managed.lancedb import LanceDBMultiModalIndex
 from llama_index.indices.managed.lancedb.utils import (
+    aquery_multimodal,
+    aquery_text,
+    query_multimodal,
+    query_text,
     TableConfig,
     EmbeddingConfig,
     IndexingConfig,
@@ -22,6 +26,7 @@ from llama_index.core.schema import Document, NodeWithScore
 from llama_index.core import Settings
 from llama_index.core.llms import MockLLM
 from typing import List
+from PIL import Image
 
 
 @pytest.fixture()
@@ -150,3 +155,80 @@ async def test_retriever_qe(uri: str, document_data: List[Document]) -> None:
     assert isinstance(qe, LanceDBRetrieverQueryEngine)
     response = await qe.aquery(query_str="Hello")
     assert isinstance(response.response, str)
+
+
+IMAGE_ROW = {
+    "id": "img-1",
+    "image_uri": "https://example.com/cat.png",
+    "image_bytes": b"\x89PNG\r\n",
+    "label": "cat",
+    "metadata": "{}",
+    "_distance": 0.42,
+}
+
+
+class _FakeQuery:
+    """Stands in for a lancedb query builder; only `to_list` is used here."""
+
+    def __init__(self, rows: List[dict]) -> None:
+        self._rows = rows
+
+    def to_list(self) -> List[dict]:
+        return self._rows
+
+
+class _FakeTable:
+    def __init__(self, rows: List[dict]) -> None:
+        self._rows = rows
+
+    def search(self, *args: object, **kwargs: object) -> _FakeQuery:
+        return _FakeQuery(self._rows)
+
+
+class _FakeAsyncQuery:
+    def __init__(self, rows: List[dict]) -> None:
+        self._rows = rows
+
+    async def to_list(self) -> List[dict]:
+        return self._rows
+
+
+class _FakeAsyncTable:
+    def __init__(self, rows: List[dict]) -> None:
+        self._rows = rows
+
+    async def search(self, *args: object, **kwargs: object) -> _FakeAsyncQuery:
+        return _FakeAsyncQuery(self._rows)
+
+
+def _assert_image_result(retrieved: List[NodeWithScore]) -> None:
+    assert len(retrieved) == 1
+    assert isinstance(retrieved[0], NodeWithScore)
+    assert retrieved[0].node.id_ == "img-1"
+    assert retrieved[0].score == pytest.approx(0.42)
+
+
+def test_query_multimodal_builds_nodes_from_image_rows() -> None:
+    """`NodeWithScore` takes its node by keyword; a positional node is a TypeError."""
+    _assert_image_result(
+        query_multimodal(_FakeTable([IMAGE_ROW]), query=Image.new("RGB", (4, 4)))
+    )
+
+
+def test_query_text_builds_nodes_from_image_rows() -> None:
+    """A row without a `text` column falls through to the image branch."""
+    _assert_image_result(query_text(_FakeTable([IMAGE_ROW]), query="a cat"))
+
+
+@pytest.mark.asyncio
+async def test_aquery_multimodal_builds_nodes_from_image_rows() -> None:
+    _assert_image_result(
+        await aquery_multimodal(
+            _FakeAsyncTable([IMAGE_ROW]), query=Image.new("RGB", (4, 4))
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_aquery_text_builds_nodes_from_image_rows() -> None:
+    _assert_image_result(await aquery_text(_FakeAsyncTable([IMAGE_ROW]), query="a cat"))
