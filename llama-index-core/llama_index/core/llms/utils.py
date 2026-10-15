@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union, Dict
+from typing import TYPE_CHECKING, List, Optional, Union, Dict
 import json
 
 if TYPE_CHECKING:
@@ -124,6 +124,25 @@ def resolve_llm(
     return llm
 
 
+def _terminate_partial_string(s: str, string_start: int) -> str:
+    r"""
+    Close the unterminated string token that starts at ``string_start``.
+
+    The tail of the token may be a truncated escape sequence (a lone ``\`` or a
+    cut ``\uXXXX``), which cannot be closed as-is. Trim from the end until the
+    token parses, which is at most a handful of characters.
+    """
+    token = s[string_start:]
+    while not token.endswith('"'):
+        try:
+            json.loads(token + '"')
+            break
+        except json.JSONDecodeError:
+            token = token[:-1]
+
+    return s[:string_start] + token + '"'
+
+
 def parse_partial_json(s: str) -> Dict:
     """
     Parse an incomplete JSON string into a valid python dictionary.
@@ -139,15 +158,26 @@ def parse_partial_json(s: str) -> Dict:
 
     # Initialize variables.
     new_s = ""
-    stack = []
+    stack: List[str] = []
     is_inside_string = False
     escaped = False
+    # Where the string token being scanned starts, and whether it is an object key.
+    string_start = -1
+    string_is_key = False
+    # Start of an object key that has no ":" after it yet.
+    dangling_key_start = -1
+    # Start of a bare literal (number/true/false/null) that may be cut mid-token.
+    literal_start = -1
+    # Last structural character seen outside a string, used to tell a key from a value.
+    last_structural = ""
 
     # Process each character in the string one at a time.
     for char in s:
         if is_inside_string:
             if char == '"' and not escaped:
                 is_inside_string = False
+                if string_is_key:
+                    dangling_key_start = string_start
             elif char == "\n" and not escaped:
                 char = "\\n"  # Replace the newline character with the escape sequence.
             elif char == "\\":
@@ -158,41 +188,77 @@ def parse_partial_json(s: str) -> Dict:
             if char == '"':
                 is_inside_string = True
                 escaped = False
+                string_start = len(new_s)
+                # Only a string sitting in an object right after "{" or "," is a key.
+                string_is_key = (
+                    bool(stack) and stack[-1] == "}" and last_structural in ("{", ",")
+                )
+                literal_start = -1
             elif char == "{":
                 stack.append("}")
+                last_structural = char
+                literal_start = -1
             elif char == "[":
                 stack.append("]")
+                last_structural = char
+                literal_start = -1
             elif char == "}" or char == "]":
                 if stack and stack[-1] == char:
                     stack.pop()
                 else:
                     # Mismatched closing character; the input is malformed.
                     raise ValueError("Malformed partial JSON encountered.")
+                last_structural = ""
+                literal_start = -1
+            elif char == ":":
+                last_structural = char
+                dangling_key_start = -1
+                literal_start = -1
+            elif char == ",":
+                last_structural = char
+                literal_start = -1
+            elif not char.isspace() and literal_start == -1:
+                literal_start = len(new_s)
 
         # Append the processed character to the new string.
         new_s += char
 
-    # If we're still inside a string at the end of processing and no colon was found after the opening quote,
-    # this is an incomplete key - remove it
-    if is_inside_string and '"' in new_s and ":" not in new_s[new_s.rindex('"') :]:
-        new_s = new_s[: new_s.rindex('"')]
-    elif is_inside_string:
-        new_s += '"'
+    if is_inside_string:
+        if string_is_key:
+            # An incomplete key carries no information at all -- drop it.
+            dangling_key_start = string_start
+        else:
+            # An incomplete value does, so keep what has arrived so far.
+            new_s = _terminate_partial_string(new_s, string_start)
 
-    # Check if we have an incomplete key-value pair
-    new_s = new_s.rstrip()
-    if new_s.endswith(":"):
-        new_s += " null"  # Add a default value for incomplete value
-    elif new_s.endswith(","):
-        new_s = new_s[:-1]  # Remove the trailing comma
+    if dangling_key_start != -1:
+        # A key with no value yet; drop it along with the comma introducing it.
+        new_s = new_s[:dangling_key_start]
+        literal_start = -1
 
-    # Close any remaining open structures in the reverse order that they were opened.
-    for closing_char in reversed(stack):
-        new_s += closing_char
+    def close(text: str) -> str:
+        # Check if we have an incomplete key-value pair
+        text = text.rstrip()
+        if text.endswith(":"):
+            text += " null"  # Add a default value for incomplete value
+        elif text.endswith(","):
+            text = text[:-1]  # Remove the trailing comma
 
-    # Attempt to parse the modified string as JSON.
-    try:
-        return json.loads(new_s)
-    except json.JSONDecodeError:
-        # If we still can't parse the string as JSON, raise error to indicate failure.
-        raise ValueError("Malformed partial JSON encountered.")
+        # Close any remaining open structures in the reverse order they were opened.
+        return text + "".join(reversed(stack))
+
+    attempts = [new_s]
+    if literal_start != -1:
+        # A trailing literal may be a value cut mid-token ("1.", "tru", "-"),
+        # which is only detectable by failing to parse it.
+        attempts.append(new_s[:literal_start])
+
+    for attempt in attempts:
+        # Attempt to parse the modified string as JSON.
+        try:
+            return json.loads(close(attempt))
+        except json.JSONDecodeError:
+            continue
+
+    # If we still can't parse the string as JSON, raise error to indicate failure.
+    raise ValueError("Malformed partial JSON encountered.")
