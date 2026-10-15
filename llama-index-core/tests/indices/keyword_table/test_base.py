@@ -182,3 +182,11 @@ def test_delete(patch_token_text_splitter) -> None:
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
+
+
+def test_empty_keyword_table_node_ids():
+    from llama_index.core.data_structs.data_structs import KeywordTable
+
+    table = KeywordTable()
+
+    assert table.node_ids == set()
