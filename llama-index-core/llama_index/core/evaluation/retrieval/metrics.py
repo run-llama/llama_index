@@ -38,6 +38,26 @@ class HitRate(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
+        """
+        Compute metric based on the provided inputs.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed hit rate score.
+
+        """
         # Checking for the required arguments
         if (
             retrieved_ids is None
@@ -49,8 +69,15 @@ class HitRate(BaseRetrievalMetric):
 
         if self.use_granular_hit_rate:
             # Granular HitRate calculation: Calculate all hits and divide by the number of expected docs
+            # Deduplicate retrieved_ids to avoid double-counting the same document
+            seen = set()
+            deduped_retrieved = []
+            for doc_id in retrieved_ids:
+                if doc_id not in seen:
+                    seen.add(doc_id)
+                    deduped_retrieved.append(doc_id)
             expected_set = set(expected_ids)
-            hits = sum(1 for doc_id in retrieved_ids if doc_id in expected_set)
+            hits = sum(1 for doc_id in deduped_retrieved if doc_id in expected_set)
             score = hits / len(expected_ids) if expected_ids else 0.0
         else:
             # Default HitRate calculation: Check if there is a single hit
@@ -85,6 +112,26 @@ class MRR(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
+        """
+        Compute MRR based on the provided inputs and selected method.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed MRR score.
+
+        """
         # Checking for the required arguments
         if (
             retrieved_ids is None
@@ -96,10 +143,17 @@ class MRR(BaseRetrievalMetric):
 
         if self.use_granular_mrr:
             # Granular MRR calculation: All relevant retrieved docs have their reciprocal ranks summed and averaged
+            # Deduplicate retrieved_ids to avoid double-counting the same document
+            seen = set()
+            deduped_retrieved = []
+            for doc_id in retrieved_ids:
+                if doc_id not in seen:
+                    seen.add(doc_id)
+                    deduped_retrieved.append(doc_id)
             expected_set = set(expected_ids)
             reciprocal_rank_sum = 0.0
             relevant_docs_count = 0
-            for index, doc_id in enumerate(retrieved_ids):
+            for index, doc_id in enumerate(deduped_retrieved):
                 if doc_id in expected_set:
                     relevant_docs_count += 1
                     reciprocal_rank_sum += 1.0 / (index + 1)
@@ -140,6 +194,26 @@ class Precision(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
+        """
+        Compute precision based on the provided inputs and selected method.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed precision score.
+
+        """
         # Checking for the required arguments
         if (
             retrieved_ids is None
@@ -176,6 +250,26 @@ class Recall(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
+        """
+        Compute recall based on the provided inputs and selected method.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed recall score.
+
+        """
         # Checking for the required arguments
         if (
             retrieved_ids is None
@@ -212,6 +306,26 @@ class AveragePrecision(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
+        """
+        Compute average precision based on the provided inputs and selected method.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed average precision score.
+
+        """
         # Checking for the required arguments
         if (
             retrieved_ids is None
@@ -223,18 +337,16 @@ class AveragePrecision(BaseRetrievalMetric):
 
         expected_set = set(expected_ids)
 
-        # Deduplicate retrieved_ids (preserving order) so that a downstream caller
-        # that merges results from several retrievers cannot count the same relevant
-        # document more than once, which would inflate average precision above 1.0.
-        seen: set = set()
-        retrieved_ids = [
-            doc_id
-            for doc_id in retrieved_ids
-            if not (doc_id in seen or seen.add(doc_id))
-        ]
+        # Deduplicate retrieved_ids to avoid double-counting the same document
+        seen = set()
+        deduped_retrieved = []
+        for doc_id in retrieved_ids:
+            if doc_id not in seen:
+                seen.add(doc_id)
+                deduped_retrieved.append(doc_id)
 
         relevant_count, total_precision = 0, 0.0
-        for i, retrieved_id in enumerate(retrieved_ids, start=1):
+        for i, retrieved_id in enumerate(deduped_retrieved, start=1):
             if retrieved_id in expected_set:
                 relevant_count += 1
                 total_precision += relevant_count / i
@@ -291,6 +403,26 @@ class NDCG(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
+        """
+        Compute NDCG based on the provided inputs and selected method.
+
+        Parameters
+        ----------
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs, unordered by relevance.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises
+        ------
+            ValueError: If the necessary IDs are not provided.
+
+        Returns
+        -------
+            RetrievalMetricResult: The result with the computed NDCG score.
+
+        """
         # Checking for the required arguments
         if (
             retrieved_ids is None
@@ -303,19 +435,17 @@ class NDCG(BaseRetrievalMetric):
         mode = self.mode
         expected_set = set(expected_ids)
 
-        # Deduplicate retrieved_ids (preserving order): a duplicated relevant id
-        # must not contribute gain more than once, which would otherwise inflate
-        # NDCG above 1.0.
-        seen: set = set()
-        retrieved_ids = [
-            doc_id
-            for doc_id in retrieved_ids
-            if not (doc_id in seen or seen.add(doc_id))
-        ]
+        # Deduplicate retrieved_ids to avoid double-counting the same document
+        seen = set()
+        deduped_retrieved = []
+        for docid in retrieved_ids:
+            if docid not in seen:
+                seen.add(docid)
+                deduped_retrieved.append(docid)
 
         dcg = sum(
             discounted_gain(rel=docid in expected_set, i=i, mode=mode)
-            for i, docid in enumerate(retrieved_ids, start=1)
+            for i, docid in enumerate(deduped_retrieved, start=1)
         )
 
         idcg = sum(
@@ -378,7 +508,7 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
             raise ValueError("Retrieved texts must be provided")
 
         results = self._client.rerank(
-            model=model,
+            model=self.model,
             top_n=len(
                 retrieved_texts
             ),  # i.e. get a rank score for each retrieved chunk
@@ -388,7 +518,9 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
         relevance_scores = [r.relevance_score for r in results.results]
         agg_func = self._get_agg_func(agg)
 
-        return RetrievalMetricResult(score=agg_func(relevance_scores), metadata={"agg": agg})
+        return RetrievalMetricResult(
+            score=agg_func(relevance_scores), metadata={"agg": agg}
+        )
 
 
 METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
