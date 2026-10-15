@@ -1100,42 +1100,35 @@ def update_tool_calls(
     Returns:
         List[ChoiceDeltaToolCall]: the updated tool calls
     """
-    # openai provides chunks consisting of tool_call deltas one tool at a time
     if tool_calls_delta is None or len(tool_calls_delta) == 0:
         return tool_calls
 
-    tc_delta = tool_calls_delta[0]
-
-    if len(tool_calls) == 0:
-        tool_calls.append(tc_delta)
-    else:
-        # we need to either update latest tool_call or start a
-        # new tool_call (i.e., multiple tools in this turn) and
-        # accumulate that new tool_call with future delta chunks
-        t = tool_calls[-1]
-        if t.index != tc_delta.index:
+    # a chunk usually carries one tool_call delta, but some providers send
+    # several at once (e.g. every parallel tool call in a single chunk)
+    for tc_delta in tool_calls_delta:
+        t = next((tc for tc in tool_calls if tc.index == tc_delta.index), None)
+        if t is None:
             # the start of a new tool call, so append to our running tool_calls list
             tool_calls.append(tc_delta)
-        else:
-            # not the start of a new tool call, so update last item of tool_calls
+            continue
 
-            # validations to get passed by mypy
-            assert t.function is not None
-            assert tc_delta.function is not None
+        # validations to get passed by mypy
+        assert t.function is not None
+        assert tc_delta.function is not None
 
-            # Initialize fields if they're None
-            # OpenAI(or Compatible)'s streaming API can return partial tool call
-            # information across multiple chunks where some fields may be None in
-            # initial chunks and populated in subsequent ones
-            if t.function.arguments is None:
-                t.function.arguments = ""
-            if t.function.name is None:
-                t.function.name = ""
-            if t.id is None:
-                t.id = ""
+        # Initialize fields if they're None
+        # OpenAI(or Compatible)'s streaming API can return partial tool call
+        # information across multiple chunks where some fields may be None in
+        # initial chunks and populated in subsequent ones
+        if t.function.arguments is None:
+            t.function.arguments = ""
+        if t.function.name is None:
+            t.function.name = ""
+        if t.id is None:
+            t.id = ""
 
-            # Update with delta values
-            t.function.arguments += tc_delta.function.arguments or ""
-            t.function.name += tc_delta.function.name or ""
-            t.id += tc_delta.id or ""
+        # Update with delta values
+        t.function.arguments += tc_delta.function.arguments or ""
+        t.function.name += tc_delta.function.name or ""
+        t.id += tc_delta.id or ""
     return tool_calls
