@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Generator
+from typing import Dict, List, Generator, Optional
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
@@ -269,6 +269,95 @@ def test_delete_nodes(
     assert len(res) == 1
     assert res[0].get_content() == "lorem ipsum"
     assert res[0].id_ == "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_delete_nodes_by_metadata_only(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    vector_store.add(node_embeddings)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author",
+                value=["Stephen King", "Marie Curie"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+
+    if use_async:
+        await vector_store.adelete_nodes(filters=filters)
+    else:
+        vector_store.delete_nodes(filters=filters)
+
+    assert set(vector_store.client.get()["ids"]) == {
+        node.node_id
+        for node in node_embeddings
+        if node.metadata.get("author") not in {"Stephen King", "Marie Curie"}
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_delete_nodes_intersects_ids_and_metadata(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    vector_store.add(node_embeddings)
+    node_ids = [node.node_id for node in node_embeddings[:2]]
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author",
+                value=["Stephen King", "Marie Curie"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+
+    if use_async:
+        await vector_store.adelete_nodes(node_ids=node_ids, filters=filters)
+    else:
+        vector_store.delete_nodes(node_ids=node_ids, filters=filters)
+
+    assert set(vector_store.client.get()["ids"]) == {
+        node.node_id for node in node_embeddings[1:]
+    }
+
+
+@pytest.mark.parametrize("node_ids", [None, []])
+def test_delete_nodes_without_selection_preserves_collection(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    node_ids: Optional[List[str]],
+) -> None:
+    vector_store.add(node_embeddings)
+
+    with pytest.raises(ValueError):
+        vector_store.delete_nodes(node_ids=node_ids)
+
+    assert set(vector_store.client.get()["ids"]) == {
+        node.node_id for node in node_embeddings
+    }
+
+
+def test_delete_nodes_empty_ids_with_metadata_preserves_collection(
+    vector_store: ChromaVectorStore, node_embeddings: List[TextNode]
+) -> None:
+    vector_store.add(node_embeddings)
+    filters = MetadataFilters(filters=[MetadataFilter(key="theme", value="Friendship")])
+
+    with pytest.raises(ValueError):
+        vector_store.delete_nodes(node_ids=[], filters=filters)
+
+    assert set(vector_store.client.get()["ids"]) == {
+        node.node_id for node in node_embeddings
+    }
 
 
 def test_clear(
