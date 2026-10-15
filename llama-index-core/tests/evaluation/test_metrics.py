@@ -202,33 +202,73 @@ def test_ndcg(expected_ids, retrieved_ids, mode, expected_result):
     assert result.score == pytest.approx(expected_result)
 
 
-# Regression: a document id appearing more than once in retrieved_ids (e.g. results
-# merged from several retrievers) must not be counted more than once, otherwise AP/NDCG
-# inflate above 1.0. The first occurrence is kept, matching trec_eval treating a doc once.
+# Tests for duplicate retrieved_ids handling
 @pytest.mark.parametrize(
-    ("expected_ids", "retrieved_ids", "expected_result"),
+    ("expected_ids", "retrieved_ids", "use_granular", "expected_result"),
     [
-        (["id1"], ["id1", "id1"], 1.0),
-        (["id1", "id2"], ["id1", "id1", "id2"], 1.0),
+        # Duplicate retrieved doc should not be double-counted
+        (["id1"], ["id1", "id1"], True, 1.0),
+        (["id1", "id2"], ["id1", "id1", "id2", "id2"], True, 2.0 / 2.0),
+        (["id1", "id2", "id3"], ["id1", "id1", "id2"], True, 2.0 / 3.0),
     ],
 )
-def test_ap_duplicate_retrieved_ids(expected_ids, retrieved_ids, expected_result):
-    ap = AveragePrecision()
-    result = ap.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
-    assert 0.0 <= result.score <= 1.0
+def test_hit_rate_duplicates(expected_ids, retrieved_ids, use_granular, expected_result):
+    hr = HitRate()
+    hr.use_granular_hit_rate = use_granular
+    result = hr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    assert result.score == pytest.approx(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("expected_ids", "retrieved_ids", "use_granular", "expected_result"),
+    [
+        # Duplicate retrieved doc should use first occurrence position
+        (["id1"], ["id1", "id1"], True, 1.0),
+        # After dedup: ["id1", "id2"], id1 at pos 0 (1/1), id2 at pos 1 (1/2)
+        (["id1", "id2"], ["id1", "id1", "id2", "id2"], True, (1.0 / 1.0 + 1.0 / 2.0) / 2.0),
+        (["id1"], ["id2", "id1", "id1"], True, 1.0 / 2.0),
+    ],
+)
+def test_mrr_duplicates(expected_ids, retrieved_ids, use_granular, expected_result):
+    mrr = MRR()
+    mrr.use_granular_mrr = use_granular
+    result = mrr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
     assert result.score == pytest.approx(expected_result)
 
 
 @pytest.mark.parametrize(
     ("expected_ids", "retrieved_ids", "expected_result"),
     [
+        # Duplicate retrieved doc should not inflate AP
         (["id1"], ["id1", "id1"], 1.0),
+        # After dedup: ["id1", "id2"]
+        # pos1: id1 relevant, precision=1/1=1.0
+        # pos2: id2 relevant, precision=2/2=1.0
+        # AP = (1.0 + 1.0) / 2 = 1.0
+        (["id1", "id2"], ["id1", "id1", "id2", "id2"], 1.0),
     ],
 )
-def test_ndcg_duplicate_retrieved_ids(expected_ids, retrieved_ids, expected_result):
+def test_ap_duplicates(expected_ids, retrieved_ids, expected_result):
+    ap = AveragePrecision()
+    result = ap.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    assert result.score == pytest.approx(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("expected_ids", "retrieved_ids", "expected_result"),
+    [
+        # Duplicate retrieved doc should not inflate NDCG
+        (["id1"], ["id1", "id1"], 1.0),
+        # After dedup: ["id1", "id2"]
+        # DCG = 1/log2(2) + 1/log2(3)
+        # IDCG = 1/log2(2) + 1/log2(3)
+        # NDCG = 1.0
+        (["id1", "id2"], ["id1", "id1", "id2", "id2"], 1.0),
+    ],
+)
+def test_ndcg_duplicates(expected_ids, retrieved_ids, expected_result):
     ndcg = NDCG()
     result = ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
-    assert 0.0 <= result.score <= 1.0
     assert result.score == pytest.approx(expected_result)
 
 
