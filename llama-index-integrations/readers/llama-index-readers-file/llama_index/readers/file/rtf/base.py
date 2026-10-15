@@ -8,7 +8,19 @@ from llama_index.core.schema import Document
 
 
 class RTFReader(BaseReader):
-    """RTF (Rich Text Format) Reader. Reads rtf file and convert to Document."""
+    """
+    RTF (Rich Text Format) Reader. Reads rtf file and convert to Document.
+
+    Args:
+        encoding (str): Encoding used to open the file.
+            utf-8 by default.
+
+    """
+
+    def __init__(self, *args: Any, encoding: str = "utf-8", **kwargs: Any) -> None:
+        """Init params."""
+        super().__init__(*args, **kwargs)
+        self._encoding = encoding
 
     def load_data(
         self,
@@ -32,6 +44,6 @@ class RTFReader(BaseReader):
         except ImportError:
             raise ImportError("striprtf is required to read RTF files.")
 
-        with open(str(input_file)) as f:
+        with open(str(input_file), encoding=self._encoding) as f:
             text = rtf_to_text(f.read())
             return [Document(text=text.strip(), metadata=extra_info or {})]
