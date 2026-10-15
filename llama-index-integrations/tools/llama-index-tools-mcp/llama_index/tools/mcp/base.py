@@ -1,10 +1,28 @@
 import asyncio
 import logging
+import re
 from typing import Any, Callable, Dict, List, Optional, Set
+from urllib.parse import quote
 
 from mcp.client.session import ClientSession
 from mcp.types import Resource
 from pydantic import BaseModel, create_model
+from pydantic.fields import FieldInfo
+
+_SIMPLE_TEMPLATE_VAR = re.compile(r"\{([^{}]+)\}")
+
+
+def _simple_template_variables(uri_template: str) -> Optional[List[str]]:
+    """
+    Variable names of an RFC 6570 level-1 template (simple ``{var}``
+    expansion only), in order of first appearance. Returns None when the
+    template uses operators or forms beyond level 1 (``{+var}``, ``{x,y}``,
+    ...), which this integration does not support.
+    """
+    names = _SIMPLE_TEMPLATE_VAR.findall(uri_template)
+    if all(name.isidentifier() for name in names):
+        return list(dict.fromkeys(names))
+    return None
 
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -123,6 +141,24 @@ class McpToolSpec(
 
         return async_resource_fn
 
+    def _create_resource_template_fn(
+        self, uri_template: str, var_names: List[str]
+    ) -> Callable:
+        """
+        Create a resource call function for an MCP resource template. The
+        returned function substitutes its keyword arguments into the
+        template (RFC 6570 simple expansion: values are percent-encoded)
+        and reads the resulting URI.
+        """
+
+        async def async_resource_fn(**kwargs):
+            uri = uri_template
+            for name in var_names:
+                uri = uri.replace("{" + name + "}", quote(str(kwargs[name]), safe=""))
+            return await self.client.read_resource(uri)
+
+        return async_resource_fn
+
     async def to_tool_list_async(self) -> List[FunctionTool]:
         """
         Asynchronous method to convert MCP tools to FunctionTool objects.
@@ -173,16 +209,55 @@ class McpToolSpec(
         if self.include_resources:
             resources_list = await self.fetch_resources()
             for resource in resources_list:
-                if hasattr(resource, "uri"):
-                    uri = resource.uri
-                elif hasattr(resource, "template"):
-                    uri = resource.template
-                fn = self._create_resource_fn(uri)
+                uri = getattr(resource, "uri", None)
+                fn_schema: Optional[type[BaseModel]] = None
+                if uri is not None:
+                    fn = self._create_resource_fn(str(uri))
+                else:
+                    # mcp.types.ResourceTemplate: the URI lives on
+                    # ``uri_template`` and contains ``{var}`` placeholders
+                    # the caller must fill in.
+                    uri_template = getattr(resource, "uri_template", None)
+                    if uri_template is None:
+                        logging.warning(
+                            "Skipping resource %r: it has neither a `uri` nor a "
+                            "`uri_template` attribute.",
+                            resource.name,
+                        )
+                        continue
+                    template_vars = _simple_template_variables(str(uri_template))
+                    if template_vars is None:
+                        logging.warning(
+                            "Skipping resource template %r: %r uses RFC 6570 "
+                            "features beyond simple {var} expansion.",
+                            resource.name,
+                            str(uri_template),
+                        )
+                        continue
+                    fn = self._create_resource_template_fn(
+                        str(uri_template), template_vars
+                    )
+                    fn_schema = create_model(
+                        f"{resource.name.replace('/', '_')}_Schema",
+                        **{
+                            var: (
+                                str,
+                                FieldInfo(
+                                    description=(
+                                        f"Value substituted for {{{var}}} in the "
+                                        f"resource URI template {uri_template!s}"
+                                    )
+                                ),
+                            )
+                            for var in template_vars
+                        },
+                    )
                 function_tool_list.append(
                     FunctionTool.from_defaults(
                         async_fn=fn,
                         name=resource.name.replace("/", "_"),
                         description=resource.description,
+                        fn_schema=fn_schema,
                     )
                 )
 
