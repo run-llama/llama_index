@@ -401,7 +401,8 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        think = kwargs.pop("think", None) or self.thinking
+        think = kwargs.pop("think", None)
+        think = self.thinking if think is None else think
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = self.client.chat(
@@ -451,7 +452,8 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        think = kwargs.pop("think", None) or self.thinking
+        think = kwargs.pop("think", None)
+        think = self.thinking if think is None else think
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         def gen() -> ChatResponseGen:
@@ -535,7 +537,8 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        think = kwargs.pop("think", None) or self.thinking
+        think = kwargs.pop("think", None)
+        think = self.thinking if think is None else think
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         async def gen() -> ChatResponseAsyncGen:
@@ -619,7 +622,8 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        think = kwargs.pop("think", None) or self.thinking
+        think = kwargs.pop("think", None)
+        think = self.thinking if think is None else think
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = await self.async_client.chat(

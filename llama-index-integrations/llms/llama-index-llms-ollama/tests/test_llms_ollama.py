@@ -1,4 +1,5 @@
 import os
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from ollama import Client
@@ -51,6 +52,32 @@ tool = FunctionTool.from_defaults(fn=generate_song)
 def test_embedding_class() -> None:
     names_of_base_classes = [b.__name__ for b in Ollama.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
+
+
+@pytest.mark.asyncio
+async def test_per_call_think_false_overrides_default() -> None:
+    response = {"message": {"content": "", "role": "assistant"}}
+    client = MagicMock()
+    client.chat.side_effect = [response, [response]]
+
+    async def stream_response():
+        yield response
+
+    async_client = MagicMock()
+    async_client.chat = AsyncMock(side_effect=[response, stream_response()])
+    llm = Ollama(model="test", thinking=True, client=client, async_client=async_client)
+    messages = [ChatMessage(role="user", content="Hello!")]
+
+    llm.chat(messages, think=False)
+    list(llm.stream_chat(messages, think=False))
+    await llm.achat(messages, think=False)
+    stream = await llm.astream_chat(messages, think=False)
+    _ = [item async for item in stream]
+
+    assert all(call.kwargs["think"] is False for call in client.chat.call_args_list)
+    assert all(
+        call.kwargs["think"] is False for call in async_client.chat.call_args_list
+    )
 
 
 @pytest.mark.skipif(
@@ -207,7 +234,7 @@ async def test_async_chat_with_tools() -> None:
 def test_chat_with_think() -> None:
     llm = Ollama(model=thinking_test_model, thinking=True, request_timeout=360)
     response = llm.chat(
-        [ChatMessage(role="user", content="Hello! What is 32 * 4?")], think=False
+        [ChatMessage(role="user", content="Hello! What is 32 * 4?")], think=True
     )
     assert response is not None
     assert str(response).strip() != ""
@@ -309,7 +336,7 @@ def test_chat_with_thinking_input() -> None:
                 content="Based on your previous reasoning, can you now tell me the result of 50*200?",
             ),
         ],
-        think=False,
+        think=True,
     )
     assert response is not None
     assert str(response).strip() != ""
@@ -343,7 +370,7 @@ def test_chat_with_thinking_input() -> None:
 async def test_async_chat_with_think() -> None:
     llm = Ollama(model=thinking_test_model, thinking=True)
     response = await llm.achat(
-        [ChatMessage(role="user", content="Hello! What is 32 * 4?")], think=False
+        [ChatMessage(role="user", content="Hello! What is 32 * 4?")], think=True
     )
     assert response is not None
     assert str(response).strip() != ""
