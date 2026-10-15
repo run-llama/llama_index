@@ -354,11 +354,22 @@ def blocks_to_anthropic_blocks(
     return anthropic_blocks
 
 
+def _count_cache_controls(value: Any) -> int:
+    """Count the blocks with cache_control, including nested tool results."""
+    if isinstance(value, dict):
+        return int("cache_control" in value) + sum(
+            _count_cache_controls(v) for v in value.values()
+        )
+    if isinstance(value, (list, tuple)):
+        return sum(_count_cache_controls(v) for v in value)
+    return 0
+
+
 def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
     cache_idx: Optional[int] = None,
     model: Optional[str] = None,
-) -> Tuple[Sequence[MessageParam], str]:
+) -> Tuple[Sequence[MessageParam], Union[str, List[TextBlockParam]]]:
     """
     Converts a list of generic ChatMessages to anthropic messages.
 
@@ -370,11 +381,13 @@ def messages_to_anthropic_messages(
     Returns:
         Tuple of:
         - List of anthropic messages
-        - System prompt
+        - System prompt (a list of text blocks if any of them has cache_control)
 
     """
     anthropic_messages = []
     system_prompt = []
+    system_blocks: List[AnthropicContentBlock] = []
+    cached_system_blocks: List[AnthropicContentBlock] = []
     for idx, message in enumerate(messages):
         # inject cache_control for all messages up to and including the cache_idx
         if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
@@ -385,6 +398,28 @@ def messages_to_anthropic_messages(
             system_prompt.extend(
                 [block.text for block in message.blocks if isinstance(block, TextBlock)]
             )
+            system_cache_control = message.additional_kwargs.get("cache_control")
+            message_blocks = blocks_to_anthropic_blocks(
+                [
+                    block
+                    for block in message.blocks
+                    if isinstance(block, (TextBlock, CachePoint))
+                ],
+                {"cache_control": system_cache_control},
+            )
+            if system_cache_control and message_blocks:
+                # A breakpoint caches every system block before it, so of
+                # consecutive identical message-level ones only the last is kept:
+                # one per system message would exceed Anthropic's limit of 4
+                # blocks with cache_control. A different one (another ttl) is a
+                # separate breakpoint and stays.
+                last_block = message_blocks[-1]
+                if cached_system_blocks and cached_system_blocks[-1].get(
+                    "cache_control"
+                ) == last_block.get("cache_control"):
+                    cached_system_blocks.pop().pop("cache_control", None)
+                cached_system_blocks.append(last_block)
+            system_blocks.extend(message_blocks)
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             anthropic_blocks = blocks_to_anthropic_blocks(
                 message.blocks, message.additional_kwargs
@@ -409,9 +444,24 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
 
-    return cast(
+    merged_messages = cast(
         Sequence[MessageParam], __merge_common_role_msgs(anthropic_messages)
-    ), "\n".join(system_prompt)
+    )
+    # Any later breakpoint also caches the system prompt, so when the
+    # message-level system ones would take the request over the limit of 4,
+    # they are dropped (as before system cache_control was supported).
+    if (
+        cached_system_blocks
+        and _count_cache_controls(system_blocks)
+        + _count_cache_controls(merged_messages)
+        > 4
+    ):
+        for block in cached_system_blocks:
+            block.pop("cache_control", None)
+    # a plain string cannot carry cache_control, so only then send text blocks
+    if any("cache_control" in block for block in system_blocks):
+        return merged_messages, cast(List[TextBlockParam], system_blocks)
+    return merged_messages, "\n".join(system_prompt)
 
 
 def blocks_to_anthropic_beta_blocks(
