@@ -101,14 +101,20 @@ class OpenAPIToolSpec(BaseToolSpec):
 
             resolver = jsonschema.RefResolver.from_schema(openapi_doc)
 
-            def _dereference(obj):
+            def _dereference(obj, visited_refs=None):
+                if visited_refs is None:
+                    visited_refs = set()
                 if isinstance(obj, dict):
                     if "$ref" in obj:
-                        with resolver.resolving(obj["$ref"]) as resolved:
-                            return _dereference(resolved)
-                    return {k: _dereference(v) for k, v in obj.items()}
+                        ref_val = obj["$ref"]
+                        if ref_val in visited_refs:
+                            # ponytail: break circular $ref cycle
+                            return obj
+                        with resolver.resolving(ref_val) as resolved:
+                            return _dereference(resolved, visited_refs | {ref_val})
+                    return {k: _dereference(v, visited_refs) for k, v in obj.items()}
                 elif isinstance(obj, list):
-                    return [_dereference(item) for item in obj]
+                    return [_dereference(item, visited_refs) for item in obj]
                 else:
                     return obj
 
