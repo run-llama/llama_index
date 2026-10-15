@@ -2,7 +2,7 @@ import warnings
 import logging
 import io
 
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from typing import (
     Optional,
     List,
@@ -12,6 +12,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Any,
+    Iterator,
 )
 from urllib.parse import urlparse, parse_qs
 from httpx2 import AsyncClient, Timeout
@@ -274,27 +275,33 @@ class BasicMCPClient(ClientSession):
                     await session.initialize()
                     yield session
 
-    def _configure_tool_call_logs_callback(self) -> io.StringIO:
+    @contextmanager
+    def _configure_tool_call_logs_callback(self) -> Iterator[io.StringIO]:
         handler = io.StringIO()
         stream_handler = logging.StreamHandler(handler)
-
-        # Configure logging to capture all events
-        logging.basicConfig(
-            level=logging.DEBUG,  # Capture all log levels
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s\n",
-            handlers=[
-                stream_handler,
-            ],
+        stream_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s\n")
         )
-        # Also enable logging for specific MCP components
-        mcp_logger = logging.getLogger("mcp")
-        mcp_logger.setLevel(logging.DEBUG)
+        stream_handler.setLevel(logging.DEBUG)
 
-        # Enable HTTP transport logging to see network details
-        http_logger = logging.getLogger("httpx")
-        http_logger.setLevel(logging.DEBUG)
+        # ponytail: attach handler to target loggers and restore levels in finally
+        loggers = [
+            logging.getLogger(),
+            logging.getLogger("mcp"),
+            logging.getLogger("httpx"),
+        ]
+        old_levels = {logger: logger.level for logger in loggers}
+        for logger in loggers:
+            logger.addHandler(stream_handler)
+            if logger.level > logging.DEBUG or logger.level == logging.NOTSET:
+                logger.setLevel(logging.DEBUG)
 
-        return handler
+        try:
+            yield handler
+        finally:
+            for logger in loggers:
+                logger.removeHandler(stream_handler)
+                logger.setLevel(old_levels[logger])
 
     # Tool methods
     async def call_tool(
@@ -306,12 +313,13 @@ class BasicMCPClient(ClientSession):
         """Call a tool on the MCP server."""
         if self.tool_call_logs_callback is not None:
             # we use a string stream so that we can recover all logs at the end of the session
-            handler = self._configure_tool_call_logs_callback()
-
-            async with self._run_session() as session:
-                result = await session.call_tool(
-                    tool_name, arguments=arguments, progress_callback=progress_callback
-                )
+            with self._configure_tool_call_logs_callback() as handler:
+                async with self._run_session() as session:
+                    result = await session.call_tool(
+                        tool_name,
+                        arguments=arguments,
+                        progress_callback=progress_callback,
+                    )
 
                 # get all logs by dividing the string with \n, since the format of the log has an \n at the end of the log message
                 extra_values = handler.getvalue().split("\n")
