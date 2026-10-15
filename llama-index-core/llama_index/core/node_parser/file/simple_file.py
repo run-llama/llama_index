@@ -83,6 +83,7 @@ class SimpleFileNodeParser(NodeParser):
                     include_metadata=self.include_metadata,
                     include_prev_next_rel=self.include_prev_next_rel,
                     callback_manager=self.callback_manager,
+                    id_func=self.id_func,
                 )
 
                 nodes = parser.get_nodes_from_documents([document], show_progress)
