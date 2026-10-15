@@ -6,6 +6,7 @@ import inspect
 import os
 import random
 import sys
+import threading
 import time
 import traceback
 import uuid
@@ -39,6 +40,14 @@ from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
+
+
+# `nltk.download()` has no network timeout and waits on `<package>.zip.lock`
+# files that NLTK only clears after its own stale timeout (MAX_ZOMBIE_TIME =
+# 60s). Bound both waits so a stuck download cannot hang the caller - e.g. every
+# worker process of a `spawn` multiprocessing pool.
+_NLTK_DOWNLOAD_TIMEOUT_SECONDS = 60
+_NLTK_LOCK_STALE_SECONDS = 60
 
 
 class GlobalsHelper:
@@ -81,25 +90,72 @@ class GlobalsHelper:
         self._download_nltk_data()
 
     def _download_nltk_data(self) -> None:
-        """Download NLTK data packages in the background."""
+        """
+        Download NLTK data packages, without blocking indefinitely.
+
+        `nltk.download` has no network timeout of its own and waits on
+        `<package>.zip.lock` files that NLTK only clears after its own stale
+        timeout (60s). An interrupted download, or a network that never answers,
+        can therefore hang the caller - which is especially painful for the
+        worker processes of a `spawn` pool, since each of them repeats this.
+
+        Run each download in a daemon thread and give up after a bounded wait
+        instead, so callers get a clear error rather than a deadlock.
+        """
         from nltk import download
         from nltk.data import find as nltk_find
 
+        packages = (
+            ("stopwords", "corpora/stopwords"),
+            ("punkt_tab", "tokenizers/punkt_tab"),
+        )
+        for package, resource in packages:
+            try:
+                nltk_find(resource, paths=[self._nltk_data_dir])
+                continue
+            except LookupError:
+                pass
+
+            self._clear_stale_nltk_lock(package)
+
+            result: list = []
+
+            def _download(package: str = package) -> None:
+                try:
+                    result.append(
+                        download(
+                            package,
+                            download_dir=self._nltk_data_dir,
+                            quiet=True,
+                        )
+                    )
+                except Exception as e:
+                    result.append(e)
+
+            thread = threading.Thread(target=_download, daemon=True)
+            thread.start()
+            thread.join(_NLTK_DOWNLOAD_TIMEOUT_SECONDS)
+            if thread.is_alive():
+                print(
+                    f"NLTK download timed out after "
+                    f"{_NLTK_DOWNLOAD_TIMEOUT_SECONDS}s; '{package}' data may be "
+                    f"missing. Install it manually or set NLTK_DATA."
+                )
+            elif result and isinstance(result[0], Exception):
+                print(f"NLTK download error: {result[0]}")
+
+    def _clear_stale_nltk_lock(self, package: str) -> None:
+        """Remove a stale NLTK install lock that would otherwise block downloads."""
+        subdir = "tokenizers" if package == "punkt_tab" else "corpora"
+        lock_path = Path(self._nltk_data_dir or "") / subdir / f"{package}.zip.lock"
         try:
-            # Download stopwords
-            try:
-                nltk_find("corpora/stopwords", paths=[self._nltk_data_dir])
-            except LookupError:
-                download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
-
-            # Download punkt tokenizer
-            try:
-                nltk_find("tokenizers/punkt_tab", paths=[self._nltk_data_dir])
-            except LookupError:
-                download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
-
-        except Exception as e:
-            print(f"NLTK download error: {e}")
+            if (
+                lock_path.exists()
+                and time.time() - lock_path.stat().st_mtime >= _NLTK_LOCK_STALE_SECONDS
+            ):
+                lock_path.unlink()
+        except OSError:
+            pass
 
     @property
     def stopwords(self) -> List[str]:
