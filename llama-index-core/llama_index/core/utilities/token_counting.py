@@ -32,6 +32,33 @@ class TokenCounter:
         """
         return len(self.tokenizer(string))
 
+    def _count_tool_call_tokens(self, tool_call: Any) -> int:
+        """Count tokens for a single tool call (supporting dicts and objects)."""
+        tokens = 0
+        func_name = None
+        func_args = None
+
+        if isinstance(tool_call, dict):
+            fn = tool_call.get("function")
+            if isinstance(fn, dict):
+                func_name = fn.get("name")
+                func_args = fn.get("arguments")
+            elif hasattr(fn, "name"):
+                func_name = getattr(fn, "name", None)
+                func_args = getattr(fn, "arguments", None)
+        elif hasattr(tool_call, "function") and tool_call.function is not None:
+            func_name = getattr(tool_call.function, "name", None)
+            func_args = getattr(tool_call.function, "arguments", None)
+
+        if func_name is not None:
+            tokens += self.get_string_tokens(str(func_name))
+        if func_args is not None:
+            tokens += self.get_string_tokens(str(func_args))
+        if func_name is not None or func_args is not None:
+            tokens += 3  # Additional tokens for tool call
+
+        return tokens
+
     def estimate_tokens_in_messages(self, messages: List[ChatMessage]) -> int:
         """
         Estimate token count for a single message.
@@ -67,14 +94,7 @@ class TokenCounter:
             if "tool_calls" in additional_kwargs:
                 tool_calls = additional_kwargs.get("tool_calls", []) or []
                 for tool_call in tool_calls:
-                    if (
-                        hasattr(tool_call, "function")
-                        and tool_call.function is not None
-                    ):
-                        tokens += self.get_string_tokens(tool_call.function.name)
-                        tokens += self.get_string_tokens(tool_call.function.arguments)
-
-                        tokens += 3  # Additional tokens for tool call
+                    tokens += self._count_tool_call_tokens(tool_call)
 
             tokens += 3  # Add three per message
 
@@ -100,7 +120,7 @@ class TokenCounter:
             if message.role:
                 tokens += self.get_string_tokens(message.role)
 
-            tokens += await message.aestimate_tokens()
+            tokens += message.estimate_tokens()
 
             additional_kwargs = {**message.additional_kwargs}
 
@@ -118,14 +138,7 @@ class TokenCounter:
             if "tool_calls" in additional_kwargs:
                 tool_calls = additional_kwargs.get("tool_calls", []) or []
                 for tool_call in tool_calls:
-                    if (
-                        hasattr(tool_call, "function")
-                        and tool_call.function is not None
-                    ):
-                        tokens += self.get_string_tokens(tool_call.function.name)
-                        tokens += self.get_string_tokens(tool_call.function.arguments)
-
-                        tokens += 3  # Additional tokens for tool call
+                    tokens += self._count_tool_call_tokens(tool_call)
 
             tokens += 3  # Add three per message
 
