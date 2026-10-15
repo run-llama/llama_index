@@ -32,7 +32,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         model: str = "cross-encoder/stsb-distilroberta-base",
         device: Optional[str] = None,
         keep_retrieval_score: bool = False,
-        trust_remote_code: bool = True,
+        trust_remote_code: bool = False,
     ):
         try:
             from sentence_transformers import CrossEncoder  # pants: no-infer-dep
