@@ -388,6 +388,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 For ChromaDB-specific parameters:
                 - where (dict): ChromaDB where clause (use query.filters instead for standard filtering)
                 - include (List[str]): ChromaDB include parameter
+                  MMR also requests embeddings, documents, metadatas and distances.
                 - where_document (dict): ChromaDB where_document parameter
 
         Returns:
@@ -533,20 +534,30 @@ class ChromaVectorStore(BasePydanticVectorStore):
             f"MMR search: prefetching {prefetch_k} candidates for {query.similarity_top_k} final results"
         )
 
+        kwargs["include"] = list(
+            dict.fromkeys(
+                [
+                    "embeddings",
+                    "documents",
+                    "metadatas",
+                    "distances",
+                    *kwargs.get("include", []),
+                ]
+            )
+        )
+
         # Query ChromaDB for more candidates than needed (kwargs now safe)
         if where:
             prefetch_results = self._collection.query(
                 query_embeddings=query.query_embedding,
                 n_results=prefetch_k,
                 where=where,
-                include=["embeddings", "documents", "metadatas", "distances"],
                 **kwargs,
             )
         else:
             prefetch_results = self._collection.query(
                 query_embeddings=query.query_embedding,
                 n_results=prefetch_k,
-                include=["embeddings", "documents", "metadatas", "distances"],
                 **kwargs,
             )
 
