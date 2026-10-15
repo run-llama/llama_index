@@ -44,6 +44,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
+    ANTHROPIC_NO_FORCED_TOOL_CALL_MODELS,
     ANTHROPIC_NO_TEMP_MODELS,
     anthropic_modelname_to_contextsize,
     force_single_tool_call,
@@ -962,9 +963,15 @@ class Anthropic(FunctionCallingLLM):
         is_thinking_enabled = (
             self.thinking_dict and self.thinking_dict.get("type") == "enabled"
         )
+        supports_forced_tool_calls = not any(
+            m in self.model for m in ANTHROPIC_NO_FORCED_TOOL_CALL_MODELS
+        )
+        force_tool = (
+            tool_required and not is_thinking_enabled and supports_forced_tool_calls
+        )
         return {
             "disable_parallel_tool_use": not allow_parallel_tool_calls,
-            "type": "any" if tool_required and not is_thinking_enabled else "auto",
+            "type": "any" if force_tool else "auto",
         }
 
     def _prepare_chat_with_tools(
