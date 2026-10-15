@@ -139,14 +139,34 @@ class FunctionTool(AsyncBaseTool):
 
         self.partial_params = partial_params or {}
 
-        # Extract actual default values from FieldInfo defaults so they are
-        # applied when the function is called without those arguments.
-        self._field_defaults: Dict[str, Any] = {}
+        # Keep the FieldInfo rather than a materialized value: a
+        # ``default_factory`` must run per call, not once per tool, or every
+        # call shares one object (and one uuid/timestamp).
+        self._field_default_infos: Dict[str, FieldInfo] = {}
+        self._positional_param_names: List[str] = []
         for param in sig.parameters.values():
+            if param.kind in (
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            ):
+                self._positional_param_names.append(param.name)
             if isinstance(param.default, FieldInfo) and not param.default.is_required():
-                self._field_defaults[param.name] = param.default.get_default(
-                    call_default_factory=True
-                )
+                self._field_default_infos[param.name] = param.default
+
+    @property
+    def _field_defaults(self) -> Dict[str, Any]:
+        """Defaults for FieldInfo params, re-resolved on every access."""
+        return {
+            name: info.get_default(call_default_factory=True)
+            for name, info in self._field_default_infos.items()
+        }
+
+    def _defaults_for_call(self, args: Tuple[Any, ...]) -> Dict[str, Any]:
+        """Field defaults, minus any parameter already supplied positionally."""
+        defaults = self._field_defaults
+        for name in self._positional_param_names[: len(args)]:
+            defaults.pop(name, None)
+        return defaults
 
     def _run_sync_callback(self, result: Any) -> CallbackReturn:
         """
@@ -334,7 +354,7 @@ class FunctionTool(AsyncBaseTool):
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
-        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
+        all_kwargs = {**self._defaults_for_call(args), **self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
@@ -373,7 +393,7 @@ class FunctionTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
-        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
+        all_kwargs = {**self._defaults_for_call(args), **self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
