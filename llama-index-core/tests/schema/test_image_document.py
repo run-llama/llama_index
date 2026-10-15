@@ -1,8 +1,8 @@
 import httpx
 import pytest
 
-from pathlib import Path
-from llama_index.core.schema import ImageDocument
+from pathlib import Path, PureWindowsPath
+from llama_index.core.schema import ImageDocument, MediaResource
 
 
 @pytest.fixture()
@@ -34,3 +34,17 @@ def test_non_image_url(image_url: str) -> None:
     image_url = image_url.replace("png", "txt")
     with pytest.raises(expected_exception=ValueError):
         doc = ImageDocument(image_url=image_url)
+
+
+def test_image_path_is_posix_on_every_platform() -> None:
+    """
+    The image_path accessor must not embed the platform path separator.
+
+    Mirrors test_serialize_path_is_posix_on_every_platform in
+    test_media_resource.py: PureWindowsPath stands in for a WindowsPath, which
+    cannot be instantiated on POSIX.
+    """
+    doc = ImageDocument.model_construct(
+        image_resource=MediaResource.model_construct(path=PureWindowsPath("a/b/c.txt"))
+    )
+    assert doc.image_path == "a/b/c.txt"
