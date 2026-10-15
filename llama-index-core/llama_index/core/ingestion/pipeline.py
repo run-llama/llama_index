@@ -144,12 +144,12 @@ async def arun_transformations(
         if cache is not None:
             hash = get_transformation_hash(nodes, transform)
 
-            cached_nodes = cache.get(hash, collection=cache_collection)
+            cached_nodes = await cache.aget(hash, collection=cache_collection)
             if cached_nodes is not None:
                 nodes = cached_nodes
             else:
                 nodes = await transform.acall(nodes, **kwargs)
-                cache.put(hash, nodes, collection=cache_collection)
+                await cache.aput(hash, nodes, collection=cache_collection)
         else:
             nodes = await transform.acall(nodes, **kwargs)
 
