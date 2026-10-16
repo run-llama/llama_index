@@ -1,3 +1,7 @@
+import time
+
+import pytest
+
 from llama_index.core.agent.react.output_parser import (
     extract_final_response,
     extract_tool_use,
@@ -206,3 +210,41 @@ Answer: Answer contains Legislative Action: here is the legislative action conte
         answer
         == "Answer contains Legislative Action: here is the legislative action content."
     )
+
+
+def test_extract_final_response_no_thought() -> None:
+    mock_input_text = """\
+I have enough information to answer the question without using any more tools.
+Answer: 2
+"""
+    thought, answer = extract_final_response(mock_input_text)
+    assert (
+        thought
+        == "I have enough information to answer the question without using any more tools."
+    )
+    assert answer == "2"
+
+
+def test_extract_final_response_answer_only() -> None:
+    mock_input_text = "Answer: 2\n"
+
+    thought, answer = extract_final_response(mock_input_text)
+    assert thought == ""
+    assert answer == "2"
+
+
+def test_extract_final_response_no_answer_raises() -> None:
+    with pytest.raises(ValueError, match="Could not extract final answer"):
+        extract_final_response("Thought: I am still thinking about it.\n")
+
+
+def test_extract_final_response_is_linear_without_answer() -> None:
+    # Same backtracking class as #22334: a lazy DOTALL pattern needs minutes here.
+    mock_input_text = "Thought: " + ("x" * 200_000)
+
+    start = time.perf_counter()
+    with pytest.raises(ValueError, match="Could not extract final answer"):
+        extract_final_response(mock_input_text)
+    elapsed = time.perf_counter() - start
+
+    assert elapsed < 1.0
