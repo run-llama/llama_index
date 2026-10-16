@@ -64,4 +64,8 @@ class PydanticOutputParser(BaseOutputParser, Generic[Model]):
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
-        return query + "\n\n" + self.get_format_string(escape_json=True)
+        # `format` is applied to an already-formatted prompt (see
+        # `BasePromptTemplate` and `LLM._get_prompt`), after which no further
+        # `str.format`-style pass happens. Escaping the braces here would leak
+        # a `{{`-escaped (invalid) JSON schema into the text sent to the LLM.
+        return query + "\n\n" + self.get_format_string(escape_json=False)
