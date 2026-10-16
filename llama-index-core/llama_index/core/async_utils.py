@@ -113,6 +113,29 @@ def run_async_tasks(
 
 
 def chunks(iterable: Iterable, size: int) -> Iterable:
+    """Split an iterable into fixed-size chunks, padding the last chunk with ``None``.
+
+    Uses :func:`itertools.zip_longest` under the hood so that every chunk
+    yielded is exactly ``size`` elements long.  If the iterable length is not
+    evenly divisible by ``size`` the final chunk is padded with ``None``
+    values.
+
+    Args:
+        iterable (Iterable): The input iterable to split into chunks.
+        size (int): The maximum number of elements per chunk.  Must be a
+            positive integer.
+
+    Returns:
+        Iterable: An iterable of tuples, each of length ``size``.  The last
+        tuple may contain ``None`` fill values if ``len(iterable)`` is not a
+        multiple of ``size``.
+
+    Example:
+        >>> list(chunks([1, 2, 3, 4, 5], 2))
+        [(1, 2), (3, 4), (5, None)]
+        >>> list(chunks(range(6), 3))
+        [(0, 1, 2), (3, 4, 5)]
+    """
     args = [iter(iterable)] * size
     return zip_longest(*args, fillvalue=None)
 
