@@ -1,6 +1,6 @@
-import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Type, TYPE_CHECKING
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.data_structs import IndexLPG
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.llms import LLM
@@ -199,7 +199,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
         # run transformations on nodes to extract triplets
         if self._use_async:
-            nodes = asyncio.run(
+            nodes = asyncio_run(
                 arun_transformations(
                     nodes, self._kg_extractors, show_progress=self._show_progress
                 )
@@ -256,7 +256,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             ]
 
             if self._use_async:
-                embeddings = asyncio.run(
+                embeddings = asyncio_run(
                     self._embed_model.aget_text_embedding_batch(
                         node_texts, show_progress=self._show_progress
                     )
@@ -273,7 +273,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             kg_node_texts = [str(kg_node) for kg_node in kg_nodes_to_insert]
 
             if self._use_async:
-                kg_embeddings = asyncio.run(
+                kg_embeddings = asyncio_run(
                     self._embed_model.aget_text_embedding_batch(
                         kg_node_texts, show_progress=self._show_progress
                     )
