@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from time import sleep
 from typing import List
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -53,6 +55,80 @@ except (ImportError, Exception):
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery
 from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
+
+
+def test_delete_uses_parameterized_ref_doc_id() -> None:
+    container = MagicMock()
+    container.query_items.return_value = [{"id": "node-id", "partitionKey": "node-id"}]
+
+    database = MagicMock()
+    database.create_container_if_not_exists.return_value = container
+
+    cosmos_client = MagicMock()
+    cosmos_client.create_database_if_not_exists.return_value = database
+
+    vector_store = AzureCosmosDBNoSqlVectorSearch(
+        cosmos_client=cosmos_client,
+        vector_embedding_policy={
+            "vectorEmbeddings": [{"path": "/embedding", "dimensions": 3}]
+        },
+        indexing_policy={"vectorIndexes": []},
+        cosmos_container_properties={"partition_key": object()},
+        cosmos_database_properties={},
+        create_container=False,
+    )
+
+    ref_doc_id = "' OR 1=1 OR c.id='"
+    vector_store.delete(ref_doc_id)
+
+    kwargs = container.query_items.call_args.kwargs
+    assert kwargs["query"] == (
+        "SELECT c.id, c.id AS partitionKey FROM c "
+        'WHERE c["metadata"]["ref_doc_id"] = @ref_doc_id'
+    )
+    assert kwargs["parameters"] == [{"name": "@ref_doc_id", "value": ref_doc_id}]
+    assert ref_doc_id not in kwargs["query"]
+
+
+def test_delete_json_encodes_metadata_key() -> None:
+    container = MagicMock()
+    container.query_items.return_value = [{"id": "node-id", "partitionKey": "node-id"}]
+
+    database = MagicMock()
+    database.create_container_if_not_exists.return_value = container
+
+    cosmos_client = MagicMock()
+    cosmos_client.create_database_if_not_exists.return_value = database
+
+    metadata_key = 'meta data-ü"] OR true --\\'
+    vector_store = AzureCosmosDBNoSqlVectorSearch(
+        cosmos_client=cosmos_client,
+        vector_embedding_policy={
+            "vectorEmbeddings": [{"path": "/embedding", "dimensions": 3}]
+        },
+        indexing_policy={"vectorIndexes": []},
+        cosmos_container_properties={"partition_key": object()},
+        cosmos_database_properties={},
+        create_container=False,
+        metadata_key=metadata_key,
+    )
+
+    ref_doc_id = "safe-ref-doc-id"
+    vector_store.delete(ref_doc_id)
+
+    kwargs = container.query_items.call_args.kwargs
+    query_prefix = "SELECT c.id, c.id AS partitionKey FROM c WHERE c["
+    query_suffix = ']["ref_doc_id"] = @ref_doc_id'
+
+    assert kwargs["query"].startswith(query_prefix)
+    assert kwargs["query"].endswith(query_suffix)
+
+    encoded_metadata_key = kwargs["query"][
+        len(query_prefix) : -len(query_suffix)
+    ]
+    assert json.loads(encoded_metadata_key) == metadata_key
+    assert metadata_key not in kwargs["query"]
+    assert kwargs["parameters"] == [{"name": "@ref_doc_id", "value": ref_doc_id}]
 
 
 @pytest.fixture(scope="session")
