@@ -175,9 +175,6 @@ class LLMMultiSelector(BaseSelector):
         prompt_template_str = prompt_template_str or DEFAULT_MULTI_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
-        # add output formatting
-        prompt_template_str = output_parser.format(prompt_template_str)
-
         # construct prompt
         prompt = MultiSelectPrompt(
             template=prompt_template_str,
