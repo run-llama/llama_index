@@ -1,5 +1,7 @@
+import json
 import logging
 import re
+import uuid
 from typing import (
     Any,
     Dict,
@@ -688,36 +690,44 @@ class PGVectorStore(BasePydanticVectorStore):
             return "="
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
-        if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-            # Expects a single value in the metadata, and a list to compare
+        # Filter values are bound as parameters rather than interpolated into
+        # the SQL string, so that a value containing a quote cannot break (or
+        # alter) the statement. Each clause needs its own parameter name,
+        # because several clauses are combined into a single statement.
+        param = f"filter_value_{uuid.uuid4().hex}"
 
-            # In Python, to create a tuple with a single element, you need to include a comma after the element
-            # This code will correctly format the IN clause whether there is one element or multiple elements in the list:
-            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
+        if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            # Expects a single value in the metadata, and a list to compare.
+            # A bare string is treated as a single value rather than as an
+            # iterable of characters.
+            filter_value = (
+                list(filter_.value)
+                if isinstance(filter_.value, (list, tuple, set))
+                else [filter_.value]
+            )
+            negate = "NOT " if filter_.operator == FilterOperator.NIN else ""
 
             return text(
-                f"metadata_->>'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)} "
-                f"({filter_value})"
-            )
+                f"{negate}metadata_->>'{filter_.key}' = ANY(cast(:{param} as text[]))"
+            ).bindparams(**{param: [str(e) for e in filter_value]})
         elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
             # Expects a text array stored in the metadata, and a list of values to compare
             # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
             # Example: metadata_::jsonb->'tags' ?| array['AI', 'ML']
-            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
-
             return text(
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
-                f"array[{filter_value}]"
-            )
+                f"cast(:{param} as text[])"
+            ).bindparams(**{param: [str(e) for e in filter_.value]})
         elif filter_.operator == FilterOperator.CONTAINS:
-            # Expects a list stored in the metadata, and a single value to compare
+            # Expects a list stored in the metadata, and a single value to compare.
+            # The cast is required because asyncpg cannot infer the type of a
+            # bare bind parameter on the jsonb @> operator.
             return text(
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
-                f"'[\"{filter_.value}\"]'"
-            )
+                f"cast(:{param} as jsonb)"
+            ).bindparams(**{param: json.dumps([filter_.value])})
         elif (
             filter_.operator == FilterOperator.TEXT_MATCH
             or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
@@ -726,8 +736,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return text(
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
-                f"'%{filter_.value}%'"
-            )
+                f":{param}"
+            ).bindparams(**{param: f"%{filter_.value}%"})
         elif filter_.operator == FilterOperator.IS_EMPTY:
             # Where the operator is is_empty, we need to check if the metadata is null
             return text(
@@ -748,8 +758,8 @@ class PGVectorStore(BasePydanticVectorStore):
                 return text(
                     f"metadata_->>'{filter_.key}' "
                     f"{self._to_postgres_operator(filter_.operator)} "
-                    f"'{filter_.value}'"
-                )
+                    f":{param}"
+                ).bindparams(**{param: str(filter_.value)})
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """

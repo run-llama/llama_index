@@ -1,3 +1,4 @@
+import json
 import asyncio
 from typing import Any, Dict, Generator, List, Union, Optional
 from unittest.mock import MagicMock, AsyncMock
@@ -3220,3 +3221,84 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
     assert "e1" not in result.ids
     assert "v1" in result.ids
     assert "v2" in result.ids
+
+
+# ================== Filter binding tests (no database required) ==================
+
+# Operators that take a single value rather than a list.
+_SCALAR_FILTER_OPERATORS = (
+    FilterOperator.CONTAINS,
+    FilterOperator.TEXT_MATCH,
+    FilterOperator.TEXT_MATCH_INSENSITIVE,
+    FilterOperator.EQ,
+)
+
+
+def _filter_clause(operator: FilterOperator, value: Any, key: str = "name") -> Any:
+    """Build a filter clause without needing a live database."""
+    store = PGVectorStore.construct()
+    return PGVectorStore._build_filter_clause(
+        store, MetadataFilter(key=key, value=value, operator=operator)
+    )
+
+
+@pytest.mark.parametrize(
+    "operator",
+    [
+        FilterOperator.IN,
+        FilterOperator.NIN,
+        FilterOperator.ANY,
+        FilterOperator.ALL,
+        FilterOperator.CONTAINS,
+        FilterOperator.TEXT_MATCH,
+        FilterOperator.TEXT_MATCH_INSENSITIVE,
+        FilterOperator.EQ,
+    ],
+)
+def test_build_filter_clause_binds_values_instead_of_interpolating(
+    operator: FilterOperator,
+) -> None:
+    """
+    A value containing a quote must not reach the SQL string.
+
+    Interpolating it would produce invalid SQL, and a crafted value could
+    change the meaning of the statement.
+    """
+    hostile = "x') OR 1=1 --"
+    value = hostile if operator in _SCALAR_FILTER_OPERATORS else [hostile]
+
+    clause = _filter_clause(operator, value)
+
+    # The value stays out of the SQL text and is carried as a bind parameter.
+    assert hostile not in str(clause)
+
+    bound = list(clause.compile().params.values())
+    assert len(bound) == 1
+    # CONTAINS encodes its operand as JSON; the others pass it through.
+    if operator is FilterOperator.CONTAINS:
+        assert json.loads(bound[0]) == [hostile]
+    elif operator in _SCALAR_FILTER_OPERATORS:
+        assert hostile in bound[0]
+    else:
+        assert bound[0] == [hostile]
+
+
+@pytest.mark.parametrize("operator", [FilterOperator.IN, FilterOperator.NIN])
+def test_build_filter_clause_treats_bare_string_as_one_value(
+    operator: FilterOperator,
+) -> None:
+    """A scalar string must not be iterated over character by character."""
+    clause = _filter_clause(operator, "abc")
+
+    assert list(clause.compile().params.values()) == [["abc"]]
+
+
+def test_build_filter_clause_uses_distinct_parameter_names() -> None:
+    """
+    Clauses are combined into one statement, so their bind parameters must
+    not collide.
+    """
+    first = _filter_clause(FilterOperator.IN, ["a"], key="k1")
+    second = _filter_clause(FilterOperator.IN, ["b"], key="k2")
+
+    assert set(first.compile().params) & set(second.compile().params) == set()
