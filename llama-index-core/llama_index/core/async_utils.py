@@ -12,6 +12,37 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 def get_asyncio_module(show_progress: bool = False) -> Any:
+    """Return the asyncio module to use, optionally with progress-bar support.
+
+    When *show_progress* is ``True`` the function returns
+    :class:`tqdm.asyncio.tqdm_asyncio`, which wraps standard asyncio
+    gather/wait calls with a ``tqdm`` progress bar.  Otherwise the
+    built-in :mod:`asyncio` module is returned unchanged.
+
+    Args:
+        show_progress (bool): If ``True``, return ``tqdm.asyncio.tqdm_asyncio``
+            so that async gathering operations display a progress bar.
+            Defaults to ``False``.
+
+    Returns:
+        Any: Either :mod:`asyncio` or :class:`tqdm.asyncio.tqdm_asyncio`,
+        both of which expose a compatible ``gather`` / ``as_completed``
+        interface.
+
+    Example:
+        .. code-block:: python
+
+            from llama_index.core.async_utils import get_asyncio_module
+
+            # Plain asyncio (no progress bar)
+            module = get_asyncio_module(show_progress=False)
+            results = module.run(some_coroutine())
+
+            # With tqdm progress bar
+            module = get_asyncio_module(show_progress=True)
+            results = module.gather(*coroutines)
+
+    """
     if show_progress:
         from tqdm.asyncio import tqdm_asyncio
 
