@@ -8,8 +8,12 @@ class PythonFileToolSpec(BaseToolSpec):
     spec_functions = ["function_definitions", "get_function", "get_functions"]
 
     def __init__(self, file_name: str) -> None:
-        f = open(file_name).read()
-        self.tree = ast.parse(f)
+        # ast.parse accepts bytes and applies PEP 263 itself (UTF-8 default,
+        # plus any encoding declaration), so decoding never depends on the
+        # system locale.
+        with open(file_name, "rb") as f:
+            source_bytes = f.read()
+        self.tree = ast.parse(source_bytes)
 
     def function_definitions(self, external: Optional[bool] = True) -> str:
         """
