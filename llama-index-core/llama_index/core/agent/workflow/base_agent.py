@@ -538,7 +538,12 @@ class BaseWorkflowAgent(
         num_iterations += 1
         await ctx.store.set("num_iterations", num_iterations)
 
-        if num_iterations >= max_iterations:
+        # num_iterations counts the iterations that have already completed, and
+        # only a continuation spends another one. A final answer produced by the
+        # last permitted iteration is therefore accepted, while a tool call or a
+        # retry stops here, before the tool runs and before the next LLM call.
+        continues = bool(ev.retry_messages or ev.tool_calls)
+        if continues and num_iterations >= max_iterations:
             early_stopping_method = await ctx.store.get(
                 "early_stopping_method", default="force"
             )

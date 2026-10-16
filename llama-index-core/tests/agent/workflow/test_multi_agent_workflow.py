@@ -726,3 +726,69 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+TOOL_CALL_RESPONSE = ChatMessage(
+    role=MessageRole.ASSISTANT,
+    content="calling tool",
+    additional_kwargs={
+        "tool_calls": [
+            ToolSelection(tool_id="one", tool_name="side_effect", tool_kwargs={})
+        ]
+    },
+)
+FINAL_RESPONSE = ChatMessage(role=MessageRole.ASSISTANT, content="the answer is 42")
+
+
+def _counting_workflow(responses: List[ChatMessage], counts: dict) -> AgentWorkflow:
+    """A workflow whose agent records every LLM call and every tool run."""
+    index = 0
+
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        nonlocal index
+        counts["llm_calls"] += 1
+        response = responses[min(index, len(responses) - 1)]
+        index += 1
+        return response
+
+    def side_effect() -> str:
+        counts["tool_runs"] += 1
+        return "done"
+
+    agent = FunctionAgent(
+        name="retriever",
+        description="Manages data retrieval",
+        tools=[side_effect],
+        llm=MockFunctionCallingLLM(response_generator=generator),
+    )
+    return AgentWorkflow(agents=[agent], root_agent="retriever")
+
+
+@pytest.mark.asyncio
+async def test_max_iterations_permits_exactly_that_many() -> None:
+    """max_iterations=N allows N LLM calls, and a final answer on the Nth is kept."""
+    counts = {"llm_calls": 0, "tool_runs": 0}
+    workflow = _counting_workflow([FINAL_RESPONSE], counts)
+    response = await workflow.run(user_msg="test", max_iterations=1)
+    assert "42" in str(response.response)
+    assert counts == {"llm_calls": 1, "tool_runs": 0}
+
+
+@pytest.mark.asyncio
+async def test_max_iterations_stops_before_the_next_tool_and_llm_call() -> None:
+    """A tool call on the last permitted iteration stops without spending another."""
+    counts = {"llm_calls": 0, "tool_runs": 0}
+    workflow = _counting_workflow([TOOL_CALL_RESPONSE, FINAL_RESPONSE], counts)
+    with pytest.raises(WorkflowRuntimeError, match="Max iterations of 1 reached"):
+        _ = await workflow.run(user_msg="test", max_iterations=1)
+    assert counts == {"llm_calls": 1, "tool_runs": 0}
+
+
+@pytest.mark.asyncio
+async def test_max_iterations_counts_a_tool_round_as_one_iteration() -> None:
+    """A tool round plus the answer after it fits in two iterations exactly."""
+    counts = {"llm_calls": 0, "tool_runs": 0}
+    workflow = _counting_workflow([TOOL_CALL_RESPONSE, FINAL_RESPONSE], counts)
+    response = await workflow.run(user_msg="test", max_iterations=2)
+    assert "42" in str(response.response)
+    assert counts == {"llm_calls": 2, "tool_runs": 1}
