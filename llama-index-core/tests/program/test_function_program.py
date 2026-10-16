@@ -6,14 +6,16 @@ import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from typing import List, Optional, Union, Any, Dict
+from typing import List, Optional, Union, Any, Dict, Sequence
 from llama_index.core.tools.types import BaseTool
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools import ToolOutput
 from llama_index.core.program import FunctionCallingProgram
 from llama_index.core.program.function_program import get_function_tool
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.tools.calling import call_tool
 
 
@@ -491,3 +493,79 @@ def test_function_program_error_message_includes_llm_text() -> None:
     )
     with pytest.raises(ValueError, match="Here's a great album"):
         llm_program(topic="songs")
+
+
+# Tests for the LLM's system prompt being included in the messages sent
+
+
+class MockNamed(BaseModel):
+    """Mock model with a default field (the mock LLM calls tools with default args)."""
+
+    name: str = "default"
+
+
+class CapturingMockFunctionCallingLLM(MockFunctionCallingLLM):
+    """Mock function-calling LLM that records the messages it is asked to send."""
+
+    last_prepared_messages: Optional[List[ChatMessage]] = Field(
+        default=None, exclude=True
+    )
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        result = super()._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
+            **kwargs,
+        )
+        self.last_prepared_messages = list(result["messages"])
+        return result
+
+
+def test_function_program_includes_llm_system_prompt() -> None:
+    """Test sync Function program includes the LLM system prompt in its messages."""
+    llm = CapturingMockFunctionCallingLLM(
+        system_prompt="You are a pirate. Always say arrr."
+    )
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockNamed,
+        prompt_template_str="This is a test name with {topic}",
+        llm=llm,
+    )
+    obj_output = llm_program(topic="songs")
+    assert isinstance(obj_output, MockNamed)
+    assert llm.last_prepared_messages is not None
+    first_message = llm.last_prepared_messages[0]
+    assert first_message.role == MessageRole.SYSTEM
+    assert first_message.content == "You are a pirate. Always say arrr."
+
+
+@pytest.mark.asyncio
+async def test_async_function_program_includes_llm_system_prompt() -> None:
+    """Test async Function program includes the LLM system prompt in its messages."""
+    llm = CapturingMockFunctionCallingLLM(
+        system_prompt="You are a pirate. Always say arrr."
+    )
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockNamed,
+        prompt_template_str="This is a test name with {topic}",
+        llm=llm,
+    )
+    obj_output = await llm_program.acall(topic="songs")
+    assert isinstance(obj_output, MockNamed)
+    assert llm.last_prepared_messages is not None
+    first_message = llm.last_prepared_messages[0]
+    assert first_message.role == MessageRole.SYSTEM
+    assert first_message.content == "You are a pirate. Always say arrr."
