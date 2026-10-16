@@ -152,3 +152,43 @@ def test_docstore_delete_all_ref_doc_nodes() -> None:
     assert docstore._kvstore.get("d1", docstore._node_collection) is None
     assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
     assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
+
+
+def test_get_all_document_ids_keeps_docs_sharing_a_hash() -> None:
+    """Identical content collapses the hash-keyed map, but not the id set."""
+    docstore = SimpleDocumentStore()
+    doc_a = Document(id_="doc-a", text="same content")
+    doc_b = Document(id_="doc-b", text="same content")
+    docstore.add_documents([doc_a, doc_b])
+
+    assert doc_a.hash == doc_b.hash
+    # the hash-keyed mapping can only represent one of them
+    assert len(docstore.get_all_document_hashes()) == 1
+
+    assert docstore.get_all_document_ids() == {"doc-a", "doc-b"}
+
+
+@pytest.mark.asyncio
+async def test_aget_all_document_ids_keeps_docs_sharing_a_hash() -> None:
+    """Async twin of test_get_all_document_ids_keeps_docs_sharing_a_hash."""
+    docstore = SimpleDocumentStore()
+    docstore.add_documents(
+        [
+            Document(id_="doc-a", text="same content"),
+            Document(id_="doc-b", text="same content"),
+        ]
+    )
+
+    assert len(await docstore.aget_all_document_hashes()) == 1
+    assert await docstore.aget_all_document_ids() == {"doc-a", "doc-b"}
+
+
+def test_get_all_document_ids_excludes_deleted_docs() -> None:
+    docstore = SimpleDocumentStore()
+    docstore.add_documents(
+        [Document(id_="doc-a", text="one"), Document(id_="doc-b", text="two")]
+    )
+    assert docstore.get_all_document_ids() == {"doc-a", "doc-b"}
+
+    docstore.delete_document("doc-a")
+    assert docstore.get_all_document_ids() == {"doc-b"}
