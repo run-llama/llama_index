@@ -310,7 +310,14 @@ class RetrieverRouterQueryEngine(BaseQueryEngine):
         return query_engine.query(query_bundle)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return self._query(query_bundle)
+        """
+        Query and get response asynchronously.
+
+        The tool retriever and the selected query engine's sync path are
+        synchronous, so offload ``_query`` to a worker thread to avoid
+        blocking the event loop.
+        """
+        return await asyncio.to_thread(self._query, query_bundle)
 
 
 class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
