@@ -36,6 +36,8 @@ from openai import AsyncOpenAI
 
 DEFAULT_UPSTAGE_MODEL = "solar-mini"
 
+ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+
 llm_retry_decorator = create_retry_decorator(
     max_retries=6,
     random_exponential=True,
@@ -135,7 +137,7 @@ class Upstage(OpenAI):
         default=None,
         description="An object specifying the format that the model must generate.",
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+    reasoning_effort: Optional[ReasoningEffort] = Field(
         default=None,
         description="Controls the level of reasoning effort. This parameter is only applicable to Reasoning models.",
     )
@@ -174,7 +176,7 @@ class Upstage(OpenAI):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        reasoning_effort: Optional[ReasoningEffort] = None,
         top_p: Optional[float] = None,
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
@@ -263,9 +265,14 @@ class Upstage(OpenAI):
         """
         Get a Huggingface tokenizer for solar models.
         """
-        if SOLAR_TOKENIZERS.get(self.model) != self.tokenizer_name:
+        expected_tokenizer = SOLAR_TOKENIZERS.get(self.model)
+        if expected_tokenizer is None:
             warnings.warn(
-                f"You are using a different tokenizer than the one specified in the model. This may cause issues with token counting. Please use {SOLAR_TOKENIZERS[self.model]} as the tokenizer name."
+                f"No Hugging Face tokenizer is registered for model {self.model}. Token counts are approximated with {self.tokenizer_name}."
+            )
+        elif expected_tokenizer != self.tokenizer_name:
+            warnings.warn(
+                f"You are using a different tokenizer than the one specified in the model. This may cause issues with token counting. Please use {expected_tokenizer} as the tokenizer name."
             )
         return Tokenizer.from_pretrained(self.tokenizer_name)
 
