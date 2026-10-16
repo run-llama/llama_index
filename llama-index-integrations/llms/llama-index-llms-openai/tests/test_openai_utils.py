@@ -28,6 +28,7 @@ from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
     from_openai_completion_logprobs,
+    from_openai_message_dict,
     from_openai_message_dicts,
     from_openai_messages,
     from_openai_token_logprob,
@@ -216,6 +217,62 @@ def test_from_openai_message_dicts_function_calling(
             ] == chat_message_with_function_calling.additional_kwargs.get(key, None)
         assert chat_message.content == chat_message_with_function_calling.content
         assert chat_message.role == chat_message_with_function_calling.role
+
+
+def test_from_openai_message_dict_image_without_detail() -> None:
+    """Image parts without the optional 'detail' key convert cleanly."""
+    message_dict = {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "what is in this image?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/cat.png"},
+            },
+        ],
+    }
+
+    chat_message = from_openai_message_dict(message_dict)
+
+    assert chat_message.role == MessageRole.USER
+    image_block = chat_message.blocks[1]
+    assert isinstance(image_block, ImageBlock)
+    assert str(image_block.url) == "https://example.com/cat.png"
+    assert image_block.detail is None
+
+
+def test_openai_message_dict_image_round_trip_without_detail() -> None:
+    """to_openai_message_dict omits 'detail'; the result must parse back."""
+    message = ChatMessage(
+        role="user",
+        blocks=[ImageBlock(url="https://example.com/cat.png")],
+    )
+
+    message_dict = to_openai_message_dict(message)
+    assert "detail" not in message_dict["content"][0]["image_url"]  # type: ignore
+
+    chat_message = from_openai_message_dict(message_dict)  # type: ignore
+    image_block = chat_message.blocks[0]
+    assert isinstance(image_block, ImageBlock)
+    assert str(image_block.url) == "https://example.com/cat.png"
+
+
+def test_from_openai_message_dict_image_with_detail() -> None:
+    """An explicit 'detail' value is preserved."""
+    message_dict = {
+        "role": "user",
+        "content": [
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/cat.png", "detail": "high"},
+            },
+        ],
+    }
+
+    chat_message = from_openai_message_dict(message_dict)
+    image_block = chat_message.blocks[0]
+    assert isinstance(image_block, ImageBlock)
+    assert image_block.detail == "high"
 
 
 def test_from_openai_messages_function_calling_azure(
