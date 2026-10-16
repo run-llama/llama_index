@@ -143,9 +143,13 @@ def test_parameter_validation_errors(param_name: str, invalid_value: Any):
 @pytest.mark.parametrize(
     ("param_name", "param_value"),
     [
+        ("reasoning_effort", "none"),
+        ("reasoning_effort", "minimal"),
         ("reasoning_effort", "low"),
         ("reasoning_effort", "medium"),
         ("reasoning_effort", "high"),
+        ("reasoning_effort", "xhigh"),
+        ("reasoning_effort", "max"),
         ("top_p", 0.0),
         ("top_p", 1.0),
         ("frequency_penalty", -2.0),
@@ -334,3 +338,43 @@ async def test_async_parameter_integration(mock_async_upstage: MagicMock) -> Non
         assert call_args.kwargs["top_p"] == 0.8
         assert call_args.kwargs["frequency_penalty"] == 1.0
         assert call_args.kwargs["presence_penalty"] == -0.5
+
+
+@pytest.mark.parametrize(
+    ("model", "context_window"),
+    [
+        ("solar-mini", 32768),
+        ("solar-pro2", 65536),
+        ("solar-pro3", 128000),
+        ("solar-pro4", 512000),
+        ("solar-mini4", 512000),
+    ],
+)
+def test_model_metadata(model: str, context_window: int) -> None:
+    """Test that known models report their context window and tool support."""
+    llm = Upstage(model=model, api_key="fake_key_for_testing")
+
+    assert llm.metadata.context_window == context_window
+    assert llm.metadata.is_function_calling_model
+
+
+@patch("llama_index.llms.upstage.base.Tokenizer")
+def test_tokenizer_without_registered_tokenizer(mock_tokenizer: MagicMock):
+    """A model without a known tokenizer falls back to tokenizer_name."""
+    llm = Upstage(model="solar-mini4", api_key="fake_key_for_testing")
+
+    with pytest.warns(UserWarning, match="No Hugging Face tokenizer"):
+        _ = llm._tokenizer
+
+    mock_tokenizer.from_pretrained.assert_called_once_with(llm.tokenizer_name)
+
+
+@patch("llama_index.llms.upstage.base.Tokenizer")
+def test_tokenizer_mismatch_warning(mock_tokenizer: MagicMock):
+    """A mismatched tokenizer warns with the registered tokenizer name."""
+    llm = Upstage(model="solar-pro4", api_key="fake_key_for_testing")
+
+    with pytest.warns(UserWarning, match="upstage/solar-pro4-tokenizer"):
+        _ = llm._tokenizer
+
+    mock_tokenizer.from_pretrained.assert_called_once_with(llm.tokenizer_name)

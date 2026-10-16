@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.upstage import UpstageEmbedding
@@ -33,6 +36,36 @@ def test_upstage_embedding_model_name(upstage_embedding):
 
     embedding = UpstageEmbedding(model="solar-embedding-1-large")
     assert embedding._query_engine == "solar-embedding-1-large-query"
+
+
+def test_upstage_embedding_2_model_name(upstage_embedding):
+    embedding = upstage_embedding(model="solar-embedding-2")
+    assert embedding._query_engine == "solar-embedding-2-query"
+    assert embedding._text_engine == "solar-embedding-2-passage"
+
+    # A "-query"/"-passage" suffix is stripped back to the base model name.
+    embedding = upstage_embedding(model="solar-embedding-2-query")
+    assert embedding._query_engine == "solar-embedding-2-query"
+    assert embedding._text_engine == "solar-embedding-2-passage"
+
+
+def test_upstage_embedding_2_request_model(upstage_embedding):
+    embedding = upstage_embedding(
+        model="solar-embedding-2", api_key=UPSTAGE_TEST_API_KEY
+    )
+    mock_client = MagicMock()
+    mock_client.embeddings.create.return_value = SimpleNamespace(
+        data=[SimpleNamespace(embedding=[0.1, 0.2])]
+    )
+
+    with patch.object(type(embedding), "_get_client", return_value=mock_client):
+        embedding.get_query_embedding("hello")
+        embedding.get_text_embedding("world")
+
+    models = [
+        call.kwargs["model"] for call in mock_client.embeddings.create.call_args_list
+    ]
+    assert models == ["solar-embedding-2-query", "solar-embedding-2-passage"]
 
 
 def test_upstage_embedding_api_key_alias(upstage_embedding):

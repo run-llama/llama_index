@@ -23,6 +23,11 @@ UPSTAGE_EMBEDDING_MODELS = {
         "query": "solar-embedding-1-large-query",
         "passage": "solar-embedding-1-large-passage",
     },
+    # 1024-dimensional, unlike the 4096-dimensional models above.
+    "solar-embedding-2": {
+        "query": "solar-embedding-2-query",
+        "passage": "solar-embedding-2-passage",
+    },
 }
 
 MAX_EMBED_BATCH_SIZE = 100
