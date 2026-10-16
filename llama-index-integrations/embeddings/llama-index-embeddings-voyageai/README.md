@@ -75,6 +75,8 @@ embedding_model = VoyageEmbedding(
     output_dtype="float",  # Options: "float", "int8", "uint8", "binary", "ubinary"
     output_dimension=512,  # Reduce dimensionality (256, 512, 1024, 2048)
     embed_batch_size=128,  # Batch size for processing
+    max_retries=3,  # Use the VoyageAI SDK retry policy
+    timeout=60.0,  # Request timeout in seconds
 )
 
 # Use general text embedding with custom input type
@@ -82,6 +84,10 @@ embedding = embedding_model.get_general_text_embedding(
     "Your text here", input_type="query"
 )
 ```
+
+`max_retries` and `timeout` are forwarded to both the synchronous and asynchronous
+VoyageAI clients. Their defaults remain `0` and `None`, matching the SDK defaults.
+Retries are handled by the SDK; this integration does not add another retry loop.
 
 ### Multimodal Embeddings
 
@@ -277,6 +283,8 @@ For the latest model information, visit the [VoyageAI documentation](https://doc
 | `truncation`       | bool            | `None`   | Enable text truncation for long inputs                        |
 | `output_dtype`     | str             | `None`   | Output format: "float", "int8", "uint8", "binary", "ubinary"  |
 | `output_dimension` | int             | `None`   | Reduce dimensionality (256, 512, 1024, 2048, model-dependent) |
+| `max_retries`      | int             | `0`      | Retry setting passed to the VoyageAI SDK                      |
+| `timeout`          | Optional[float] | `None`   | Request timeout in seconds for both clients                   |
 | `callback_manager` | CallbackManager | `None`   | LlamaIndex callback manager for observability                 |
 
 ## Features
