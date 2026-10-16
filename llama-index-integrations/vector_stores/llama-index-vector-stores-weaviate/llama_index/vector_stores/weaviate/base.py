@@ -658,14 +658,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         property_types: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
-        filters = None
+        # doc_ids, node_ids and metadata filters all restrict the search (AND)
+        filters = []
 
         # list of documents to constrain search
         if query.doc_ids:
-            filters = wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
+            filters.append(
+                wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
+            )
 
         if query.node_ids:
-            filters = wvc.query.Filter.by_id().contains_any(query.node_ids)
+            filters.append(wvc.query.Filter.by_id().contains_any(query.node_ids))
 
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
@@ -676,10 +679,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             if vector is not None and query.query_str:
                 alpha = query.alpha or 0.5
 
+        metadata_filters = None
         if query.filters is not None:
-            filters = _to_weaviate_filter(query.filters, property_types)
+            metadata_filters = _to_weaviate_filter(query.filters, property_types)
         elif "filter" in kwargs and kwargs["filter"] is not None:
-            filters = kwargs["filter"]
+            metadata_filters = kwargs["filter"]
+        if metadata_filters:
+            filters.append(metadata_filters)
+        if len(filters) > 1:
+            combined_filters = wvc.query.Filter.all_of(filters)
+        else:
+            combined_filters = filters[0] if filters else None
 
         limit = query.similarity_top_k
         _logger.debug(f"Using limit of {query.similarity_top_k}")
@@ -689,7 +699,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             "vector": vector,
             "alpha": alpha,
             "limit": limit,
-            "filters": filters,
+            "filters": combined_filters,
             "return_metadata": return_metatada,
             "include_vector": True,
         }
