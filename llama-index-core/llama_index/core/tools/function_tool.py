@@ -85,6 +85,10 @@ class FunctionTool(AsyncBaseTool):
         callback: Optional[Callable[..., Any]] = None,
         async_callback: Optional[Callable[..., Any]] = None,
         partial_params: Optional[Dict[str, Any]] = None,
+        pre_processor: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        async_pre_processor: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
+        post_processor: Optional[Callable[[ToolOutput], ToolOutput]] = None,
+        async_post_processor: Optional[Callable[[ToolOutput], Awaitable[ToolOutput]]] = None,
     ) -> None:
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
@@ -137,6 +141,32 @@ class FunctionTool(AsyncBaseTool):
         elif self._callback is not None:
             self._async_callback = sync_to_async(self._callback)
 
+        # Handle pre-processor (sync and async)
+        self._pre_processor = None
+        if pre_processor is not None:
+            self._pre_processor = pre_processor
+        elif async_pre_processor is not None:
+            self._pre_processor = async_to_sync(async_pre_processor)
+
+        self._async_pre_processor = None
+        if async_pre_processor is not None:
+            self._async_pre_processor = async_pre_processor
+        elif self._pre_processor is not None:
+            self._async_pre_processor = sync_to_async(self._pre_processor)
+
+        # Handle post-processor (sync and async)
+        self._post_processor = None
+        if post_processor is not None:
+            self._post_processor = post_processor
+        elif async_post_processor is not None:
+            self._post_processor = async_to_sync(async_post_processor)
+
+        self._async_post_processor = None
+        if async_post_processor is not None:
+            self._async_post_processor = async_post_processor
+        elif self._post_processor is not None:
+            self._async_post_processor = sync_to_async(self._post_processor)
+
         self.partial_params = partial_params or {}
 
         # Extract actual default values from FieldInfo defaults so they are
@@ -168,6 +198,133 @@ class FunctionTool(AsyncBaseTool):
             return ret
         return None
 
+    def _run_sync_pre_processor(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Runs the sync pre-processor, if provided."""
+        if self._pre_processor:
+            return self._pre_processor(arguments)
+        return arguments
+
+    async def _run_async_pre_processor(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Runs the async pre-processor, if provided."""
+        if self._async_pre_processor:
+            return await self._async_pre_processor(arguments)
+        return arguments
+
+    def _run_sync_post_processor(self, result: ToolOutput) -> ToolOutput:
+        """Runs the sync post-processor, if provided."""
+        if self._post_processor:
+            return self._post_processor(result)
+        return result
+
+    async def _run_async_post_processor(self, result: ToolOutput) -> ToolOutput:
+        """Runs the async post-processor, if provided."""
+        if self._async_post_processor:
+            return await self._async_post_processor(result)
+        return result
+
+    def __call__(self, input: Any) -> ToolOutput:
+        """
+        Call the tool with input.
+        
+        This method handles both pre-processing of inputs and post-processing of outputs
+        in a deterministic way before and after execution.
+        """
+        # Convert input to dict if needed (for compatibility with existing code)
+        if isinstance(input, str):
+            arguments = {"input": input}
+        elif isinstance(input, dict):
+            arguments = input
+        else:
+            arguments = {"input": input}
+
+        # Apply pre-processor if provided
+        arguments = self._run_sync_pre_processor(arguments)
+
+        # Call the actual function
+        try:
+            result = self._fn(**arguments)
+            if inspect.iscoroutine(result):
+                # This shouldn't happen in sync call, but handle gracefully
+                raise ValueError("Unexpected async result in sync tool call")
+        except Exception as e:
+            return ToolOutput(
+                content="Encountered error: " + str(e),
+                tool_name=self.metadata.get_name(),
+                raw_input=arguments,
+                raw_output=str(e),
+                is_error=True,
+                exception=e,
+            )
+
+        # Apply callback if provided (post-processing)
+        callback_result = self._run_sync_callback(result)
+        if callback_result is not None:
+            if isinstance(callback_result, ToolOutput):
+                result = callback_result
+            else:
+                # Override the content only
+                result = ToolOutput(
+                    tool_name=self.metadata.get_name(),
+                    content=callback_result,
+                    raw_input=arguments,
+                    raw_output=result,
+                )
+        
+        # Apply post-processor if provided
+        result = self._run_sync_post_processor(result)
+        
+        return result
+
+    async def acall(self, input: Any) -> ToolOutput:
+        """
+        Async call the tool with input.
+        
+        This method handles both pre-processing of inputs and post-processing of outputs
+        in a deterministic way before and after execution.
+        """
+        # Convert input to dict if needed (for compatibility with existing code)
+        if isinstance(input, str):
+            arguments = {"input": input}
+        elif isinstance(input, dict):
+            arguments = input
+        else:
+            arguments = {"input": input}
+
+        # Apply pre-processor if provided
+        arguments = await self._run_async_pre_processor(arguments)
+
+        # Call the actual function
+        try:
+            result = await self._async_fn(**arguments)
+        except Exception as e:
+            return ToolOutput(
+                content="Encountered error: " + str(e),
+                tool_name=self.metadata.get_name(),
+                raw_input=arguments,
+                raw_output=str(e),
+                is_error=True,
+                exception=e,
+            )
+
+        # Apply callback if provided (post-processing)
+        callback_result = await self._run_async_callback(result)
+        if callback_result is not None:
+            if isinstance(callback_result, ToolOutput):
+                result = callback_result
+            else:
+                # Override the content only
+                result = ToolOutput(
+                    tool_name=self.metadata.get_name(),
+                    content=callback_result,
+                    raw_input=arguments,
+                    raw_output=result,
+                )
+        
+        # Apply post-processor if provided
+        result = await self._run_async_post_processor(result)
+        
+        return result
+
     @classmethod
     def from_defaults(
         cls,
@@ -181,6 +338,10 @@ class FunctionTool(AsyncBaseTool):
         callback: Optional[Callable[[Any], Any]] = None,
         async_callback: Optional[AsyncCallable] = None,
         partial_params: Optional[Dict[str, Any]] = None,
+        pre_processor: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        async_pre_processor: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
+        post_processor: Optional[Callable[[ToolOutput], ToolOutput]] = None,
+        async_post_processor: Optional[Callable[[ToolOutput], Awaitable[ToolOutput]]] = None,
     ) -> "FunctionTool":
         partial_params = partial_params or {}
 
@@ -230,250 +391,41 @@ class FunctionTool(AsyncBaseTool):
 
                 description = description.strip()
 
-            # 6. Build fn_schema only if not already provided
+            # 6. Get function schema
             if fn_schema is None:
-                ignore_fields = []
-                if ctx_param_name:
-                    ignore_fields.append(ctx_param_name)
-                if has_self:
-                    ignore_fields.append("self")
-                ignore_fields.extend(partial_params.keys())
+                try:
+                    fn_schema = create_schema_from_function(
+                        fn_to_parse, name=name, description=description
+                    )
+                except Exception:
+                    pass
 
-                fn_schema = create_schema_from_function(
-                    f"{name}",
-                    fn_to_parse,
-                    additional_fields=None,
-                    ignore_fields=ignore_fields,
-                    param_descriptions={
-                        param_name: doc.strip()
-                        for param_name, doc in param_docs.items()
-                    },
-                )
-
+            # 7. Create metadata
             tool_metadata = ToolMetadata(
                 name=name,
                 description=description,
                 fn_schema=fn_schema,
                 return_direct=return_direct,
             )
+
+        # Create the FunctionTool with pre- and post-processors
         return cls(
             fn=fn,
-            metadata=tool_metadata,
             async_fn=async_fn,
+            metadata=tool_metadata,
             callback=callback,
             async_callback=async_callback,
             partial_params=partial_params,
+            pre_processor=pre_processor,
+            async_pre_processor=async_pre_processor,
+            post_processor=post_processor,
+            async_post_processor=async_post_processor,
         )
 
-    @property
-    def metadata(self) -> ToolMetadata:
-        """Metadata."""
-        return self._metadata
+    def call(self, input: Any) -> ToolOutput:
+        """Synchronous tool call."""
+        return self.__call__(input)
 
-    @property
-    def fn(self) -> Callable[..., Any]:
-        """Function."""
-        return self._fn
-
-    @property
-    def async_fn(self) -> AsyncCallable:
-        """Async function."""
-        return self._async_fn
-
-    @property
-    def real_fn(self) -> Union[Callable[..., Any], AsyncCallable]:
-        """Real function."""
-        if self._real_fn is None:
-            raise ValueError("Real function is not set!")
-
-        return self._real_fn
-
-    def _parse_tool_output(self, raw_output: Any) -> List[ContentBlock]:
-        """Parse tool output into content blocks."""
-        if isinstance(
-            raw_output,
-            (
-                TextBlock,
-                ImageBlock,
-                AudioBlock,
-                CitableBlock,
-                CitationBlock,
-                DocumentBlock,
-                VideoBlock,
-            ),
-        ):
-            return [raw_output]
-        elif isinstance(raw_output, list) and all(
-            isinstance(
-                item,
-                (
-                    TextBlock,
-                    ImageBlock,
-                    AudioBlock,
-                    CitableBlock,
-                    CitationBlock,
-                    DocumentBlock,
-                    VideoBlock,
-                ),
-            )
-            for item in raw_output
-        ):
-            return raw_output
-        elif isinstance(raw_output, (BaseNode, Document)):
-            return [TextBlock(text=raw_output.get_content())]
-        elif isinstance(raw_output, list) and all(
-            isinstance(item, (BaseNode, Document)) for item in raw_output
-        ):
-            return [TextBlock(text=item.get_content()) for item in raw_output]
-        else:
-            return [TextBlock(text=str(raw_output))]
-
-    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        all_kwargs = {**self.partial_params, **kwargs}
-        return self.call(*args, **all_kwargs)
-
-    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Sync Call."""
-        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
-        if self.requires_context and self.ctx_param_name is not None:
-            if self.ctx_param_name not in all_kwargs:
-                raise ValueError("Context is required for this tool")
-
-        raw_output = self._fn(*args, **all_kwargs)
-
-        # Exclude the Context param from the tool output so that the Context can be serialized
-        tool_output_kwargs = {
-            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
-        }
-
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
-
-        # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
-        # Check for a sync callback override
-        callback_result = self._run_sync_callback(raw_output)
-        if callback_result is not None:
-            if isinstance(callback_result, ToolOutput):
-                return callback_result
-            else:
-                # Assume callback_result is a string to override the content.
-                return ToolOutput(
-                    content=str(callback_result),
-                    tool_name=self.metadata.get_name(),
-                    raw_input={"args": args, "kwargs": tool_output_kwargs},
-                    raw_output=raw_output,
-                )
-        return default_output
-
-    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Async Call."""
-        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
-        if self.requires_context and self.ctx_param_name is not None:
-            if self.ctx_param_name not in all_kwargs:
-                raise ValueError("Context is required for this tool")
-
-        raw_output = await self._async_fn(*args, **all_kwargs)
-
-        # Exclude the Context param from the tool output so that the Context can be serialized
-        tool_output_kwargs = {
-            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
-        }
-
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
-
-        # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
-        # Check for an async callback override
-        callback_result = await self._run_async_callback(raw_output)
-        if callback_result is not None:
-            if isinstance(callback_result, ToolOutput):
-                return callback_result
-            else:
-                # Assume callback_result is a string to override the content.
-                return ToolOutput(
-                    content=str(callback_result),
-                    tool_name=self.metadata.get_name(),
-                    raw_input={"args": args, "kwargs": tool_output_kwargs},
-                    raw_output=raw_output,
-                )
-        return default_output
-
-    def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":
-        """To langchain tool."""
-        from llama_index.core.bridge.langchain import Tool
-
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
-            langchain_tool_kwargs
-        )
-        return Tool.from_function(
-            func=self.fn,
-            coroutine=self.async_fn,
-            **langchain_tool_kwargs,
-        )
-
-    def to_langchain_structured_tool(
-        self, **langchain_tool_kwargs: Any
-    ) -> "StructuredTool":
-        """To langchain structured tool."""
-        from llama_index.core.bridge.langchain import StructuredTool
-
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
-            langchain_tool_kwargs
-        )
-        return StructuredTool.from_function(
-            func=self.fn,
-            coroutine=self.async_fn,
-            **langchain_tool_kwargs,
-        )
-
-    @staticmethod
-    def extract_param_docs(
-        docstring: str, fn_params: Optional[set] = None
-    ) -> Tuple[dict, set]:
-        """
-        Parses param descriptions from a docstring.
-
-        Returns:
-            - param_docs: Only for params in fn_params with non-conflicting descriptions.
-            - unknown_params: Params found in docstring but not in fn_params (ignored in final output).
-
-        """
-        raw_param_docs: dict[str, str] = {}
-        unknown_params = set()
-
-        def try_add_param(name: str, desc: str) -> None:
-            desc = desc.strip()
-            if fn_params and name not in fn_params:
-                unknown_params.add(name)
-                return
-            if name in raw_param_docs and raw_param_docs[name] != desc:
-                return
-            raw_param_docs[name] = desc
-
-        # Sphinx style
-        for match in re.finditer(r":param (\w+): (.+)", docstring):
-            try_add_param(match.group(1), match.group(2))
-
-        # Google style
-        for match in re.finditer(
-            r"^\s*(\w+)\s*\(.*?\):\s*(.+)$", docstring, re.MULTILINE
-        ):
-            try_add_param(match.group(1), match.group(2))
-
-        # Javadoc style
-        for match in re.finditer(r"@param (\w+)\s+(.+)", docstring):
-            try_add_param(match.group(1), match.group(2))
-
-        return raw_param_docs, unknown_params
+    async def acall_async(self, input: Any) -> ToolOutput:
+        """Async tool call."""
+        return await self.acall(input)
