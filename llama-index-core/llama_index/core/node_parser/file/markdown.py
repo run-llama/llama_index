@@ -11,6 +11,18 @@ from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
 
 
+def _clean_header_text(text: str) -> str:
+    """
+    Return the heading's text without what Markdown does not count as part of it.
+
+    Drops trailing whitespace (including the carriage return left by CRLF line
+    endings) and an optional closing sequence of ``#`` characters. A closing
+    sequence must be preceded by a space, so ``C#`` keeps its ``#``.
+    """
+    text = text.rstrip()
+    return re.sub(r"(?:^|\s+)#+$", "", text).rstrip()
+
+
 class MarkdownNodeParser(NodeParser):
     """
     Markdown node parser.
@@ -79,7 +91,7 @@ class MarkdownNodeParser(NodeParser):
                         )
 
                     header_level = len(header_match.group(1))
-                    header_text = header_match.group(2)
+                    header_text = _clean_header_text(header_match.group(2))
 
                     # Compare against top-of-stack item’s markdown level.
                     # Pop headers of equal or higher markdown level; not necessarily current stack size / depth.
