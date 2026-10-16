@@ -27,10 +27,19 @@ NODE_SCHEMA: List[Dict] = [
         "description": "Text property",
         "name": "text",
     },
+    # ids are filtered with exact matches (delete by ref_doc_id, query doc_ids):
+    # "field" tokenization keeps e.g. "faq" from also matching "faq-v2"
     {
         "dataType": ["text"],
         "description": "The ref_doc_id of the Node",
         "name": "ref_doc_id",
+        "tokenization": "field",
+    },
+    {
+        "dataType": ["text"],
+        "description": "The doc_id of the Node",
+        "name": "doc_id",
+        "tokenization": "field",
     },
     {
         "dataType": ["text"],
