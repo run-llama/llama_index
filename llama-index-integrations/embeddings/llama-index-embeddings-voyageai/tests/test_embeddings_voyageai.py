@@ -1,4 +1,8 @@
-from unittest.mock import Mock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock, patch
+
+import voyageai
+from voyageai.error import ServiceUnavailableError
 
 import pytest
 
@@ -11,6 +15,84 @@ from llama_index.embeddings.voyageai.base import (
     SUPPORTED_VIDEO_FORMATS,
     VIDEO_SUPPORT,
 )
+
+
+@pytest.mark.parametrize(
+    ("options", "max_retries", "timeout"),
+    [
+        ({}, 0, None),
+        ({"max_retries": 3, "timeout": 12.5}, 3, 12.5),
+        ({"max_retries": 0, "timeout": None}, 0, None),
+    ],
+)
+def test_client_request_options(options, max_retries, timeout):
+    emb = VoyageEmbedding(
+        model_name="voyage-3.5", voyage_api_key="NOT_A_VALID_KEY", **options
+    )
+    for client in (emb._client, emb._aclient):
+        assert client.max_retries == max_retries
+        assert client._params["request_timeout"] == timeout
+    assert emb.max_retries == max_retries
+    assert emb.timeout == timeout
+
+
+def test_client_request_options_round_trip():
+    emb = VoyageEmbedding(
+        model_name="voyage-3.5",
+        voyage_api_key="NOT_A_VALID_KEY",
+        max_retries=2,
+        timeout=30.0,
+    )
+    restored = VoyageEmbedding.from_dict(
+        emb.to_dict(), voyage_api_key="NOT_A_VALID_KEY"
+    )
+    for client in (restored._client, restored._aclient):
+        assert client.max_retries == 2
+        assert client._params["request_timeout"] == 30.0
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize(("max_retries", "failures"), [(2, 1), (2, 2), (0, 1)])
+@pytest.mark.asyncio
+async def test_embedding_request_retries(asynchronous, max_retries, failures):
+    emb = VoyageEmbedding(
+        model_name="voyage-3.5",
+        voyage_api_key="NOT_A_VALID_KEY",
+        max_retries=max_retries,
+        timeout=7.5,
+    )
+    error = ServiceUnavailableError("synthetic service failure")
+    response = SimpleNamespace(
+        data=[SimpleNamespace(embedding=[0.1, 0.2])],
+        usage=SimpleNamespace(total_tokens=1),
+    )
+    outcomes = [error] * failures + [response]
+    method = "acreate" if asynchronous else "create"
+    request = (
+        AsyncMock(side_effect=outcomes) if asynchronous else Mock(side_effect=outcomes)
+    )
+    with (
+        patch.object(emb._client, "tokenize", return_value=[[1]]),
+        patch.object(voyageai.Embedding, method, request),
+        patch("voyageai.client.wait_exponential_jitter", return_value=lambda _: 0),
+        patch(
+            "voyageai.client_async.wait_exponential_jitter", return_value=lambda _: 0
+        ),
+    ):
+
+        async def run():
+            if asynchronous:
+                return await emb.aget_query_embedding("query")
+            return emb.get_query_embedding("query")
+
+        if failures < max_retries:
+            assert await run() == [0.1, 0.2]
+        else:
+            with pytest.raises(ServiceUnavailableError) as exc_info:
+                await run()
+            assert exc_info.value is error
+    assert request.call_count == (2 if max_retries else 1)
+    assert request.call_args.kwargs["request_timeout"] == 7.5
 
 
 def test_embedding_class():
