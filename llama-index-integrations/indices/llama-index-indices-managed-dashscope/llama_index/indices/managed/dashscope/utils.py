@@ -1,9 +1,14 @@
 import requests
 import time
 
+# Seconds to wait for a connection or between bytes before giving up.
+REQUEST_TIMEOUT = 30
+
 
 def post(base_url: str, headers: dict, params: dict):
-    response = requests.post(base_url, headers=headers, json=params)
+    response = requests.post(
+        base_url, headers=headers, json=params, timeout=REQUEST_TIMEOUT
+    )
     if response.status_code != 200:
         raise RuntimeError(response.text)
     response_dict = response.json()
@@ -13,7 +18,9 @@ def post(base_url: str, headers: dict, params: dict):
 
 
 def get(base_url: str, headers: dict, params: dict):
-    response = requests.get(base_url, headers=headers, params=params)
+    response = requests.get(
+        base_url, headers=headers, params=params, timeout=REQUEST_TIMEOUT
+    )
     if response.status_code != 200:
         raise RuntimeError(response.text)
 
@@ -36,6 +43,7 @@ def run_ingestion(request_url: str, headers: dict, verbose: bool = False):
         response = requests.get(
             request_url,
             headers=headers,
+            timeout=REQUEST_TIMEOUT,
         )
         try:
             response_text = response.json()

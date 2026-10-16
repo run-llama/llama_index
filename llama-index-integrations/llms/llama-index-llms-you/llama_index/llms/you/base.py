@@ -15,6 +15,9 @@ from llama_index.core.bridge.pydantic import Field
 SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
+# Seconds to wait for a connection or between bytes before giving up.
+REQUEST_TIMEOUT = 60
+
 
 def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
     """
@@ -22,7 +25,9 @@ def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
-    response = requests.post(base_url, headers=headers, json=kwargs)
+    response = requests.post(
+        base_url, headers=headers, json=kwargs, timeout=REQUEST_TIMEOUT
+    )
     response.raise_for_status()
     return response.json()
 
@@ -32,7 +37,13 @@ def _request_stream(
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)
-    response = requests.post(base_url, headers=headers, stream=True, json=params)
+    response = requests.post(
+        base_url,
+        headers=headers,
+        stream=True,
+        json=params,
+        timeout=REQUEST_TIMEOUT,
+    )
     response.raise_for_status()
 
     client = sseclient.SSEClient(response)

@@ -83,7 +83,7 @@ class ZendeskReader(BaseReader):
         else:
             url = next_page
 
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
 
         response_json = json.loads(response.text)
 
