@@ -191,6 +191,23 @@ def test_prompt_helper_truncate() -> None:
     ]
 
 
+def test_prompt_helper_truncate_whitespace_only_chunk() -> None:
+    """Test truncating a whitespace-only chunk."""
+    prompt_helper = PromptHelper(
+        context_window=19,
+        num_output=0,
+        chunk_overlap_ratio=0,
+        tokenizer=mock_tokenizer,
+    )
+
+    truncated_chunks = prompt_helper.truncate(
+        prompt=PromptTemplate("test{text}"),
+        text_chunks=[" \n\t "],
+    )
+
+    assert truncated_chunks == [""]
+
+
 def test_prompt_helper_get_numbered_text_from_nodes() -> None:
     """Test get_text_from_nodes."""
     # test prompt uses up one token
