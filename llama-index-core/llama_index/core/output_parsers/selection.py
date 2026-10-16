@@ -96,8 +96,27 @@ class SelectionOutputParser(BaseOutputParser):
         if not isinstance(json_obj, list):
             raise ValueError(f"Failed to convert output to JSON: {output!r}")
 
+        if not all(isinstance(item, dict) for item in json_obj):
+            raise OutputParserException(
+                "Selection output must be a list of objects with integer "
+                "choices and string reasons."
+            )
+
         json_output = self._format_output(json_obj)
-        answers = [Answer.from_dict(json_dict) for json_dict in json_output]
+        answers = []
+        for json_dict in json_output:
+            choice = json_dict.get("choice")
+            reason = json_dict.get("reason")
+            if (
+                isinstance(choice, bool)
+                or not isinstance(choice, int)
+                or not isinstance(reason, str)
+            ):
+                raise OutputParserException(
+                    "Selection output must contain an integer 'choice' and "
+                    "a string 'reason'."
+                )
+            answers.append(Answer.from_dict(json_dict))
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
     def format(self, prompt_template: str) -> str:
