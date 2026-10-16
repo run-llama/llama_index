@@ -12,6 +12,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.tools import ToolOutput
 from llama_index.core.memory import BaseMemory
+from llama_index.core.prompts import PromptTemplate
 
 
 @pytest.fixture()
@@ -215,3 +216,32 @@ async def test_code_act_agent_workflow_integration():
     # Verify we got an AgentOutput
     assert isinstance(result, AgentOutput)
     assert result.response.content == "The answer is 4."
+
+
+def test_code_act_agent_prompt_template_without_system_prompt(mock_llm):
+    """Test CodeActAgent with a BasePromptTemplate when system_prompt is None (issue #23080)."""
+    custom_template = PromptTemplate("You are a code agent. {tool_descriptions}")
+    agent = CodeActAgent(
+        code_execute_fn=lambda code: "result",
+        code_act_system_prompt=custom_template,
+        system_prompt=None,
+        llm=mock_llm,
+    )
+    assert (
+        agent.code_act_system_prompt.get_template()
+        == "You are a code agent. {tool_descriptions}"
+    )
+
+
+def test_code_act_agent_prompt_template_with_system_prompt(mock_llm):
+    """Test CodeActAgent with a BasePromptTemplate when system_prompt is provided."""
+    custom_template = PromptTemplate("You are a code agent. {tool_descriptions}")
+    agent = CodeActAgent(
+        code_execute_fn=lambda code: "result",
+        code_act_system_prompt=custom_template,
+        system_prompt="Be concise.",
+        llm=mock_llm,
+    )
+    template_str = agent.code_act_system_prompt.get_template()
+    assert "You are a code agent. {tool_descriptions}" in template_str
+    assert "Be concise." in template_str
