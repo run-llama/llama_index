@@ -7,6 +7,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 from typing import Any, AsyncIterator, Iterator
 from llama_index.core.llms.callbacks import llm_completion_callback
@@ -135,6 +137,74 @@ async def test_streaming_response_awrite_history_handles_multiblock_message():
 
     assert memory.messages == [message]
     assert message.blocks == [TextBlock(text="new text")]
+
+
+def test_streaming_response_write_history_preserves_thinking_and_tool_blocks():
+    thinking = ThinkingBlock(content="evaluating steps", num_tokens=12)
+    tool = ToolCallBlock(tool_name="calculator", tool_kwargs={"expr": "1+1"})
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[thinking, tool, TextBlock(text="initial")],
+    )
+
+    def chat_stream() -> Iterator[ChatResponse]:
+        yield ChatResponse(message=message, delta="result ")
+        yield ChatResponse(message=message, delta="is 2")
+
+    memory = MockMemory()
+    response = StreamingAgentChatResponse(chat_stream=chat_stream())
+
+    response.write_response_to_history(memory)  # type: ignore[arg-type]
+
+    assert memory.messages == [message]
+    assert len(message.blocks) == 3
+    assert message.blocks[0] == thinking
+    assert message.blocks[1] == tool
+    assert message.blocks[2] == TextBlock(text="result is 2")
+
+
+@pytest.mark.asyncio
+async def test_streaming_response_awrite_history_preserves_thinking_and_tool_blocks():
+    thinking = ThinkingBlock(content="evaluating steps", num_tokens=12)
+    tool = ToolCallBlock(tool_name="calculator", tool_kwargs={"expr": "1+1"})
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[thinking, tool, TextBlock(text="initial")],
+    )
+
+    async def chat_stream() -> AsyncIterator[ChatResponse]:
+        yield ChatResponse(message=message, delta="result ")
+        yield ChatResponse(message=message, delta="is 2")
+
+    memory = MockMemory()
+    response = StreamingAgentChatResponse(achat_stream=chat_stream())
+
+    await response.awrite_response_to_history(memory)  # type: ignore[arg-type]
+
+    assert memory.messages == [message]
+    assert len(message.blocks) == 3
+    assert message.blocks[0] == thinking
+    assert message.blocks[1] == tool
+    assert message.blocks[2] == TextBlock(text="result is 2")
+
+
+def test_streaming_response_write_history_preserves_tool_block_with_empty_stream():
+    tool = ToolCallBlock(tool_name="calculator", tool_kwargs={"expr": "1+1"})
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[tool],
+    )
+
+    def chat_stream() -> Iterator[ChatResponse]:
+        yield ChatResponse(message=message, delta="")
+
+    memory = MockMemory()
+    response = StreamingAgentChatResponse(chat_stream=chat_stream())
+
+    response.write_response_to_history(memory)  # type: ignore[arg-type]
+
+    assert memory.messages == [message]
+    assert message.blocks == [tool]
 
 
 def test_simple_chat_engine_astream_exception_handling():
