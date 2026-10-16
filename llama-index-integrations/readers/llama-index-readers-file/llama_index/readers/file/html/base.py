@@ -73,5 +73,12 @@ class HTMLTagReader(BaseReader):
             elif elem.name == self._tag:
                 continue
             else:
-                texts.append(elem.get_text().strip())
+                text = "".join(
+                    text
+                    for text in elem.strings
+                    if isinstance(text, NavigableString)
+                    and text.find_parent(self._tag) is tag
+                ).strip()
+                if text:
+                    texts.append(text)
         return "\n".join(texts)
