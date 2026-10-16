@@ -2,7 +2,16 @@ from typing import Generator
 
 import pytest
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
+from sqlalchemy import (
+    Column,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
+    event,
+    text,
+)
 
 
 # Create a fixture for the database instance
@@ -201,3 +210,62 @@ def test_schema_prefix_case_insensitive(sql_database: SQLDatabase) -> None:
     result = sql_database._add_schema_prefix("select * from users join orders on 1=1")
     assert "from myschema.users" in result
     assert "join myschema.orders" in result
+
+
+def test_schema_prefix_preserves_sql_literals_and_comments(
+    sql_database: SQLDatabase,
+) -> None:
+    sql_database._schema = "myschema"
+    command = (
+        "SELECT 'FROM users' AS label, 'it''s JOIN orders' AS note "
+        "FROM users -- JOIN ignored\n"
+        "/* FROM hidden */ JOIN orders ON users.id = orders.user_id"
+    )
+    result = sql_database._add_schema_prefix(command)
+    assert "'FROM users'" in result
+    assert "'it''s JOIN orders'" in result
+    assert "-- JOIN ignored" in result
+    assert "/* FROM hidden */" in result
+    assert "FROM myschema.users" in result
+    assert "JOIN myschema.orders" in result
+
+
+def test_schema_prefix_preserves_quoted_identifiers_and_dollar_strings(
+    sql_database: SQLDatabase,
+) -> None:
+    sql_database._schema = "myschema"
+    command = (
+        'SELECT "FROM users", `JOIN orders`, $$FROM orders$$, '
+        "$tag$JOIN users$tag$ FROM users"
+    )
+    result = sql_database._add_schema_prefix(command)
+    assert '"FROM users"' in result
+    assert "`JOIN orders`" in result
+    assert "$$FROM orders$$" in result
+    assert "$tag$JOIN users$tag$" in result
+    assert result.endswith("FROM myschema.users")
+
+
+def test_schema_prefix_skips_cte_name_inside_string_literal(
+    sql_database: SQLDatabase,
+) -> None:
+    sql_database._schema = "myschema"
+    command = "SELECT 'WITH users AS (' AS label FROM users"
+    result = sql_database._add_schema_prefix(command)
+    assert result == "SELECT 'WITH users AS (' AS label FROM myschema.users"
+
+
+def test_run_sql_schema_does_not_change_returned_literal() -> None:
+    engine = create_engine("sqlite:///:memory:")
+
+    @event.listens_for(engine, "connect")
+    def attach_schema(dbapi_connection, connection_record) -> None:
+        dbapi_connection.execute("ATTACH DATABASE ':memory:' AS tenant")
+
+    with engine.begin() as connection:
+        connection.execute(text("CREATE TABLE tenant.users (name TEXT)"))
+        connection.execute(text("INSERT INTO tenant.users VALUES ('Ada')"))
+
+    sql_database = SQLDatabase(engine=engine, schema="tenant")
+    result, _ = sql_database.run_sql("SELECT 'FROM users', name FROM users")
+    assert result == "[('FROM users', 'Ada')]"
