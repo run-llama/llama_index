@@ -427,10 +427,15 @@ class BaseWorkflowAgent(
             user_hist: List[ChatMessage] = [
                 msg for msg in chat_history if msg.role == "user"
             ]
+            target_msg = (
+                user_hist[-1]
+                if user_hist
+                else [msg for msg in chat_history if msg.role != "system"][-1]
+            )
             content_str = "\n".join(
                 [
                     block.text
-                    for block in user_hist[-1].blocks
+                    for block in target_msg.blocks
                     if isinstance(block, TextBlock)
                 ]
             )
