@@ -38,8 +38,8 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             from sentence_transformers import CrossEncoder  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
-                "Cannot import sentence-transformers or torch package,",
-                "please `pip install torch sentence-transformers`",
+                "Cannot import sentence-transformers or torch package, "
+                "please `pip install torch sentence-transformers`"
             )
         device = infer_torch_device() if device is None else device
         super().__init__(
