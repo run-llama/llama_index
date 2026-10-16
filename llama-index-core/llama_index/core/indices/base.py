@@ -323,8 +323,10 @@ class BaseIndex(Generic[IS], ABC):
             logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
             return
 
+        # Pass a copy: deleting each node from the docstore also removes it from
+        # this ref doc's node_ids, which may be the very list the store holds.
         self.delete_nodes(
-            ref_doc_info.node_ids,
+            list(ref_doc_info.node_ids),
             delete_from_docstore=delete_from_docstore,
             **delete_kwargs,
         )
@@ -342,7 +344,7 @@ class BaseIndex(Generic[IS], ABC):
             return
 
         await self.adelete_nodes(
-            ref_doc_info.node_ids,
+            list(ref_doc_info.node_ids),
             delete_from_docstore=delete_from_docstore,
             **delete_kwargs,
         )
