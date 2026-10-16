@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Optional, Sequence
 
 from llama_index.core.base.response.schema import Response
@@ -119,3 +120,11 @@ def test_batch_runner() -> None:
     assert get_eval_results("evaluator2", results) == 1.0
     assert get_eval_results("evaluator1", results) == 0.5
     assert get_eval_results("evaluator2", results) == 1.0
+
+
+def test_batch_runner_does_not_emit_asyncio_module_deprecation() -> None:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "error", message=".*asyncio_module.*", category=DeprecationWarning
+        )
+        BatchEvalRunner(evaluators={"evaluator1": MockEvaluator()}, show_progress=False)

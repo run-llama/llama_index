@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from llama_index.core.async_utils import asyncio_module, asyncio_run
+from llama_index.core.async_utils import asyncio_run, get_asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.evaluation.base import EvaluationResult
 
@@ -22,7 +22,7 @@ async def aget_responses(
     tasks = []
     for question in questions:
         tasks.append(query_engine.aquery(question))
-    asyncio_mod = asyncio_module(show_progress=show_progress)
+    asyncio_mod = get_asyncio_module(show_progress=show_progress)
     return await asyncio_mod.gather(*tasks)
 
 
