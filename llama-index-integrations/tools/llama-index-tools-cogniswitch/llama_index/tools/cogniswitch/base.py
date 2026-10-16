@@ -100,16 +100,16 @@ class CogniswitchToolSpec(BaseToolSpec):
             api_url = self.source_file_endpoint
 
             headers = self.headers
-            if file is not None:
-                files = {"file": open(file, "rb")}
-            else:
-                files = None
             data = {
                 "url": url,
                 "documentName": document_name,
                 "documentDescription": document_description,
             }
-            response = requests.post(api_url, headers=headers, data=data, files=files)
+            with open(file, "rb") as f:
+                files = {"file": f}
+                response = requests.post(
+                    api_url, headers=headers, data=data, files=files
+                )
         if response.status_code == 200:
             return response.json()
         else:
