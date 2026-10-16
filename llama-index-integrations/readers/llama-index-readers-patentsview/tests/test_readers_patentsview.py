@@ -1,7 +1,7 @@
 """Tests for Patentsview."""
 
 import re
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -65,6 +65,24 @@ class TestPatentsviewReader:
         abstracts = loader.load_data(patents)
         assert len(abstracts) == 2
         assert isinstance(abstracts[0], Document)
+
+    @patch("llama_index.readers.patentsview.base.time.sleep")
+    @patch("llama_index.readers.patentsview.base.requests.post")
+    def test_load_data_retries_after_rate_limit(
+        self, mock_post, mock_sleep, api_key, mock_json_response
+    ):
+        """Test that a 429 response waits for Retry-After and retries once"""
+        throttled = MagicMock(status_code=429, headers={"Retry-After": "2"})
+        ok = MagicMock(status_code=200)
+        ok.json.return_value = mock_json_response
+        mock_post.side_effect = [throttled, ok]
+
+        loader = PatentsviewReader(api_key=api_key)
+        abstracts = loader.load_data(["8848839", "10452978"])
+
+        mock_sleep.assert_called_once_with(2)
+        assert mock_post.call_count == 2
+        assert len(abstracts) == 2
 
     def test_class(self):
         names_of_base_classes = [b.__name__ for b in PatentsviewReader.__mro__]
