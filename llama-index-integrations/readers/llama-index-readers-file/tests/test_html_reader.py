@@ -83,3 +83,29 @@ def test_html_tag_reader(html_str: str) -> None:
     assert docs[2].metadata["tag_id"] is None
 
     os.remove(temp_file.name)
+
+
+@pytest.mark.parametrize("tag", ["section", "article"])
+@pytest.mark.parametrize("wrapper", ["<div>{}</div>", "<div><div>{}</div></div>"])
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("Before <b>bold</b>{nested} after", "Parent text\nBefore bold after"),
+        ("{nested}", "Parent text"),
+    ],
+)
+def test_html_tag_reader_excludes_wrapped_nested_tags(
+    tmp_path: Path, tag: str, wrapper: str, content: str, expected: str
+) -> None:
+    nested = f'<{tag} id="child">Child text</{tag}>'
+    content = wrapper.format(content.format(nested=nested))
+    file = tmp_path / "nested.html"
+    file.write_text(
+        f'<{tag} id="parent"><p>Parent text</p>{content}</{tag}>', encoding="utf-8"
+    )
+
+    docs = HTMLTagReader(tag=tag).load_data(file, extra_info={"source": "test"})
+
+    assert [doc.text for doc in docs] == [expected, "Child text"]
+    assert [doc.metadata["tag_id"] for doc in docs] == ["parent", "child"]
+    assert all(doc.metadata["source"] == "test" for doc in docs)
