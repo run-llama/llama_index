@@ -34,3 +34,25 @@ def test_default_parse_choice_select_answer_fn(answer):
     answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
     assert answer_nums == [2, 4]
     assert answer_relevances == [8, 6]
+
+
+@pytest.mark.parametrize("answer_num", [0, -1, -3])
+def test_parse_choice_select_rejects_nonpositive_choice_numbers(
+    answer_num: int,
+) -> None:
+    """
+    Choices are 1-based, so a non-positive number must not survive parsing.
+
+    Callers index their node batch with ``int(choice) - 1``. A parsed 0 becomes
+    ``-1``, which indexes the *last* node instead of raising, so a model that
+    answers "0" silently retrieves the wrong document. The upper bound was
+    already checked; the lower bound was not.
+    """
+    from llama_index.core.indices.utils import default_parse_choice_select_answer_fn
+
+    answer = f"answer_num: {answer_num}, answer_relevance: 9.5"
+
+    answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
+
+    assert answer_nums == []
+    assert answer_relevances == []

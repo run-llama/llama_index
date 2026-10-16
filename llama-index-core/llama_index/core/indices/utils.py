@@ -146,7 +146,10 @@ def default_parse_choice_select_answer_fn(
                     "Answer line must be of the form: "
                     "answer_num: <int>, answer_relevance: <float>"
                 )
-        if answer_num > num_choices:
+        # Choices are 1-based: callers index their batch with int(choice) - 1.
+        # A number outside 1..num_choices is dropped here, because a 0 would
+        # become -1 downstream and index the last node instead of failing.
+        if answer_num < 1 or answer_num > num_choices:
             continue
         answer_nums.append(answer_num)
         # extract just the first digits after the colon.
