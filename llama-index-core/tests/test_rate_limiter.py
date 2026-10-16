@@ -499,3 +499,13 @@ def test_sliding_window_embedding_calls_acquire() -> None:
     embed = MockEmbedding(embed_dim=8, rate_limiter=rl)
     result = embed.get_text_embedding("test")
     assert len(result) == 8
+
+
+def test_sliding_window_wait_time_accumulated_tokens() -> None:
+    """Ensure wait time is non-zero when accumulated token usage exceeds capacity."""
+    limiter = SlidingWindowRateLimiter(tokens_per_minute=100)
+    now = time.monotonic()
+    limiter._record_usage(now, num_tokens=80)
+    wait = limiter._wait_time(now + 1.0, num_tokens=50)
+    assert wait > 0.0
+
