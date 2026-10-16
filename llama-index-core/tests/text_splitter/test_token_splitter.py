@@ -4,7 +4,11 @@ from typing import List
 
 import tiktoken
 from llama_index.core.node_parser.text import TokenTextSplitter
-from llama_index.core.node_parser.text.utils import truncate_text
+from llama_index.core.node_parser.text.utils import (
+    split_by_sep,
+    split_text_keep_separator,
+    truncate_text,
+)
 from llama_index.core.schema import Document, MetadataMode, TextNode
 
 
@@ -89,3 +93,46 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_split_text_keep_separator() -> None:
+    """Test split_text_keep_separator preserves separators prefixed to subsequent segments."""
+    # a) Normal separator
+    text_a = "Hello world test"
+    res_a = split_text_keep_separator(text_a, " ")
+    assert res_a == ["Hello", " world", " test"]
+    assert "".join(res_a) == text_a
+
+    # b) Punctuation
+    text_b = "Hello. World. Bye."
+    res_b = split_text_keep_separator(text_b, ".")
+    assert res_b == ["Hello", ". World", ". Bye", "."]
+    assert "".join(res_b) == text_b
+
+    # c) Consecutive separators
+    text_c = "a..b"
+    res_c = split_text_keep_separator(text_c, ".")
+    assert res_c == ["a", ".", ".b"]
+    assert "".join(res_c) == text_c
+
+    # d) Separator absent
+    text_d = "hello"
+    res_d = split_text_keep_separator(text_d, ",")
+    assert res_d == ["hello"]
+    assert "".join(res_d) == text_d
+
+
+def test_split_by_sep() -> None:
+    """Test split_by_sep with keep_sep=True and keep_sep=False."""
+    text = "Hello. World. Bye."
+
+    # e) split_by_sep(..., keep_sep=True)
+    split_fn_keep = split_by_sep(".", keep_sep=True)
+    res_keep = split_fn_keep(text)
+    assert res_keep == ["Hello", ". World", ". Bye", "."]
+    assert "".join(res_keep) == text
+
+    # f) split_by_sep(..., keep_sep=False)
+    split_fn_no_keep = split_by_sep(".", keep_sep=False)
+    res_no_keep = split_fn_no_keep(text)
+    assert res_no_keep == ["Hello", " World", " Bye", ""]
