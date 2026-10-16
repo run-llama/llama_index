@@ -879,6 +879,32 @@ async def test_recursive_block_asplit_forwards_overlap():
 
 
 @pytest.mark.asyncio
+async def test_asplit_overlap_larger_than_max_tokens_raises():
+    """
+    An overlap wider than the chunk is rejected, for leaf and recursive blocks alike.
+
+    `TokenTextSplitter` refuses an overlap larger than the chunk size. `TextBlock`
+    already surfaced that error; now that recursive blocks forward `overlap`, they
+    surface it too instead of silently dropping the argument.
+    """
+    text = " ".join(f"word{i}" for i in range(200))
+
+    with pytest.raises(ValueError, match="larger chunk overlap"):
+        await TextBlock(text=text).asplit(max_tokens=20, overlap=30)
+
+    with pytest.raises(ValueError, match="larger chunk overlap"):
+        await ChatMessage(role=MessageRole.USER, blocks=[TextBlock(text=text)]).asplit(
+            max_tokens=20, overlap=30
+        )
+
+    # a block that already fits is never handed to the splitter, so it is unaffected
+    short = await ChatMessage(
+        role=MessageRole.USER, blocks=[TextBlock(text="tiny")]
+    ).asplit(max_tokens=20, overlap=30)
+    assert len(short) == 1
+
+
+@pytest.mark.asyncio
 async def test_text_block_atruncate():
     tb = TextBlock(text="Hello world! This is a test.")
     truncated_tb = await tb.atruncate(max_tokens=4)
