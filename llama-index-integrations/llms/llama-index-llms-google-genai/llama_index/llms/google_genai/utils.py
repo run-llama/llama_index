@@ -92,8 +92,8 @@ def merge_neighboring_same_role_messages(
         # operate on a copy of the message to avoid mutating the original
         current_message = messages[i].model_copy()
         # Initialize merged content with current message content
-        merged_content = current_message.blocks
-        merged_kwargs = current_message.additional_kwargs
+        merged_content = list(current_message.blocks)
+        merged_kwargs = dict(current_message.additional_kwargs)
 
         # Check if the next message exists and has the same role
         while (
