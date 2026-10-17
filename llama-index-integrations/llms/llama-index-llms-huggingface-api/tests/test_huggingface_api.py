@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.llms import ChatMessage, MessageRole
@@ -134,3 +134,56 @@ class TestHuggingFaceInferenceAPI:
             messages=[{"role": "user", "content": prompt}],
         )
         assert response.text == generated_text
+
+
+    @pytest.mark.asyncio
+    async def test_astream_chat_recreates_closed_client(
+        self, hf_inference_api: HuggingFaceInferenceAPI
+    ) -> None:
+        first_client = MagicMock()
+        first_client.close = AsyncMock()
+        chunk = MagicMock()
+        chunk.choices[0].finish_reason = "stop"
+
+        async def stream():
+            yield chunk
+
+        first_client.chat_completion = AsyncMock(return_value=stream())
+        second_client = MagicMock()
+        with patch(
+            "llama_index.llms.huggingface_api.base.AsyncInferenceClient",
+            return_value=second_client,
+        ):
+            hf_inference_api._async_client = first_client
+            response_stream = await hf_inference_api.astream_chat(
+                [ChatMessage(content="hello")]
+            )
+            async for _ in response_stream:
+                pass
+
+        first_client.close.assert_awaited_once()
+        assert hf_inference_api._async_client is second_client
+
+    @pytest.mark.asyncio
+    async def test_astream_complete_recreates_closed_client(
+        self, hf_inference_api: HuggingFaceInferenceAPI
+    ) -> None:
+        first_client = MagicMock()
+        first_client.close = AsyncMock()
+
+        async def stream():
+            yield "hi"
+
+        first_client.text_generation = AsyncMock(return_value=stream())
+        second_client = MagicMock()
+        with patch(
+            "llama_index.llms.huggingface_api.base.AsyncInferenceClient",
+            return_value=second_client,
+        ):
+            hf_inference_api._async_client = first_client
+            response_stream = await hf_inference_api.astream_complete("hello")
+            async for _ in response_stream:
+                pass
+
+        first_client.close.assert_awaited_once()
+        assert hf_inference_api._async_client is second_client
