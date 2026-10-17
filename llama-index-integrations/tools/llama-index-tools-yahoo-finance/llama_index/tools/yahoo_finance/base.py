@@ -27,8 +27,10 @@ class YahooFinanceToolSpec(BaseToolSpec):
 
         """
         stock = yf.Ticker(ticker)
-        balance_sheet = pd.DataFrame(stock.balance_sheet)
-        return "Balance Sheet: \n" + balance_sheet.to_string()
+        balance_sheet = stock.balance_sheet
+        if balance_sheet is None or balance_sheet.empty:
+            return "Balance sheet data is not available."
+        return "Balance Sheet: \n" + pd.DataFrame(balance_sheet).to_string()
 
     def income_statement(self, ticker: str) -> str:
         """
@@ -39,8 +41,10 @@ class YahooFinanceToolSpec(BaseToolSpec):
 
         """
         stock = yf.Ticker(ticker)
-        income_statement = pd.DataFrame(stock.income_stmt)
-        return "Income Statement: \n" + income_statement.to_string()
+        income_stmt = stock.income_stmt
+        if income_stmt is None or income_stmt.empty:
+            return "Income statement data is not available."
+        return "Income Statement: \n" + pd.DataFrame(income_stmt).to_string()
 
     def cash_flow(self, ticker: str) -> str:
         """
@@ -51,8 +55,10 @@ class YahooFinanceToolSpec(BaseToolSpec):
 
         """
         stock = yf.Ticker(ticker)
-        cash_flow = pd.DataFrame(stock.cashflow)
-        return "Cash Flow: \n" + cash_flow.to_string()
+        cash_flow = stock.cashflow
+        if cash_flow is None or cash_flow.empty:
+            return "Cash flow data is not available."
+        return "Cash Flow: \n" + pd.DataFrame(cash_flow).to_string()
 
     def stock_basic_info(self, ticker: str) -> str:
         """
@@ -86,7 +92,9 @@ class YahooFinanceToolSpec(BaseToolSpec):
         """
         stock = yf.Ticker(ticker)
         news = stock.news
+        if news is None or len(news) == 0:
+            return "No news available."
         out = "News: \n"
         for i in news:
-            out += i["title"] + "\n"
+            out += i.get("title", "No title") + "\n"
         return out
