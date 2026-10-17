@@ -215,3 +215,41 @@ async def test_code_act_agent_workflow_integration():
     # Verify we got an AgentOutput
     assert isinstance(result, AgentOutput)
     assert result.response.content == "The answer is 4."
+
+
+def test_code_act_agent_with_base_prompt_template_and_no_system_prompt():
+    """Passing a BasePromptTemplate as code_act_system_prompt without a
+    system_prompt must not crash (regression test for UnboundLocalError on
+    `code_act_system_str`)."""
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.prompts import PromptTemplate, RichPromptTemplate
+
+    async def code_execute_fn(code: str) -> dict:
+        return {"result": "ok"}
+
+    template = PromptTemplate("custom prompt {tool_descriptions}")
+    agent = CodeActAgent(
+        code_execute_fn=code_execute_fn,
+        llm=MockLLM(),
+        code_act_system_prompt=template,
+    )
+    # the template should be kept as-is when there is no system_prompt to append
+    assert agent.code_act_system_prompt is template
+
+    # str template without system_prompt still works
+    agent2 = CodeActAgent(
+        code_execute_fn=code_execute_fn,
+        llm=MockLLM(),
+        code_act_system_prompt="custom prompt {tool_descriptions}",
+    )
+    assert isinstance(agent2.code_act_system_prompt, PromptTemplate)
+
+    # BasePromptTemplate combined with a system_prompt appends it
+    rich_template = RichPromptTemplate("custom prompt {{ tool_descriptions }}")
+    agent3 = CodeActAgent(
+        code_execute_fn=code_execute_fn,
+        llm=MockLLM(),
+        code_act_system_prompt=rich_template,
+        system_prompt="extra instructions",
+    )
+    assert "extra instructions" in agent3.code_act_system_prompt.get_template()
