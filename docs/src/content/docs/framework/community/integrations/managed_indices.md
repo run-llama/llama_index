@@ -40,7 +40,7 @@ See the [notebook guide](/python/examples/managed/googledemo) for full details.
 
 ## Vectara
 
-First, [sign up](https://vectara.com/integrations/llama_index) and use the Vectara Console to create a corpus (aka Index), and add an API key for access.
+First, [sign up](https://www.vectara.com/integrations/llamaindex) and use the Vectara Console to create a corpus (aka Index), and add an API key for access.
 Once you have your API key, export it as an environment variable:
 
 ```python
