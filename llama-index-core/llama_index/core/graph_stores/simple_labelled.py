@@ -3,6 +3,7 @@ import json
 import os
 from typing import Any, List, Dict, Sequence, Tuple, Optional
 
+from llama_index.core._persistence import _atomic_write
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
     ChunkNode,
@@ -167,7 +168,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         """Persist the graph store to a file."""
         if fs is None:
             fs = fsspec.filesystem("file")
-        with fs.open(persist_path, "w", encoding="utf-8") as f:
+        with _atomic_write(persist_path, fs) as f:
             f.write(self.graph.model_dump_json())
 
     @classmethod

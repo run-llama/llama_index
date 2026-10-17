@@ -14,6 +14,10 @@ This will persist data to disk, under the specified `persist_dir` (or `./storage
 
 Multiple indexes can be persisted and loaded from the same directory, assuming you keep track of index ID's for loading.
 
+The built-in simple document, index, vector, and graph stores publish each local JSON file by writing a temporary file in the same directory and replacing the destination after the write closes successfully. A failed write preserves the previous file, and readers see a complete old or new snapshot. This requires write access to the containing directory and preserves existing basic file permissions and symbolic links; replacing a file does not preserve its inode, hard links, ownership, or extended attributes.
+
+This guarantee applies to the standard local filesystem outside an explicit `fsspec` transaction. Remote or custom filesystems and caller-managed transactions retain their existing behavior. It is not a transaction across all files in a `StorageContext`, does not merge concurrent writers, and does not guarantee durability after a power loss. Coordinate writers and readers when a consistent multi-file index snapshot is required.
+
 User can also configure alternative storage backends (e.g. `MongoDB`) that persist data by default.
 In this case, calling `storage_context.persist()` will do nothing.
 
