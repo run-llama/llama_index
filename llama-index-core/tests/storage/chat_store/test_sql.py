@@ -1,5 +1,8 @@
 import json
 import pytest
+from pydantic_core import PydanticSerializationError
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.storage.chat_store.sql import (
@@ -93,6 +96,72 @@ async def test_set_messages(chat_store: SQLAlchemyChatStore):
     messages = await chat_store.get_messages("replace_user")
     assert len(messages) == 2
     assert [m.content for m in messages] == ["replaced1", "replaced2"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["serialization", "database"])
+async def test_set_messages_rolls_back_failed_replacement(
+    chat_store: SQLAlchemyChatStore, failure: str
+):
+    await chat_store.add_message(
+        "replace_user", ChatMessage(role="user", content="original active message")
+    )
+    await chat_store.add_message(
+        "replace_user",
+        ChatMessage(role="user", content="original archived message"),
+        status=MessageStatus.ARCHIVED,
+    )
+    await chat_store.add_message(
+        "other_user", ChatMessage(role="user", content="another session")
+    )
+    original_data = await chat_store._dump_db_data()
+    new_messages = [
+        ChatMessage(role="user", content="first replacement"),
+        ChatMessage(role="assistant", content="second replacement"),
+    ]
+
+    if failure == "serialization":
+        new_messages[1].additional_kwargs["unserializable"] = object()
+        expected_error = PydanticSerializationError
+    else:
+        session_factory, _ = await chat_store._initialize()
+        async with session_factory() as session:
+            await session.execute(
+                text(
+                    "CREATE TRIGGER reject_assistant BEFORE INSERT ON test_messages "
+                    "WHEN NEW.role = 'assistant' "
+                    "BEGIN SELECT RAISE(ABORT, 'replacement rejected'); END"
+                )
+            )
+            await session.commit()
+        expected_error = IntegrityError
+
+    with pytest.raises(expected_error):
+        await chat_store.set_messages("replace_user", new_messages)
+
+    assert await chat_store._dump_db_data() == original_data
+
+
+@pytest.mark.asyncio
+async def test_set_messages_empty_replacement(chat_store: SQLAlchemyChatStore):
+    await chat_store.add_message(
+        "replace_user", ChatMessage(role="user", content="active message")
+    )
+    await chat_store.add_message(
+        "replace_user",
+        ChatMessage(role="user", content="archived message"),
+        status=MessageStatus.ARCHIVED,
+    )
+    await chat_store.add_message(
+        "other_user", ChatMessage(role="user", content="another session")
+    )
+
+    await chat_store.set_messages("replace_user", [])
+
+    assert await chat_store.get_messages("replace_user", status=None) == []
+    assert [m.content for m in await chat_store.get_messages("other_user")] == [
+        "another session"
+    ]
 
 
 @pytest.mark.asyncio
