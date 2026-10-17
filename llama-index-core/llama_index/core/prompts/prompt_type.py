@@ -70,6 +70,9 @@ class PromptType(str, Enum):
     # Decompose query transform
     DECOMPOSE = "decompose"
 
+    # Step-back query transform (Zheng et al., 2023)
+    STEP_BACK = "step_back"
+
     # Choice select
     CHOICE_SELECT = "choice_select"
 
