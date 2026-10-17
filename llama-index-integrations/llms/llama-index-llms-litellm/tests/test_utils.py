@@ -341,6 +341,26 @@ def test_update_tool_calls_partial_arguments():
     assert result[0]["function"]["arguments"] == '{"key":'
 
 
+def test_update_tool_calls_repeated_id_is_not_appended():
+    """Tool call IDs are stable identifiers, not streamed text fragments."""
+    tool_calls = [
+        {
+            "id": "call_123",
+            "type": "function",
+            "index": 0,
+            "function": {"name": "test_function", "arguments": "{"},
+        }
+    ]
+
+    delta = ChatCompletionDeltaToolCall(
+        index=0, id="call_123", function={"arguments": '"key":1}'}
+    )
+
+    result = update_tool_calls(tool_calls, [delta])
+    assert result[0]["id"] == "call_123"
+    assert result[0]["function"]["arguments"] == '{"key":1}'
+
+
 def test_update_tool_calls_multiple_parallel():
     """Test handling multiple parallel tool calls."""
     tool_calls = [
