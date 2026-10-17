@@ -59,8 +59,14 @@ def get_transformation_hash(
     nodes: Sequence[BaseNode], transformation: TransformComponent
 ) -> str:
     """Get the hash of a transformation."""
+    # Length-prefix each node so node boundaries are unambiguous. Joining the contents
+    # directly made ["ab", "c"] and ["a", "bc"] hash identically, so one input could be
+    # served the other's cached nodes (which carry their own ids).
     nodes_str = "".join(
-        [str(node.get_content(metadata_mode=MetadataMode.ALL)) for node in nodes]
+        f"{len(content)}:{content}"
+        for content in (
+            str(node.get_content(metadata_mode=MetadataMode.ALL)) for node in nodes
+        )
     )
 
     transformation_dict = transformation.to_dict()
@@ -494,9 +500,10 @@ class IngestionPipeline(BaseModel):
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
-            existing_doc_ids_before = set(
-                self.docstore.get_all_document_hashes().values()
-            )
+            # get_all_document_hashes() is keyed by hash, so its values collapse documents
+            # that share content down to one id and the delete pass would silently keep the
+            # others. Enumerate the stored ref doc ids instead.
+            existing_doc_ids_before = set(self.docstore.get_all_ref_doc_info() or {})
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 self.docstore.delete_document(ref_doc_id)
@@ -730,8 +737,9 @@ class IngestionPipeline(BaseModel):
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
+            # Same as the sync path: enumerate stored ref doc ids, not the hash-keyed map.
             existing_doc_ids_before = set(
-                (await self.docstore.aget_all_document_hashes()).values()
+                (await self.docstore.aget_all_ref_doc_info()) or {}
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
