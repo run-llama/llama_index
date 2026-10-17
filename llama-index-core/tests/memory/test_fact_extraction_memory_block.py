@@ -1,7 +1,13 @@
 from typing import Any, List, Sequence
 
 from llama_index.core.async_utils import asyncio_run
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    TextBlock,
+    ToolCallBlock,
+)
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.memory.memory_blocks.fact import (
@@ -21,6 +27,92 @@ class _ScriptedLLM(MockLLM):
         content = self.scripted_responses.pop(0)
         return ChatResponse(
             message=ChatMessage(role=MessageRole.ASSISTANT, content=content)
+        )
+
+
+class _RejectingToolHistoryLLM(_ScriptedLLM):
+    """Reject provider-specific tool history and capture sanitized prompts."""
+
+    captured_messages: List[List[ChatMessage]] = Field(default_factory=list)
+
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        for message in messages:
+            if message.role in (MessageRole.FUNCTION, MessageRole.TOOL):
+                raise ValueError("provider rejected raw tool-result history")
+            if any(isinstance(block, ToolCallBlock) for block in message.blocks):
+                raise ValueError("provider rejected raw tool-call history")
+
+        self.captured_messages.append(list(messages))
+        return await super().achat(messages, **kwargs)
+
+
+def _tool_history() -> List[ChatMessage]:
+    return [
+        ChatMessage(
+            role=MessageRole.USER,
+            content="Remember that the deployment uses <pgvector> & HNSW.",
+        ),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                TextBlock(text="I will inspect the deployment."),
+                ToolCallBlock(
+                    tool_name="inspect_deployment",
+                    tool_kwargs={"service": "retrieval"},
+                    tool_call_id="call-1",
+                ),
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="pgvector is enabled",
+            additional_kwargs={"tool_call_id": "call-1"},
+        ),
+    ]
+
+
+def test_fact_extraction_serializes_tool_history_as_provider_neutral_text() -> None:
+    llm = _RejectingToolHistoryLLM()
+    llm.scripted_responses = ["<facts><fact>deployment uses pgvector</fact></facts>"]
+    block = FactExtractionMemoryBlock(llm=llm)
+
+    asyncio_run(block._aput(_tool_history()))
+
+    assert block.facts == ["deployment uses pgvector"]
+    assert len(llm.captured_messages) == 1
+    rendered = "\n".join(message.content or "" for message in llm.captured_messages[0])
+    assert "<current_conversation>" in rendered
+    assert (
+        "<user>Remember that the deployment uses &lt;pgvector&gt; &amp; HNSW.</user>"
+        in rendered
+    )
+    assert "<assistant>I will inspect the deployment.</assistant>" in rendered
+    assert "<tool>pgvector is enabled</tool>" in rendered
+    assert "inspect_deployment" not in rendered
+
+
+def test_fact_condense_serializes_tool_history_as_provider_neutral_text() -> None:
+    llm = _RejectingToolHistoryLLM()
+    llm.scripted_responses = [
+        "<facts><fact>d</fact></facts>",
+        "<facts><fact>x</fact><fact>y</fact></facts>",
+    ]
+    block = FactExtractionMemoryBlock(llm=llm, facts=["a", "b", "c"], max_facts=3)
+
+    asyncio_run(block._aput(_tool_history()))
+
+    assert block.facts == ["x", "y"]
+    assert len(llm.captured_messages) == 2
+    for messages in llm.captured_messages:
+        assert all(
+            message.role not in (MessageRole.FUNCTION, MessageRole.TOOL)
+            for message in messages
+        )
+        assert all(
+            not any(isinstance(block, ToolCallBlock) for block in message.blocks)
+            for message in messages
         )
 
 
