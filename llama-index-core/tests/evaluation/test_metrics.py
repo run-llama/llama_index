@@ -1,8 +1,10 @@
+import inspect
 from math import log2
 
 import pytest
 from llama_index.core.evaluation.retrieval.metrics import (
     AveragePrecision,
+    CohereRerankRelevancyMetric,
     HitRate,
     MRR,
     NDCG,
@@ -245,3 +247,16 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         ndcg = NDCG()
         ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+
+# Cohere shut these down on 2025-04-30, so a default pointing at either one
+# makes CohereRerankRelevancyMetric() fail on every request.
+SHUT_DOWN_COHERE_RERANK_MODELS = {"rerank-english-v2.0", "rerank-multilingual-v2.0"}
+
+
+def test_cohere_rerank_relevancy_default_model_is_not_shut_down():
+    # Read the default off the signature so the test needs neither the cohere
+    # package nor an API key, both of which the constructor requires.
+    default = inspect.signature(CohereRerankRelevancyMetric).parameters["model"].default
+    assert default not in SHUT_DOWN_COHERE_RERANK_MODELS
+    assert default == "rerank-v3.5"
