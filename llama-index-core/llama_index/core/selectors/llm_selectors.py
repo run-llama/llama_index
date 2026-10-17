@@ -33,7 +33,9 @@ def _build_choices_text(choices: Sequence[ToolMetadata]) -> str:
     return "\n\n".join(texts)
 
 
-def _structured_output_to_selector_result(output: Any) -> SelectorResult:
+def _structured_output_to_selector_result(
+    output: Any, num_choices: int
+) -> SelectorResult:
     """Convert structured output to selector result."""
     structured_output = cast(StructuredOutput, output)
     answers = cast(List[Answer], structured_output.parsed_output)
@@ -43,7 +45,21 @@ def _structured_output_to_selector_result(output: Any) -> SelectorResult:
         SingleSelection(index=answer.choice - 1, reason=answer.reason)
         for answer in answers
     ]
-    return SelectorResult(selections=selections)
+    return _validate_selector_result(selections, num_choices)
+
+
+def _validate_selector_result(
+    selections: List[SingleSelection], num_choices: int
+) -> SelectorResult:
+    """Drop out-of-range selections; raise if nothing valid remains."""
+    valid = [s for s in selections if 0 <= s.index < num_choices]
+    if not valid:
+        raise ValueError(
+            f"LLM selected out-of-range choices "
+            f"({[s.index + 1 for s in selections]}); "
+            f"expected choices between 1 and {num_choices}."
+        )
+    return SelectorResult(selections=valid)
 
 
 class LLMSingleSelector(BaseSelector):
@@ -115,7 +131,7 @@ class LLMSingleSelector(BaseSelector):
         # parse output
         assert self._prompt.output_parser is not None
         parse = self._prompt.output_parser.parse(prediction)
-        return _structured_output_to_selector_result(parse)
+        return _structured_output_to_selector_result(parse, len(choices))
 
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
@@ -134,7 +150,7 @@ class LLMSingleSelector(BaseSelector):
         # parse output
         assert self._prompt.output_parser is not None
         parse = self._prompt.output_parser.parse(prediction)
-        return _structured_output_to_selector_result(parse)
+        return _structured_output_to_selector_result(parse, len(choices))
 
 
 class LLMMultiSelector(BaseSelector):
@@ -212,7 +228,7 @@ class LLMMultiSelector(BaseSelector):
 
         assert self._prompt.output_parser is not None
         parsed = self._prompt.output_parser.parse(prediction)
-        return _structured_output_to_selector_result(parsed)
+        return _structured_output_to_selector_result(parsed, len(choices))
 
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
@@ -231,4 +247,4 @@ class LLMMultiSelector(BaseSelector):
 
         assert self._prompt.output_parser is not None
         parsed = self._prompt.output_parser.parse(prediction)
-        return _structured_output_to_selector_result(parsed)
+        return _structured_output_to_selector_result(parsed, len(choices))
