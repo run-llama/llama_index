@@ -156,6 +156,12 @@ class QueryPlanTool(BaseTool):
             print_text(
                 f"Executing {len(node.dependencies)} child nodes\n", color="pink"
             )
+            missing_deps = [dep for dep in node.dependencies if dep not in nodes_dict]
+            if missing_deps:
+                raise ValueError(
+                    f"Query plan node {node.id} references missing dependencies: "
+                    f"{missing_deps}"
+                )
             child_query_nodes: List[QueryNode] = [
                 nodes_dict[dep] for dep in node.dependencies
             ]
@@ -196,6 +202,11 @@ class QueryPlanTool(BaseTool):
 
         else:
             # this is a leaf request, execute the query string using the specified tool
+            if node.tool_name not in self._query_tools_dict:
+                raise ValueError(
+                    f"Query plan node {node.id} references unknown tool "
+                    f"{node.tool_name!r}."
+                )
             tool = self._query_tools_dict[node.tool_name]
             print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
             response = tool(node.query_str)
@@ -213,6 +224,8 @@ class QueryPlanTool(BaseTool):
         node_counts = dict.fromkeys(nodes_dict, 0)
         for node in nodes_dict.values():
             for dep in node.dependencies:
+                if dep not in node_counts:
+                    continue
                 node_counts[dep] += 1
         root_node_ids = [
             node_id for node_id, count in node_counts.items() if count == 0
@@ -227,7 +240,7 @@ class QueryPlanTool(BaseTool):
 
         nodes_dict = {node.id: node for node in query_plan.nodes}
         root_nodes = self._find_root_nodes(nodes_dict)
-        if len(root_nodes) > 1:
+        if len(root_nodes) != 1:
             raise ValueError("Query plan should have exactly one root node.")
 
         return self._execute_node(root_nodes[0], nodes_dict)
