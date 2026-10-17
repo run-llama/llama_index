@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-youtube-transcript"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index readers youtube transcript integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
@@ -35,7 +35,7 @@ license = "MIT"
 maintainers = [{name = "ravi03071991"}]
 keywords = ["video"]
 dependencies = [
-    "youtube-transcript-api>=0.5.0",
+    "youtube-transcript-api>=1.0.0,<2",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
