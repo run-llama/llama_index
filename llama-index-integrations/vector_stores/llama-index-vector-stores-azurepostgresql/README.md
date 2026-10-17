@@ -13,14 +13,10 @@ This package provides an integration for using Azure Database for PostgreSQL as 
 
 ## Installation
 
-You can install the package and its dependencies using [uv](https://github.com/astral-sh/uv), pip, or poetry:
+You can install the package using pip:
 
 ```bash
-uv pip install .
-# or
-pip install .
-# or
-poetry install
+pip install llama-index-vector-stores-azurepostgres
 ```
 
 **Dependencies:**
@@ -32,36 +28,53 @@ poetry install
 ## Usage Example
 
 ```python
-import sys
-
-sys.path.insert(0, "/path/to/llama-index-vector-stores-azurepostgresql")
-
-from llama_index.vector_stores.azurepostgresql.base import AzurePGVectorStore
 from llama_index.core import (
+    Settings,
     SimpleDirectoryReader,
     StorageContext,
     VectorStoreIndex,
 )
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+from llama_index.vector_stores.azure_postgres import AzurePGVectorStore
+from llama_index.vector_stores.azure_postgres.common import (
+    AzurePGConnectionPool,
+    BasicAuth,
+    ConnectionInfo,
+    DiskANN,
+    SSLMode,
+)
 
-# Set up your Azure OpenAI and PostgreSQL connection details
-llm = AzureOpenAI(...)
-embed_model = AzureOpenAIEmbedding(...)
+# Set up the models LlamaIndex should use.
+Settings.llm = AzureOpenAI(...)
+Settings.embed_model = AzureOpenAIEmbedding(...)
+
+# Describe how to reach your Azure Database for PostgreSQL instance. Use a
+# TokenCredential from azure-identity in place of BasicAuth for Entra ID auth.
+connection_info = ConnectionInfo(
+    host="<your-host>.postgres.database.azure.com",
+    dbname="postgres",
+    port=5432,
+    sslmode=SSLMode.require,
+    credentials=BasicAuth(username="<user>", password="<password>"),
+)
+connection_pool = AzurePGConnectionPool(azure_conn_info=connection_info)
+
+# Choose the vector index to create. DiskANN is shown here; HNSW and IVFFlat
+# are also exported from the same module.
+embedding_index = DiskANN(
+    op_class="vector_cosine_ops",
+    max_neighbors=32,
+    l_value_ib=100,
+    l_value_is=100,
+)
 
 vector_store = AzurePGVectorStore.from_params(
-    database="postgres",
-    host="<your-host>.postgres.database.azure.com",
-    port=5432,
-    table_name="my_table",
+    connection_pool=connection_pool,
+    schema_name="public",
+    table_name="llamaindex_vectors",
     embed_dim=1536,
-    pg_diskann_kwargs={
-        "pg_diskann_operator_class": "vector_cosine_ops",
-        "pg_diskann_max_neighbors": 32,
-        "pg_diskann_l_value_ib": 100,
-        "pg_diskann_l_value_is": 100,
-        "pg_diskann_iterative_search": True,
-    },
+    embedding_index=embedding_index,
 )
 
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
