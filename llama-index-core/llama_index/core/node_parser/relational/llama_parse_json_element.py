@@ -75,6 +75,8 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
             mode: different modes for returning different types of elements based on the selected mode
             node_id: unique id for the node
             node_metadata: metadata for the node. the json output for the nodes contains a lot of fields for elements
+            table_filters: optional list of predicates applied to each candidate table element; a
+                table is kept only when every filter returns True
 
         """
         elements: List[Element] = []
