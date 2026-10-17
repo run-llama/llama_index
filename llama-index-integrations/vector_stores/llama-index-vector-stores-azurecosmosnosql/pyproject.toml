@@ -56,7 +56,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.azurecosmosnosql"
 
 [tool.llamahub.class_authors]
-AzureCosmosDBMongoDBVectorSearch = "llama-index"
+AzureCosmosDBNoSqlVectorSearch = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

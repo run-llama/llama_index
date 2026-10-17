@@ -28,11 +28,11 @@ USER_AGENT = ("LlamaIndex-CDBNoSql-VectorStore-Python",)
 
 class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
     """
-    Azure CosmosDB NoSQL vCore Vector Store.
+    Azure Cosmos DB for NoSQL vector store.
 
-    To use, you should have both:
-    -the ``azure-cosmos`` python package installed
-    -from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
+    Install the ``azure-cosmos`` package and import
+    ``AzureCosmosDBNoSqlVectorSearch`` from
+    ``llama_index.vector_stores.azurecosmosnosql``.
     """
 
     stores_text: bool = True
@@ -72,14 +72,42 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         Initialize the vector store.
 
         Args:
-            cosmos_client: Client used to connect to azure cosmosdb no sql account.
-            database_name: Name of the database to be created.
-            container_name: Name of the container to be created.
-            embedding: Text embedding model to use.
-            vector_embedding_policy: Vector Embedding Policy for the container.
-            indexing_policy: Indexing Policy for the container.
-            cosmos_container_properties: Container Properties for the container.
-            cosmos_database_properties: Database Properties for the container.
+            cosmos_client: Initialized Azure Cosmos DB client.
+            vector_embedding_policy: Container vector embedding policy. It must
+                contain a non-empty ``vectorEmbeddings`` list. The first entry's
+                ``path`` identifies the embedding field stored with each node.
+            indexing_policy: Container indexing policy. When ``create_container``
+                is true, it must contain a non-empty ``vectorIndexes`` list. The
+                embedding path should also be excluded from regular indexing.
+            cosmos_container_properties: Container creation options. The
+                ``partition_key`` entry is required when ``create_container`` is
+                true. Supported entries include ``default_ttl``,
+                ``offer_throughput``, ``unique_key_policy``,
+                ``conflict_resolution_policy``, ``analytical_storage_ttl``,
+                ``computed_properties``, ``etag``, ``match_condition``,
+                ``session_token``, and ``initial_headers``.
+            cosmos_database_properties: Optional database creation options,
+                including ``offer_throughput``, ``session_token``,
+                ``initial_headers``, ``etag``, and ``match_condition``. Defaults
+                to ``None``; pass an empty mapping when no options are needed.
+            database_name: Database to retrieve or create. Defaults to
+                ``"vectorSearchDB"``.
+            container_name: Container to retrieve or create. Defaults to
+                ``"vectorSearchContainer"``.
+            create_container: Whether to validate the required vector and
+                container policies before initializing resources. Defaults to
+                true. The database and container are always retrieved or created
+                with the SDK's ``create_*_if_not_exists`` methods.
+            id_key: Document field used for node IDs. Defaults to ``"id"``.
+            text_key: Document field used for node text. Defaults to ``"text"``.
+            metadata_key: Document field used for node metadata. Defaults to
+                ``"metadata"``.
+            **kwargs: Additional keyword arguments accepted for compatibility.
+                They are not currently used.
+
+        Raises:
+            ValueError: If ``create_container`` is true and the vector index,
+                vector embedding, or partition key configuration is empty.
 
         """
         super().__init__()
