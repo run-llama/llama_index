@@ -35,7 +35,7 @@ from typing import (
 
 import platformdirs
 import requests
-from urllib.parse import urlparse
+from urllib.parse import unquote, unquote_to_bytes, urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
@@ -681,8 +681,10 @@ def resolve_binary(
             is_base64_encoded = metadata.endswith(";base64")
 
             if is_base64_encoded:
-                # Data is base64 encoded in the URL
-                decoded_data = base64.b64decode(url_data)
+                # Data is base64 encoded in the URL. Percent-decode first, since
+                # characters like "+" may be escaped as "%2B" when the data URL
+                # is embedded in a larger URL.
+                decoded_data = base64.b64decode(unquote(url_data))
                 if as_base64:
                     # Return as base64 bytes
                     return BytesIO(base64.b64encode(decoded_data))
@@ -690,13 +692,16 @@ def resolve_binary(
                     # Return decoded binary data
                     return BytesIO(decoded_data)
             else:
-                # Data is not base64 encoded in the URL (URL-encoded text)
+                # Data is not base64 encoded in the URL (URL-encoded text).
+                # Percent-decode to bytes so escapes like "%20" become the
+                # characters they represent instead of being kept literally.
+                decoded_bytes = unquote_to_bytes(url_data)
                 if as_base64:
                     # Encode the text data as base64
-                    return BytesIO(base64.b64encode(url_data.encode("utf-8")))
+                    return BytesIO(base64.b64encode(decoded_bytes))
                 else:
                     # Return as text bytes
-                    return BytesIO(url_data.encode("utf-8"))
+                    return BytesIO(decoded_bytes)
 
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
