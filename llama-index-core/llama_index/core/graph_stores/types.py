@@ -268,7 +268,7 @@ class GraphStore(Protocol):
         """Get the schema of the graph store."""
         ...
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = None) -> Any:
         """Query the graph store with statement and parameters."""
         ...
 
@@ -507,7 +507,7 @@ class PropertyGraphStore(ABC):
         return self.delete_llama_nodes(node_ids, ref_doc_ids)
 
     async def astructured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+        self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Asynchronously query the graph store with statement and parameters."""
         return self.structured_query(query, param_map)
