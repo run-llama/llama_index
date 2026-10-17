@@ -39,7 +39,9 @@ class LilacReader(BaseReader):
         try:
             import lilac as ll
         except ImportError:
-            raise ("`lilac` package not found, please run `pip install lilac`")
+            raise ImportError(
+                "`lilac` package not found, please run `pip install lilac`"
+            )
 
         namespace, dataset_name = dataset.split("/")
         lilac_dataset = ll.get_dataset(namespace, dataset_name, project_dir=project_dir)
