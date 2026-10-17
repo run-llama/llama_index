@@ -241,7 +241,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         result_response = None
         for number_str in numbers:
             number = int(number_str)
-            if number > len(cur_node_list):
+            if number < 1 or number > len(cur_node_list):
                 logger.debug(
                     f">[Level {level}] Invalid response: {response} - "
                     f"number {number} out of range"
@@ -363,7 +363,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         selected_nodes = []
         for number_str in numbers:
             number = int(number_str)
-            if number > len(cur_node_list):
+            if number < 1 or number > len(cur_node_list):
                 logger.debug(
                     f">[Level {level}] Invalid response: {response} - "
                     f"number {number} out of range"
