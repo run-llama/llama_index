@@ -12,6 +12,37 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 def get_asyncio_module(show_progress: bool = False) -> Any:
+    """Return the appropriate asyncio-compatible module.
+
+    Returns the standard :mod:`asyncio` module by default.  When
+    ``show_progress`` is ``True`` the :class:`tqdm.asyncio.tqdm_asyncio` class
+    is returned instead so that callers can transparently wrap coroutine
+    gathering with a progress bar.
+
+    Args:
+        show_progress (bool):
+            If ``True``, return :class:`tqdm.asyncio.tqdm_asyncio` which
+            exposes the same ``gather`` interface as :mod:`asyncio` but
+            additionally renders a ``tqdm`` progress bar.  Defaults to
+            ``False``.
+
+    Returns:
+        Any:
+            Either the built-in :mod:`asyncio` module or
+            :class:`tqdm.asyncio.tqdm_asyncio`, both of which expose a
+            ``gather`` coroutine.
+
+    Example:
+        >>> import asyncio
+        >>> module = get_asyncio_module(show_progress=False)
+        >>> module is asyncio
+        True
+        >>> module = get_asyncio_module(show_progress=True)
+        >>> from tqdm.asyncio import tqdm_asyncio
+        >>> module is tqdm_asyncio
+        True
+
+    """
     if show_progress:
         from tqdm.asyncio import tqdm_asyncio
 
