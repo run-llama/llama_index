@@ -120,25 +120,28 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         if not query_text:
             return ""
 
-        # Handle filtering by session_id
+        # Handle filtering by session_id.
+        # The session filter is built per call: the same block instance can be
+        # shared by memories with different session ids, so it must never be
+        # written back into self.query_kwargs (nor into a caller-owned
+        # MetadataFilters), or the first session's id would be reused forever.
+        query_kwargs = {**self.query_kwargs}
         if session_id is not None:
             filter = MetadataFilter(key="session_id", value=session_id)
-            if "filters" in self.query_kwargs and isinstance(
-                self.query_kwargs["filters"], MetadataFilters
-            ):
+            existing_filters = query_kwargs.get("filters")
+            if isinstance(existing_filters, MetadataFilters):
                 # only add session_id filter if it does not exist in the filters list
-                session_id_filter_exists = False
-                for metadata_filter in self.query_kwargs["filters"].filters:
-                    if (
-                        isinstance(metadata_filter, MetadataFilter)
-                        and metadata_filter.key == "session_id"
-                    ):
-                        session_id_filter_exists = True
-                        break
+                session_id_filter_exists = any(
+                    isinstance(metadata_filter, MetadataFilter)
+                    and metadata_filter.key == "session_id"
+                    for metadata_filter in existing_filters.filters
+                )
                 if not session_id_filter_exists:
-                    self.query_kwargs["filters"].filters.append(filter)
+                    query_kwargs["filters"] = existing_filters.model_copy(
+                        update={"filters": [*existing_filters.filters, filter]}
+                    )
             else:
-                self.query_kwargs["filters"] = MetadataFilters(filters=[filter])
+                query_kwargs["filters"] = MetadataFilters(filters=[filter])
 
         # Create and execute the query
         query_embedding = await self.embed_model.aget_query_embedding(query_text)
@@ -146,7 +149,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             query_str=query_text,
             query_embedding=query_embedding,
             similarity_top_k=self.similarity_top_k,
-            **self.query_kwargs,
+            **query_kwargs,
         )
 
         results = await self.vector_store.aquery(query)
@@ -180,12 +183,18 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             if not text:
                 continue
 
-            # special case for session_id
-            if "session_id" in message.additional_kwargs:
-                session_id = message.additional_kwargs.pop("session_id")
+            # special case for session_id: it is stored as node metadata rather
+            # than embedded in the text, but read it without mutating the
+            # caller's message
+            additional_kwargs = {
+                key: value
+                for key, value in message.additional_kwargs.items()
+                if key != "session_id"
+            }
+            session_id = message.additional_kwargs.get("session_id", session_id)
 
-            if message.additional_kwargs:
-                text += f"\nAdditional Info: ({message.additional_kwargs!s})"
+            if additional_kwargs:
+                text += f"\nAdditional Info: ({additional_kwargs!s})"
 
             text = f"<message role='{message.role.value}'>{text}</message>"
             texts.append(text)
