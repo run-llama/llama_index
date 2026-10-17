@@ -64,6 +64,13 @@ def test_delete_chat_message() -> None:
     ]
 
 
+def test_delete_last_message_empty_key_returns_none() -> None:
+    chat_store = SimpleChatStore()
+    chat_store.set_messages("user1", [])
+    assert chat_store.delete_last_message("user1") is None
+    assert chat_store.delete_last_message("missing") is None
+
+
 def test_delete_chat_message_idx() -> None:
     """Test undoing messages from a chat store at a specific idx."""
     chat_store = SimpleChatStore()
