@@ -487,7 +487,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
-        return await astream_complete_fn(prompt, stream=True, **kwargs)
+        return await astream_complete_fn(prompt, **kwargs)
 
     def chat_with_tools(
         self,
