@@ -78,6 +78,7 @@ class BaseExtractor(TransformComponent):
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        data = dict(data)
         if isinstance(kwargs, dict):
             data.update(kwargs)
 
