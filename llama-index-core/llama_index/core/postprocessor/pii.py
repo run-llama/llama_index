@@ -4,6 +4,7 @@ import json
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple
 
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
@@ -56,21 +57,52 @@ class PIINodePostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "PIINodePostprocessor"
 
-    def mask_pii(self, text: str) -> Tuple[str, Dict]:
-        """Mask PII in text."""
+    def _get_pii_prompt(self) -> Tuple[PromptTemplate, str]:
+        """Build the prompt and task string shared by the sync and async paths."""
         pii_prompt = PromptTemplate(self.pii_str_tmpl)
         # TODO: allow customization
         task_str = (
             "Mask out the PII, replace each PII with a tag, and return the text. "
             "Return the mapping in JSON."
         )
+        return pii_prompt, task_str
 
-        response = self.llm.predict(pii_prompt, context_str=text, query_str=task_str)
+    def _parse_pii_response(self, response: str) -> Tuple[str, Dict]:
+        """Split an LLM response into the masked text and its PII mapping."""
         splits = response.split("Output Mapping:")
         text_output = splits[0].strip()
         json_str_output = splits[1].strip()
         json_dict = json.loads(json_str_output)
         return text_output, json_dict
+
+    def _build_masked_node(
+        self,
+        node_with_score: NodeWithScore,
+        new_text: str,
+        mapping_info: Dict,
+    ) -> NodeWithScore:
+        """Copy a node, swapping in the masked text and recording the mapping."""
+        node = node_with_score.node
+        new_node = deepcopy(node)
+        new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
+        new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
+        new_node.metadata[self.pii_node_info_key] = mapping_info
+        new_node.set_content(new_text)
+        return NodeWithScore(node=new_node, score=node_with_score.score)
+
+    def mask_pii(self, text: str) -> Tuple[str, Dict]:
+        """Mask PII in text."""
+        pii_prompt, task_str = self._get_pii_prompt()
+        response = self.llm.predict(pii_prompt, context_str=text, query_str=task_str)
+        return self._parse_pii_response(response)
+
+    async def amask_pii(self, text: str) -> Tuple[str, Dict]:
+        """Mask PII in text (async)."""
+        pii_prompt, task_str = self._get_pii_prompt()
+        response = await self.llm.apredict(
+            pii_prompt, context_str=text, query_str=task_str
+        )
+        return self._parse_pii_response(response)
 
     def _postprocess_nodes(
         self,
@@ -81,18 +113,36 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         # swap out text from nodes, with the original node mappings
         new_nodes = []
         for node_with_score in nodes:
-            node = node_with_score.node
+            # mask each node independently
             new_text, mapping_info = self.mask_pii(
-                node.get_content(metadata_mode=MetadataMode.LLM)
+                node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
             )
-            new_node = deepcopy(node)
-            new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
-            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
-            new_node.metadata[self.pii_node_info_key] = mapping_info
-            new_node.set_content(new_text)
-            new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
+            new_nodes.append(
+                self._build_masked_node(node_with_score, new_text, mapping_info)
+            )
 
         return new_nodes
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes (async)."""
+        # mask each node independently, in parallel
+        results = await run_jobs(
+            [
+                self.amask_pii(
+                    node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
+                )
+                for node_with_score in nodes
+            ]
+        )
+
+        return [
+            self._build_masked_node(node_with_score, new_text, mapping_info)
+            for node_with_score, (new_text, mapping_info) in zip(nodes, results)
+        ]
 
 
 class NERPIINodePostprocessor(BaseNodePostprocessor):
