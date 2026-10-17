@@ -726,3 +726,27 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_handoff_disallowed_message_names_correct_agents():
+    """The error message for a disallowed handoff must name the agents in the
+    right order: the *current* agent cannot hand off to the *target* agent."""
+    from workflows.context.state_store import DictState, InMemoryStateStore
+    from llama_index.core.agent.workflow.multi_agent_workflow import handoff
+
+    class _Ctx:
+        def __init__(self):
+            self.store = InMemoryStateStore(DictState())
+
+    ctx = _Ctx()
+    await ctx.store.set("agents", ["agent_a", "agent_b"])
+    await ctx.store.set("current_agent_name", "agent_b")
+    await ctx.store.set("can_handoff_to", {"agent_a": ["agent_b"], "agent_b": []})
+
+    # agent_b is not allowed to hand off to agent_a
+    msg = await handoff(ctx, to_agent="agent_a", reason="test")
+    assert msg == (
+        "Agent agent_b cannot hand off to agent_a. "
+        "Please select a valid agent to hand off to."
+    )
