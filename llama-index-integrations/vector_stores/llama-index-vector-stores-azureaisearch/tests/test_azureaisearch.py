@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Any, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -504,6 +504,41 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_close_keeps_async_client_close_task_alive_until_it_completes() -> None:
+    """
+    close(), called with a loop already running (e.g. from __del__ while the
+    vector store is being garbage-collected), schedules the async client's
+    close() via asyncio.create_task(). create_task() only keeps a *weak*
+    reference to the returned Task - with nothing else referencing it, the
+    task can be garbage-collected before it ever runs. close() must keep a
+    strong reference (here, _background_close_tasks) until the task is done.
+    """
+    from llama_index.vector_stores.azureaisearch.base import _background_close_tasks
+
+    mock_async_client = MagicMock()
+    mock_async_client.close = AsyncMock()
+
+    vector_store = AzureAISearchVectorStore.__new__(AzureAISearchVectorStore)
+    vector_store._search_client = None
+    vector_store._owns_search_client = False
+    vector_store._async_search_client = mock_async_client
+    vector_store._owns_async_search_client = True
+
+    async def run() -> None:
+        vector_store.close()
+        assert len(_background_close_tasks) == 1
+        (task,) = tuple(_background_close_tasks)
+        await task
+
+    asyncio.run(run())
+
+    mock_async_client.close.assert_called_once()
+    assert len(_background_close_tasks) == 0
 
 
 @pytest.mark.skipif(
