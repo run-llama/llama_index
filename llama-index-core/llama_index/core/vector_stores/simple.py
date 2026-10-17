@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
+from llama_index.core._persistence import _atomic_write
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
@@ -325,7 +326,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w", encoding="utf-8") as f:
+        with _atomic_write(persist_path, fs) as f:
             json.dump(self.data.to_dict(), f)
 
     @classmethod

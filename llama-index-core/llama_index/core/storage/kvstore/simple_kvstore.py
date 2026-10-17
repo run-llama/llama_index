@@ -4,6 +4,7 @@ import os
 from typing import Dict, Optional
 
 import fsspec
+from llama_index.core._persistence import _atomic_write
 from llama_index.core.storage.kvstore.types import (
     MutableMappingKVStore,
 )
@@ -41,7 +42,7 @@ class SimpleKVStore(MutableMappingKVStore[dict]):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w", encoding="utf-8") as f:
+        with _atomic_write(persist_path, fs) as f:
             f.write(json.dumps(self._collections_mappings))
 
     @classmethod
