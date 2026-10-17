@@ -5,7 +5,7 @@
 To install the required package, run:
 
 ```shell
-pip install llama-index-llms-netmind
+pip install llama-index-embeddings-netmind
 ```
 
 ## Setup
@@ -15,7 +15,7 @@ pip install llama-index-llms-netmind
 ```shell
 import os
 
-os.environ["NETMIND_API_KEY"] = "you_api_key"
+os.environ["NETMIND_API_KEY"] = "your_api_key"
 ```
 
 ## Basic Usage

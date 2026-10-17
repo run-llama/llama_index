@@ -13,7 +13,7 @@ from llama_index.llms.openai import OpenAI
 llm = OpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY, temperature=0.0)
 
 tool_spec = JiraIssueToolSpec(
-    server_url=SERVER, email=EMAIL, api_token=API_KEY
+    server_url=SERVER, email=EMAIL, api_key=API_KEY
 )
 
 agent_name = "Jira Issue Agent"

@@ -71,9 +71,9 @@ First, instantiate the KalturaReader (aka Kaltura Loader) with your Kaltura conf
 from llama_index.readers.kaltura_esearch import KalturaESearchReader
 
 loader = KalturaESearchReader(
-    partnerId="INSERT_YOUR_PARTNER_ID",
-    apiSecret="INSERT_YOUR_ADMIN_SECRET",
-    userId="INSERT_YOUR_USER_ID",
+    partner_id="INSERT_YOUR_PARTNER_ID",
+    api_secret="INSERT_YOUR_ADMIN_SECRET",
+    user_id="INSERT_YOUR_USER_ID",
 )
 ```
 

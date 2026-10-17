@@ -9,7 +9,7 @@ A LlamaIndex vector store using Cloud Firestore as the backend.
 Pre-requisite:
 
 ```bash
-pip install llama-index-vector-stores-firestore
+pip install llama-index-vector-store-firestore
 ```
 
 Minimal example:
