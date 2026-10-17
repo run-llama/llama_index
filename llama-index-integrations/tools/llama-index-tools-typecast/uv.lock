@@ -1865,7 +1865,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-typecast"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1897,7 +1897,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "typecast-python", specifier = ">=0.1.5" },
+    { name = "typecast-python", specifier = ">=0.3.14" },
 ]
 
 [package.metadata.requires-dev]
@@ -3884,7 +3884,7 @@ wheels = [
 
 [[package]]
 name = "typecast-python"
-version = "0.3.13"
+version = "0.3.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -3892,9 +3892,9 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/96/fe/3abbd7d4c2a44d7de228eed964aae65f1f7e9c142cc99cf2a5bb637c5dff/typecast_python-0.3.13.tar.gz", hash = "sha256:3d2dcada2bd522f3797209b2780bcd21cd999ac2ec06513f85231da767485440", size = 30879, upload-time = "2026-08-20T05:52:09.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/53/0bc0e9c2e9cee573104e1a22f2981d80b4ac8dbd5e877078e97c19a5605a/typecast_python-0.3.14.tar.gz", hash = "sha256:22c1fbee455a7f5877b19b5bac3783c2b213d8f212ba7a8dbe8d2ee46aaa1755", size = 31703, upload-time = "2026-08-28T01:54:15.446Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/e7/84f15bfa8a3b72431cb89309838076c2fa00e3e4311c9119b77ae4ca918b/typecast_python-0.3.13-py3-none-any.whl", hash = "sha256:0bebab36e6c7503e80f37f5025865f00f422b6e93458f207971cc521679bafe4", size = 40999, upload-time = "2026-08-20T05:52:10.902Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/02/f1693e6cee8c15955dec36170087f5dc9949eff0278bbcaf06f7bc6573bb/typecast_python-0.3.14-py3-none-any.whl", hash = "sha256:b877c7660403bfd45e8d56743e41e34c3a434c250accad565b7f2e74550415b2", size = 42069, upload-time = "2026-08-28T01:54:16.652Z" },
 ]
 
 [[package]]
