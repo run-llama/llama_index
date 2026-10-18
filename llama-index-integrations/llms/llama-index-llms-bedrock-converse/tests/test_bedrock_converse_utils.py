@@ -255,6 +255,48 @@ def test_content_block_to_bedrock_format_thinking_assistant_role_uses_reasoning_
     assert result == {"reasoningContent": {"reasoningText": {"text": "Hello, world!"}}}
 
 
+def test_content_block_to_bedrock_format_thinking_with_signature():
+    think_block = ThinkingBlock(
+        content="Hello, world!", additional_information={"signature": "sig"}
+    )
+    result = _content_block_to_bedrock_format(think_block, MessageRole.ASSISTANT)
+    assert result == {
+        "reasoningContent": {
+            "reasoningText": {"text": "Hello, world!", "signature": "sig"}
+        }
+    }
+
+
+@pytest.mark.parametrize("content", ["", None])
+def test_content_block_to_bedrock_format_thinking_signature_only(content):
+    think_block = ThinkingBlock(
+        content=content, additional_information={"signature": "sig"}
+    )
+    result = _content_block_to_bedrock_format(think_block, MessageRole.ASSISTANT)
+    assert result == {
+        "reasoningContent": {"reasoningText": {"text": "", "signature": "sig"}}
+    }
+
+
+@pytest.mark.parametrize(
+    "additional_information", [{}, {"signature": ""}, {"signature": None}]
+)
+def test_content_block_to_bedrock_format_thinking_empty_without_signature_skipped(
+    additional_information,
+):
+    think_block = ThinkingBlock(
+        content="", additional_information=additional_information
+    )
+    result = _content_block_to_bedrock_format(think_block, MessageRole.ASSISTANT)
+    assert result is None
+
+
+def test_content_block_to_bedrock_format_thinking_user_role_empty_skipped():
+    think_block = ThinkingBlock(content="", additional_information={"signature": "sig"})
+    result = _content_block_to_bedrock_format(think_block, MessageRole.USER)
+    assert result is None
+
+
 def test_cache_point_block():
     cache_point = CachePoint(cache_control=CacheControl(type="default"))
     result = _content_block_to_bedrock_format(cache_point, MessageRole.USER)
