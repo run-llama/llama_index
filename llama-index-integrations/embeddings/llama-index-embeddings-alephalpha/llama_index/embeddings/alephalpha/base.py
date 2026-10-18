@@ -85,7 +85,11 @@ class AlephAlphaEmbedding(BaseEmbedding):
             token: The token to use for the AlephAlpha API.
             model: The model to use for generating embeddings.
             base_url: The base URL of the AlephAlpha API.
+            hosting: The hosting to use.
+            timeout: The request timeout in seconds.
+            max_retries: The maximum number of API retries.
             nice: Whether to use the "nice" mode for the AlephAlpha API.
+            verify_ssl: Whether to verify SSL certificates.
             additional_kwargs: Additional kwargs for the AlephAlpha API.
 
         """
@@ -96,7 +100,11 @@ class AlephAlphaEmbedding(BaseEmbedding):
             representation=representation,
             base_url=base_url,
             token=token,
+            hosting=hosting,
+            timeout=timeout,
+            max_retries=max_retries,
             nice=nice,
+            verify_ssl=verify_ssl,
             additional_kwargs=additional_kwargs,
         )
 
