@@ -496,7 +496,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                     )
 
                 await self._async_client.close()
-                self._async_client = AsyncInferenceClient(
+            self._async_client = AsyncInferenceClient(
                     **self._get_inference_client_kwargs()
                 )
 
