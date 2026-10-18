@@ -411,23 +411,23 @@ def _content_block_to_bedrock_format(
             logger.warning(
                 "Bedrock Converse API only supports reasoning content for assistant messages."
             )
+            if not block.content:
+                return None
             return {"text": block.content}
 
-        if block.content:
-            thinking_data = {
-                "reasoningContent": {"reasoningText": {"text": block.content}}
-            }
-            if (
-                "signature" in block.additional_information
-                and block.additional_information["signature"]
-            ):
-                thinking_data["reasoningContent"]["reasoningText"]["signature"] = (
-                    block.additional_information["signature"]
-                )
-
-            return thinking_data
-        else:
+        signature = block.additional_information.get("signature")
+        # Signature-only blocks (e.g. Claude's default `display: "omitted"` mode) must
+        # still be replayed, with empty text, so that thinking history is not dropped.
+        if not block.content and not signature:
             return None
+
+        thinking_data = {
+            "reasoningContent": {"reasoningText": {"text": block.content or ""}}
+        }
+        if signature:
+            thinking_data["reasoningContent"]["reasoningText"]["signature"] = signature
+
+        return thinking_data
     elif isinstance(block, DocumentBlock):
         if not block.data:
             file_buffer = block.resolve_document()
