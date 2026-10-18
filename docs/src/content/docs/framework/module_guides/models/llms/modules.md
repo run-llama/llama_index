@@ -77,5 +77,7 @@ Check the source and publication status before installation.
   `from llama_index.llms.acedatacloud import AceDataCloud`. The native class presets
   the Ace endpoint and application-token environment variable; users explicitly
   select the available model and context limit. Tool calling is opt-in for models
-  that support it. The README records source installation and release status; this
-  listing does not imply default inclusion or endorsement.
+  that support it. The [v0.1.0 release](https://github.com/AceDataCloud/AceDataCloudModelProviderLlamaIndex/releases/tag/v0.1.0)
+  provides an installable wheel and source archive; its README gives the versioned
+  installation URL. PyPI publication is pending registry project-creation limits.
+  This listing does not imply default inclusion or endorsement.

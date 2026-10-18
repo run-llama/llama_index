@@ -109,8 +109,8 @@ installation source, credential requirements, and release status before use.
 - [Suno by Ace Data Cloud](https://github.com/AceDataCloud/SunoLlamaIndex): native
   music generation and retrieval of the same asynchronous task. The independent
   package is `llama-index-tools-suno-acedatacloud`, with
-  `from llama_index.tools.suno_acedatacloud import SunoToolSpec`. Its README lists
-  the current source installation and publication status. This integration is
+  `from llama_index.tools.suno_acedatacloud import SunoToolSpec`. Its [v0.1.0 release](https://github.com/AceDataCloud/SunoLlamaIndex/releases/tag/v0.1.0)
+  provides an installable wheel and source archive. This integration is
   maintained by Ace Data Cloud; it is not an official Suno product. Generation may
   consume account credits. A pending audio preview is not a completed result.
 
@@ -128,8 +128,10 @@ installation source, credential requirements, and release status before use.
   package `llama-index-tools-nano-banana-acedatacloud`.
 
 These independently maintained packages provide synchronous and asynchronous native
-FunctionTools. Check their README for source-installation and PyPI release status;
-listing here does not mean a PyPI release is already available. Each requires an
+FunctionTools. Version 0.1.0 wheels and source archives are published on each linked repository’s
+GitHub Releases page; the README gives the exact installation URL. PyPI publication
+is pending registry project-creation limits, so a package-name install is not yet
+claimed. These entries do not imply default inclusion or endorsement. Each requires an
 Ace application token. Generation may consume credits; save the returned task ID
 and query it rather than submitting again while pending.
 
