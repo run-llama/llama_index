@@ -264,18 +264,23 @@ class Memory(BaseMemory):
     @model_validator(mode="before")
     @classmethod
     def validate_memory(cls, values: dict) -> dict:
-        # Validate token limit
-        token_limit = values.get("token_limit", -1)
-        if token_limit < 1:
+        # Validate token limit, falling back to the declared field default when
+        # it is not provided so that Memory() and model_validate() without an
+        # explicit token_limit are usable.
+        token_limit = values.get("token_limit", DEFAULT_TOKEN_LIMIT)
+        if token_limit is None or token_limit < 1:
             raise ValueError("Token limit must be set and greater than 0.")
 
         tokenizer_fn = values.get("tokenizer_fn")
         if tokenizer_fn is None:
             values["tokenizer_fn"] = get_tokenizer()
 
-        if values.get("token_flush_size", -1) < 1:
-            values["token_flush_size"] = int(token_limit * 0.1)
-        elif values.get("token_flush_size", -1) > token_limit:
+        token_flush_size = values.get("token_flush_size", DEFAULT_FLUSH_SIZE)
+        if (
+            token_flush_size is None
+            or token_flush_size < 1
+            or token_flush_size > token_limit
+        ):
             values["token_flush_size"] = int(token_limit * 0.1)
 
         # validate all blocks have unique names
