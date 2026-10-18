@@ -96,7 +96,9 @@ class FunctionTool(AsyncBaseTool):
             self._fn = fn or async_to_sync(async_fn)
         else:
             assert fn is not None
-            if inspect.iscoroutinefunction(fn):
+            if inspect.iscoroutinefunction(fn) or inspect.iscoroutinefunction(
+                getattr(fn, "__call__", None)
+            ):
                 self._async_fn = fn
                 self._fn = async_to_sync(fn)
             else:
