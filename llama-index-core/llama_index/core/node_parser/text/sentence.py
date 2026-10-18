@@ -255,6 +255,20 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         def close_chunk() -> None:
             nonlocal chunks, cur_chunk, last_chunk, cur_chunk_len, new_chunk
 
+            # _postprocess_chunks strips each chunk, and stripping can change how
+            # the tokenizer merges across split boundaries, so close against the
+            # text that is actually emitted.
+            while (
+                len(cur_chunk) > 1
+                and self._token_size("".join(text for text, _ in cur_chunk).strip())
+                > chunk_size
+            ):
+                text, length = cur_chunk.pop()
+                cur_chunk_len -= length
+                splits.insert(
+                    split_idx, _Split(text=text, is_sentence=False, token_size=length)
+                )
+
             chunks.append("".join([text for text, length in cur_chunk]))
             last_chunk = cur_chunk
             cur_chunk = []
@@ -309,8 +323,18 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
         # handle the last chunk
         if not new_chunk:
-            chunk = "".join([text for text, length in cur_chunk])
-            chunks.append(chunk)
+            pending = cur_chunk
+            leftover: List[Tuple[str, int]] = []
+            while pending:
+                while (
+                    len(pending) > 1
+                    and self._token_size("".join(text for text, _ in pending).strip())
+                    > chunk_size
+                ):
+                    leftover.insert(0, pending.pop())
+                chunks.append("".join([text for text, _ in pending]))
+                pending = leftover
+                leftover = []
 
         # run postprocessing to remove blank spaces
         return self._postprocess_chunks(chunks)
