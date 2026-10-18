@@ -114,6 +114,25 @@ installation source, credential requirements, and release status before use.
   maintained by Ace Data Cloud; it is not an official Suno product. Generation may
   consume account credits. A pending audio preview is not a completed result.
 
+- [Seedance by Ace Data Cloud](https://github.com/AceDataCloud/SeedanceLlamaIndex):
+  native text-to-video, first-frame animation, and retrieval of the same task;
+  package `llama-index-tools-seedance-acedatacloud`.
+- [HappyHorse by Ace Data Cloud](https://github.com/AceDataCloud/HappyHorseLlamaIndex):
+  text-to-video and first-frame animation with explicit action-matched models;
+  package `llama-index-tools-happyhorse-acedatacloud`.
+- [GPT Image by Ace Data Cloud](https://github.com/AceDataCloud/GPTImageLlamaIndex):
+  image generation/editing and same-task retrieval; completed image tasks require
+  a `finished_at` timestamp. Package `llama-index-tools-gpt-image-acedatacloud`.
+- [Nano Banana by Ace Data Cloud](https://github.com/AceDataCloud/NanoBananaLlamaIndex):
+  image generation/editing and same-task retrieval;
+  package `llama-index-tools-nano-banana-acedatacloud`.
+
+These independently maintained packages provide synchronous and asynchronous native
+FunctionTools. Check their README for source-installation and PyPI release status;
+listing here does not mean a PyPI release is already available. Each requires an
+Ace application token. Generation may consume credits; save the returned task ID
+and query it rather than submitting again while pending.
+
 ## Utility Tools
 
 Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using).
