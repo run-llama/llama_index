@@ -137,7 +137,7 @@ class TestHuggingFaceInferenceAPI:
 
 
     @pytest.mark.asyncio
-    async def test_astream_chat_recreates_closed_client(
+    async def test_astream_chat_recreates_closed_client_and_supports_achat(
         self, hf_inference_api: HuggingFaceInferenceAPI
     ) -> None:
         first_client = MagicMock()
@@ -150,6 +150,11 @@ class TestHuggingFaceInferenceAPI:
 
         first_client.chat_completion = AsyncMock(return_value=stream())
         second_client = MagicMock()
+        chat_output = MagicMock()
+        chat_output.choices[0].message.content = "hello again"
+        chat_output.choices[0].message.tool_calls = []
+        second_client.chat_completion = AsyncMock(return_value=chat_output)
+
         with patch(
             "llama_index.llms.huggingface_api.base.AsyncInferenceClient",
             return_value=second_client,
@@ -161,7 +166,13 @@ class TestHuggingFaceInferenceAPI:
             async for _ in response_stream:
                 pass
 
+            response = await hf_inference_api.achat(
+                [ChatMessage(content="hello again")]
+            )
+
         first_client.close.assert_awaited_once()
+        second_client.chat_completion.assert_awaited_once()
+        assert response.message.content == "hello again"
         assert hf_inference_api._async_client is second_client
 
     @pytest.mark.asyncio
