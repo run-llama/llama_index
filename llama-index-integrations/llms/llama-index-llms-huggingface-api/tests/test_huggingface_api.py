@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,57 @@ from huggingface_hub.inference._generated.types import ChatCompletionOutput
 STUB_MODEL_NAME = "Qwen/Qwen2.5-Coder-32B-Instruct"
 
 
+class FakeAsyncClient:
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def chat_completion(self, **kwargs):
+        if self.closed:
+            raise RuntimeError("Cannot send a request, as the client is closed.")
+        if kwargs.get("stream"):
+
+            async def stream():
+                yield SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            finish_reason=None,
+                            delta=SimpleNamespace(content="hi", tool_calls=None),
+                        )
+                    ]
+                )
+                yield SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            finish_reason="stop",
+                            delta=SimpleNamespace(content=None, tool_calls=None),
+                        )
+                    ]
+                )
+
+            return stream()
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content="hi", tool_calls=None)
+                )
+            ]
+        )
+
+    async def text_generation(self, prompt: str, **kwargs):
+        if self.closed:
+            raise RuntimeError("Cannot send a request, as the client is closed.")
+        if kwargs.get("stream"):
+
+            async def stream():
+                yield "hi"
+
+            return stream()
+        return "hi"
+
+    async def close(self) -> None:
+        self.closed = True
+
+
 @pytest.fixture(name="hf_inference_api")
 def fixture_hf_inference_api() -> HuggingFaceInferenceAPI:
     with patch.dict("sys.modules", huggingface_hub=MagicMock()):
@@ -15,6 +67,53 @@ def fixture_hf_inference_api() -> HuggingFaceInferenceAPI:
 
 
 class TestHuggingFaceInferenceAPI:
+    @pytest.mark.asyncio
+    async def test_astream_chat_reopens_client_for_follow_up_calls(self) -> None:
+        first_client = FakeAsyncClient()
+        second_client = FakeAsyncClient()
+        with (
+            patch("llama_index.llms.huggingface_api.base.InferenceClient"),
+            patch(
+                "llama_index.llms.huggingface_api.base.AsyncInferenceClient",
+                side_effect=[first_client, second_client],
+            ),
+        ):
+            llm = HuggingFaceInferenceAPI(model_name=STUB_MODEL_NAME)
+            stream = await llm.astream_chat(
+                [ChatMessage(role=MessageRole.USER, content="hello")]
+            )
+            streamed = [response async for response in stream]
+            response = await llm.achat(
+                [ChatMessage(role=MessageRole.USER, content="follow up")]
+            )
+
+        assert [item.delta for item in streamed] == ["hi"]
+        assert first_client.closed
+        assert llm._async_client is second_client
+        assert response.message.content == "hi"
+
+    @pytest.mark.asyncio
+    async def test_astream_complete_reopens_client_for_follow_up_calls(self) -> None:
+        first_client = FakeAsyncClient()
+        second_client = FakeAsyncClient()
+        with (
+            patch("llama_index.llms.huggingface_api.base.InferenceClient"),
+            patch(
+                "llama_index.llms.huggingface_api.base.AsyncInferenceClient",
+                side_effect=[first_client, second_client],
+            ),
+        ):
+            llm = HuggingFaceInferenceAPI(model_name=STUB_MODEL_NAME)
+            llm.task = "text-generation"
+            stream = await llm.astream_complete("hello")
+            streamed = [response async for response in stream]
+            response = await llm.acomplete("follow up")
+
+        assert [item.delta for item in streamed] == ["hi"]
+        assert first_client.closed
+        assert llm._async_client is second_client
+        assert response.text == "hi"
+
     def test_class_name(self, hf_inference_api: HuggingFaceInferenceAPI) -> None:
         assert HuggingFaceInferenceAPI.class_name() == HuggingFaceInferenceAPI.__name__
         assert hf_inference_api.class_name() == HuggingFaceInferenceAPI.__name__
@@ -134,3 +233,4 @@ class TestHuggingFaceInferenceAPI:
             messages=[{"role": "user", "content": prompt}],
         )
         assert response.text == generated_text
+

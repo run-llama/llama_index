@@ -206,6 +206,12 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
             "cookies": self.cookies,
         }
 
+    def _reset_async_client(self) -> None:
+        """Recreate the shared async client after closing its HTTP session."""
+        self._async_client = AsyncInferenceClient(
+            **self._get_inference_client_kwargs()
+        )
+
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         base_kwargs = {
             "model": self.model_name or self.model,
@@ -496,6 +502,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                     )
 
                 await self._async_client.close()
+                self._reset_async_client()
 
             return gen()
         else:
@@ -530,6 +537,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                 yield CompletionResponse(text=response, delta=delta)
 
             await self._async_client.close()
+            self._reset_async_client()
 
         return gen()
 
@@ -609,3 +617,4 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
             )
 
         return tool_selections
+
