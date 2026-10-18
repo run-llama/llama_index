@@ -12,7 +12,7 @@ def get_default_tokenizer() -> Callable:
     try:
         from transformers import BertTokenizerFast
     except ImportError:
-        raise ImpotError(
+        raise ImportError(
             "In order to run `llama-index-vector-stores-moorcheh` you need to have `transformers` installed. Please run `pip install transformers`"
         )
 

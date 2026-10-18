@@ -1,5 +1,6 @@
 # Importing required libraries and modules
 import logging
+import warnings
 from typing import Any, List, Optional, Callable, ClassVar, Literal
 import uuid
 import os
@@ -17,7 +18,8 @@ from llama_index.core.vector_stores.types import (
 
 # Moorcheh SDK for backend vector storage
 from moorcheh_sdk import MoorchehClient, MoorchehError
-from moorcheh_sdk import MoorchehClient
+
+from llama_index.vector_stores.moorcheh.utils import DefaultMoorchehSparseEmbedding
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -197,15 +199,15 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
             documents.append(document)
 
-            if sparse_inputs:
-                sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
-                    sparse_inputs
-                )
-                for i, sparse_vector in enumerate(sparse_vectors):
-                    documents[i][SPARSE_VECTOR_KEY] = {
-                        "indices": list(sparse_vector.keys()),
-                        "values": list(sparse_vector.values()),
-                    }
+        if sparse_inputs:
+            sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
+                sparse_inputs
+            )
+            for i, sparse_vector in enumerate(sparse_vectors):
+                documents[i][SPARSE_VECTOR_KEY] = {
+                    "indices": list(sparse_vector.keys()),
+                    "values": list(sparse_vector.values()),
+                }
 
         # Process in batches
         for i in range(0, len(documents), self.batch_size):
@@ -259,15 +261,16 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
             vectors.append(vector)
 
-            if sparse_inputs:
-                sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
-                    sparse_inputs
-                )
-                for i, sparse_vector in enumerate(sparse_vectors):
-                    documents[i][SPARSE_VECTOR_KEY] = {
-                        "indices": list(sparse_vector.keys()),
-                        "values": list(sparse_vector.values()),
-                    }
+        if sparse_inputs:
+            sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
+                sparse_inputs
+            )
+            for i, sparse_vector in enumerate(sparse_vectors):
+                vectors[i][SPARSE_VECTOR_KEY] = {
+                    "indices": list(sparse_vector.keys()),
+                    "values": list(sparse_vector.values()),
+                }
+
         # Process in batches
         for i in range(0, len(vectors), self.batch_size):
             batch = vectors[i : i + self.batch_size]
