@@ -43,7 +43,8 @@ def test_ovhcloud_class():
 
     # Test available_models property with exception (falls back to current model)
     llm = OVHcloud(model="test-model", api_key="fake-api-key")
-    result = llm.available_models
+    with patch.object(OVHcloud, "_get_client", side_effect=Exception("no network")):
+        result = llm.available_models
     assert len(result) == 1
     assert result[0].id == "test-model"
 
