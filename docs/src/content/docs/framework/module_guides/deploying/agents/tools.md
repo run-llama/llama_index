@@ -99,6 +99,21 @@ agent = FunctionAgent(llm=llm, tools=tool_spec.to_tool_list())
 
 See the [tools directory on GitHub](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) for a full list of community contributed tool specs.
 
+### Externally maintained tool specs
+
+New integration packages can be maintained in independent repositories, as described
+in the [contribution guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md).
+They use the same `BaseToolSpec.to_tool_list()` interface. Check the maintainer,
+installation source, credential requirements, and release status before use.
+
+- [Suno by Ace Data Cloud](https://github.com/AceDataCloud/SunoLlamaIndex): native
+  music generation and retrieval of the same asynchronous task. The independent
+  package is `llama-index-tools-suno-acedatacloud`, with
+  `from llama_index.tools.suno_acedatacloud import SunoToolSpec`. Its README lists
+  the current source installation and publication status. This integration is
+  maintained by Ace Data Cloud; it is not an official Suno product. Generation may
+  consume account credits. A pending audio preview is not a completed result.
+
 ## Utility Tools
 
 Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using).
