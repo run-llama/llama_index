@@ -233,4 +233,3 @@ class TestHuggingFaceInferenceAPI:
             messages=[{"role": "user", "content": prompt}],
         )
         assert response.text == generated_text
-

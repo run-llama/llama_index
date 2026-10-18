@@ -617,4 +617,3 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
             )
 
         return tool_selections
-
