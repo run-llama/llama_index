@@ -180,6 +180,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     _pinecone_index: PineconeIndex = PrivateAttr()
     _sparse_embedding_model: Optional[BaseSparseEmbedding] = PrivateAttr()
+    _default_empty_query_vector: Optional[List[float]] = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -225,6 +226,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
 
         self._sparse_embedding_model = sparse_embedding_model
+        self._default_empty_query_vector = default_empty_query_vector
 
         if isinstance(pinecone_index, str):
             raise ValueError(
@@ -506,15 +508,23 @@ class PineconeVectorStore(BasePydanticVectorStore):
                     "values": list(sparse_vector.values()),
                 }
 
-        # pinecone requires a query embedding, so default to 0s if not provided
-        if query.query_embedding is not None:
-            dimension = len(query.query_embedding)
+        # pinecone requires a query embedding, so fall back to the configured
+        # default vector, and otherwise to 0s, if the query has none
+        requested_embedding = query.query_embedding
+        if requested_embedding is None:
+            requested_embedding = self._default_empty_query_vector
+
+        if requested_embedding is not None:
+            dimension = len(requested_embedding)
         else:
             dimension = self._pinecone_index.describe_index_stats()["dimension"]
         query_embedding = [0.0] * dimension
 
-        if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID):
-            query_embedding = cast(List[float], query.query_embedding)
+        if (
+            query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID)
+            and requested_embedding is not None
+        ):
+            query_embedding = cast(List[float], requested_embedding)
             if query.alpha is not None:
                 query_embedding = [v * query.alpha for v in query_embedding]
 
