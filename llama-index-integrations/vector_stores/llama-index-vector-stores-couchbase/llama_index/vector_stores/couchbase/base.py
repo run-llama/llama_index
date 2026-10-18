@@ -379,7 +379,9 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
                 for doc in batch:
                     insert_batch.update(doc)
 
-                logger.debug("Inserting batch of documents to Couchbase", insert_batch)
+                logger.debug(
+                    "Inserting batch of documents to Couchbase: %s", insert_batch
+                )
 
                 # upsert the batch of documents into the collection
                 result = self._collection.upsert_multi(insert_batch)
@@ -459,7 +461,7 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
             bucket_manager.get_bucket(self._bucket_name)
             return True
         except Exception as e:
-            logger.debug("Error checking if bucket exists:", e)
+            logger.debug("Error checking if bucket exists: %s", e)
             return False
 
     def _check_scope_and_collection_exists(self) -> bool:
@@ -621,7 +623,7 @@ class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
         if self._text_key not in fields and fields != ["*"]:
             fields.append(self._text_key)
 
-        logger.debug("Output Fields: ", fields)
+        logger.debug("Output Fields: %s", fields)
 
         k = query.similarity_top_k
 
