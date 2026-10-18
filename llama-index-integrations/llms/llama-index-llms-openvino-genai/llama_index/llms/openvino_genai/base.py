@@ -234,7 +234,7 @@ class OpenVINOGenAILLM(CustomLLM):
                 if isinstance(token_id, list):
                     self.tokens_cache += token_id
                 else:
-                    self.tokens_cache.append(token)
+                    self.tokens_cache.append(token_id)
                 text = self.tokenizer.decode(
                     self.tokens_cache, skip_special_tokens=True
                 )
@@ -297,7 +297,7 @@ class OpenVINOGenAILLM(CustomLLM):
                     if isinstance(token_id, list):
                         self.tokens_cache += token_id
                     else:
-                        self.tokens_cache.append(token)
+                        self.tokens_cache.append(token_id)
                     return openvino_genai.StreamingStatus.RUNNING
                 return super().write(token_id)
 
