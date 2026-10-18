@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import functools
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -68,6 +69,15 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
 CallbackReturn = Optional[Union[ToolOutput, str]]
 
 
+def _is_coroutine_callable(fn: Any) -> bool:
+    """Check if a function or callable instance is a coroutine function."""
+    while isinstance(fn, functools.partial):
+        fn = fn.func
+    return inspect.iscoroutinefunction(fn) or (
+        callable(fn) and inspect.iscoroutinefunction(getattr(fn, "__call__", None))
+    )
+
+
 class FunctionTool(AsyncBaseTool):
     """
     Function Tool.
@@ -96,7 +106,7 @@ class FunctionTool(AsyncBaseTool):
             self._fn = fn or async_to_sync(async_fn)
         else:
             assert fn is not None
-            if inspect.iscoroutinefunction(fn):
+            if _is_coroutine_callable(fn):
                 self._async_fn = fn
                 self._fn = async_to_sync(fn)
             else:
@@ -187,7 +197,11 @@ class FunctionTool(AsyncBaseTool):
         if tool_metadata is None:
             fn_to_parse = fn or async_fn
             assert fn_to_parse is not None, "fn must be provided"
-            name = name or fn_to_parse.__name__
+            name = (
+                name
+                or getattr(fn_to_parse, "__name__", None)
+                or type(fn_to_parse).__name__
+            )
             docstring = fn_to_parse.__doc__ or ""
 
             # Get function signature

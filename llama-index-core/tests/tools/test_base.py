@@ -603,3 +603,26 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_async_callable_instance() -> None:
+    """Test FunctionTool.from_defaults with an async callable class instance."""
+
+    class AsyncMultiplier:
+        """Multiply a number by 3."""
+
+        async def __call__(self, x: int) -> int:
+            return x * 3
+
+    tool = FunctionTool.from_defaults(fn=AsyncMultiplier())
+    assert tool.metadata.name == "AsyncMultiplier"
+
+    async_output = await tool.acall(4)
+    assert async_output.raw_output == 12
+    assert str(async_output) == "12"
+
+    sync_output = tool.call(5)
+    assert sync_output.raw_output == 15
+    assert str(sync_output) == "15"
+
