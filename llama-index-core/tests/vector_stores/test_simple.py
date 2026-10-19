@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from typing import List
+from unittest import mock
 
 import pytest
 
@@ -19,6 +20,7 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
     MetadataFilter,
     FilterOperator,
+    VectorStoreQueryMode,
 )
 
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
@@ -485,3 +487,26 @@ def test_from_namespaced_persist_dir(persist_dir: str) -> None:
         persist_dir=persist_dir
     )
     assert vector_store is not None
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        VectorStoreQueryMode.SVM,
+        VectorStoreQueryMode.LINEAR_REGRESSION,
+        VectorStoreQueryMode.LOGISTIC_REGRESSION,
+    ],
+)
+def test_query_passes_learner_mode(mode: VectorStoreQueryMode) -> None:
+    simple_vector_store = SimpleVectorStore()
+    simple_vector_store.add(_node_embeddings_for_test())
+
+    with mock.patch(
+        "llama_index.core.vector_stores.simple.get_top_k_embeddings_learner",
+        return_value=([], []),
+    ) as mock_learner:
+        simple_vector_store.query(
+            VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3, mode=mode)
+        )
+
+    assert mock_learner.call_args.kwargs["query_mode"] == mode

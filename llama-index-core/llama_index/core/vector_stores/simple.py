@@ -289,6 +289,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
                 embeddings,
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
+                query_mode=query.mode,
             )
         elif query.mode == MMR_MODE:
             mmr_threshold = kwargs.get("mmr_threshold")
