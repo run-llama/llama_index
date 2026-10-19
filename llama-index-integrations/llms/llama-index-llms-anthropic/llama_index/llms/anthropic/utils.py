@@ -294,11 +294,15 @@ def blocks_to_anthropic_blocks(
             )
 
         elif isinstance(block, ThinkingBlock):
-            if block.content:
-                signature = block.additional_information.get("signature", "")
+            signature = block.additional_information.get("signature", "")
+            # Signature-only blocks (e.g. Claude's `display: "omitted"` mode) must still
+            # be replayed, with empty text, so that thinking history is not dropped.
+            if block.content or signature:
                 anthropic_blocks.append(
                     ThinkingBlockParam(
-                        signature=signature, thinking=block.content, type="thinking"
+                        signature=signature,
+                        thinking=block.content or "",
+                        type="thinking",
                     )
                 )
 
@@ -427,10 +431,14 @@ def blocks_to_anthropic_beta_blocks(
             ant_block = BetaTextBlockParam(text=block.text, type=block.block_type)
             ant_blocks.append(ant_block)
         elif isinstance(block, ThinkingBlock):
+            signature = block.additional_information.get("signature", "")
+            # A block with neither content nor signature carries nothing to replay
+            if not block.content and not signature:
+                continue
             # does not support cache control
             ant_block = BetaThinkingBlockParam(
                 thinking=block.content or "",
-                signature=block.additional_information.get("signature", ""),
+                signature=signature,
                 type=block.block_type,
             )
             ant_blocks.append(ant_block)
