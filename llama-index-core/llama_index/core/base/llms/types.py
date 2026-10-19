@@ -226,7 +226,7 @@ class BaseContentBlock(ABC, BaseModel):
                         formatted_attrs[attribute_name] = att_type(formatted_str)  # type: ignore
                     except Exception:
                         raise ValueError(
-                            "Could not format attribute {attribute_name} with value {template_str} to type {att_type}"
+                            f"Could not format attribute {attribute_name} with value {template_str} to type {att_type}"
                         )
         return type(self).model_validate(self.model_copy(update=formatted_attrs))
 
