@@ -199,6 +199,23 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 new_splits.extend(self._split(split, chunk_size=chunk_size))
         return new_splits
 
+    def _strip_delta(self, cur_chunk: List[str]) -> int:
+        """
+        Extra tokens the first split of `cur_chunk` costs once it is stripped.
+
+        Some tokenizers (e.g. tiktoken) encode a leading space together with the
+        following word as one token, so `" foo"` can be one token while `"foo"`
+        is two. The emitted chunk has its edge whitespace stripped (unless
+        `keep_whitespaces` is set), so the running token count has to include
+        this difference or the chunk can be emitted over `chunk_size`.
+        """
+        if self.keep_whitespaces or not cur_chunk:
+            return 0
+        first_split = cur_chunk[0]
+        return len(self._tokenizer(first_split.strip())) - len(
+            self._tokenizer(first_split)
+        )
+
     def _merge(self, splits: List[str], chunk_size: int) -> List[str]:
         """
         Merge splits into chunks.
@@ -221,26 +238,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                     f"larger than chunk size {chunk_size}.",
                 )
 
-            # Some tokenizers (e.g. tiktoken) encode a leading space
-            # together with the following word as a single token. Since the
-            # emitted chunk has its leading whitespace stripped (unless
-            # `keep_whitespaces` is set), the first split in `cur_chunk` can
-            # re-tokenize into *more* tokens once that space is removed than
-            # were counted while accumulating `cur_len` below -- e.g. " foo"
-            # is one token but "foo" is two. Left unaccounted for, this lets
-            # the emitted chunk silently exceed `chunk_size`. Compute the
-            # discrepancy so the size check below reflects the chunk as it
-            # will actually be emitted.
-            strip_adjustment = 0
-            if cur_chunk and not self.keep_whitespaces:
-                first_split = cur_chunk[0]
-                strip_adjustment = len(
-                    self._tokenizer(first_split.strip())
-                ) - len(self._tokenizer(first_split))
-
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if cur_len + strip_adjustment + split_len > chunk_size:
+            if cur_len + self._strip_delta(cur_chunk) + split_len > chunk_size:
                 # end the previous chunk
                 chunk = (
                     "".join(cur_chunk)
@@ -255,7 +255,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 #   1. the current chunk length is less than chunk overlap
                 #   2. the total length is less than chunk size
                 while cur_chunk and (
-                    cur_len > self.chunk_overlap or cur_len + split_len > chunk_size
+                    cur_len + self._strip_delta(cur_chunk) > self.chunk_overlap
+                    or cur_len + self._strip_delta(cur_chunk) + split_len > chunk_size
                 ):
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)

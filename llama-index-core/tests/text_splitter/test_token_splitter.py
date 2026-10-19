@@ -102,6 +102,11 @@ def test_split_with_metadata(english_text: str) -> None:
         ("tqbmbylk npgzrka dmfjy vwtogkt tqgwioqr tacgtm xvaidhlqxq", 8, 0),
         # and again at a mid-range chunk_size.
         ("hoytyof gjzsrwahyf hvbzlrk dodgzcbn nwdfto", 12, 0),
+        # with overlap, the first split kept from the previous chunk is the one
+        # that gets stripped, so the overlap trim has to count it too.
+        ("euyj tunbh hkwk tyvmawdcb", 10, 5),
+        ("uwxh vgd canechqd xmfbbkbhf", 8, 3),
+        ("eewne gjv dwwsbvzuy rvvwpfbu", 8, 5),
     ],
 )
 def test_merge_respects_chunk_size_across_whitespace_strip(
