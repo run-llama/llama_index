@@ -69,7 +69,13 @@ def extract_keywords_given_response(
         rk = k
         if lowercase:
             rk = rk.lower()
-        results.append(rk.strip())
+        rk = rk.strip()
+        # LLMs routinely end a comma-separated list with a trailing comma (or
+        # emit a repeated one); the empty segment is not a keyword, and storing
+        # it would add an "" key to the table that matches unrelated nodes.
+        if not rk:
+            continue
+        results.append(rk)
 
     # if keyword consists of multiple words, split into subwords
     # (removing stopwords)
