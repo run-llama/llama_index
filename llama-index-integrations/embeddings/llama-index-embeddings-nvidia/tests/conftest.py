@@ -31,6 +31,16 @@ def public_class(request: pytest.FixtureRequest) -> type:
 
 
 def pytest_collection_modifyitems(config, items):
+    for item in items:
+        # pytest-httpx >= 0.35 asserts every registered mock is requested and
+        # makes mocks single-use; these tests register broad, reused mocks.
+        item.add_marker(
+            pytest.mark.httpx_mock(
+                assert_all_responses_were_requested=False,
+                assert_all_requests_were_expected=False,
+                can_send_already_matched_responses=True,
+            )
+        )
     if "NVIDIA_API_KEY" not in os.environ:
         skip_marker = pytest.mark.skip(
             reason="requires NVIDIA_API_KEY environment variable or --nim-endpoint option"

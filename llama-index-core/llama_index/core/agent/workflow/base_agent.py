@@ -141,6 +141,16 @@ class BaseWorkflowAgent(
         description="Method to handle max iterations. 'force' raises an error (default). 'generate' makes one final LLM call to generate a response.",
     )
 
+    def __hash__(self) -> int:
+        """
+        Hash by identity.
+
+        Pydantic models are unhashable by default, but the workflows runtime keys
+        caches (e.g. its serializer WeakKeyDictionary) on the workflow instance,
+        so agents need to be usable as dict keys.
+        """
+        return id(self)
+
     def __init__(
         self,
         name: str = DEFAULT_AGENT_NAME,

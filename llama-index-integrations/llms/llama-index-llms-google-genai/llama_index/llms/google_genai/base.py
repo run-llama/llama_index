@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import functools
 import os
+import re
 from importlib.metadata import PackageNotFoundError, version
 import typing
 from typing import (
@@ -68,7 +69,22 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "gemini-3-flash-preview"
+DEFAULT_MODEL = "gemini-3.7-flash"
+
+
+def _is_gemini_3_or_newer(model: str) -> bool:
+    """Check if the model is Gemini 3 or newer."""
+    model_name = model.split("/")[-1].lower()
+    if not model_name:
+        return False
+    # Pre-Gemini 3 models: gemini-1.x, gemini-2.x, gemini-pro, gemini-flash, gemini-exp
+    return not bool(
+        re.match(
+            r"^gemini-(?:[12](?:\.\d+)?|exp|(?:pro|flash)(?!-(?:lite-)?latest$))(?:-|$)",
+            model_name,
+        )
+    )
+
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -191,7 +207,7 @@ class GoogleGenAI(FunctionCallingLLM):
     ):
         if temperature is None:
             # Gemini 3-series models may error if temperature is set.
-            if "gemini-3" not in model:
+            if not _is_gemini_3_or_newer(model):
                 temperature = DEFAULT_TEMPERATURE
 
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -606,7 +622,10 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.tool_name,
+                    # Use the per-call id when the provider supplies one (Gemini)
+                    # so parallel calls to the same tool can be correlated. Vertex
+                    # AI has no id, so tool_call_id falls back to the tool name.
+                    tool_id=tool_call.tool_call_id or tool_call.tool_name,
                     tool_name=tool_call.tool_name,
                     tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
                 )

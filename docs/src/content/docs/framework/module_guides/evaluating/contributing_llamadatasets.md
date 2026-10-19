@@ -2,10 +2,12 @@
 title: Contributing A `LabelledRagDataset`
 ---
 
+**NOTE:** LlamaDatasets are deprecated and no longer maintained. This page is kept for reference and new submissions are not being accepted.
+
 Building a more robust RAG system requires a diversified evaluation suite. That is
-why we launched `LlamaDatasets` in [llama-hub](https://llamahub.ai). In this page,
-we discuss how you can contribute the first kind of `LlamaDataset` made available
-in llama-hub, that is, `LabelledRagDataset`.
+why we launched `LlamaDatasets`. In this page,
+we discuss how you can contribute the first kind of `LlamaDataset` made available,
+that is, `LabelledRagDataset`.
 
 Contributing a `LabelledRagDataset` involves two high level steps. Generally speaking,
 you must create the `LabelledRagDataset`, save it as a json and submit both this
