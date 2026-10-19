@@ -3,6 +3,7 @@ from math import log2
 import pytest
 from llama_index.core.evaluation.retrieval.metrics import (
     AveragePrecision,
+    CohereRerankRelevancyMetric,
     HitRate,
     MRR,
     NDCG,
@@ -245,3 +246,11 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         ndcg = NDCG()
         ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+
+def test_cohere_rerank_missing_api_key_raises_value_error(monkeypatch):
+    # A missing COHERE_API_KEY env var raises KeyError, not IndexError, so the
+    # intended helpful ValueError was never actually raised.
+    monkeypatch.delenv("COHERE_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="cohere api key"):
+        CohereRerankRelevancyMetric()
