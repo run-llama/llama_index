@@ -9,9 +9,12 @@ from llama_index.observability.otel import LlamaIndexOpenTelemetry
 from llama_index.observability.otel.base import (
     SERVICE_NAME,
     ConsoleSpanExporter,
+    OTelCompatibleEventHandler,
     OTelCompatibleSpanHandler,
     Resource,
 )
+from llama_index_instrumentation.base import BaseEvent
+from llama_index_instrumentation.span import active_span_id
 from llama_index.observability.otel.utils import flatten_dict
 from opentelemetry import context, trace
 from opentelemetry.sdk.trace import Event, ReadableSpan, SpanProcessor, TracerProvider
@@ -697,3 +700,104 @@ def test_flatten_dict() -> None:
     nested_dict = {"a": 1, "b": {"c": 2, "d": {"e": 3}}, "f": [1, 2, 3]}
     flattened = flatten_dict(nested_dict)
     assert flattened == {"a": 1, "b.c": 2, "b.d.e": 3, "f": [1, 2, 3]}
+
+
+# ---------------------------------------------------------------------------
+# Event routing
+# ---------------------------------------------------------------------------
+
+
+class _ProbeEvent(BaseEvent):
+    payload: str = "x"
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ProbeEvent"
+
+
+def _event_names(span: ReadableSpan) -> list[str]:
+    return [e.name for e in span.events]
+
+
+def test_event_routed_by_ambient_span_id() -> None:
+    """The pre-existing path: an event dispatched inside an active span."""
+    exporter, handler, provider = make_handler()
+    event_handler = OTelCompatibleEventHandler(span_handler=handler)
+    handler.span_enter(id_="span-uuid", bound_args=_bound)
+
+    token = active_span_id.set("span-uuid")
+    try:
+        event_handler.handle(_ProbeEvent())
+    finally:
+        active_span_id.reset(token)
+
+    handler.span_exit(id_="span-uuid", bound_args=_bound)
+    provider.force_flush()
+    (span,) = exporter.get_finished_spans()
+    assert _event_names(span) == ["ProbeEvent"]
+
+
+def test_event_span_id_takes_precedence_over_contextvar() -> None:
+    """
+    Streaming events are stamped with an explicit span id because the
+    generator body runs in the consumer's context, where the contextvar
+    points somewhere else entirely (or nowhere).
+    """
+    exporter, handler, provider = make_handler()
+    event_handler = OTelCompatibleEventHandler(span_handler=handler)
+    handler.span_enter(id_="stream-uuid", bound_args=_bound)
+    handler.span_enter(id_="other-uuid", bound_args=_bound)
+
+    # Consumer is inside an unrelated span while iterating the stream.
+    token = active_span_id.set("other-uuid")
+    try:
+        event_handler.handle(_ProbeEvent(span_id="stream-uuid"))
+    finally:
+        active_span_id.reset(token)
+
+    handler.span_exit(id_="other-uuid", bound_args=_bound)
+    handler.span_exit(id_="stream-uuid", bound_args=_bound)
+    provider.force_flush()
+    by_name = {s.name: s for s in exporter.get_finished_spans()}
+    assert _event_names(by_name["stream"]) == ["ProbeEvent"]
+    assert _event_names(by_name["other"]) == []
+
+
+def test_event_with_span_id_but_no_ambient_context_is_kept() -> None:
+    """
+    Regression: previously dropped outright, since `active_span_id` is
+    `None` once the coroutine that created the generator has returned.
+    """
+    exporter, handler, provider = make_handler()
+    event_handler = OTelCompatibleEventHandler(span_handler=handler)
+    handler.span_enter(id_="stream-uuid", bound_args=_bound)
+
+    assert active_span_id.get() is None
+    event_handler.handle(_ProbeEvent(span_id="stream-uuid"))
+
+    handler.span_exit(id_="stream-uuid", bound_args=_bound)
+    provider.force_flush()
+    (span,) = exporter.get_finished_spans()
+    assert _event_names(span) == ["ProbeEvent"]
+
+
+def test_event_outside_any_span_is_dropped() -> None:
+    exporter, handler, provider = make_handler()
+    event_handler = OTelCompatibleEventHandler(span_handler=handler)
+    assert active_span_id.get() is None
+    event_handler.handle(_ProbeEvent())
+    assert handler._events_by_span == {}
+
+
+def test_event_for_ended_span_does_not_leak() -> None:
+    """
+    An event stamped with a span that already closed has nothing to
+    attach to; buffering it would create a bucket nothing ever drains.
+    """
+    exporter, handler, provider = make_handler()
+    event_handler = OTelCompatibleEventHandler(span_handler=handler)
+    handler.span_enter(id_="gone-uuid", bound_args=_bound)
+    handler.span_exit(id_="gone-uuid", bound_args=_bound)
+
+    event_handler.handle(_ProbeEvent(span_id="gone-uuid"))
+    assert handler._events_by_span == {}

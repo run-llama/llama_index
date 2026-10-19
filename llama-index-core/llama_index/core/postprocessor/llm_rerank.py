@@ -1,7 +1,8 @@
 """LLM reranker."""
 
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
@@ -15,7 +16,7 @@ from llama_index.core.prompts.chat_prompts import CHAT_CONTENT_CHOICE_SELECT_PRO
 from llama_index.core.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.prompts.utils import is_chat_model
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 
 
@@ -76,6 +77,38 @@ class LLMRerank(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "LLMRerank"
 
+    def _get_node_batches(self, nodes: List[NodeWithScore]) -> List[List[BaseNode]]:
+        return [
+            [node.node for node in nodes[idx : idx + self.choice_batch_size]]
+            for idx in range(0, len(nodes), self.choice_batch_size)
+        ]
+
+    def _get_predict_kwargs(
+        self, nodes_batch: List[BaseNode], query_str: str
+    ) -> Dict[str, Any]:
+        # Don't include non text types for non-chat models
+        fmt_batch = self._format_node_batch_fn(nodes_batch)
+        kwargs: Dict[str, Any] = {"query_str": query_str}
+        if is_chat_model(self.llm):
+            kwargs["context_messages"] = fmt_batch
+        else:
+            kwargs["context_str"] = fmt_batch
+        return kwargs
+
+    def _parse_raw_response(
+        self, raw_response: str, nodes_batch: List[BaseNode]
+    ) -> List[NodeWithScore]:
+        raw_choices, relevances = self._parse_choice_select_answer_fn(
+            raw_response, len(nodes_batch)
+        )
+        choice_idxs = [int(choice) - 1 for choice in raw_choices]
+        choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
+        relevances = relevances or [1.0 for _ in choice_nodes]
+        return [
+            NodeWithScore(node=node, score=relevance)
+            for node, relevance in zip(choice_nodes, relevances)
+        ]
+
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -87,34 +120,43 @@ class LLMRerank(BaseNodePostprocessor):
             return []
 
         initial_results: List[NodeWithScore] = []
-        for idx in range(0, len(nodes), self.choice_batch_size):
-            nodes_batch = [
-                node.node for node in nodes[idx : idx + self.choice_batch_size]
-            ]
-
-            query_str = query_bundle.query_str
-            # Don't include non text types for non-chat models
-            fmt_batch = self._format_node_batch_fn(nodes_batch)
+        for nodes_batch in self._get_node_batches(nodes):
             # call each batch independently
-            kwargs = {"query_str": query_str}
-            if is_chat_model(self.llm):
-                kwargs["context_messages"] = fmt_batch
-            else:
-                kwargs["context_str"] = fmt_batch
-            raw_response = self.llm.predict(self.choice_select_prompt, **kwargs)
+            raw_response = self.llm.predict(
+                self.choice_select_prompt,
+                **self._get_predict_kwargs(nodes_batch, query_bundle.query_str),
+            )
+            initial_results.extend(self._parse_raw_response(raw_response, nodes_batch))
 
-            raw_choices, relevances = self._parse_choice_select_answer_fn(
-                raw_response, len(nodes_batch)
-            )
-            choice_idxs = [int(choice) - 1 for choice in raw_choices]
-            choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
-            relevances = relevances or [1.0 for _ in choice_nodes]
-            initial_results.extend(
-                [
-                    NodeWithScore(node=node, score=relevance)
-                    for node, relevance in zip(choice_nodes, relevances)
-                ]
-            )
+        return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
+            : self.top_n
+        ]
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
+        if len(nodes) == 0:
+            return []
+
+        node_batches = self._get_node_batches(nodes)
+        # call each batch independently, in parallel
+        raw_responses = await run_jobs(
+            [
+                self.llm.apredict(
+                    self.choice_select_prompt,
+                    **self._get_predict_kwargs(nodes_batch, query_bundle.query_str),
+                )
+                for nodes_batch in node_batches
+            ]
+        )
+
+        initial_results: List[NodeWithScore] = []
+        for raw_response, nodes_batch in zip(raw_responses, node_batches):
+            initial_results.extend(self._parse_raw_response(raw_response, nodes_batch))
 
         return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
             : self.top_n

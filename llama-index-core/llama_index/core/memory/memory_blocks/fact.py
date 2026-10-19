@@ -37,13 +37,16 @@ If no new facts are present, return: <facts></facts>""")
 
 DEFAULT_FACT_CONDENSE_PROMPT = RichPromptTemplate("""You are a precise fact condensing system designed to identify key information from conversations.
 
+The condensed list you return completely replaces the existing facts, so it must be the full, self-contained snapshot of everything worth keeping - not just newly added or changed facts.
+
 INSTRUCTIONS:
 1. Review the current list of existing facts
-2. Condense the facts into a more concise list, less than {{ max_facts }} facts
-3. Focus on factual information like preferences, personal details, requirements, constraints, or context
-4. Format each fact as a separate <fact> XML tag
-5. Do not include opinions, summaries, or interpretations - only extract explicit information
-6. Do not duplicate facts that are already in the existing facts list
+2. Return a single, complete list of fewer than {{ max_facts }} facts
+3. Merge related facts and drop semantically redundant ones so that each fact appears only once
+4. Preserve every distinct piece of information - only remove a fact when it duplicates or is fully covered by another fact you keep
+5. Focus on factual information like preferences, personal details, requirements, constraints, or context
+6. Do not include opinions, summaries, or interpretations - only the explicit information already present
+7. Format each fact as a separate <fact> XML tag
 
 <existing_facts>
 {{ existing_facts }}
@@ -54,9 +57,7 @@ Return ONLY the condensed facts in this exact format:
   <fact>Specific fact 1</fact>
   <fact>Specific fact 2</fact>
   <!-- More facts as needed -->
-</facts>
-
-If no new facts are present, return: <facts></facts>""")
+</facts>""")
 
 
 def get_default_llm() -> LLM:
@@ -156,8 +157,13 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
                 max_facts=self.max_facts,
             )
             response = await self.llm.achat(messages=[*messages, *prompt_messages])
-            new_facts = self._parse_facts_xml(response.message.content or "")
-            self.facts = new_facts
+            condensed_facts = self._parse_facts_xml(response.message.content or "")
+
+            # The condensed response replaces the fact list wholesale, so only
+            # apply it when it actually contains facts - otherwise an empty or
+            # unparsable response would silently wipe the stored facts.
+            if condensed_facts:
+                self.facts = condensed_facts
 
     def _parse_facts_xml(self, xml_text: str) -> List[str]:
         """Parse facts from XML format."""
