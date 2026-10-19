@@ -1,6 +1,7 @@
 import base64
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 from unittest import mock
 from unittest.mock import Mock
 
@@ -26,7 +27,7 @@ from llama_index.core.base.llms.types import (
     CitableBlock,
     CitationBlock,
 )
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import ImageDocument
@@ -870,6 +871,31 @@ def test_text_block_format():
     tb = TextBlock(text="Hello {addressee}!")
     formatted_tb = tb.format_vars(addressee="world")
     assert formatted_tb.text == "Hello world!"
+
+
+def test_format_vars_error_names_the_attribute():
+    class Tag:
+        def __init__(self, value: str) -> None:
+            if " " in value:
+                raise ValueError("tags cannot contain spaces")
+            self.value = value
+
+        def __str__(self) -> str:
+            return self.value
+
+    class TaggedBlock(TextBlock):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        tag: Any
+
+        @property
+        def templatable_attributes(self) -> list[str]:
+            return ["tag"]
+
+    block = TaggedBlock(text="hi", tag=Tag("#{name}"))
+    with pytest.raises(
+        ValueError, match="Could not format attribute tag with value #{name}"
+    ):
+        block.format_vars(name="two words")
 
 
 def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):

@@ -169,7 +169,7 @@ class DashScopeCloudIndex(BaseManagedIndex):
             print(f"failed_docs: {failed_docs}")
 
         if ingestion_status == "FAILED":
-            print("Index {name} created failed!")
+            print(f"Index {name} created failed!")
             return None
 
         if verbose:
