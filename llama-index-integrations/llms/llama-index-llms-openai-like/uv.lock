@@ -2177,20 +2177,20 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.7.10"
+version = "0.8.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-core" },
     { name = "openai" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/6e/1ef83a852296c55fe8c529b4476073eccaff150d57aceb3d6319a87dcc89/llama_index_llms_openai-0.7.10.tar.gz", hash = "sha256:aa8dabf08ea0b9740fc9dae9677f05049254be5e929794a886692eaf26973def", size = 27586, upload-time = "2026-07-21T23:16:18.087Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/74/b1a9109331d479bb9023b00e7ae759f34b735b495b3f040fb19fb8f25dee/llama_index_llms_openai-0.8.2.tar.gz", hash = "sha256:366a03e14e724707f1c729f15ea67748c16a4ab812a3f18479ed287918de34c8", size = 27965, upload-time = "2026-09-25T02:53:30.381Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/89/854cb7b2e5be3b3c16561e93f3edd52d8a1b6e031be1aca4519b9fdd3917/llama_index_llms_openai-0.7.10-py3-none-any.whl", hash = "sha256:b76a0c3d4aaa9aba57dc0366ca6b2346c6819bed22973e334676d7a34704e46a", size = 28673, upload-time = "2026-07-21T23:16:17.062Z" },
+    { url = "https://files.pythonhosted.org/packages/63/9c/f7855dbcf4240a5e27071c39842c3dbfe2220920e4cbd9d6479a03b0339e/llama_index_llms_openai-0.8.2-py3-none-any.whl", hash = "sha256:458f432b4f9909ab136ce0693572a95706a0eb3597ff41c4b3b92c0db1b38236", size = 28990, upload-time = "2026-09-25T02:53:29.351Z" },
 ]
 
 [[package]]
 name = "llama-index-llms-openai-like"
-version = "0.7.2"
+version = "0.8.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2227,7 +2227,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.14.3,<0.15" },
-    { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.8" },
+    { name = "llama-index-llms-openai", specifier = ">=0.8.0,<0.9" },
     { name = "transformers", marker = "extra == 'transformers'", specifier = ">=4.37.0,<6" },
 ]
 provides-extras = ["transformers"]
