@@ -2168,7 +2168,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-desearch"
-version = "0.1.1"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "desearch-py" },
@@ -2200,7 +2200,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "desearch-py", specifier = ">=1.0.0" },
+    { name = "desearch-py", specifier = ">=1.2.0,<2" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "openai" },
 ]
