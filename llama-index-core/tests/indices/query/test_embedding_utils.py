@@ -1,10 +1,13 @@
 """Test embedding utility functions."""
 
 import numpy as np
+import pytest
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
+    get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 
 def test_get_top_k_mmr_embeddings() -> None:
@@ -108,3 +111,28 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+@pytest.mark.parametrize(
+    "query_mode",
+    [
+        VectorStoreQueryMode.SVM,
+        VectorStoreQueryMode.LINEAR_REGRESSION,
+        VectorStoreQueryMode.LOGISTIC_REGRESSION,
+    ],
+)
+def test_get_top_k_embeddings_learner(query_mode: VectorStoreQueryMode) -> None:
+    pytest.importorskip("sklearn")
+    query_embedding = [1.0, 0.1, 0.0]
+    embeddings = [[0.0, 1.0, 0.2], [1.0, 0.0, 0.1], [0.7, 0.7, 0.0]]
+
+    result_similarities, result_ids = get_top_k_embeddings_learner(
+        query_embedding,
+        embeddings,
+        similarity_top_k=2,
+        embedding_ids=["A", "B", "C"],
+        query_mode=query_mode,
+    )
+
+    assert len(result_similarities) == 2
+    assert result_ids[0] == "B"
