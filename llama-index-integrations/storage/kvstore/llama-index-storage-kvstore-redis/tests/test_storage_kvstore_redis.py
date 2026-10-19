@@ -70,9 +70,10 @@ async def test_aget_all_decode_responses_false():
         for item in [(b"akey1", '{"id": 1}'), (b"akey2", '{"id": 2}')]:
             yield item
 
-    mock_async_redis.hscan_iter.return_value = async_iter()
+    # hscan_iter is a regular method returning an async iterator, not a coroutine
+    mock_async_redis.hscan_iter = MagicMock(return_value=async_iter())
 
-    store = RedisKVStore(async_redis_client=mock_async_redis)
+    store = RedisKVStore(redis_client=MagicMock(), async_redis_client=mock_async_redis)
     result = await store.aget_all()
 
     assert result == {"akey1": {"id": 1}, "akey2": {"id": 2}}
@@ -88,9 +89,10 @@ async def test_aget_all_decode_responses_true():
         for item in [("akey1", '{"id": 1}'), ("akey2", '{"id": 2}')]:
             yield item
 
-    mock_async_redis.hscan_iter.return_value = async_iter()
+    # hscan_iter is a regular method returning an async iterator, not a coroutine
+    mock_async_redis.hscan_iter = MagicMock(return_value=async_iter())
 
-    store = RedisKVStore(async_redis_client=mock_async_redis)
+    store = RedisKVStore(redis_client=MagicMock(), async_redis_client=mock_async_redis)
     result = await store.aget_all()
 
     assert result == {"akey1": {"id": 1}, "akey2": {"id": 2}}

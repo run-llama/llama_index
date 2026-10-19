@@ -1,13 +1,16 @@
 # /// script
 # dependencies = [
-#   "toml",
+#   "tomli; python_version < '3.11'",
 #   "pyaml",
 # ]
 # ///
 
 import os
 
-import toml
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib
 import yaml
 
 MKDOCS_YML = "./api_reference/mkdocs.yml"
@@ -103,7 +106,6 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "storage": "Storage",
     "tools": "Tools",
     "workflow": "Workflow",
-    "llama_deploy": "LlamaDeploy",
     "message_queues": "Message Queues",
     "voice_agents": "Voice Agents",
 }
@@ -141,8 +143,8 @@ def main():
                     if ".venv" in toml_path:
                         continue
 
-                    with open(toml_path) as f:
-                        toml_data = toml.load(f)
+                    with open(toml_path, "rb") as f:
+                        toml_data = tomllib.load(f)
 
                     import_path = toml_data["tool"]["llamahub"]["import_path"]
                     class_authors = toml_data["tool"]["llamahub"][
