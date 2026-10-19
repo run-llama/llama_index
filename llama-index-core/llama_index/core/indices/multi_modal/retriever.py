@@ -290,12 +290,15 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
     ) -> List[NodeWithScore]:
         if not self._index.is_text_vector_store_empty:
             if self._vector_store.is_embedding_query:
-                # change the embedding for query bundle to Multi Modal Text encoder
-                query_bundle.embedding = (
-                    await self._embed_model.aget_agg_embedding_from_queries(
-                        query_bundle.embedding_strs
+                if (
+                    query_bundle.embedding is None
+                    and len(query_bundle.embedding_strs) > 0
+                ):
+                    query_bundle.embedding = (
+                        await self._embed_model.aget_agg_embedding_from_queries(
+                            query_bundle.embedding_strs
+                        )
                     )
-                )
             return await self._aget_nodes_with_embeddings(
                 query_bundle, self._similarity_top_k, self._vector_store
             )
