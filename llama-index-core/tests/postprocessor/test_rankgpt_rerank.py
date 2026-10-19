@@ -31,6 +31,18 @@ nodes = [
 nodes_with_score = [NodeWithScore(node=n) for n in nodes]
 
 
+def test_rankgpt_rerank_uses_default_llm(monkeypatch: pytest.MonkeyPatch) -> None:
+    default_llm = MockLLM()
+    monkeypatch.setattr(
+        "llama_index.core.postprocessor.rankGPT_rerank.get_default_llm",
+        lambda: default_llm,
+    )
+
+    rankgpt_rerank = RankGPTRerank()
+
+    assert rankgpt_rerank.llm is default_llm
+
+
 @patch.object(
     MockLLM,
     "chat",
