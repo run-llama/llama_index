@@ -11,7 +11,7 @@ existing keywords in the table.
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -193,11 +193,17 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
-        # delete node from the keyword table
+        self._delete_nodes([node_id], **delete_kwargs)
+
+    def _delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
+        """Delete a list of nodes from the keyword table in a single pass."""
+        if not node_ids:
+            return
+        nodes_to_delete = set(node_ids)
         keywords_to_delete = set()
         for keyword, existing_node_ids in self._index_struct.table.items():
-            if node_id in existing_node_ids:
-                existing_node_ids.remove(node_id)
+            if not existing_node_ids.isdisjoint(nodes_to_delete):
+                existing_node_ids.difference_update(nodes_to_delete)
                 if len(existing_node_ids) == 0:
                     keywords_to_delete.add(keyword)
 

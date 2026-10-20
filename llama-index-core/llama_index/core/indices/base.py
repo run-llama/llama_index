@@ -256,6 +256,11 @@ class BaseIndex(Generic[IS], ABC):
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
 
+    def _delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
+        """Delete a list of nodes from the index struct."""
+        for node_id in node_ids:
+            self._delete_node(node_id, **delete_kwargs)
+
     def delete_nodes(
         self,
         node_ids: List[str],
@@ -269,9 +274,9 @@ class BaseIndex(Generic[IS], ABC):
             doc_ids (List[str]): A list of doc_ids from the nodes to delete
 
         """
-        for node_id in node_ids:
-            self._delete_node(node_id, **delete_kwargs)
-            if delete_from_docstore:
+        self._delete_nodes(node_ids, **delete_kwargs)
+        if delete_from_docstore:
+            for node_id in node_ids:
                 self.docstore.delete_document(node_id, raise_error=False)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
@@ -289,9 +294,9 @@ class BaseIndex(Generic[IS], ABC):
             doc_ids (List[str]): A list of doc_ids from the nodes to delete
 
         """
-        for node_id in node_ids:
-            self._delete_node(node_id, **delete_kwargs)
-            if delete_from_docstore:
+        self._delete_nodes(node_ids, **delete_kwargs)
+        if delete_from_docstore:
+            for node_id in node_ids:
                 await self.docstore.adelete_document(node_id, raise_error=False)
 
         await self._storage_context.index_store.async_add_index_struct(

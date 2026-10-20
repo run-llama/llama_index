@@ -223,6 +223,29 @@ def test_list_delete(documents: List[Document], patch_token_text_splitter) -> No
     assert nodes[2].get_content() == "This is a test v2."
 
 
+def test_list_delete_nodes_batch(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """Test deleting multiple nodes from SummaryIndex in a single batch."""
+    summary_index = SummaryIndex.from_documents(documents)
+    all_node_ids = list(summary_index.index_struct.nodes)
+    assert len(all_node_ids) == 4
+    to_delete = [all_node_ids[0], all_node_ids[2]]
+
+    summary_index.delete_nodes(to_delete, delete_from_docstore=True)
+
+    assert summary_index.index_struct.nodes == [all_node_ids[1], all_node_ids[3]]
+    nodes = summary_index.docstore.get_nodes(summary_index.index_struct.nodes)
+    assert [n.get_content() for n in nodes] == [
+        "This is a test.",
+        "This is a test v2.",
+    ]
+    for deleted_id in to_delete:
+        assert (
+            summary_index.docstore.get_document(deleted_id, raise_error=False) is None
+        )
+
+
 def test_as_retriever(documents: List[Document]) -> None:
     summary_index = SummaryIndex.from_documents(documents)
     default_retriever = summary_index.as_retriever(
