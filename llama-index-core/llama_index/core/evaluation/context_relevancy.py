@@ -171,6 +171,11 @@ class ContextRelevancyEvaluator(BaseEvaluator):
             query=query,
             contexts=contexts,
             score=score,
+            # See the matching comment in AnswerRelevancyEvaluator: `score` is
+            # normalised above, so 1.0 means the raw score reached
+            # `score_threshold`, and leaving `passing` unset makes every result
+            # read as a failure to anything that gates on it.
+            passing=score >= 1.0 if score is not None else None,
             feedback=raw_response_txt,
             invalid_result=invalid_result,
             invalid_reason=invalid_reason,
