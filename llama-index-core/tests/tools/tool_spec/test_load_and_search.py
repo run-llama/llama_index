@@ -20,6 +20,37 @@ def _foo(query: str) -> List[Document]:
     return [Document(text=f"Test document with query: {query}")]
 
 
+@pytest.mark.parametrize("existing_index", [False, True])
+def test_load_preserves_loader_owned_list(existing_index: bool) -> None:
+    document = Document(text="first")
+    payload = {"text": "third"}
+    source = [document, "second", payload]
+
+    def load_cached_data():
+        return source
+
+    index_cls = MagicMock()
+    tool_spec = LoadAndSearchToolSpec.from_defaults(
+        tool=FunctionTool.from_defaults(fn=load_cached_data), index_cls=index_cls
+    )
+    if existing_index:
+        tool_spec._index = MagicMock()
+
+    tool_spec.load()
+
+    assert source == [document, "second", payload]
+    assert source[0] is document
+    assert source[2] is payload
+    if existing_index:
+        indexed = [call.args[0] for call in tool_spec._index.insert.call_args_list]
+    else:
+        indexed = index_cls.from_documents.call_args.args[0]
+        assert indexed is not source
+    assert indexed[0] is document
+    assert all(isinstance(doc, Document) for doc in indexed)
+    assert [doc.text for doc in indexed] == ["first", "second", str(payload)]
+
+
 def test_load_and_search_tool_spec_init() -> None:
     function_tool = FunctionTool.from_defaults(
         fn=_foo,

@@ -128,9 +128,10 @@ class LoadAndSearchToolSpec(BaseToolSpec):
 
         # convert to Document if necessary
         if isinstance(docs, list):
-            for i, doc in enumerate(docs):
-                if not isinstance(doc, Document):
-                    docs[i] = Document(text=str(doc))
+            docs = [
+                doc if isinstance(doc, Document) else Document(text=str(doc))
+                for doc in docs
+            ]
         elif isinstance(docs, str):
             docs = [Document(text=docs)]
         elif isinstance(docs, Document):
