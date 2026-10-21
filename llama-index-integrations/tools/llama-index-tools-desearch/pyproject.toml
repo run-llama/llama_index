@@ -27,7 +27,7 @@ dev = [
 [project]
 authors = [{name = "Desearch", email = "support@desearch.com"}]
 dependencies = [
-    "desearch-py>=1.0.0",
+    "desearch-py>=1.2.0,<2",
     "llama-index-core>=0.13.0,<0.15",
     "openai",
 ]
@@ -37,7 +37,7 @@ maintainers = [{name = "Desearch", email = "support@desearch.com"}]
 name = "llama-index-tools-desearch"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.codespell]
 check-filenames = true
