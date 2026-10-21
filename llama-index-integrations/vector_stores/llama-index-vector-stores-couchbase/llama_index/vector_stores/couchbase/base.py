@@ -510,11 +510,7 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
         for key, value in row_fields.items():
             # Couchbase Search returns the metadata key with a prefix
             # `metadata.` We remove it to get the original metadata key
-            if key.startswith(self._metadata_key):
-                new_key = key.split(self._metadata_key + ".")[-1]
-                metadata[new_key] = value
-            else:
-                metadata[key] = value
+            metadata[key.removeprefix(self._metadata_key + ".")] = value
 
         return metadata
 
