@@ -37,36 +37,32 @@ def _tool_entrypoint(tool: BaseTool, async_call: bool) -> Any:
     return tool
 
 
-def _entrypoint_needs_kwargs(fn: Any) -> bool:
+def _entrypoint_needs_kwargs(fn: Any, single_arg: Any) -> bool:
     """
-    Check whether a tool entry point can only take its input as kwargs.
+    Select a call shape before executing, without retrying tool failures.
 
-    Non-FunctionTool tools all declare ``(*args, **kwargs)``, so there is no
-    user function signature to bind against. What can be inspected is the
-    tool's own call method: a keyword-only declaration
-    (``def call(self, *, input)``) is how such a tool says it needs kwargs.
-    Anything else takes the positional call, and a failure there is a genuine
-    tool error, not a calling-convention mismatch worth retrying.
+    Preserve positional dispatch when it binds, including permissive *args
+    tools. Binding also detects required keyword-only parameters even when
+    *args is present. Otherwise use kwargs, as for multi-argument tools and
+    entry points whose signatures cannot be inspected.
     """
     try:
         signature = inspect.signature(fn)
+        signature.bind(single_arg)
     except (TypeError, ValueError):
-        # cannot inspect: kwargs is the one convention every tool accepts
         return True
-    return not any(
-        parameter.kind
-        in (
-            inspect.Parameter.POSITIONAL_ONLY,
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            inspect.Parameter.VAR_POSITIONAL,
-        )
-        for parameter in signature.parameters.values()
-    )
+    return False
 
 
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments."""
+    from llama_index.core.tools.ondemand_loader_tool import OnDemandLoaderTool
+
     try:
+        # The loader requires its configurable query key in kwargs, even
+        # though it also supports direct positional reader arguments.
+        if isinstance(tool, OnDemandLoaderTool):
+            return tool(**arguments)
         if (
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
@@ -76,7 +72,9 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return tool(**arguments)
                 return tool(single_arg)
-            if _entrypoint_needs_kwargs(_tool_entrypoint(tool, async_call=False)):
+            if _entrypoint_needs_kwargs(
+                _tool_entrypoint(tool, async_call=False), single_arg
+            ):
                 return tool(**arguments)
             return tool(single_arg)
         else:
@@ -94,8 +92,12 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
 
 async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments asynchronously."""
+    from llama_index.core.tools.ondemand_loader_tool import OnDemandLoaderTool
+
     async_tool = adapt_to_async_tool(tool)
     try:
+        if isinstance(tool, OnDemandLoaderTool):
+            return await async_tool.acall(**arguments)
         if (
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
@@ -105,7 +107,9 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return await async_tool.acall(**arguments)
                 return await async_tool.acall(single_arg)
-            if _entrypoint_needs_kwargs(_tool_entrypoint(tool, async_call=True)):
+            if _entrypoint_needs_kwargs(
+                _tool_entrypoint(tool, async_call=True), single_arg
+            ):
                 return await async_tool.acall(**arguments)
             return await async_tool.acall(single_arg)
         else:
