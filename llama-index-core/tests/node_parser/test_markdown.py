@@ -121,6 +121,27 @@ A list begins here:
     assert splits[5].text == "## Another Header 2"
 
 
+def test_heading_level_is_limited_to_six_hashes() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    text = "\n".join(
+        [
+            "# Root",
+            "####### Not a heading",
+            "########\tStill not a heading",
+            "###### Child",
+            " Child body",
+        ]
+    )
+    splits = markdown_parser.get_nodes_from_documents([Document(text=text)])
+
+    assert len(splits) == 2
+    assert splits[0].text == (
+        "# Root\n####### Not a heading\n########\tStill not a heading"
+    )
+    assert splits[1].text == "###### Child\n Child body"
+
+
 def test_non_header_splits() -> None:
     markdown_parser = MarkdownNodeParser()
 
