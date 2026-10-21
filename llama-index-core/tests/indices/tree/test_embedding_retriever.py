@@ -76,3 +76,29 @@ def test_embedding_query(
 
     response = retriever._query(QueryBundle(query_str))
     assert response.source_nodes[0].node.get_content() == "Hello world."
+
+
+def test_get_most_similar_nodes_preserves_indices(
+    index_kwargs: Dict,
+    documents: List[Document],
+    patch_llm_predictor,
+    patch_token_text_splitter,
+) -> None:
+    """Verify _get_most_similar_nodes returns exact positional indices even with equal nodes."""
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
+    retriever = TreeSelectLeafEmbeddingRetriever(tree, child_branch_factor=2)
+    node_a = Document(text="same", id_="dup")
+    node_b = Document(text="other", id_="other")
+    node_c = Document(text="same", id_="dup")
+    with patch.object(
+        retriever,
+        "_get_query_text_embedding_similarities",
+        return_value=[0.5, 0.1, 0.9],
+    ):
+        selected_nodes, selected_indices = retriever._get_most_similar_nodes(
+            [node_a, node_b, node_c], QueryBundle("q")
+        )
+    assert selected_indices == [2, 0]
+    assert selected_nodes[0] is node_c
+    assert selected_nodes[1] is node_a
+
