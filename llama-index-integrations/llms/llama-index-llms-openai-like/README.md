@@ -26,21 +26,24 @@ llm = OpenAILike(
 
 ## Foundry Local
 
-Install `llama-index-llms-openai-like` and the Foundry Local SDK for your platform:
+Use Python 3.11-3.14 and install `llama-index-llms-openai-like` with
+Foundry Local 2.2.1 on Windows, macOS, or Linux:
 
 ```bash
-# Windows
-pip install llama-index-llms-openai-like foundry-local-sdk-winml
-
-# macOS/Linux
-pip install llama-index-llms-openai-like foundry-local-sdk
+pip install llama-index-llms-openai-like foundry-local-sdk==2.2.1
 ```
+
+The unified `foundry-local-sdk` package includes Windows support; the separate
+`foundry-local-sdk-winml` package is no longer needed. If upgrading from an older
+Windows installation, uninstall `foundry-local-sdk-winml` first.
 
 ```python
 from foundry_local_sdk import Configuration, FoundryLocalManager
 from llama_index.llms.openai_like import OpenAILike
 
-FoundryLocalManager.initialize(Configuration(app_name="llamaindex-foundry-local"))
+FoundryLocalManager.initialize(
+    Configuration(app_name="llamaindex-foundry-local")
+)
 manager = FoundryLocalManager.instance
 
 model = manager.catalog.get_model("qwen2.5-0.5b")
@@ -62,5 +65,6 @@ llm = OpenAILike(
 Foundry Local itself is SDK-first and does not need to run as a web server unless
 you are connecting it to an OpenAI-compatible HTTP client like `OpenAILike`. This
 example uses the optional local `/v1` endpoint only for that compatibility layer.
-Foundry Local 1.2 also exposes the OpenAI Responses API from the same `/v1`
-endpoint, but `OpenAILike` continues to use the chat-completions surface.
+Foundry Local 2.2.1 uses typed sessions for native in-process inference, but its
+OpenAI-compatible HTTP API remains available. `OpenAILike` uses the
+chat-completions surface, not the native Session API or the Responses API.
