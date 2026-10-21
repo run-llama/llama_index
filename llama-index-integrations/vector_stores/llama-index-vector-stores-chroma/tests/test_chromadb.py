@@ -10,6 +10,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterOperator,
     FilterCondition,
+    VectorStoreQueryMode,
 )
 
 
@@ -230,6 +231,48 @@ async def test_add_to_chromadb_and_query_by_nested_metadata_filters(
         res = vector_store.query(VectorStoreQuery(filters=filters, similarity_top_k=1))
 
     assert res.nodes[0].get_content() == "lorem ipsum"
+
+
+@pytest.mark.parametrize(
+    "mode", [VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.MMR]
+)
+def test_query_respects_node_ids(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    mode: VectorStoreQueryMode,
+) -> None:
+    vector_store.add(node_embeddings)
+    res = vector_store.query(
+        VectorStoreQuery(
+            query_embedding=[1.0, 0.0, 0.0],
+            similarity_top_k=2,
+            node_ids=["c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d"],
+            mode=mode,
+        )
+    )
+    assert res.ids == ["c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d"]
+
+
+def test_query_respects_doc_ids_with_filters(
+    vector_store: ChromaVectorStore, node_embeddings: List[TextNode]
+) -> None:
+    vector_store.add(node_embeddings)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Charlotte Bronte", operator=FilterOperator.NE
+            )
+        ]
+    )
+    res = vector_store.query(
+        VectorStoreQuery(
+            query_embedding=[1.0, 0.0, 0.0],
+            similarity_top_k=5,
+            doc_ids=["text-3", "text-5"],
+            filters=filters,
+        )
+    )
+    assert res.ids == ["0b31ae71-b797-4e88-8495-031371a7752e"]
 
 
 def test_get_nodes(
