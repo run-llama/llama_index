@@ -272,3 +272,50 @@ def test_sync_put_works_across_event_loops() -> None:
     memory.put(ChatMessage(role="user", content="two"))
 
     assert [m.content for m in memory.get_all()] == ["one", "two"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model_copy", [False, True])
+@pytest.mark.parametrize("contended", [False, True])
+async def test_deepcopy_after_put(model_copy: bool, contended: bool) -> None:
+    from copy import deepcopy
+
+    memory = Memory(
+        token_limit=1000, session_id="copy_user", sql_store=InMemoryChatStore()
+    )
+    await memory.aput(ChatMessage(role="user", content="original"))
+    original_lock = memory._get_manage_lock()
+    if contended:
+        await original_lock.acquire()
+        pending = asyncio.create_task(
+            memory.aput(ChatMessage(role="user", content="waiting"))
+        )
+        await asyncio.sleep(0)
+    try:
+        copied = memory.model_copy(deep=True) if model_copy else deepcopy(memory)
+        copied_lock = copied._get_manage_lock()
+        assert copied_lock is not original_lock
+        assert not copied_lock.locked()
+        await asyncio.wait_for(
+            copied.aput(ChatMessage(role="user", content="copy")), timeout=1
+        )
+        assert [m.content for m in await copied.aget_all()] == ["original", "copy"]
+        assert [m.content for m in await memory.aget_all()] == ["original"]
+    finally:
+        if contended:
+            original_lock.release()
+            await pending
+
+
+@pytest.mark.asyncio
+async def test_pickle_after_put_uses_fresh_lock() -> None:
+    import pickle
+
+    memory = Memory(
+        token_limit=1000, session_id="pickle_user", sql_store=InMemoryChatStore()
+    )
+    await memory.aput(ChatMessage(role="user", content="original"))
+    copied = pickle.loads(pickle.dumps(memory))
+    assert copied._get_manage_lock() is not memory._get_manage_lock()
+    await copied.aput(ChatMessage(role="user", content="copy"))
+    assert [m.content for m in await copied.aget_all()] == ["original", "copy"]

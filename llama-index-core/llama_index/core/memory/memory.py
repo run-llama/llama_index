@@ -186,6 +186,23 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
         return None
 
 
+class _MemoryLockState:
+    """Runtime synchronization state, never copied or serialized with memory."""
+
+    def __init__(self) -> None:
+        self.lock: Optional[asyncio.Lock] = None
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "_MemoryLockState":
+        copied = type(self)()
+        memo[id(self)] = copied
+        return copied
+
+    def __getstate__(self) -> Dict[str, Any]:
+        # Pickled memory must also start with fresh, unbound synchronization.
+        return {"lock": None, "loop": None}
+
+
 class Memory(BaseMemory):
     """
     A memory module that waterfalls into memory blocks.
@@ -258,13 +275,12 @@ class Memory(BaseMemory):
         description="The key to use for storing messages in the chat store.",
     )
 
-    # Serializes aput/aput_messages/aset per event loop. The waterfall in
+    # Serializes aput/aput_messages/aset on this instance per event loop. The waterfall in
     # _manage_queue is a read-modify-write over the chat store (snapshot the
     # active queue, then archive_oldest_messages(n)); two concurrent puts on
     # the same session otherwise archive against a stale snapshot and drop
     # active messages that were never meant to be flushed.
-    _manage_lock: Optional[asyncio.Lock] = PrivateAttr(default=None)
-    _manage_lock_loop: Optional[asyncio.AbstractEventLoop] = PrivateAttr(default=None)
+    _manage_lock_state: _MemoryLockState = PrivateAttr(default_factory=_MemoryLockState)
 
     def _get_manage_lock(self) -> asyncio.Lock:
         """
@@ -277,11 +293,12 @@ class Memory(BaseMemory):
         coroutines in that loop all get the same lock.
         """
         loop = asyncio.get_running_loop()
-        lock = self._manage_lock
-        if lock is None or self._manage_lock_loop is not loop:
+        state = self._manage_lock_state
+        lock = state.lock
+        if lock is None or state.loop is not loop:
             lock = asyncio.Lock()
-            self._manage_lock = lock
-            self._manage_lock_loop = loop
+            state.lock = lock
+            state.loop = loop
         return lock
 
     @classmethod
