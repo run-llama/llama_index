@@ -1,12 +1,12 @@
-from typing import Union
+import importlib.util
 
-from google.oauth2.service_account import Credentials  # type: ignore
 from google.cloud import aiplatform, storage
 from google.cloud.aiplatform import telemetry
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
 )
+from google.oauth2.service_account import Credentials
 
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
     get_client_info,
@@ -26,8 +26,8 @@ class VectorSearchSDKManager:
         *,
         project_id: str,
         region: str,
-        credentials: Union[Credentials, None] = None,
-        credentials_path: Union[str, None] = None,
+        credentials: Credentials | None = None,
+        credentials_path: str | None = None,
     ) -> None:
         """
         Constructor.
@@ -46,17 +46,25 @@ class VectorSearchSDKManager:
         self._region = region
 
         if credentials is not None:
-            self._credentials = credentials
+            self._credentials: Credentials | None = credentials
         elif credentials_path is not None:
-            self._credentials = Credentials.from_service_account_file(credentials_path)
+            self._credentials = Credentials.from_service_account_file(  # type: ignore[no-untyped-call]
+                credentials_path
+            )
         else:
             self._credentials = None
 
         # v2 client is initialized lazily
-        self._v2_client = None
-        self._v2_available = None
+        self._v2_available = self._module_exists("google.cloud.vectorsearch_v1beta")
 
         self.initialize_aiplatform()
+
+    @staticmethod
+    def _module_exists(module_name: str) -> bool:
+        try:
+            return importlib.util.find_spec(module_name) is not None
+        except ModuleNotFoundError:
+            return False
 
     def initialize_aiplatform(self) -> None:
         """Initializes aiplatform."""
@@ -65,6 +73,10 @@ class VectorSearchSDKManager:
             location=self._region,
             credentials=self._credentials,
         )
+
+    def get_credentials(self) -> "Credentials | None":
+        """Access prepared credentials if available."""
+        return self._credentials
 
     def get_gcs_client(self) -> storage.Client:
         """
@@ -144,48 +156,18 @@ class VectorSearchSDKManager:
             bool: True if google-cloud-vectorsearch is available
 
         """
-        if self._v2_available is None:
-            import importlib.util
-
-            self._v2_available = (
-                importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
-            )
         return self._v2_available
 
-    def get_v2_client(self):
+    def ensure_v2_available(self) -> None:
         """
-        Get v2 clients only when needed - lazy import.
-
-        Returns:
-            dict: Dictionary containing the three v2 clients:
-                - vector_search_service_client: For collection and index operations
-                - data_object_service_client: For CRUD operations on data objects
-                - data_object_search_service_client: For search/query operations
+        Ensures v2 SDK is available.
 
         Raises:
-            ImportError: If google-cloud-vectorsearch is not installed
+            ImportError: If the 'v2' extra is not installed with this package
 
         """
-        if self._v2_client is None:
-            if not self.is_v2_available():
-                raise ImportError(
-                    "v2 requires 'google-cloud-vectorsearch'. "
-                    "Install with: pip install 'llama-index-vector-stores-vertexaivectorsearch[v2]'"
-                )
-
-            # Import only when needed, not at module level
-            from google.cloud import vectorsearch_v1beta
-
-            # Initialize all three clients needed for v2
-            self._v2_client = {
-                "vector_search_service_client": vectorsearch_v1beta.VectorSearchServiceClient(
-                    credentials=self._credentials
-                ),
-                "data_object_service_client": vectorsearch_v1beta.DataObjectServiceClient(
-                    credentials=self._credentials
-                ),
-                "data_object_search_service_client": vectorsearch_v1beta.DataObjectSearchServiceClient(
-                    credentials=self._credentials
-                ),
-            }
-        return self._v2_client
+        if not self._v2_available:
+            raise ImportError(
+                "Vertex v2 operations require the 'v2' extra, install with: "
+                '`pip install "llama-index-vector-stores-vertexaivectorsearch[v2]"`'
+            )

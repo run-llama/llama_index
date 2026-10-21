@@ -437,14 +437,15 @@ class GoogleDriveReader(
                 )
             return fileids_meta
 
-    def _download_file(self, fileid: str, filename: str) -> str:
+    def _download_file(self, fileid: str, filename: str) -> Optional[str]:
         """
         Download the file with fileid and filename
         Args:
             fileid: file id of the file in google drive
             filename: filename with which it will be downloaded
         Returns:
-            The downloaded filename, which may have a new extension.
+            The downloaded filename, which may have a new extension, or None
+            if the download failed and raise_errors is False.
         """
         from io import BytesIO
 
@@ -493,6 +494,7 @@ class GoogleDriveReader(
                 logger.error(
                     f"An error occurred while downloading file: {e}", exc_info=True
                 )
+            return None
 
     def _load_data_fileids_meta(self, fileids_meta: List[List[str]]) -> List[Document]:
         """
@@ -518,6 +520,10 @@ class GoogleDriveReader(
                     fileid = fileid_meta[0]
                     filepath = os.path.join(temp_dir, fileid)
                     final_filepath = self._download_file(fileid, filepath)
+                    if final_filepath is None:
+                        # The download failed and was swallowed; nothing was
+                        # written to temp_dir, so there is no file to describe.
+                        continue
 
                     # Add metadata of the file to metadata dictionary
                     metadata[final_filepath] = {
@@ -546,6 +552,7 @@ class GoogleDriveReader(
                     f"An error occurred while loading data from fileids meta: {e}",
                     exc_info=True,
                 )
+            return []
 
     def _load_from_file_ids(
         self,
@@ -584,6 +591,7 @@ class GoogleDriveReader(
                 logger.error(
                     f"An error occurred while loading with fileid: {e}", exc_info=True
                 )
+            return []
 
     def _load_from_folder(
         self,
@@ -620,6 +628,7 @@ class GoogleDriveReader(
                 logger.error(
                     f"An error occurred while loading from folder: {e}", exc_info=True
                 )
+            return []
 
     def load_data(
         self,

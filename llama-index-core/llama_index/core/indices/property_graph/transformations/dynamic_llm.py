@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 import re
 import json
@@ -16,6 +17,8 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_DYNAMIC_EXTRACT_PROPS_PROMPT,
 )
 from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
+
+logger = logging.getLogger(__name__)
 
 
 def default_parse_dynamic_triplets(
@@ -203,6 +206,7 @@ class DynamicLLMPathExtractor(TransformComponent):
     allowed_entity_props: List[str]
     allowed_relation_types: Optional[List[str]]
     allowed_relation_props: Optional[List[str]]
+    raise_on_error: bool = False
 
     def __init__(
         self,
@@ -217,6 +221,7 @@ class DynamicLLMPathExtractor(TransformComponent):
         allowed_relation_props: Optional[
             Union[List[str], List[Tuple[str, str]]]
         ] = None,
+        raise_on_error: bool = False,
     ) -> None:
         """
         Initialize the DynamicLLMPathExtractor.
@@ -229,6 +234,7 @@ class DynamicLLMPathExtractor(TransformComponent):
             num_workers (int): Number of workers for parallel processing.
             allowed_entity_types (Optional[List[str]]): List of initial entity types for the ontology.
             allowed_relation_types (Optional[List[str]]): List of initial relation types for the ontology.
+            raise_on_error (bool): Whether to raise exceptions if extraction fails. Defaults to False.
 
         """
         from llama_index.core import Settings
@@ -271,6 +277,7 @@ class DynamicLLMPathExtractor(TransformComponent):
             allowed_entity_props=allowed_entity_props or [],
             allowed_relation_types=allowed_relation_types or [],
             allowed_relation_props=allowed_relation_props or [],
+            raise_on_error=raise_on_error,
         )
 
     @classmethod
@@ -370,7 +377,9 @@ class DynamicLLMPathExtractor(TransformComponent):
 
             triplets = self.parse_fn(llm_response)
         except Exception as e:
-            print(f"Error during extraction: {e!s}")
+            logger.error(f"Error during extraction: {e!s}", exc_info=True)
+            if self.raise_on_error:
+                raise
             triplets = []
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])

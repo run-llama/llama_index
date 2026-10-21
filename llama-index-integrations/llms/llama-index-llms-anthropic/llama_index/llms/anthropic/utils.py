@@ -64,11 +64,17 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
+    "anthropic.claude-haiku-5-5": 1000000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
-    "anthropic.claude-opus-4-6-v1:0": 200000,
+    "anthropic.claude-opus-4-6-v1:0": 1000000,
     "anthropic.claude-sonnet-4-6": 1000000,
+    "anthropic.claude-sonnet-5": 1000000,
+    "anthropic.claude-sonnet-5-5": 1000000,
     "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-opus-4-8": 1000000,
+    "anthropic.claude-opus-5": 1000000,
+    "anthropic.claude-opus-5-5": 1000000,
+    "anthropic.claude-fable-5": 1000000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -81,11 +87,17 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-4-1@20250805": 200000,
     "claude-sonnet-4-5@20250929": 200000,
     "claude-haiku-4-5@20251001": 200000,
+    "claude-haiku-5-5": 1000000,
     "claude-opus-4-5@20251101": 200000,
-    "claude-opus-4-6": 200000,
+    "claude-opus-4-6": 1000000,
     "claude-sonnet-4-6": 1000000,
+    "claude-sonnet-5": 1000000,
+    "claude-sonnet-5-5": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
+    "claude-opus-5": 1000000,
+    "claude-opus-5-5": 1000000,
+    "claude-fable-5": 1000000,
 }
 
 # Anthropic API/SDK identifiers
@@ -108,12 +120,18 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-5": 200000,
     "claude-haiku-4-5-20251001": 200000,
     "claude-haiku-4-5": 200000,
+    "claude-haiku-5-5": 1000000,
     "claude-opus-4-5": 200000,
     "claude-opus-4-5-20251101": 200000,
-    "claude-opus-4-6": 200000,
+    "claude-opus-4-6": 1000000,
     "claude-sonnet-4-6": 1000000,
+    "claude-sonnet-5": 1000000,
+    "claude-sonnet-5-5": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
+    "claude-opus-5": 1000000,
+    "claude-opus-5-5": 1000000,
+    "claude-fable-5": 1000000,
 }
 
 # All provider Anthropic identifiers
@@ -129,11 +147,23 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
     "claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "claude-opus-4-8",
+    "anthropic.claude-opus-5",
+    "claude-opus-5",
+    "anthropic.claude-opus-5-5",
+    "claude-opus-5-5",
+    "anthropic.claude-fable-5",
+    "claude-fable-5",
+    "anthropic.claude-sonnet-5",
+    "claude-sonnet-5",
+    "anthropic.claude-sonnet-5-5",
+    "claude-sonnet-5-5",
+    "anthropic.claude-haiku-5-5",
+    "claude-haiku-5-5",
 )
 
 
 def is_function_calling_model(modelname: str) -> bool:
-    return "-3" in modelname or "-4" in modelname
+    return "-3" in modelname or "-4" in modelname or "-5" in modelname
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
@@ -571,6 +601,10 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude Opus 5.5
+    "claude-opus-5-5",
+    # Claude Opus 5
+    "claude-opus-5",
     # Claude 4.5 Opus
     "claude-opus-4-5-20251101",
     "claude-opus-4-5",
@@ -581,6 +615,10 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-opus-4-20250514",
     "claude-opus-4-0",
     "claude-4-opus-20250514",
+    # Claude Sonnet 5.5
+    "claude-sonnet-5-5",
+    # Claude Sonnet 5
+    "claude-sonnet-5",
     # Claude 4.5 Sonnet
     "claude-sonnet-4-5-20250929",
     "claude-sonnet-4-5",
@@ -595,6 +633,8 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-5-sonnet-20241022",
     "claude-3-5-sonnet-20240620",
     "claude-3-5-sonnet-latest",
+    # Claude Haiku 5
+    "claude-haiku-5-5",
     # Claude 4.5 Haiku
     "claude-haiku-4-5-20251001",
     "claude-haiku-4-5",
@@ -610,15 +650,20 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
 )
 
 STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
+    "claude-opus-5-5",
+    "claude-opus-5",
     "claude-opus-4-1-20250805",
     "claude-opus-4-1",
     "claude-sonnet-4-5-20250929",
     "claude-sonnet-4-5",
     "claude-haiku-4-5-20251001",
     "claude-haiku-4-5",
+    "claude-haiku-5-5",
     "claude-opus-4-5-20251101",
     "claude-opus-4-5",
     "claude-sonnet-4-6",
+    "claude-sonnet-5",
+    "claude-sonnet-5-5",
     "claude-opus-4-6",
 )
 

@@ -31,6 +31,9 @@ from llama_index.vector_stores.pinecone.utils import (
 import pinecone.db_data
 import pinecone.pinecone_asyncio
 
+# pinecone>=9 moved the Index class to the package root.
+PineconeIndex = getattr(pinecone, "Index", None) or pinecone.db_data.Index
+
 ID_KEY = "id"
 VECTOR_KEY = "values"
 SPARSE_VECTOR_KEY = "sparse_values"
@@ -122,8 +125,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
     k most similar nodes.
 
     Args:
-        pinecone_index (Optional[Union[pinecone.Pinecone.Index, pinecone.Index]]): Pinecone index instance,
-        pinecone.Pinecone.Index for clients >= 3.0.0; pinecone.Index for older clients.
+        pinecone_index (Optional[Index]): Pinecone index instance, as returned by
+        `Pinecone(...).Index(...)`.
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
@@ -175,12 +178,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
     batch_size: int
     remove_text_from_metadata: bool
 
-    _pinecone_index: pinecone.db_data.index.Index = PrivateAttr()
+    _pinecone_index: PineconeIndex = PrivateAttr()
     _sparse_embedding_model: Optional[BaseSparseEmbedding] = PrivateAttr()
 
     def __init__(
         self,
-        pinecone_index: Optional[pinecone.db_data.index.Index] = None,
+        pinecone_index: Optional[PineconeIndex] = None,
         api_key: Optional[str] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
@@ -225,7 +228,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         if isinstance(pinecone_index, str):
             raise ValueError(
-                "`pinecone_index` cannot be of type `str`; should be an instance of pinecone.data.index.Index"
+                "`pinecone_index` cannot be of type `str`; should be an instance of the Pinecone client's Index"
             )
 
         self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
@@ -341,12 +344,24 @@ class PineconeVectorStore(BasePydanticVectorStore):
                     "values": list(sparse_vector.values()),
                 }
 
-        self._pinecone_index.upsert(
-            entries,
+        # pinecone>=9 made the data plane keyword-only.
+        response = self._pinecone_index.upsert(
+            vectors=entries,
             namespace=self.namespace,
             batch_size=self.batch_size,
             **self.insert_kwargs,
         )
+
+        # pinecone>=9 reports per-batch failures on the response rather than
+        # raising, so `ids` would otherwise cover vectors that were never written.
+        errors = getattr(response, "errors", None)
+        if errors:
+            raise RuntimeError(
+                f"Pinecone upsert failed for {response.failed_item_count} of "
+                f"{response.total_item_count} vectors: "
+                + "; ".join(error.error_message for error in errors)
+            ) from errors[0].error
+
         return ids
 
     def get_nodes(
@@ -405,10 +420,14 @@ class PineconeVectorStore(BasePydanticVectorStore):
         except Exception:
             # fallback to deleting by prefix for serverless
             # TODO: this is a bit of a hack, we should find a better way to handle this
-            id_gen = self._pinecone_index.list(
-                prefix=ref_doc_id, namespace=self.namespace
-            )
-            ids_to_delete = list(id_gen)
+            # pinecone<9 yields pages of ids, pinecone>=9 yields pages of entries
+            ids_to_delete = [
+                entry if isinstance(entry, str) else entry.id
+                for page in self._pinecone_index.list(
+                    prefix=ref_doc_id, namespace=self.namespace
+                )
+                for entry in page
+            ]
             if ids_to_delete:
                 self._pinecone_index.delete(
                     ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
@@ -426,18 +445,25 @@ class PineconeVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+                Mutually exclusive with `node_ids`.
 
         """
-        node_ids = node_ids or []
+        # Pinecone deletes by exactly one of ids/filter/delete_all, and pinecone>=9
+        # rejects the combination client-side.
+        if node_ids and filters is not None:
+            raise ValueError(
+                "`node_ids` and `filters` cannot be combined; Pinecone deletes by "
+                "ids or by filter, not both."
+            )
 
         if filters is not None:
-            filter = _to_pinecone_filter(filters)
+            delete_kwargs["filter"] = _to_pinecone_filter(filters)
+        elif node_ids:
+            delete_kwargs["ids"] = node_ids
         else:
-            filter = None
+            return
 
-        self._pinecone_index.delete(
-            ids=node_ids, namespace=self.namespace, filter=filter, **delete_kwargs
-        )
+        self._pinecone_index.delete(namespace=self.namespace, **delete_kwargs)
 
     def clear(self) -> None:
         """Clears the index."""
