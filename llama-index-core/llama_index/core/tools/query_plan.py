@@ -219,7 +219,7 @@ class QueryPlanTool(BaseTool):
         ]
         return [nodes_dict[node_id] for node_id in root_node_ids]
 
-    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
+    def __call__(self, **kwargs: Any) -> ToolOutput:
         """Call."""
         # the kwargs represented as a JSON object
         # should be a QueryPlan object

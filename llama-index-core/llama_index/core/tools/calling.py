@@ -1,10 +1,15 @@
 import inspect
 import json
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.tools.function_tool import FunctionTool
-from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools.types import (
+    AsyncBaseTool,
+    BaseTool,
+    ToolOutput,
+    adapt_to_async_tool,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -24,9 +29,40 @@ def _function_tool_accepts_kwargs(tool: FunctionTool, arguments: dict) -> bool:
     return True
 
 
+def _tool_entrypoint(tool: BaseTool, async_call: bool) -> Any:
+    """Return the callable that actually receives the tool arguments."""
+    if isinstance(tool, AsyncBaseTool):
+        return tool.acall if async_call else tool.call
+    # plain BaseTool: invoked through __call__, also by the async adapter
+    return tool
+
+
+def _entrypoint_needs_kwargs(fn: Any, single_arg: Any) -> bool:
+    """
+    Select a call shape before executing, without retrying tool failures.
+
+    Preserve positional dispatch when it binds, including permissive *args
+    tools. Binding also detects required keyword-only parameters even when
+    *args is present. Otherwise use kwargs, as for multi-argument tools and
+    entry points whose signatures cannot be inspected.
+    """
+    try:
+        signature = inspect.signature(fn)
+        signature.bind(single_arg)
+    except (TypeError, ValueError):
+        return True
+    return False
+
+
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments."""
+    from llama_index.core.tools.ondemand_loader_tool import OnDemandLoaderTool
+
     try:
+        # The loader requires its configurable query key in kwargs, even
+        # though it also supports direct positional reader arguments.
+        if isinstance(tool, OnDemandLoaderTool):
+            return tool(**arguments)
         if (
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
@@ -36,11 +72,11 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return tool(**arguments)
                 return tool(single_arg)
-            try:
-                return tool(single_arg)
-            except Exception:
-                # some tools will REQUIRE kwargs, so try it
+            if _entrypoint_needs_kwargs(
+                _tool_entrypoint(tool, async_call=False), single_arg
+            ):
                 return tool(**arguments)
+            return tool(single_arg)
         else:
             return tool(**arguments)
     except Exception as e:
@@ -56,8 +92,12 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
 
 async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments asynchronously."""
+    from llama_index.core.tools.ondemand_loader_tool import OnDemandLoaderTool
+
     async_tool = adapt_to_async_tool(tool)
     try:
+        if isinstance(tool, OnDemandLoaderTool):
+            return await async_tool.acall(**arguments)
         if (
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
@@ -67,11 +107,11 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
                 if _function_tool_accepts_kwargs(tool, arguments):
                     return await async_tool.acall(**arguments)
                 return await async_tool.acall(single_arg)
-            try:
-                return await async_tool.acall(single_arg)
-            except Exception:
-                # some tools will REQUIRE kwargs, so try it
+            if _entrypoint_needs_kwargs(
+                _tool_entrypoint(tool, async_call=True), single_arg
+            ):
                 return await async_tool.acall(**arguments)
+            return await async_tool.acall(single_arg)
         else:
             return await async_tool.acall(**arguments)
     except Exception as e:
