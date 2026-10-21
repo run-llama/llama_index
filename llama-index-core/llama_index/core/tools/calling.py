@@ -1,10 +1,27 @@
-from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
-from typing import TYPE_CHECKING, Sequence
-from llama_index.core.llms.llm import ToolSelection
+import inspect
 import json
+from typing import TYPE_CHECKING, Sequence
+
+from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+
+def _function_tool_accepts_kwargs(tool: FunctionTool, arguments: dict) -> bool:
+    """Check whether a function tool can receive its generated arguments as kwargs."""
+    try:
+        signature = inspect.signature(tool.real_fn)
+    except (TypeError, ValueError):
+        return True
+
+    try:
+        signature.bind_partial(**arguments)
+    except TypeError:
+        return False
+    return True
 
 
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
@@ -14,8 +31,12 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
         ):
+            single_arg = arguments[next(iter(arguments))]
+            if isinstance(tool, FunctionTool):
+                if _function_tool_accepts_kwargs(tool, arguments):
+                    return tool(**arguments)
+                return tool(single_arg)
             try:
-                single_arg = arguments[next(iter(arguments))]
                 return tool(single_arg)
             except Exception:
                 # some tools will REQUIRE kwargs, so try it
@@ -41,8 +62,12 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
         ):
+            single_arg = arguments[next(iter(arguments))]
+            if isinstance(tool, FunctionTool):
+                if _function_tool_accepts_kwargs(tool, arguments):
+                    return await async_tool.acall(**arguments)
+                return await async_tool.acall(single_arg)
             try:
-                single_arg = arguments[next(iter(arguments))]
                 return await async_tool.acall(single_arg)
             except Exception:
                 # some tools will REQUIRE kwargs, so try it

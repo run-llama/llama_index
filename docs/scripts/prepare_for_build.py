@@ -106,7 +106,6 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "storage": "Storage",
     "tools": "Tools",
     "workflow": "Workflow",
-    "llama_deploy": "LlamaDeploy",
     "message_queues": "Message Queues",
     "voice_agents": "Voice Agents",
 }

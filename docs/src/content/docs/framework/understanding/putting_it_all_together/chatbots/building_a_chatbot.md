@@ -38,12 +38,12 @@ Let's first download the raw 10-k files, from 2019-2022.
 !unzip data/UBER.zip -d data
 ```
 
-To parse the HTML files into formatted text, we use the [Unstructured](https://github.com/Unstructured-IO/unstructured) library. Thanks to [LlamaHub](https://llamahub.ai/), we can directly integrate with Unstructured, allowing conversion of any text into a Document format that LlamaIndex can ingest.
+To parse the HTML files into formatted text, we use the [Unstructured](https://github.com/Unstructured-IO/unstructured) library. Thanks to the [`llama-index-readers-file` package](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-file), we can directly integrate with Unstructured, allowing conversion of any text into a Document format that LlamaIndex can ingest.
 
 First we install the necessary packages:
 
 ```
-!pip install llama-hub unstructured
+!pip install llama-index-readers-file unstructured
 ```
 
 Then we can use the `UnstructuredReader` to parse the HTML files into a list of `Document` objects.

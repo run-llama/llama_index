@@ -1,6 +1,6 @@
 from typing import Callable, Dict, Any, List, Optional, Awaitable
 
-from ag_ui.core import RunAgentInput
+from ag_ui.core import PROTOCOL_VERSION, RunAgentInput
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
@@ -65,6 +65,7 @@ class AGUIWorkflowRouter:
                         timestamp=timestamp(),
                         thread_id=input.thread_id,
                         run_id=input.run_id,
+                        protocol_version=PROTOCOL_VERSION,
                     )
                 )
 
