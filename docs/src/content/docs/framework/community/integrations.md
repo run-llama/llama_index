@@ -8,11 +8,14 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 Data loaders (readers) live in the [`readers` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) of the LlamaIndex repo, one package per source. See the [data connectors guide](/python/framework/module_guides/loading/connector) for how to use them.
 
+- [ContextFetch Reader](https://github.com/lachy3433/llama-index-contextfetch) — load web search results or URLs as Markdown Documents.
+
 ## Agent Tools
 
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [ContextFetch Tool Spec](https://github.com/lachy3433/llama-index-contextfetch) — `search`, `read_page`, `find_similar`, and `answer` tools backed by the ContextFetch API.
 
 ## LlamaPacks -- Code Templates
 
