@@ -14,13 +14,14 @@ def test_class():
 
 
 class FakeHWPFile:
-    def __init__(self, section_data: bytes) -> None:
+    def __init__(self, section_data: bytes, compressed: bool = True) -> None:
         self.section_data = section_data
+        self.compressed = compressed
 
     def openstream(self, section: str) -> io.BytesIO:
         if section == "FileHeader":
             header = bytearray(37)
-            header[36] = 1
+            header[36] = int(self.compressed)
             return io.BytesIO(header)
         return io.BytesIO(self.section_data)
 
@@ -30,10 +31,17 @@ def raw_deflate(data: bytes) -> bytes:
     return compressor.compress(data) + compressor.flush()
 
 
+def hwp_record(record_type: int, payload: bytes) -> bytes:
+    length = len(payload)
+    header = record_type | (min(length, 0xFFF) << 20)
+    record = struct.pack("<I", header)
+    if length >= 0xFFF:
+        record += struct.pack("<I", length)
+    return record + payload
+
+
 def hwp_text_record(text: str) -> bytes:
-    encoded_text = text.encode("utf-16")
-    header = 67 | (len(encoded_text) << 20)
-    return struct.pack("<I", header) + encoded_text
+    return hwp_record(67, text.encode("utf-16"))
 
 
 def test_compressed_section_is_decompressed_with_limit():
@@ -41,6 +49,38 @@ def test_compressed_section_is_decompressed_with_limit():
     load_file = FakeHWPFile(raw_deflate(hwp_text_record("hello")))
 
     assert reader.get_text_from_section(load_file, "BodyText/Section0") == "hello\n"
+
+
+@pytest.mark.parametrize("compressed", [False, True])
+@pytest.mark.parametrize("text", ["한" * 2046, "한" * 2047], ids=["inline", "extended"])
+def test_section_reads_text_records(compressed: bool, text: str) -> None:
+    reader = HWPReader()
+    section = hwp_text_record(text) + hwp_text_record("following paragraph")
+    load_file = FakeHWPFile(
+        raw_deflate(section) if compressed else section, compressed=compressed
+    )
+
+    assert (
+        reader.get_text_from_section(load_file, "BodyText/Section0")
+        == f"{text}\nfollowing paragraph\n"
+    )
+
+
+@pytest.mark.parametrize("compressed", [False, True])
+@pytest.mark.parametrize("payload_size", [0xFFE, 0xFFF, 0x1000])
+def test_section_skips_nontext_record(compressed: bool, payload_size: int) -> None:
+    reader = HWPReader()
+    section = hwp_record(0x200, b"\x01" * payload_size) + hwp_text_record(
+        "following paragraph"
+    )
+    load_file = FakeHWPFile(
+        raw_deflate(section) if compressed else section, compressed=compressed
+    )
+
+    assert (
+        reader.get_text_from_section(load_file, "BodyText/Section0")
+        == "following paragraph\n"
+    )
 
 
 def test_compressed_section_rejects_decompression_bomb():
