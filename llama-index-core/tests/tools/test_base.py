@@ -5,7 +5,7 @@ import json
 from typing import List, Optional
 
 import pytest
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.schema import Document, TextNode
@@ -82,6 +82,25 @@ def test_function_tool_to_langchain() -> None:
     langchain_tool2 = function_tool.to_langchain_structured_tool()
     assert langchain_tool2.run({"x": 1, "y": 2}) == "1,2"
     assert langchain_tool2.args_schema == TestSchema
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.parametrize(
+    "conversion", ["to_langchain_tool", "to_langchain_structured_tool"]
+)
+def test_function_tool_to_langchain_schema_override(conversion: str) -> None:
+    class PositiveInput(BaseModel):
+        x: int = Field(gt=0)
+
+    function_tool = FunctionTool.from_defaults(
+        tmp_function, name="positive", description="Return a positive number"
+    )
+    langchain_tool = getattr(function_tool, conversion)(args_schema=PositiveInput)
+
+    assert langchain_tool.run({"x": 1}) == "1"
+    with pytest.raises(ValidationError, match="greater than 0"):
+        langchain_tool.run({"x": 0})
+    assert langchain_tool.args_schema is PositiveInput
 
 
 @pytest.mark.asyncio
