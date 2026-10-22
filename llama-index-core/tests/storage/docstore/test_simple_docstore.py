@@ -152,3 +152,33 @@ def test_docstore_delete_all_ref_doc_nodes() -> None:
     assert docstore._kvstore.get("d1", docstore._node_collection) is None
     assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
     assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
+
+
+@pytest.mark.asyncio
+async def test_docstore_adelete_all_ref_doc_nodes() -> None:
+    ref_doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    doc = Document(text="hello world", id_="d2", metadata={"foo": "bar"})
+    doc.relationships[NodeRelationship.SOURCE] = ref_doc.as_related_node_info()
+    node = TextNode(text="my node", id_="d3", metadata={"node": "info"})
+    node.relationships[NodeRelationship.SOURCE] = ref_doc.as_related_node_info()
+
+    docstore = SimpleDocumentStore()
+    await docstore.async_add_documents([ref_doc, doc, node])
+
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection)["node_ids"] == [
+        "d2",
+        "d3",
+    ]
+
+    await docstore.adelete_document("d2")
+    assert docstore._kvstore.get("d1", docstore._node_collection) is not None
+    assert docstore._kvstore.get("d1", docstore._metadata_collection) is not None
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is not None
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection)["node_ids"] == [
+        "d3"
+    ]
+
+    await docstore.adelete_document("d3")
+    assert docstore._kvstore.get("d1", docstore._node_collection) is None
+    assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
+    assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
