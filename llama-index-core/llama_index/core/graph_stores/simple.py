@@ -125,13 +125,13 @@ class SimpleGraphStore(GraphStore):
         if subj not in self._data.graph_dict:
             self._data.graph_dict[subj] = []
         existing = self._data.graph_dict[subj]
-        if (rel, obj) not in map(tuple, existing):
+        if [rel, obj] not in existing:
             existing.append([rel, obj])
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         if subj in self._data.graph_dict:
-            if (rel, obj) in self._data.graph_dict[subj]:
+            if [rel, obj] in self._data.graph_dict[subj]:
                 self._data.graph_dict[subj].remove([rel, obj])
                 if len(self._data.graph_dict[subj]) == 0:
                     del self._data.graph_dict[subj]
