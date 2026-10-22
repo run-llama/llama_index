@@ -271,6 +271,39 @@ def test_delete_nodes(
     assert res[0].id_ == "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d"
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_delete_nodes_by_metadata_filter(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    vector_store.add(node_embeddings)
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="author", value="Stephen King")]
+    )
+    all_node_ids = [node.node_id for node in node_embeddings]
+
+    # An explicit empty ID list must not become an unrestricted filtered delete.
+    if use_async:
+        await vector_store.adelete_nodes(node_ids=[], filters=filters)
+    else:
+        vector_store.delete_nodes(node_ids=[], filters=filters)
+    assert {node.id_ for node in vector_store.get_nodes(all_node_ids)} == set(
+        all_node_ids
+    )
+
+    # Omitting IDs asks Chroma to delete every node matching the metadata filter.
+    if use_async:
+        await vector_store.adelete_nodes(filters=filters)
+    else:
+        vector_store.delete_nodes(filters=filters)
+    remaining = vector_store.get_nodes(all_node_ids)
+    assert {node.id_ for node in remaining} == set(all_node_ids) - {
+        "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
+    }
+
+
 def test_clear(
     vector_store: ChromaVectorStore, node_embeddings: List[TextNode]
 ) -> None:

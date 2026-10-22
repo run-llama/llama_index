@@ -349,12 +349,17 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        node_ids = node_ids or []
+        # An explicitly empty ID list means there is nothing to delete. In
+        # particular, don't turn it into a filter-only deletion.
+        if node_ids is not None and not node_ids:
+            return
+
+        if not filters and node_ids is None:
+            node_ids = []
 
         if filters:
             where = _to_chroma_filter(filters)
             self._collection.delete(ids=node_ids, where=where)
-
         else:
             self._collection.delete(ids=node_ids)
 
