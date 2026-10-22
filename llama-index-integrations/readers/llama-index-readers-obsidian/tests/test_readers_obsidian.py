@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
 
+import pytest
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.obsidian import ObsidianReader
 
@@ -55,6 +57,28 @@ def test_file_metadata_nested(tmp_path: Path):
     doc = docs[0]
     assert doc.metadata.get("file_name") == "nested.md"
     assert Path(doc.metadata.get("folder_path")).resolve() == subdir.resolve()
+
+
+@pytest.mark.parametrize("relative_input", [True, False])
+@pytest.mark.parametrize("folder", ["", "notes", "notes/deep"])
+def test_folder_metadata_is_relative_to_vault(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, relative_input: bool, folder: str
+) -> None:
+    vault = tmp_path / "vault"
+    note_dir = vault / folder
+    note_dir.mkdir(parents=True)
+    create_markdown_file(note_dir, "example.md", "Example note.")
+    monkeypatch.chdir(tmp_path)
+
+    input_dir = "vault" if relative_input else str(vault)
+    docs = ObsidianReader(input_dir=input_dir).load_data()
+
+    assert len(docs) == 1
+    assert docs[0].metadata["folder_name"] == str(Path(folder))
+    assert docs[0].metadata["folder_path"] == str(note_dir)
+    assert docs[0].metadata["file_name"] == "example.md"
+    assert docs[0].metadata["note_name"] == "example"
+    assert "Example note." in docs[0].text
 
 
 ###########################################
