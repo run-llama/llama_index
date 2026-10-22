@@ -161,12 +161,11 @@ class GPTTreeIndexBuilder:
                     self._llm.apredict(self.summary_prompt, context_str=text_chunk)
                     for text_chunk in text_chunks
                 ]
-                outputs: List[Tuple[str, str]] = run_async_tasks(
+                summaries: List[str] = run_async_tasks(
                     tasks,
                     show_progress=self._show_progress,
                     progress_bar_desc="Generating summaries",
                 )
-                summaries = [output[0] for output in outputs]
             else:
                 text_chunks_progress = get_tqdm_iterable(
                     text_chunks,
