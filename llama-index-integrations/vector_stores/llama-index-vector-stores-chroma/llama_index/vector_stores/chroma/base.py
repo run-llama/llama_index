@@ -1,5 +1,6 @@
 """Chroma vector store."""
 
+import asyncio
 import logging
 import math
 from typing import Any, Dict, Generator, List, Optional, Union, cast
@@ -422,6 +423,12 @@ class ChromaVectorStore(BasePydanticVectorStore):
             where=where,
             **kwargs,
         )
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """Query the vector store without blocking the event loop."""
+        return await asyncio.to_thread(self.query, query, **kwargs)
 
     def _query(
         self, query_embeddings: List["float"], n_results: int, where: dict, **kwargs
