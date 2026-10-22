@@ -239,18 +239,15 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         and which will have to be summarized by the llm.
         """
         chat_history_full_text: List[ChatMessage] = []
-        message_count = len(chat_history)
-        while (
-            message_count > 0
-            and self.get_token_count()
-            + self._token_count_for_messages([chat_history[-1]])
-            <= self.token_limit
-        ):
+        while len(chat_history) > 0:
+            msg_tokens = self._token_count_for_messages([chat_history[-1]])
+            if self.get_token_count() + msg_tokens > self.token_limit:
+                break
             # traverse the history in reverse order, when token limit is about to be
             # exceeded, we stop, so remaining messages are summarized
-            self._token_count += self._token_count_for_messages([chat_history[-1]])
-            chat_history_full_text.insert(0, chat_history.pop())
-            message_count -= 1
+            self._token_count += msg_tokens
+            chat_history_full_text.append(chat_history.pop())
+        chat_history_full_text.reverse()
 
         chat_history_to_be_summarized = chat_history.copy()
         self._handle_assistant_and_tool_messages(
@@ -333,8 +330,12 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         Therefore, we switch messages to summarized list until the first message is
         not an ASSISTANT or TOOL message.
         """
-        while chat_history_full_text and chat_history_full_text[0].role in (
+        idx = 0
+        while idx < len(chat_history_full_text) and chat_history_full_text[idx].role in (
             MessageRole.ASSISTANT,
             MessageRole.TOOL,
         ):
-            chat_history_to_be_summarized.append(chat_history_full_text.pop(0))
+            idx += 1
+        if idx > 0:
+            chat_history_to_be_summarized.extend(chat_history_full_text[:idx])
+            del chat_history_full_text[:idx]
