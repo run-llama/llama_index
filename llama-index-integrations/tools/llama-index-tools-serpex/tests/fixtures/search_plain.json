@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "number_of_results": 10,
+    "response_time": 1348,
+    "timestamp": "2026-10-23T06:27:50.993Z",
+    "credits_used": 1,
+    "from_cache": false,
+    "status": "success"
+  },
+  "id": "00000000-0000-4000-8000-000000000001",
+  "query": "python asyncio tutorial",
+  "engines": ["auto"],
+  "results": [
+    {
+      "title": "Python's asyncio: A Hands-On Walkthrough - Real Python",
+      "url": "https://realpython.com/async-io-python/",
+      "snippet": "Python's asyncio library enables you to write concurrent code using the async and await keywords. The core building blocks of async I/O in Python are awaitable objects—most often coroutines—that an event loop schedules and executes asynchronously. This programming model lets you efficiently manage multiple I/O-bound tasks within a single thread of execution. In this tutorial, you'll ...",
+      "position": 1,
+      "engine": "auto"
+    },
+    {
+      "title": "asyncio in Python - GeeksforGeeks",
+      "url": "https://www.geeksforgeeks.org/python/asyncio-in-python/",
+      "snippet": "Asyncio is used as a foundation for multiple Python asynchronous frameworks that provide high-performance network and web servers, database connection libraries, distributed task queues, etc Asynchronous Programming with Asyncio in Python In the example below, we'll create a function and make it asynchronous using the async keyword.",
+      "position": 2,
+      "engine": "auto"
+    },
+    {
+      "title": "Python AsyncIO Tutorial: A Comprehensive Guide To Async Python",
+      "url": "https://codesamplez.com/programming/python-asyncio-tutorial",
+      "snippet": "Learn Python AsyncIO with our beginner-friendly tutorial. Master asynchronous programming, coroutines, and more. Start coding efficiently!",
+      "position": 3,
+      "engine": "auto"
+    },
+    {
+      "title": "asyncio — Asynchronous I/O — Python 3.15.1 documentation",
+      "url": "https://docs.python.org/3/library/asyncio.html",
+      "snippet": "asyncio is a library to write concurrent code using the async/await syntax. asyncio is used as a foundation for multiple Python asynchronous frameworks that provide high-performance network and web-servers, database connection libraries, distributed task queues, etc. asyncio is often a perfect fit for IO-bound and high-level structured network code.",
+      "position": 4,
+      "engine": "auto"
+    },
+    {
+      "title": "A conceptual overview of asyncio — Python 3.15.0 documentation",
+      "url": "https://docs.python.org/3/howto/a-conceptual-overview-of-asyncio.html",
+      "snippet": "A conceptual overview part 1: the high-level ¶ In part 1, we'll cover the main, high-level building blocks of asyncio: the event loop, coroutine functions, coroutine objects, tasks, and await. Event loop ¶ Everything in asyncio happens relative to the event loop. It's the star of the show, but prefers to work behind the scenes, managing and coordinating resources. It's like an ...",
+      "position": 5,
+      "engine": "auto"
+    },
+    {
+      "title": "Python Tutorial: AsyncIO - Complete Guide to Asynchronous Programming ...",
+      "url": "https://www.youtube.com/watch?v=oAkLSJNr5zY",
+      "snippet": "By the end of this video, you'll have a solid understanding of asynchronous programming in Python and know exactly when and how to use AsyncIO in your own projects.",
+      "position": 6,
+      "engine": "auto"
+    },
+    {
+      "title": "Python Async Programming: The Complete Guide - DataCamp",
+      "url": "https://www.datacamp.com/tutorial/python-async-programming",
+      "snippet": "Speed up your code with Python async programming. A step-by-step guide to asyncio, concurrency, efficient HTTP requests, and database integration.",
+      "position": 7,
+      "engine": "auto"
+    },
+    {
+      "title": "Python Asyncio: The Complete Guide - SuperFastPython",
+      "url": "https://superfastpython.com/python-asyncio/",
+      "snippet": "This makes asyncio very attractive and widely used for Python web development, Python APIs that make web calls, and concurrency for socket programming. This book-length guide provides a detailed and comprehensive walkthrough of Python Asyncio.",
+      "position": 8,
+      "engine": "auto"
+    },
+    {
+      "title": "Asyncio in Python - Full Tutorial - YouTube",
+      "url": "https://www.youtube.com/watch?v=Qb9s3UiMSTA",
+      "snippet": "Asyncio is your choice for running multiple tasks concurrently such as network requests or reading files, without using much CPU power.",
+      "position": 9,
+      "engine": "auto"
+    },
+    {
+      "title": "Python asyncio Module - W3Schools",
+      "url": "https://www.w3schools.com/python/ref_module_asyncio.asp",
+      "snippet": "The asyncio module provides an event loop, tasks, and I/O primitives for concurrent code. Use async / await to write structured asynchronous programs, schedule coroutines, and work with networking, subprocesses, and synchronization primitives.",
+      "position": 10,
+      "engine": "auto"
+    }
+  ]
+}

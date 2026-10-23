@@ -1,0 +1,6 @@
+{
+  "error": {
+    "message": "Unexpected end of JSON input",
+    "status": 500
+  }
+}

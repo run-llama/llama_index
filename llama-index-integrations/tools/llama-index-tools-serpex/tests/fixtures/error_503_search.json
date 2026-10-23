@@ -1,0 +1,10 @@
+{
+  "status": "error",
+  "error": "Search temporarily unavailable, please retry.",
+  "retryable": true,
+  "metadata": {
+    "status": "error",
+    "response_time": 30412,
+    "timestamp": "2026-10-23T06:30:00.000Z"
+  }
+}
