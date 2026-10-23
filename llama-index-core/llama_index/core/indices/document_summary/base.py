@@ -256,7 +256,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
-        index_nodes = set(self._index_struct.node_id_to_summary_id.keys())
+        index_nodes = self._index_struct.node_id_to_summary_id
         valid_node_ids = []
         for node in node_ids:
             if node not in index_nodes:
@@ -266,16 +266,16 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
         self._index_struct.delete_nodes(valid_node_ids)
 
-        remove_summary_ids = [
+        remove_summary_ids = {
             summary_id
-            for summary_id in self._index_struct.summary_id_to_node_ids
-            if len(self._index_struct.summary_id_to_node_ids[summary_id]) == 0
-        ]
+            for summary_id, summary_nodes in self._index_struct.summary_id_to_node_ids.items()
+            if len(summary_nodes) == 0
+        }
 
         remove_docs = [
             doc_id
-            for doc_id in self._index_struct.doc_id_to_summary_id
-            if self._index_struct.doc_id_to_summary_id[doc_id] in remove_summary_ids
+            for doc_id, summary_id in self._index_struct.doc_id_to_summary_id.items()
+            if summary_id in remove_summary_ids
         ]
 
         for doc_id in remove_docs:
