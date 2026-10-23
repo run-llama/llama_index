@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Optional
 
 import pytest
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
@@ -69,6 +69,47 @@ def test_insert_and_run_sql(sql_database: SQLDatabase) -> None:
     result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
 
     assert result_str == "[(1, 'Paul McCartney')]"
+
+
+@pytest.mark.parametrize(
+    ("schema", "table_name"),
+    [
+        (None, "records"),
+        ("main", "records"),
+        ("analytics", "records"),
+        ("main", "main.records"),
+        ("analytics", "analytics.records"),
+    ],
+)
+def test_insert_into_table_uses_configured_schema(
+    schema: Optional[str], table_name: str
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    try:
+        with engine.begin() as connection:
+            connection.exec_driver_sql("ATTACH DATABASE ':memory:' AS analytics")
+            connection.exec_driver_sql("CREATE TABLE main.records (id INTEGER)")
+            connection.exec_driver_sql("CREATE TABLE analytics.records (id INTEGER)")
+
+        database = SQLDatabase(engine, schema=schema)
+        database.insert_into_table(table_name, {"id": 1})
+
+        with engine.connect() as connection:
+            main_ids = (
+                connection.exec_driver_sql("SELECT id FROM main.records")
+                .scalars()
+                .all()
+            )
+            analytics_ids = (
+                connection.exec_driver_sql("SELECT id FROM analytics.records")
+                .scalars()
+                .all()
+            )
+
+        assert main_ids == ([] if schema == "analytics" else [1])
+        assert analytics_ids == ([1] if schema == "analytics" else [])
+    finally:
+        engine.dispose()
 
 
 # Test query results truncation
