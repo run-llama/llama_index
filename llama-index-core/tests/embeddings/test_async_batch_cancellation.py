@@ -155,3 +155,30 @@ async def test_gather_cancel_on_error_drains_remaining_tasks():
 
     assert state["completed"] == []
     assert sorted(state["cancelled"]) == ["a", "b"]
+
+
+@pytest.mark.asyncio
+async def test_show_progress_batch_cancels_siblings_on_failure():
+    """The tqdm progress path has no return_exceptions switch of its own."""
+    embed_model = _RecordingEmbedding(embed_batch_size=1)
+
+    with pytest.raises(ValueError):
+        await embed_model.aget_text_embedding_batch(
+            ["bad", "slow-1", "slow-2"], show_progress=True
+        )
+
+    assert sorted(embed_model.started) == ["bad", "slow-1", "slow-2"]
+    assert sorted(embed_model.cancelled) == ["slow-1", "slow-2"]
+
+
+@pytest.mark.asyncio
+async def test_show_progress_batch_success_returns_all_embeddings():
+    embed_model = _RecordingEmbedding(embed_batch_size=1)
+
+    embeddings = await embed_model.aget_text_embedding_batch(
+        ["a", "b"], show_progress=True
+    )
+
+    assert len(embeddings) == 2
+    assert embed_model.cancelled == []
+    assert sorted(embed_model.finished) == ["a", "b"]
