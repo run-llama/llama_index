@@ -1,0 +1,5 @@
+{
+  "error": "Rate limit exceeded",
+  "limit": 5,
+  "retryAfterMs": 292
+}
