@@ -1,8 +1,10 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest import mock
 
 import pytest
+from fsspec.implementations.dirfs import DirFileSystem
 from fsspec.implementations.local import LocalFileSystem
+from fsspec.implementations.memory import MemoryFileSystem
 from llama_index.core import Document
 from llama_index.core.readers.file.base import (
     SimpleDirectoryReader,
@@ -258,3 +260,31 @@ def test_SimpleDirectoryReader_iter_data(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, recursive=True)
     docs = list(r.iter_data())
     assert len(docs) == 5
+
+
+@pytest.fixture()
+def dir_fs():
+    # DirFileSystem only accepts str (or list) paths, unlike most fsspec filesystems
+    fs = MemoryFileSystem()
+    fs.pipe("/dirfs_test/docs/a.txt", b"hello")
+    fs.pipe("/dirfs_test/docs/sub/b.txt", b"world")
+    yield DirFileSystem(path="/dirfs_test", fs=fs)
+    fs.rm("/dirfs_test", recursive=True)
+
+
+def test_SimpleDirectoryReader_dir_fs_load_data(dir_fs):
+    r = SimpleDirectoryReader(input_dir="docs", fs=dir_fs, recursive=True)
+    docs = r.load_data()
+    assert sorted(doc.text for doc in docs) == ["hello", "world"]
+
+
+@pytest.mark.asyncio
+async def test_SimpleDirectoryReader_dir_fs_aload_data(dir_fs):
+    r = SimpleDirectoryReader(input_dir="docs", fs=dir_fs, recursive=True)
+    docs = await r.aload_data()
+    assert sorted(doc.text for doc in docs) == ["hello", "world"]
+
+
+def test_SimpleDirectoryReader_dir_fs_read_file_content(dir_fs):
+    r = SimpleDirectoryReader(input_dir="docs", fs=dir_fs)
+    assert r.read_file_content(PurePosixPath("docs/a.txt")) == b"hello"
