@@ -156,3 +156,41 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+@pytest.mark.parametrize("include_prev_next_rel", [False, True])
+@pytest.mark.parametrize(
+    "method",
+    [
+        "get_nodes_from_documents",
+        "build_semantic_nodes_from_documents",
+        "build_semantic_nodes_from_nodes",
+    ],
+)
+def test_neighbor_relationship_option(include_prev_next_rel: bool, method: str) -> None:
+    from llama_index.core.schema import NodeRelationship
+
+    parser = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=MockEmbedding(embed_dim=4),
+        sentence_splitter=str.splitlines,
+        max_chunk_size=10,
+        include_prev_next_rel=include_prev_next_rel,
+    )
+    document = Document(text="First sentence.\nSecond sentence.\nThird sentence.")
+
+    nodes = getattr(parser, method)([document])
+
+    assert [node.get_content() for node in nodes] == document.text.splitlines()
+    for index, node in enumerate(nodes):
+        assert node.source_node is not None
+        assert node.source_node.node_id == document.id_
+        if include_prev_next_rel and index > 0:
+            assert node.prev_node is not None
+            assert node.prev_node.node_id == nodes[index - 1].node_id
+        else:
+            assert NodeRelationship.PREVIOUS not in node.relationships
+        if include_prev_next_rel and index < len(nodes) - 1:
+            assert node.next_node is not None
+            assert node.next_node.node_id == nodes[index + 1].node_id
+        else:
+            assert NodeRelationship.NEXT not in node.relationships
