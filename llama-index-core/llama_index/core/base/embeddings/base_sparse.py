@@ -20,7 +20,7 @@ from llama_index.core.instrumentation.events.embedding import (
 )
 import llama_index.core.instrumentation as instrument
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import gather_cancel_on_error, run_jobs
 
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -209,8 +209,8 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
 
         Subclasses can implement this method if batch queries are supported.
         """
-        return await asyncio.gather(
-            *[self._aget_text_embedding(text) for text in texts]
+        return await gather_cancel_on_error(
+            [self._aget_text_embedding(text) for text in texts]
         )
 
     @dispatcher.span
@@ -331,18 +331,35 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
             )
         else:
             if show_progress:
+                tqdm_asyncio = None
                 try:
                     from tqdm.asyncio import tqdm_asyncio
-
-                    nested_embeddings = await tqdm_asyncio.gather(
-                        *embeddings_coroutines,
-                        total=len(embeddings_coroutines),
-                        desc="Generating embeddings",
-                    )
                 except ImportError:
-                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                    pass
+
+                if tqdm_asyncio is None:
+                    nested_embeddings = await gather_cancel_on_error(
+                        embeddings_coroutines
+                    )
+                else:
+                    # tqdm_asyncio.gather has no return_exceptions switch, so collect
+                    # the tasks and cancel them here when one of them fails.
+                    tasks = [
+                        asyncio.ensure_future(coro) for coro in embeddings_coroutines
+                    ]
+                    try:
+                        nested_embeddings = await tqdm_asyncio.gather(
+                            *tasks,
+                            total=len(tasks),
+                            desc="Generating embeddings",
+                        )
+                    except BaseException:
+                        for task in tasks:
+                            task.cancel()
+                        await asyncio.gather(*tasks, return_exceptions=True)
+                        raise
             else:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                nested_embeddings = await gather_cancel_on_error(embeddings_coroutines)
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
