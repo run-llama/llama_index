@@ -64,3 +64,16 @@ async def test_rankgpt_rerank_async():
     assert len(result) == 2
     assert result[0].node.get_content() == "Test2"
     assert result[1].node.get_content() == "Test"
+
+
+def test_rankgpt_rerank_receive_permutation_duplicates_and_missing():
+    rankgpt_rerank = RankGPTRerank(
+        top_n=3,
+        llm=MockLLM(),
+    )
+    item = {"hits": [{"content": f"doc-{i}"} for i in range(5)]}
+    perm = rankgpt_rerank._receive_permutation(
+        item, "[4] > [2] > [4] > [99] > [0] > [1]"
+    )
+    assert perm == [3, 1, 0, 2, 4]
+
