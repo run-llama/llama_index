@@ -70,14 +70,22 @@ class RecursiveRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         """
         Deduplicate nodes according to node id.
-        Keep the node with the highest score/first returned.
+        Keep the highest-scoring node at the position of the first returned node.
+        On equal scores, keep the first returned node.
         """
-        node_ids = set()
+        node_positions: Dict[str, int] = {}
         deduplicate_nodes = []
         for node_with_score in nodes_with_score:
-            node = node_with_score.node
-            if node.id_ not in node_ids:
-                node_ids.add(node.id_)
+            node_id = node_with_score.node.id_
+            if node_id in node_positions:
+                position = node_positions[node_id]
+                if (
+                    node_with_score.get_score()
+                    > deduplicate_nodes[position].get_score()
+                ):
+                    deduplicate_nodes[position] = node_with_score
+            else:
+                node_positions[node_id] = len(deduplicate_nodes)
                 deduplicate_nodes.append(node_with_score)
         return deduplicate_nodes
 
