@@ -1,6 +1,6 @@
-# LlamaIndex Tools Integration: SERPEX
+# LlamaIndex Tools Integration: Serpex
 
-This tool allows you to use SERPEX API to search the web and get real-time results from multiple search engines within your LlamaIndex application.
+Search the web from a LlamaIndex agent with [Serpex](https://serpex.dev), a real-time web search API for AI agents and data enrichment. Each search returns ranked web results (title, URL and snippet) as LlamaIndex `Document` objects.
 
 ## Installation
 
@@ -25,33 +25,27 @@ response = agent.chat("What are the latest AI developments?")
 print(response)
 ```
 
-### Advanced Usage
+### Search directly
 
 ```python
-# Use specific search engine
-serpex_tool = SerpexToolSpec(
-    api_key="your_api_key",
-    engine="google",  # or 'bing', 'duckduckgo', 'brave', etc.
-)
-
-# Search with time filter
+# Search with a time filter
 results = serpex_tool.search(
     "recent AI news",
     num_results=10,
     time_range="day",  # 'day', 'week', 'month', 'year'
 )
 
-# Use different engines for different queries
-results = serpex_tool.search(
-    "privacy tools", engine="duckduckgo", num_results=5
-)
+for doc in results:
+    print(doc.metadata["title"], doc.metadata["url"])
 ```
+
+The `engine` argument is deprecated. It is still accepted so existing code keeps working, but the Serpex API ignores it and routes every search itself.
 
 ## API Key
 
-Get your API key from [SERPEX Dashboard](https://serpex.dev/dashboard).
+Get your API key from the [Serpex dashboard](https://app.serpex.dev/dashboard).
 
-Set as environment variable:
+Set it as an environment variable:
 
 ```bash
 export SERPEX_API_KEY=your_api_key
@@ -59,26 +53,13 @@ export SERPEX_API_KEY=your_api_key
 
 ## Features
 
-- **Multiple Search Engines**: Auto-routing, Google, Bing, DuckDuckGo, Brave, Yahoo, Yandex
-- **Real-time Results**: Get up-to-date search results via API
-- **Time Filtering**: Filter by day, week, month, or year
-- **Fast & Reliable**: 99.9% uptime SLA with global proxy network
-- **Structured Data**: Clean JSON responses optimized for AI applications
-- **Cost Effective**: Only 1 credit per request, failed requests free
-
-## Search Engines
-
-- `auto` - Automatically routes to the best available engine (default)
-- `google` - Google Search
-- `bing` - Microsoft Bing
-- `duckduckgo` - Privacy-focused DuckDuckGo
-- `brave` - Brave Search
-- `yahoo` - Yahoo Search
-- `yandex` - Yandex Search
+- **Real-time results**: live web results for every query
+- **Time filtering**: day, week, month or year
+- **Structured data**: clean JSON, returned as LlamaIndex `Document` objects
+- **Pay per use**: 1 credit per search; failed requests are not charged
 
 ## Links
 
-- [SERPEX Website](https://serpex.dev)
-- [SERPEX Documentation](https://serpex.dev/docs)
-- [SERPEX Dashboard](https://serpex.dev/dashboard)
+- [Serpex website](https://serpex.dev)
+- [Serpex documentation](https://serpex.dev/docs)
 - [LlamaIndex](https://llamaindex.ai)
