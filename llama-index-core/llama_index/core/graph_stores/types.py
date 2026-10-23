@@ -161,9 +161,6 @@ class LabelledPropertyGraph(BaseModel):
     def add_triplet(self, triplet: Triplet) -> None:
         """Add a triplet."""
         subj, rel, obj = triplet
-        if (subj.id, rel.id, obj.id) in self.triplets:
-            return
-
         self.triplets.add((subj.id, rel.id, obj.id))
         self.nodes[subj.id] = subj
         self.nodes[obj.id] = obj
