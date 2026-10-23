@@ -117,6 +117,28 @@ def chunks(iterable: Iterable, size: int) -> Iterable:
     return zip_longest(*args, fillvalue=None)
 
 
+async def gather_cancel_on_error(
+    tasks: Iterable[Coroutine[Any, Any, Any]],
+) -> List[Any]:
+    """
+    Await `tasks` concurrently and cancel the survivors when one of them fails.
+
+    `asyncio.gather` propagates the first exception but leaves the remaining
+    tasks running detached, with nothing left to await or cancel them. That
+    orphans in-flight work: for embedding calls the provider has already done billable work
+    whose results are thrown away. This helper cancels the remaining tasks and
+    drains them before re-raising, so callers never leak orphaned coroutines.
+    """
+    futures = [asyncio.ensure_future(task) for task in tasks]
+    try:
+        return await asyncio.gather(*futures)
+    except BaseException:
+        for future in futures:
+            future.cancel()
+        await asyncio.gather(*futures, return_exceptions=True)
+        raise
+
+
 async def batch_gather(
     tasks: List[Coroutine], batch_size: int = 10, verbose: bool = False
 ) -> List[Any]:
