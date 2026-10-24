@@ -1,6 +1,7 @@
 import os
 import tempfile
 
+import pytest
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -144,3 +145,59 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_from_dict_does_not_mutate_input() -> None:
+    """from_dict must not clear the caller's nodes (issue #23677)."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    r = Relation(label="KNOWS", source_id=e1.id, target_id=e2.id)
+
+    g.upsert_nodes([e1, e2])
+    g.upsert_relations([r])
+
+    snapshot = g.to_dict()
+    first = SimplePropertyGraphStore.from_dict(snapshot)
+
+    assert set(snapshot["nodes"]) == {"Alice", "Bob"}
+    assert len(first.graph.get_triplets()) == 1
+
+
+def test_from_dict_same_snapshot_twice() -> None:
+    """Loading the same snapshot twice must resolve triplets both times."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    r = Relation(label="KNOWS", source_id=e1.id, target_id=e2.id)
+
+    g.upsert_nodes([e1, e2])
+    g.upsert_relations([r])
+
+    snapshot = g.to_dict()
+    SimplePropertyGraphStore.from_dict(snapshot)
+    second = SimplePropertyGraphStore.from_dict(snapshot)
+
+    assert second.get_triplets(ids=["Alice"]) == [(e1, r, e2)]
+
+
+def test_from_dict_failed_load_leaves_input_intact() -> None:
+    """A validation failure must not destroy the caller's snapshot."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    r = Relation(label="KNOWS", source_id=e1.id, target_id=e2.id)
+
+    g.upsert_nodes([e1, e2])
+    g.upsert_relations([r])
+
+    snapshot = g.to_dict()
+    del snapshot["relations"]["Alice_KNOWS_Bob"]["label"]
+
+    with pytest.raises(Exception):
+        SimplePropertyGraphStore.from_dict(snapshot)
+
+    assert set(snapshot["nodes"]) == {"Alice", "Bob"}
