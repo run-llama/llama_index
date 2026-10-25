@@ -65,6 +65,18 @@ def enable_sse(command_or_url: str) -> bool:
     return False
 
 
+async def _list_all_tools(session: ClientSession) -> types.ListToolsResult:
+    """Collect tool pages without carrying cursors across sessions."""
+    first = page = await session.list_tools()
+    tools = list(first.tools)
+    while page.next_cursor is not None:
+        page = await session.list_tools(
+            params=types.PaginatedRequestParams(cursor=page.next_cursor)
+        )
+        tools.extend(page.tools)
+    return first.model_copy(update={"tools": tools, "next_cursor": None})
+
+
 class DefaultInMemoryTokenStorage(TokenStorage):
     """
     Simple in-memory token storage implementation for OAuth authentication.
@@ -329,7 +341,7 @@ class BasicMCPClient(ClientSession):
     async def list_tools(self) -> types.ListToolsResult:
         """List all available tools on the MCP server."""
         async with self._run_session() as session:
-            return await session.list_tools()
+            return await _list_all_tools(session)
 
     # Resource methods
     async def list_resources(self) -> types.ListToolsResult:
