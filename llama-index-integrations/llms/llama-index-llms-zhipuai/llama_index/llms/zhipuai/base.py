@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from zhipuai import ZhipuAI as ZhipuAIClient
 from llama_index.core.base.llms.types import (
@@ -31,7 +32,16 @@ if TYPE_CHECKING:
 DEFAULT_REQUEST_TIMEOUT = 30.0
 SUCCESS = "SUCCESS"
 FAILED = "FAILED"
+DEFAULT_CONTEXT_WINDOW = 128_000
 GLM_CHAT_MODELS = {
+    # GLM-5 series
+    "glm-5.3": 128_000,
+    "glm-5.3-flash": 128_000,
+    "glm-5v-turbo": 200_000,
+    # GLM-4.5 series
+    "glm-4.5": 128_000,
+    "glm-4.5-air": 128_000,
+    # GLM-4 series
     "glm-4-plus": 128_000,
     "glm-4-0520": 128_000,
     "glm-4-long": 1_000_000,
@@ -39,23 +49,28 @@ GLM_CHAT_MODELS = {
     "glm-4-air": 128_000,
     "glm-4-flashx": 128_000,
     "glm-4-flash": 128_000,
+    "glm-4v-plus": 128_000,
     "glm-4v": 2_000,
     "glm-4-alltools": 128_000,
     "glm-4": 128_000,
 }
 
 
-def glm_model_to_context_size(model: str) -> Union[int, None]:
-    token_limit = GLM_CHAT_MODELS.get(model)
+def glm_model_to_context_size(model: str) -> int:
+    normalized = model.lower()
+    if normalized in GLM_CHAT_MODELS:
+        return GLM_CHAT_MODELS[normalized]
 
-    if token_limit is None:
-        raise ValueError(f"Model name {model} not found in {GLM_CHAT_MODELS.keys()}")
+    clean_model = normalized.split("/")[-1]
+    if clean_model in GLM_CHAT_MODELS:
+        return GLM_CHAT_MODELS[clean_model]
 
-    return token_limit
+    return DEFAULT_CONTEXT_WINDOW
 
 
 def is_function_calling_model(model: str) -> bool:
-    return "4v" not in model
+    normalized = model.lower().split("/")[-1]
+    return normalized != "glm-4v"
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -96,6 +111,10 @@ class ZhipuAI(FunctionCallingLLM):
         default=None,
         description="The API key to use for the ZhipuAI API.",
     )
+    base_url: Optional[str] = Field(
+        default=None,
+        description="The base URL path for the ZhipuAI API.",
+    )
     temperature: float = Field(
         default=0.95,
         description="The temperature to use for sampling.",
@@ -120,7 +139,8 @@ class ZhipuAI(FunctionCallingLLM):
     def __init__(
         self,
         model: str,
-        api_key: str,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         temperature: float = 0.95,
         max_tokens: int = 1024,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
@@ -128,8 +148,23 @@ class ZhipuAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+        api_key = (
+            api_key
+            or os.getenv("ZHIPUAI_API_KEY")
+            or os.getenv("BIGMODEL_API_KEY")
+            or os.getenv("ZAI_API_KEY")
+        )
+        base_url = (
+            base_url
+            or os.getenv("ZHIPUAI_BASE_URL")
+            or os.getenv("ZHIPUAI_API_BASE")
+            or os.getenv("BIGMODEL_API_BASE")
+            or os.getenv("ZAI_API_BASE")
+        )
         super().__init__(
             model=model,
+            api_key=api_key,
+            base_url=base_url,
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,
@@ -137,7 +172,10 @@ class ZhipuAI(FunctionCallingLLM):
             **kwargs,
         )
 
-        self._client = ZhipuAIClient(api_key=api_key)
+        client_kwargs: Dict[str, Any] = {"api_key": api_key}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+        self._client = ZhipuAIClient(**client_kwargs)
 
     @classmethod
     def class_name(cls) -> str:
