@@ -5,6 +5,7 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 """
 
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
@@ -106,7 +107,10 @@ class OnDemandLoaderTool(AsyncBaseTool):
             description = f"Tool to load data from {tool.__class__.__name__}"
         if fn_schema is None:
             fn_schema = create_schema_from_function(
-                name or "LoadData", tool._fn, [(query_str_kwargs_key, str, None)]
+                name or "LoadData",
+                tool.fn,
+                [(query_str_kwargs_key, str, None)],
+                ignore_fields=list(tool.partial_params),
             )
         metadata = ToolMetadata(
             name=name,
@@ -115,7 +119,7 @@ class OnDemandLoaderTool(AsyncBaseTool):
             return_direct=return_direct,
         )
         return cls(
-            loader=tool._fn,
+            loader=partial(tool.fn, **tool.partial_params),
             index_cls=index_cls,
             index_kwargs=index_kwargs,
             use_query_str_in_loader=use_query_str_in_loader,
