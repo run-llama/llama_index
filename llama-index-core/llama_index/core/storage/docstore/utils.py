@@ -13,8 +13,20 @@ from llama_index.core.schema import (
 
 
 def doc_to_json(doc: BaseNode) -> dict:
+    data = doc.to_dict()
+    # Preserve Python metadata types while making media URLs safe for JSON stores.
+    if isinstance(doc, Node):
+        for field in (
+            "text_resource",
+            "image_resource",
+            "audio_resource",
+            "video_resource",
+        ):
+            resource = data.get(field)
+            if isinstance(resource, dict) and resource.get("url") is not None:
+                data[field] = {**resource, "url": str(resource["url"])}
     return {
-        DATA_KEY: doc.to_dict(),
+        DATA_KEY: data,
         TYPE_KEY: doc.get_type(),
     }
 
