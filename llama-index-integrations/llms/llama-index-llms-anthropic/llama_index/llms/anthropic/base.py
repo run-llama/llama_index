@@ -1,3 +1,4 @@
+import inspect
 import json
 import logging
 import llama_index.core.instrumentation as instrument
@@ -88,6 +89,9 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
+
+# Removed from Messages.create in anthropic 1.x. Still accepted by 0.x.
+_CREATE_SAMPLING_PARAMS = ("temperature", "top_p", "top_k")
 
 
 def _get_default_headers(
@@ -338,18 +342,46 @@ class Anthropic(FunctionCallingLLM):
     def tokenizer(self) -> Tokenizer:
         return AnthropicTokenizer(self._client, self.model)
 
+    def _supports_sampling_param(self, param: str) -> bool:
+        """
+        Return whether messages.create accepts this sampling parameter.
+
+        anthropic 1.x removed temperature, top_p, and top_k from Messages.create.
+        Older SDKs still declare them. Sync and async clients, including Bedrock
+        and Vertex, share one signature, so the sync client is enough to check.
+        """
+        try:
+            parameters = inspect.signature(self._client.messages.create).parameters
+        except (TypeError, ValueError):
+            return True
+        if param in parameters:
+            return True
+        return any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+
+    def _drop_unsupported_sampling_kwargs(self, kwargs: Dict[str, Any]) -> None:
+        """Remove sampling kwargs Messages.create will reject on this SDK."""
+        for param in _CREATE_SAMPLING_PARAMS:
+            if param in kwargs and not self._supports_sampling_param(param):
+                kwargs.pop(param)
+
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        base_kwargs = {
+        base_kwargs: Dict[str, Any] = {
             "model": self.model,
-            "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
 
-        for model in ANTHROPIC_NO_TEMP_MODELS:
-            if model in self.model:
-                del base_kwargs["temperature"]
-                break
+        # Keep the public temperature field, but only send it when this SDK
+        # accepts it and the model allows sampling temperature.
+        if self._supports_sampling_param("temperature"):
+            base_kwargs["temperature"] = self.temperature
+            for model in ANTHROPIC_NO_TEMP_MODELS:
+                if model in self.model:
+                    del base_kwargs["temperature"]
+                    break
 
         return {
             **base_kwargs,
@@ -376,6 +408,10 @@ class Anthropic(FunctionCallingLLM):
         elif self.mcp_servers and "mcp_servers" in kwargs:
             kwargs["mcp_servers"] = [*self.mcp_servers, *kwargs["mcp_servers"]]
             kwargs["betas"] = ["mcp-client-2025-04-04"]
+
+        # additional_kwargs and caller kwargs can reintroduce sampling params
+        # after _model_kwargs. Strip them when this SDK cannot accept them.
+        self._drop_unsupported_sampling_kwargs(kwargs)
 
         return kwargs
 
