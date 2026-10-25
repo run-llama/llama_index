@@ -394,19 +394,21 @@ def messages_to_anthropic_messages(
                 type="tool_result",
                 content=anthropic_blocks,
             )
-            anth_message = MessageParam(
-                role=MessageRole.USER.value,
-                content=[content],
-            )
+            # Plain dicts stay valid when MessageParam is a Union (anthropic 2.x)
+            # and when it is still a TypedDict (0.x / 1.x).
+            anth_message = {
+                "role": MessageRole.USER.value,
+                "content": [content],
+            }
             anthropic_messages.append(anth_message)
         else:
             content = blocks_to_anthropic_blocks(
                 message.blocks, message.additional_kwargs
             )
-            anth_message = MessageParam(
-                role=message.role.value,
-                content=content,
-            )
+            anth_message = {
+                "role": message.role.value,
+                "content": content,
+            }
             anthropic_messages.append(anth_message)
 
     return cast(
@@ -567,19 +569,21 @@ def messages_to_anthropic_beta_messages(
                 type="tool_result",
                 content=cast(Sequence[BetaContent], anthropic_blocks),
             )
-            anth_message = BetaMessageParam(
-                role=MessageRole.USER.value,
-                content=[content],
-            )
+            # Plain dicts stay valid when BetaMessageParam is a Union (anthropic 2.x)
+            # and when it is still a TypedDict (0.x / 1.x).
+            anth_message = {
+                "role": MessageRole.USER.value,
+                "content": [content],
+            }
             anthropic_messages.append(anth_message)
         else:
             content = blocks_to_anthropic_beta_blocks(
                 message.blocks, message.additional_kwargs
             )
-            anth_message = BetaMessageParam(
-                role=cast(Literal["assistant", "user"], message.role.value),
-                content=content,
-            )
+            anth_message = {
+                "role": message.role.value,
+                "content": content,
+            }
             anthropic_messages.append(anth_message)
     return cast(
         Sequence[BetaMessageParam], __merge_common_role_msgs(anthropic_messages)
