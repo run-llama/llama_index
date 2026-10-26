@@ -5,7 +5,7 @@ from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
     SemanticDoubleMergingSplitterNodeParser,
     LanguageConfig,
 )
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, NodeRelationship
 
 doc = Document(
     text="Warsaw: Warsaw, the capital city of Poland, is a bustling metropolis located on the banks of the Vistula River. "
@@ -156,3 +156,39 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+def test_include_prev_next_rel_disabled_omits_neighbor_relationships() -> None:
+    """include_prev_next_rel=False must not add PREVIOUS/NEXT relationships."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        sentence_splitter=str.splitlines,
+        max_chunk_size=10,
+        include_prev_next_rel=False,
+    )
+    nodes = splitter.get_nodes_from_documents(
+        [Document(text="First sentence.\nSecond sentence.\nThird sentence.")]
+    )
+    assert len(nodes) == 3
+    for node in nodes:
+        assert NodeRelationship.PREVIOUS not in node.relationships
+        assert NodeRelationship.NEXT not in node.relationships
+
+
+def test_include_prev_next_rel_enabled_adds_neighbor_relationships() -> None:
+    """Default include_prev_next_rel=True keeps PREVIOUS/NEXT relationships."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        sentence_splitter=str.splitlines,
+        max_chunk_size=10,
+    )
+    nodes = splitter.get_nodes_from_documents(
+        [Document(text="First sentence.\nSecond sentence.\nThird sentence.")]
+    )
+    assert len(nodes) == 3
+    assert NodeRelationship.NEXT in nodes[0].relationships
+    assert NodeRelationship.PREVIOUS in nodes[1].relationships
+    assert NodeRelationship.NEXT in nodes[1].relationships
+    assert NodeRelationship.PREVIOUS in nodes[2].relationships
