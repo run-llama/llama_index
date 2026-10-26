@@ -1,4 +1,5 @@
-"""Example Famulor agent setup.
+"""
+Example Famulor agent setup.
 
 Running this file does not call the Famulor API and does not place a call.
 """
@@ -11,7 +12,8 @@ from llama_index.tools.famulor import FamulorToolSpec
 
 
 def build_agent(api_key: str) -> FunctionAgent:
-    """Build an agent with the Famulor tools.
+    """
+    Build an agent with the Famulor tools.
 
     ``make_call`` places a real outbound phone call. Do not invoke it unless
     the destination should actually be dialed.
