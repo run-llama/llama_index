@@ -11,9 +11,18 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
-from rank_llm.rerank.rankllm import PromptMode
-from rank_llm.rerank.reranker import Reranker
-from rank_llm.data import Request, Query, Candidate
+# rank_llm (and its rerank submodule) eagerly pulls in vLLM/CUDA-only
+# dependencies at import time, even for backends that do not use vLLM. Guard
+# the import so this module (and RankLLMRerank) stay importable without
+# rank_llm installed; the real dependency is only required when reranking.
+try:
+    from rank_llm.rerank.rankllm import PromptMode
+    from rank_llm.rerank.reranker import Reranker
+    from rank_llm.data import Request, Query, Candidate
+except Exception:  # pragma: no cover - optional dependency / eager import chain
+    PromptMode = None  # type: ignore[misc, assignment]
+    Reranker = None  # type: ignore[misc, assignment]
+    Request = Query = Candidate = None  # type: ignore[assignment]
 
 
 class RankLLMRerank(BaseNodePostprocessor):
@@ -47,9 +56,9 @@ class RankLLMRerank(BaseNodePostprocessor):
     context_size: int = Field(
         description="Maximum number of tokens for the context window.", default=4096
     )
-    prompt_mode: PromptMode = Field(
+    prompt_mode: Any = Field(
         description="Prompt format and strategy used when invoking the reranking model.",
-        default=PromptMode.RANK_GPT,
+        default=PromptMode.RANK_GPT if PromptMode is not None else None,
     )
     num_gpus: int = Field(
         description="Number of GPUs to use for inference if applicable.", default=1
