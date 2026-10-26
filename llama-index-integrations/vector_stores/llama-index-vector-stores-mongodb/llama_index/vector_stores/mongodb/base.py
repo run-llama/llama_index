@@ -491,7 +491,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
             # Compute weighted sum and sort pipeline
             alpha = (
-                query.alpha or 0.5
+                query.alpha if query.alpha is not None else 0.5
             )  # If no alpha is given, equal weighting is applied
             pipeline += final_hybrid_stage(
                 scores_fields=scores_fields, limit=hybrid_top_k, alpha=alpha
