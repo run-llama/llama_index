@@ -401,7 +401,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
                 )
 
             nodes.append(node)
-            similarities.append(1.0 - math.exp(-result[5]))
+            similarities.append(math.exp(-result[5]))
             ids.append(result[0])
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
