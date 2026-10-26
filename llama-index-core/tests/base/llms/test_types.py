@@ -808,6 +808,29 @@ def test_chat_response():
     assert str(cr) == str(message)
 
 
+def test_recursive_block_format_vars_calls_get_template_vars_once_per_block(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    b1 = TextBlock(text="Hello {a}")
+    b2 = TextBlock(text="World {b}")
+    msg = ChatMessage(blocks=[b1, b2])
+
+    call_count = 0
+    orig_get_template_vars = TextBlock.get_template_vars
+
+    def counting_get_template_vars(self: TextBlock) -> list[str]:
+        nonlocal call_count
+        call_count += 1
+        return orig_get_template_vars(self)
+
+    monkeypatch.setattr(TextBlock, "get_template_vars", counting_get_template_vars)
+
+    formatted = msg.format_vars(a="1", b="2", c="3", d="4", e="5")
+    assert formatted.blocks[0].text == "Hello 1"
+    assert formatted.blocks[1].text == "World 2"
+    assert call_count == 2
+
+
 def test_completion_response():
     cr = CompletionResponse(text="some text")
     assert str(cr) == "some text"
