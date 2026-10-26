@@ -13,6 +13,6 @@ Congratulations! You've loaded your data, indexed it, stored your index, and que
 - We have a complete guide to using [property graphs for indexing and retrieval](/python/framework/module_guides/indexing/lpg_index_guide)
 - And last but not least we show you how to build [a full stack web application](/python/framework/understanding/putting_it_all_together/apps) using LlamaIndex
 
-LlamaIndex also provides some tools / project templates to help you build a full-stack template. For instance, [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama) spins up a full-stack scaffold for you.
+LlamaIndex also provides some tools / project templates to help you build a full-stack template. For instance, [`create-llama`](https://github.com/run-llama/create-llama) spins up a full-stack scaffold for you.
 
 Check out our [Full-Stack Projects](/python/framework/community/full_stack_projects) page for more details.
