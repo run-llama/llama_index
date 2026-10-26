@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov>=6.1.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-tools-famulor"
+version = "0.1.0"
+description = "llama-index tools Famulor integration"
+authors = [{name = "bekservice", email = "i.khabazi@bekgroup.de"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "bekservice", email = "i.khabazi@bekgroup.de"}]
+dependencies = ["llama-index-core>=0.13.0,<0.15", "requests>=2.28.0"]
+keywords = ["famulor", "voice", "phone", "calls", "assistants", "llm", "ai"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.tools.famulor"
+
+[tool.llamahub.class_authors]
+FamulorToolSpec = "bekservice"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.9"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]

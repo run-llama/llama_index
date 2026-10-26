@@ -658,6 +658,7 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-mcp-discovery
             - ../../llama-index-integrations/tools/llama-index-tools-moss
             - ../../llama-index-integrations/tools/llama-index-tools-seltz
+            - ../../llama-index-integrations/tools/llama-index-tools-famulor
             - ../../llama-index-integrations/readers/llama-index-readers-layoutir
             - ../../llama-index-integrations/llms/llama-index-llms-modelslab
             - ../../llama-index-integrations/readers/llama-index-readers-screenpipe
