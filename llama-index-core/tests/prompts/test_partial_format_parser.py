@@ -7,27 +7,26 @@ from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.types import BaseOutputParser
 
 
-class LockedOutputParser(BaseOutputParser):
+class MutableOutputParser(BaseOutputParser):
     def __init__(self) -> None:
-        self.lock = Lock()
+        self.instructions = ["Return JSON."]
 
     def parse(self, output: str) -> Any:
         return output
 
     def format(self, query: str) -> str:
-        return query + "\nReturn JSON."
+        return query + "\n" + " ".join(self.instructions)
 
 
-@pytest.mark.parametrize("is_chat", [False, True])
-def test_partial_format_preserves_uncopyable_parser(is_chat: bool) -> None:
+class LockedOutputParser(MutableOutputParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.lock = Lock()
+
+
+def test_partial_format_preserves_uncopyable_parser() -> None:
     parser = LockedOutputParser()
-    prompt = (
-        ChatPromptTemplate.from_messages(
-            [("user", "Hello {name} {topic}")], output_parser=parser
-        )
-        if is_chat
-        else PromptTemplate("Hello {name} {topic}", output_parser=parser)
-    )
+    prompt = PromptTemplate("Hello {name} {topic}", output_parser=parser)
 
     partial = prompt.partial_format(name="Ada")
 
@@ -46,7 +45,7 @@ def test_partial_format_preserves_uncopyable_parser(is_chat: bool) -> None:
 
 @pytest.mark.parametrize("is_chat", [False, True])
 def test_partial_format_failure_does_not_drop_parser(is_chat: bool) -> None:
-    parser = LockedOutputParser()
+    parser = MutableOutputParser()
     metadata = {"uncopyable": Lock()}
     prompt = (
         ChatPromptTemplate.from_messages(
@@ -61,6 +60,26 @@ def test_partial_format_failure_does_not_drop_parser(is_chat: bool) -> None:
 
     assert prompt.output_parser is parser
     assert prompt.kwargs == {}
+    assert prompt.format_messages(name="Grace")[0].content == (
+        "Hello Grace\nReturn JSON."
+    )
+
+
+def test_chat_partial_format_keeps_parser_isolation() -> None:
+    parser = MutableOutputParser()
+    prompt = ChatPromptTemplate.from_messages(
+        [("user", "Hello {name}")], output_parser=parser
+    )
+
+    partial = prompt.partial_format(name="Ada")
+    partial_parser = partial.output_parser
+    assert isinstance(partial_parser, MutableOutputParser)
+    assert partial_parser is not parser
+    partial_parser.instructions.append("Use Spanish.")
+
+    assert partial.format_messages()[0].content == (
+        "Hello Ada\nReturn JSON. Use Spanish."
+    )
     assert prompt.format_messages(name="Grace")[0].content == (
         "Hello Grace\nReturn JSON."
     )

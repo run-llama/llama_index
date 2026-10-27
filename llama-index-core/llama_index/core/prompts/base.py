@@ -250,7 +250,7 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         return cls(message_templates=message_templates, **kwargs)  # type: ignore[arg-type]
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
-        prompt = deepcopy(self, memo={id(self.output_parser): self.output_parser})
+        prompt = deepcopy(self)
         prompt.kwargs.update(kwargs)
         return prompt
 
