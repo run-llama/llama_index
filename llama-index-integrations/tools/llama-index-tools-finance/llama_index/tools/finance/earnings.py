@@ -62,7 +62,8 @@ def get_upcoming_earnings(
     only_sp500: bool,
 ):
     """Returns stocks announcing there earnings in next 3 months."""
-    CSV_URL = f"https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey={api_key}"
+    ALPHA_VANTAGE_API_KEY = api_key["ALPHA_VANTAGE"]
+    CSV_URL = f"https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey={ALPHA_VANTAGE_API_KEY}"
     with requests.Session() as s:
         download = s.get(CSV_URL)
         decoded_content = download.content.decode("utf-8")
@@ -71,7 +72,11 @@ def get_upcoming_earnings(
         sd = pd.to_datetime(start_date, format="%Y-%m-%d")
         ed = pd.to_datetime(end_date, format="%Y-%m-%d")
         df["reportDate"] = pd.to_datetime(df["reportDate"])
-        df = df[df["currency"] == country][df["reportDate"] > sd][df["reportDate"] < ed]
+        df = df[
+            (df["currency"] == country)
+            & (df["reportDate"] > sd)
+            & (df["reportDate"] < ed)
+        ]
         if only_sp500:
             sp500 = pd.read_html(
                 "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
