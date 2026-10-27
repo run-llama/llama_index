@@ -117,6 +117,28 @@ def test_get_nodes() -> None:
     assert g.get_llama_nodes(["n1", "n2"]) == [n1, n2]
 
 
+def test_get_rel_map_deduplicates_triplets_in_cyclic_graph() -> None:
+    """Each triplet is collected at most once, even when the graph has cycles (#23073)."""
+    g = SimplePropertyGraphStore()
+
+    a = EntityNode(name="a")
+    b = EntityNode(name="b")
+    c = EntityNode(name="c")
+    g.upsert_nodes([a, b, c])
+    g.upsert_relations(
+        [
+            Relation(label="knows", source_id=a.id, target_id=b.id),
+            Relation(label="knows", source_id=b.id, target_id=a.id),
+            Relation(label="likes", source_id=b.id, target_id=c.id),
+        ]
+    )
+
+    rel_map = g.get_rel_map([a], depth=2, limit=30)
+
+    assert len(rel_map) == 3
+    assert len({str(t) for t in rel_map}) == 3
+
+
 def test_persist_utf8_round_trip() -> None:
     """Test that persist/load works with non-ASCII characters (issue #21109)."""
     g = SimplePropertyGraphStore()

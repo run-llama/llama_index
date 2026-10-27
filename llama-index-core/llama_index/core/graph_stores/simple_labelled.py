@@ -112,7 +112,10 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
         cur_depth = 0
         graph_triplets = self.get_triplets(ids=[gn.id for gn in graph_nodes])
-        seen_triplets = set()
+        # Seed the seen set with the starting triplets, otherwise any triplet that
+        # loops back to an already-visited depth (two-way relations, self-loops or
+        # longer cycles) is collected again at every later depth.
+        seen_triplets = {str(t) for t in graph_triplets}
 
         while len(graph_triplets) > 0 and cur_depth < depth:
             triplets.extend(graph_triplets)
