@@ -159,10 +159,14 @@ class LabelledPropertyGraph(BaseModel):
         ]
 
     def add_triplet(self, triplet: Triplet) -> None:
-        """Add a triplet."""
+        """
+        Add a triplet.
+
+        Adding an already known triplet is treated as an upsert: the stored
+        nodes and relation are replaced with the provided ones so that updated
+        properties are persisted instead of being silently dropped.
+        """
         subj, rel, obj = triplet
-        if (subj.id, rel.id, obj.id) in self.triplets:
-            return
 
         self.triplets.add((subj.id, rel.id, obj.id))
         self.nodes[subj.id] = subj

@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+import pytest
+
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -144,3 +146,80 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_upsert_relation_updates_properties() -> None:
+    g = SimplePropertyGraphStore()
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    g.upsert_nodes([e1, e2])
+
+    for confidence in (0.1, 0.9):
+        g.upsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id=e1.id,
+                    target_id=e2.id,
+                    properties={"confidence": confidence},
+                )
+            ]
+        )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
+
+
+@pytest.mark.asyncio
+async def test_aupsert_relation_updates_properties() -> None:
+    g = SimplePropertyGraphStore()
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    await g.aupsert_nodes([e1, e2])
+
+    for confidence in (0.1, 0.9):
+        await g.aupsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id=e1.id,
+                    target_id=e2.id,
+                    properties={"confidence": confidence},
+                )
+            ]
+        )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
+
+
+def test_upsert_relation_keeps_other_triplets_and_properties() -> None:
+    g = SimplePropertyGraphStore()
+    e1 = EntityNode(name="Alice", properties={"role": "analyst"})
+    e2 = EntityNode(name="Bob")
+    e3 = EntityNode(name="Carol")
+    g.upsert_nodes([e1, e2, e3])
+
+    knows = Relation(label="KNOWS", source_id=e1.id, target_id=e2.id)
+    works_with = Relation(label="WORKS_WITH", source_id=e1.id, target_id=e3.id)
+    g.upsert_relations([knows, works_with])
+
+    updated_knows = Relation(
+        label="KNOWS",
+        source_id=e1.id,
+        target_id=e2.id,
+        properties={"confidence": 0.9},
+    )
+    g.upsert_relations([updated_knows])
+
+    triplets = g.graph.get_triplets()
+    relations_by_label = {t[1].label: t[1] for t in triplets}
+
+    assert len(triplets) == 2
+    assert relations_by_label["KNOWS"].properties == {"confidence": 0.9}
+    assert relations_by_label["WORKS_WITH"].properties == {}
+    assert g.get(ids=[e1.id])[0].properties == {"role": "analyst"}
