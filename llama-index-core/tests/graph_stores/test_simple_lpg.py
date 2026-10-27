@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+import pytest
+
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -115,6 +117,57 @@ def test_get_nodes() -> None:
     g.upsert_llama_nodes([n1, n2])
 
     assert g.get_llama_nodes(["n1", "n2"]) == [n1, n2]
+
+
+def test_upsert_relations_updates_properties() -> None:
+    """Re-upserting an existing relation updates its properties (issue #23679)."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2")
+    g.upsert_nodes([e1, e2])
+
+    for confidence in (0.1, 0.9):
+        g.upsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id=e1.id,
+                    target_id=e2.id,
+                    properties={"confidence": confidence},
+                )
+            ]
+        )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
+
+
+@pytest.mark.asyncio
+async def test_aupsert_relations_updates_properties() -> None:
+    """Async re-upserting an existing relation updates its properties (issue #23679)."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2")
+    await g.aupsert_nodes([e1, e2])
+
+    for confidence in (0.1, 0.9):
+        await g.aupsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id=e1.id,
+                    target_id=e2.id,
+                    properties={"confidence": confidence},
+                )
+            ]
+        )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
 
 
 def test_persist_utf8_round_trip() -> None:
