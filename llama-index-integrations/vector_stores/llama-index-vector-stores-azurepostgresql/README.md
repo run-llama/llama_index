@@ -36,7 +36,7 @@ import sys
 
 sys.path.insert(0, "/path/to/llama-index-vector-stores-azurepostgresql")
 
-from llama_index.vector_stores.azurepostgresql.base import AzurePGVectorStore
+from llama_index.vector_stores.azure_postgres import AzurePGVectorStore
 from llama_index.core import (
     SimpleDirectoryReader,
     StorageContext,

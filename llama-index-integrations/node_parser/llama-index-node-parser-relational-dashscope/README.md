@@ -15,7 +15,7 @@ Get up and running with just a few lines of code:
 ```python
 import json
 import os
-from llama_index.node_parser.relational.dashscope import (
+from llama_index.node_parser.dashscope import (
     DashScopeJsonNodeParser,
 )
 from llama_index.core.ingestion import IngestionPipeline
