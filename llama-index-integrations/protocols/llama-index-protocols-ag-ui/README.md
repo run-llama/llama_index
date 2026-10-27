@@ -1,8 +1,10 @@
 # LlamaIndex Protocols AG UI Integration
 
 ```bash
-pip install llama-index-protocols-ag-ui
+pip install "llama-index-protocols-ag-ui[fastapi]"
 ```
+
+The router (`llama_index.protocols.ag_ui.router`) imports FastAPI, which is only installed through the `fastapi` extra. The server example below also uses `uvicorn` (`pip install uvicorn`).
 
 The `llama-index-protocols-ag-ui` package provides a factory function for creating a FastAPI router that communicates using the [AG UI Protocol](https://github.com/ag-ui-protocol/ag-ui).
 
@@ -55,13 +57,15 @@ The router is configured with the following parameters:
 - `backend_tools`: Tools that are available to execute on the backend.
 - `system_prompt`: The system prompt to use for the agent.
 - `initial_state`: The initial state to use for the agent. Typically the state is then interacted with by the frontend.
+- `timeout`: The workflow timeout in seconds (default `120`).
+- `workflow_factory`: Optional async factory returning a custom `Workflow`; when set, it is used instead of the default chat workflow built from the parameters above.
 
 ```python
 import uvicorn
 from fastapi import FastAPI
 
 from llama_index.llms.openai import OpenAI
-from llama_index.protocols.ag_ui.server import get_ag_ui_workflow_router
+from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
 from typing import Annotated
 
 
