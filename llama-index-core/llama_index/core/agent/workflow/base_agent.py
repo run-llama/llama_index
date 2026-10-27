@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import copy
 import functools
 import warnings
 import inspect
@@ -139,6 +140,16 @@ class BaseWorkflowAgent(
         default="force",
         description="Method to handle max iterations. 'force' raises an error (default). 'generate' makes one final LLM call to generate a response.",
     )
+
+    def __hash__(self) -> int:
+        """
+        Hash by identity.
+
+        Pydantic models are unhashable by default, but the workflows runtime keys
+        caches (e.g. its serializer WeakKeyDictionary) on the workflow instance,
+        so agents need to be usable as dict keys.
+        """
+        return id(self)
 
     def __init__(
         self,
@@ -289,7 +300,7 @@ class BaseWorkflowAgent(
             )
             await ctx.store.set("memory", default_memory)
         if not await ctx.store.get("state", default=None):
-            await ctx.store.set("state", self.initial_state.copy())
+            await ctx.store.set("state", copy.deepcopy(self.initial_state))
 
         if not await ctx.store.get("max_iterations", default=None):
             max_iterations = (

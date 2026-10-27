@@ -3,7 +3,7 @@ from typing import Any, Generator, Optional, Sequence, cast
 from llama_index.core.base.llms.types import ChatMessage
 
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.chat_prompts import CHAT_CONTENT_QA_PROMPT
@@ -21,6 +21,7 @@ class SimpleSummarize(BaseSynthesizer):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        chat_prompt_helper: Optional[ChatPromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         chat_content_qa_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
@@ -31,6 +32,7 @@ class SimpleSummarize(BaseSynthesizer):
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
+            chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             multimodal=multimodal,
         )

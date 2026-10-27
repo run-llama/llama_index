@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.1.1]
+
+### Fixed
+
+- Fixed a `TypeError` in `aquery` when `string_expr` was passed via `vector_store_kwargs`, which caused duplicate argument errors during hybrid/sparse search. Filters now take precedence over `string_expr` when both are provided.
+
 ## [v0.9.6]
 
 ### Changed

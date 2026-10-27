@@ -209,7 +209,7 @@ def tool_call_json_from_messages(
 def mock_chat_message_with_tool_call_generator(
     input_to_query_satisfied,
 ) -> Callable[[Sequence[ChatMessage]], ChatMessage]:
-    def func(messages: Sequence[ChatMessage]) -> ChatMessage:
+    def func(messages: Sequence[ChatMessage], **kwargs) -> ChatMessage:
         tool_args_json = tool_call_json_from_messages(
             messages, input_to_query_satisfied
         )
@@ -232,7 +232,9 @@ def mock_chat_message_with_tool_call_generator(
 def mock_streaming_chat_message_with_tool_call_generator(
     input_to_query_satisfied,
 ) -> Callable[[Sequence[ChatMessage]], Generator[ChatMessage, None, None]]:
-    def func(messages: Sequence[ChatMessage]) -> Generator[ChatMessage, None, None]:
+    def func(
+        messages: Sequence[ChatMessage], **kwargs
+    ) -> Generator[ChatMessage, None, None]:
         tool_args_json = tool_call_json_from_messages(
             messages, input_to_query_satisfied
         )
@@ -271,10 +273,10 @@ def mock_async_streaming_chat_message_with_tool_call_generator(
     input_to_query_satisfied, mock_streaming_chat_message_with_tool_call_generator
 ) -> Coroutine[None, None, AsyncGenerator[ChatMessage, None]]:
     async def coro(
-        messages: Sequence[ChatMessage],
+        messages: Sequence[ChatMessage], **kwargs
     ) -> AsyncGenerator[ChatMessage, None]:
         for chat_message in mock_streaming_chat_message_with_tool_call_generator(
-            messages
+            messages, **kwargs
         ):
             yield chat_message
 
@@ -469,14 +471,9 @@ class TestRefine:
     def test_synthesize__multimodal_default_refine_program(
         self, multimodal_nodes: list[NodeWithScore]
     ) -> None:
-        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
         synthesizer = Refine(llm=llm, multimodal=True)
-
-        # Act
         response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == " ".join(["text"] * 10)
         assert llm.last_called_chat_function == ["chat", "chat", "chat"], (
@@ -496,14 +493,9 @@ class TestRefine:
     async def test_asynthesize__multimodal_default_refine_program(
         self, multimodal_nodes: list[NodeWithScore]
     ) -> None:
-        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
         synthesizer = Refine(llm=llm, multimodal=True)
-
-        # Act
         response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == " ".join(["text"] * 10)
         assert llm.last_called_chat_function.count("achat") == 3, "One per node"
@@ -560,6 +552,38 @@ class TestRefine:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    def test_synthesize__streaming_default_refine_program_yields_incremental_chunks(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        """Without an output_cls there is no json to wait on, so tokens must stream through."""
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = synthesizer.synthesize(query="test", nodes=nodes)
+        assert isinstance(response, StreamingResponse)
+
+        chunks = list(response.response_gen)
+        expected = " ".join(["text"] * 10)
+        assert len(chunks) > 1
+        # no chunk is the whole answer, and boundary whitespace is preserved
+        assert "".join(chunks) == expected
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_default_refine_program_yields_incremental_chunks(
+        self, llm_case: LLMCase, nodes: list[NodeWithScore]
+    ) -> None:
+        """Without an output_cls there is no json to wait on, so tokens must stream through."""
+        llm = llm_case.llm
+        llm.max_tokens = 10
+        synthesizer = Refine(llm=llm, streaming=True)
+        response = await synthesizer.asynthesize(query="test", nodes=nodes)
+        assert isinstance(response, AsyncStreamingResponse)
+
+        chunks = [chunk async for chunk in response.async_response_gen()]
+        expected = " ".join(["text"] * 10)
+        assert len(chunks) > 1
+        assert "".join(chunks) == expected
 
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
@@ -657,20 +681,15 @@ class TestRefine:
         ],
         query_satisfied_case: QuerySatisfiedCase,
     ) -> None:
-        # Arrange
         input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
         llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
         synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
-
-        # Act
         with patch.object(
             CustomLLM,
             "chat",
             side_effect=mock_chat_response_text_completion_generator,
         ):
             response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
         assert llm.last_called_chat_function == ["chat", "chat", "chat"], "One per node"
@@ -693,12 +712,9 @@ class TestRefine:
         ],
         query_satisfied_case: QuerySatisfiedCase,
     ) -> None:
-        # Arrange
         input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
         llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
         synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
-
-        # Act
         with patch.object(
             CustomLLM,
             "achat",
@@ -707,8 +723,6 @@ class TestRefine:
             response = await synthesizer.asynthesize(
                 query="test", nodes=multimodal_nodes
             )
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
         assert llm.last_called_chat_function == ["achat", "achat", "achat"], (
@@ -870,18 +884,13 @@ class TestRefine:
         ],
         query_satisfied_case: QuerySatisfiedCase,
     ) -> None:
-        # Arrange
         input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
         llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
             response_generator=mock_chat_message_with_tool_call_generator,
             is_chat_model=True,
         )
         synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
-
-        # Act
         response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
         assert llm.last_called_chat_function == ["chat", "chat", "chat"], "One per node"
@@ -904,18 +913,13 @@ class TestRefine:
         ],
         query_satisfied_case: QuerySatisfiedCase,
     ) -> None:
-        # Arrange
         input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
         llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
             response_generator=mock_chat_message_with_tool_call_generator,
             is_chat_model=True,
         )
         synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
-
-        # Act
         response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == query_satisfied_case.expected_response
         assert llm.last_called_chat_function.count("achat") == 3, "One per node"

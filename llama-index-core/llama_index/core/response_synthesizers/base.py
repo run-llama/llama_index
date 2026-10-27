@@ -92,14 +92,14 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
                 raise ValueError("Multimodal synthesis requires a chat LLM.")
         self._prompt_helper = (
             prompt_helper
-            or Settings.prompt_helper
+            or Settings._prompt_helper
             or PromptHelper.from_llm_metadata(
                 self._llm.metadata,
             )
         )
         self._chat_prompt_helper = (
             chat_prompt_helper
-            or Settings.chat_prompt_helper
+            or Settings._chat_prompt_helper
             or ChatPromptHelper.from_llm_metadata(
                 self._llm.metadata,
             )

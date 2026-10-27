@@ -18,7 +18,7 @@ def _response_generator_from_list(responses: List[ChatMessage]):
     """Helper to create a response generator from a list of responses."""
     index = 0
 
-    def generator(messages: List[ChatMessage]) -> ChatMessage:
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
         nonlocal index
         if not responses:
             return ChatMessage(role=MessageRole.ASSISTANT, content=None)
@@ -176,6 +176,53 @@ async def test_single_function_agent(function_agent):
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_function_agent_streams_empty_tool_arguments() -> None:
+    async def run_agent(streaming: bool) -> str:
+        call_count = 0
+
+        def empty_tool() -> str:
+            nonlocal call_count
+            call_count += 1
+            return "empty tool result"
+
+        responses = [
+            ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="calling empty tool",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(
+                            tool_id="empty-call", tool_name="empty_tool", tool_kwargs={}
+                        )
+                    ]
+                },
+            ),
+            ChatMessage(role=MessageRole.ASSISTANT, content="finished"),
+        ]
+        agent = FunctionAgent(
+            name="agent",
+            description="test",
+            tools=[empty_tool],
+            llm=MockFunctionCallingLLM(
+                response_generator=_response_generator_from_list(responses)
+            ),
+            streaming=streaming,
+        )
+
+        handler = agent.run(user_msg="Run the empty tool")
+        async for _ in handler.stream_events():
+            pass
+        response = await handler
+
+        assert call_count == 1
+        return response.response.content or ""
+
+    streamed_response = await run_agent(streaming=True)
+    assert streamed_response == "finished"
+    assert streamed_response == await run_agent(streaming=False)
 
 
 @pytest.mark.asyncio
@@ -444,8 +491,17 @@ async def test_function_agent_with_context_and_chat_message():
         """A no-op function for testing."""
         return "noop executed"
 
+    # Use an echo response generator that ignores tools
+    def echo_generator(messages, **kwargs):
+        if not messages:
+            return ChatMessage(role=MessageRole.ASSISTANT, content="<empty>")
+        content = "".join(
+            block.text for block in messages[-1].blocks if isinstance(block, TextBlock)
+        )
+        return ChatMessage(role=MessageRole.ASSISTANT, content=content or "<empty>")
+
     # Step 1: Construct FunctionAgent
-    llm = MockFunctionCallingLLM()
+    llm = MockFunctionCallingLLM(response_generator=echo_generator)
     function_tools = [FunctionTool.from_defaults(fn=noop)]
     constructor_kwargs = {
         "llm": llm,

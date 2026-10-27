@@ -1,5 +1,11 @@
 # CHANGELOG — llama-index-llms-genai
 
+## [v0.9.4]
+
+### Changed
+
+- Bump `google-genai` dependency to support v2.0 SDKs
+
 ## [v0.9.3]
 
 ### Fixed

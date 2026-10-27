@@ -180,7 +180,9 @@ async def test_code_act_agent_workflow_integration():
     # Track call count to return different responses
     call_count = [0]
 
-    def multi_response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+    def multi_response_generator(
+        messages: Sequence[ChatMessage], **kwargs
+    ) -> ChatMessage:
         call_count[0] += 1
         if call_count[0] == 1:
             # First call: return code to execute

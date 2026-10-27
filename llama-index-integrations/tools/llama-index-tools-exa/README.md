@@ -37,9 +37,9 @@ print(
 
 `retrieve_documents`: Retrieve a list of documents returned from `exa_search`.
 
-`search_and_retrieve_documents`: Combines search and retrieve_documents to directly return a list of documents related to a search
+`search_and_retrieve_highlights`: Search and retrieve query-relevant highlights from results.
 
-`find_similar`: Find similar documents to a given URL.
+`search_and_retrieve_documents`: Combines search and retrieve_documents to directly return a list of documents related to a search
 
 `current_date`: Utility for the Agent to get todays date
 

@@ -15,13 +15,13 @@ EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
 
 def save_embedding(embedding: List[float], file_path: str) -> None:
     """Save embedding to file."""
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write(",".join([str(x) for x in embedding]))
 
 
 def load_embedding(file_path: str) -> List[float]:
     """Load embedding from file. Will only return first embedding in file."""
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         for line in f:
             return [float(x) for x in line.strip().split(",")]
     raise ValueError(f"The embedding file {file_path} is empty.")

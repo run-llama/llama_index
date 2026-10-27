@@ -81,7 +81,7 @@ class You(CustomLLM):
     )
     ydc_api_key: Optional[str] = Field(
         None,
-        description="You.com API key, if `YDC_API_KEY` is not set in the envrioment",
+        description="You.com API key, if `YDC_API_KEY` is not set in the environment",
     )
 
     @property

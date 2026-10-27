@@ -135,6 +135,39 @@ def test_llm_rerank() -> None:
 
 @patch.object(
     MockLLM,
+    "complete",
+    mock_llm_chat_or_complete,
+)
+@pytest.mark.asyncio
+async def test_llm_rerank__async() -> None:
+    """Test LLM rerank (async)."""
+    nodes = [
+        TextNode(text="Test"),
+        TextNode(text="Test2"),
+        TextNode(text="Test3"),
+        TextNode(text="Test4"),
+        TextNode(text="Test5"),
+        TextNode(text="Test6"),
+        TextNode(text="Test7"),
+        TextNode(text="Test8"),
+    ]
+    nodes_with_score = [NodeWithScore(node=n) for n in nodes]
+
+    # choice batch size 4 (so two batches)
+    # take top-3 across all data
+    llm_rerank = LLMRerank(choice_batch_size=4, top_n=3)
+    query_str = "What is?"
+    result_nodes = await llm_rerank.apostprocess_nodes(
+        nodes_with_score, QueryBundle(query_str)
+    )
+    assert len(result_nodes) == 3
+    assert result_nodes[0].node.get_content() == "Test7"
+    assert result_nodes[1].node.get_content() == "Test5"
+    assert result_nodes[2].node.get_content() == "Test3"
+
+
+@patch.object(
+    MockLLM,
     "chat",
     mock_llm_chat_or_complete,
 )
@@ -162,6 +195,45 @@ def test_llm_rerank_multimodal(png_1px_b64, mp3_bytes, mp4_bytes) -> None:
 
     query_str = "What is?"
     result_nodes = llm_rerank_mm.postprocess_nodes(
+        nodes_with_score, QueryBundle(query_str)
+    )
+    assert len(result_nodes) == 4
+    assert result_nodes[0].node.get_content_blocks() == [AudioBlock(audio=mp3_bytes)]
+    assert result_nodes[1].node.get_content_blocks() == [ImageBlock(image=png_1px_b64)]
+    assert result_nodes[2].node.get_content_blocks() == [ImageBlock(image=png_1px_b64)]
+    assert result_nodes[3].node.get_content_blocks() == [TextBlock(text="Test3")]
+
+
+@patch.object(
+    MockLLM,
+    "chat",
+    mock_llm_chat_or_complete,
+)
+@pytest.mark.asyncio
+async def test_llm_rerank_multimodal__async(png_1px_b64, mp3_bytes, mp4_bytes) -> None:
+    """Test LLM rerank (async)."""
+    nodes = [
+        TextNode(text="Test"),
+        TextNode(text="Test2"),
+        TextNode(text="Test3"),
+        TextNode(text="Test4"),
+        ImageNode(image=png_1px_b64),
+        Node(image_resource=MediaResource(data=png_1px_b64)),
+        Node(audio_resource=MediaResource(data=mp3_bytes)),
+        Node(video_resource=MediaResource(data=mp4_bytes)),
+    ]
+    nodes_with_score = [NodeWithScore(node=n) for n in nodes]
+
+    # choice batch size 4 (so two batches)
+    # take top-4 across all data
+    llm_rerank_mm = LLMRerank(
+        llm=MockLLM(is_chat_model=True),
+        choice_batch_size=4,
+        top_n=4,
+    )
+
+    query_str = "What is?"
+    result_nodes = await llm_rerank_mm.apostprocess_nodes(
         nodes_with_score, QueryBundle(query_str)
     )
     assert len(result_nodes) == 4

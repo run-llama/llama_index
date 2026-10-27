@@ -263,6 +263,8 @@ class PromptHelper(BaseComponent):
         tools: Optional[List["BaseTool"]] = None,
     ) -> List[str]:
         """Truncate text chunks to fit available context window."""
+        if not text_chunks:
+            return []
         text_splitter = self.get_text_splitter_given_prompt(
             prompt,
             num_chunks=len(text_chunks),
@@ -518,6 +520,8 @@ class ChatPromptHelper(BaseComponent):
         """
         Async truncate text chunks to fit available context window.
         """
+        if not messages:
+            return []
         num_chunks = len(messages)
         message_size = await self._aget_available_chunk_size(
             prompt, num_chunks=num_chunks, padding=padding, llm=llm, tools=tools
@@ -572,6 +576,8 @@ class ChatPromptHelper(BaseComponent):
         """
         # Combine messages into largest possible messages
         # Will not combine messages which have different roles/metadata
+        if not messages:
+            return []
         max_chunk_size = sum([await message.aestimate_tokens() for message in messages])
         combined_messages = cast(
             list[ChatMessage],

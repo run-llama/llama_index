@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
+import deprecated
+
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -30,6 +32,23 @@ def _get_image_and_text_nodes(
     return image_nodes, text_nodes
 
 
+@deprecated.deprecated(
+    version="0.14.23",
+    reason=(
+        "SimpleMultiModalQueryEngine is deprecated. Multimodal synthesis is now "
+        "available on the standard engines via `multimodal=True`. Use "
+        "`RetrieverQueryEngine.from_args(retriever=..., llm=..., multimodal=True)` "
+        "(or `CitationQueryEngine.from_args(..., multimodal=True)` for cited "
+        "responses) with a chat LLM that supports multimodal content blocks. "
+        "Migration notes: pass your multimodal model via `llm=` instead of "
+        "`multi_modal_llm=`; replace the separate `text_qa_template` and "
+        "`image_qa_template` with a single `chat_content_qa_template` (and "
+        "optional `chat_content_refine_template`) — a `RichPromptTemplate` that "
+        "iterates over `context_messages[].blocks` and emits each block by type "
+        "(see `CHAT_CONTENT_QA_PROMPT` in `llama_index.core.prompts.chat_prompts` "
+        "for the default)."
+    ),
+)
 class SimpleMultiModalQueryEngine(BaseQueryEngine):
     """
     Simple Multi Modal Retriever query engine.

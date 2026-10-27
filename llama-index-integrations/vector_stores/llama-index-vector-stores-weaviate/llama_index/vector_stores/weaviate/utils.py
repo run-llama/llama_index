@@ -7,6 +7,7 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 import logging
 from typing import Any, Dict, List, cast
+from uuid import uuid4
 
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -142,11 +143,18 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
         node.embedding = embedding
     except Exception as e:
         _logger.debug("Failed to parse Node metadata, fallback to legacy logic. %s", e)
-        metadata, node_info, relationships = legacy_metadata_dict_to_node(entry)
+        # Only the properties are node metadata -- passing the whole entry would
+        # surface the Weaviate object wrapper (uuid/vector/collection/...) as the
+        # node's metadata and hide the real properties one level down.
+        metadata, node_info, relationships = legacy_metadata_dict_to_node(
+            entry["properties"]
+        )
+
+        node_id = additional.get("id") or entry.get("uuid")
 
         node = TextNode(
             text=text,
-            id_=additional.get("id", str(metadata.get("uuid"))),
+            id_=str(node_id) if node_id is not None else str(uuid4()),
             metadata=metadata,
             start_char_idx=node_info.get("start", None),
             end_char_idx=node_info.get("end", None),

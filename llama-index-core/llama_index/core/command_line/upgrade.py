@@ -116,7 +116,7 @@ def _parse_hub_downloads(
 def parse_lines(
     lines: List[str], installed_modules: List[str], verbose: bool = False
 ) -> Tuple[List[str], List[str]]:
-    with open(mappings_path) as f:
+    with open(mappings_path, encoding="utf-8") as f:
         mappings = json.load(f)
 
     new_installs = []
@@ -203,7 +203,7 @@ def _format_new_installs(new_installs: List[str]) -> List[str]:
 
 def upgrade_nb_file(file_path: str) -> None:
     print(f"\n=====================\n{file_path}\n", flush=True)
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         notebook = json.load(f)
 
     verbose = False
@@ -243,18 +243,18 @@ def upgrade_nb_file(file_path: str) -> None:
 
     cur_cells = [cell for cell in cur_cells if not _cell_installs_llama_hub(cell)]
     notebook["cells"] = cur_cells
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         json.dump(notebook, f, indent=1, ensure_ascii=False)
 
 
 def upgrade_py_md_file(file_path: str) -> None:
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         lines = f.readlines()
 
     installed_modules = ["llama-index-core"]  # default installs
     new_lines, new_installs = parse_lines(lines, installed_modules)
 
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write("".join(new_lines))
 
     if len(new_installs) > 0:
