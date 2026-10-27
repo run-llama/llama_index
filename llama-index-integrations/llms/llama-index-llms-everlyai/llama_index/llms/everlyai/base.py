@@ -1,3 +1,4 @@
+import os
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
@@ -47,7 +48,10 @@ class EverlyAI(OpenAI):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        api_key = get_from_param_or_env("api_key", api_key, "EverlyAI_API_KEY")
+        if api_key is None and not os.environ.get("EVERLYAI_API_KEY"):
+            # Fall back to the mixed-case name this integration used to read.
+            api_key = os.environ.get("EverlyAI_API_KEY") or None
+        api_key = get_from_param_or_env("api_key", api_key, "EVERLYAI_API_KEY")
 
         super().__init__(
             model=model,
