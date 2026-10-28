@@ -156,3 +156,42 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+def test_include_prev_next_rel_false() -> None:
+    """include_prev_next_rel=False must not attach PREVIOUS/NEXT (#23675)."""
+    from llama_index.core.schema import NodeRelationship
+
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        sentence_splitter=str.splitlines,
+        max_chunk_size=10,
+        include_prev_next_rel=False,
+    )
+    nodes = splitter.get_nodes_from_documents(
+        [Document(text="First sentence.\nSecond sentence.\nThird sentence.")]
+    )
+    assert len(nodes) >= 2
+    for node in nodes:
+        assert NodeRelationship.PREVIOUS not in node.relationships
+        assert NodeRelationship.NEXT not in node.relationships
+
+
+def test_include_prev_next_rel_true_default() -> None:
+    """Default include_prev_next_rel=True still links adjacent chunks."""
+    from llama_index.core.schema import NodeRelationship
+
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        sentence_splitter=str.splitlines,
+        max_chunk_size=10,
+        include_prev_next_rel=True,
+    )
+    nodes = splitter.get_nodes_from_documents(
+        [Document(text="First sentence.\nSecond sentence.\nThird sentence.")]
+    )
+    assert len(nodes) >= 2
+    assert NodeRelationship.NEXT in nodes[0].relationships
+    assert NodeRelationship.PREVIOUS in nodes[1].relationships
