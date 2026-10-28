@@ -116,7 +116,11 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text into chunks, reserving space required for metadata str."""
-        metadata_len = len(self._tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
+        metadata_len = (
+            len(self._tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
+            if self.include_metadata
+            else 0
+        )
         effective_chunk_size = self.chunk_size - metadata_len
         if effective_chunk_size <= 0:
             raise ValueError(

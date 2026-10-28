@@ -89,3 +89,23 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_disabled_metadata_does_not_reserve_format_tokens() -> None:
+    document = Document(
+        text="a b c d e f g",
+        metadata={"context": "x" * 100},
+    )
+    splitter = TokenTextSplitter(
+        chunk_size=5,
+        chunk_overlap=0,
+        tokenizer=str.split,
+        include_metadata=False,
+    )
+
+    nodes = splitter.get_nodes_from_documents([document])
+
+    assert [node.get_content(metadata_mode=MetadataMode.NONE) for node in nodes] == [
+        "a b c d e",
+        "f g",
+    ]
