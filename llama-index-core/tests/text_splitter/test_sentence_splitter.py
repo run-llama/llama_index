@@ -197,3 +197,75 @@ def test_no_overflow_with_chinese_text_and_metadata() -> None:
             f"Node {i} has {content_length} tokens, exceeds chunk_size of 512. "
             f"This indicates the overflow bug is not fixed."
         )
+
+
+# Devanagari ends a sentence with the danda U+0964 and a verse or a section
+# with the double danda U+0965. A character tokenizer keeps these cases
+# offline and deterministic, so they do not depend on a tiktoken encoding.
+DEVANAGARI_TERMINATORS = ("।", "॥")
+PHRASE_TERMINATORS = (
+    ",",
+    ";",
+    ".",
+    "!",
+    "?",
+    "।",
+    "॥",
+    "。",
+    "！",
+    "？",
+    "，",
+    "、",
+)
+
+
+def _chunk_endings(chunks: List[str]) -> List[str]:
+    """Last character of every chunk that is followed by another chunk."""
+    stripped = [chunk.strip() for chunk in chunks if chunk.strip()]
+    return [chunk[-1] for chunk in stripped[:-1]]
+
+
+def test_hindi_text(hindi_text: str) -> None:
+    """Hindi should break on punctuation, and use the danda to do it."""
+    splitter = SentenceSplitter(chunk_size=128, chunk_overlap=0, tokenizer=list)
+    endings = _chunk_endings(splitter.split_text(hindi_text))
+
+    assert len(endings) > 1
+    # Without the danda the splitter finds no sentence boundary and falls back
+    # to cutting on a space, which severs a phrase across two chunks.
+    assert all(ending in PHRASE_TERMINATORS for ending in endings)
+    assert any(ending in DEVANAGARI_TERMINATORS for ending in endings)
+
+
+def test_marathi_text(marathi_text: str) -> None:
+    """Marathi should break on punctuation, and use the danda to do it."""
+    splitter = SentenceSplitter(chunk_size=128, chunk_overlap=0, tokenizer=list)
+    endings = _chunk_endings(splitter.split_text(marathi_text))
+
+    assert len(endings) > 1
+    assert all(ending in PHRASE_TERMINATORS for ending in endings)
+    assert any(ending in DEVANAGARI_TERMINATORS for ending in endings)
+
+
+def test_sanskrit_verse_text(sanskrit_verse_text: str) -> None:
+    """Verse carries no punctuation but the double danda, so every chunk ends on one."""
+    splitter = SentenceSplitter(chunk_size=64, chunk_overlap=0, tokenizer=list)
+    endings = _chunk_endings(splitter.split_text(sanskrit_verse_text))
+
+    assert len(endings) > 1
+    assert all(ending == "॥" for ending in endings)
+
+
+def test_latin_and_cjk_boundaries_unchanged(
+    english_text: str, chinese_text: str
+) -> None:
+    """Adding the danda must not move Latin or CJK chunk boundaries."""
+    splitter = SentenceSplitter(chunk_size=128, chunk_overlap=0, tokenizer=list)
+
+    english_endings = _chunk_endings(splitter.split_text(english_text))
+    assert len(english_endings) > 1
+    assert all(ending in PHRASE_TERMINATORS for ending in english_endings)
+
+    chinese_endings = _chunk_endings(splitter.split_text(chinese_text))
+    assert len(chinese_endings) > 1
+    assert all(ending in PHRASE_TERMINATORS for ending in chinese_endings)
