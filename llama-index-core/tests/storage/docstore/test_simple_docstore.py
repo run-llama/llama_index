@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from llama_index.core.schema import Document, TextNode, NodeRelationship
+from llama_index.core.schema import Document, TextNode, NodeRelationship,RelatedNodeInfo
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
 
@@ -152,3 +152,22 @@ def test_docstore_delete_all_ref_doc_nodes() -> None:
     assert docstore._kvstore.get("d1", docstore._node_collection) is None
     assert docstore._kvstore.get("d1", docstore._metadata_collection) is None
     assert docstore._kvstore.get("d1", docstore._ref_doc_collection) is None
+
+def test_add_documents_no_partial_ref_doc_update_on_error() -> None:
+    def _child(node_id: str, source_id: str) -> TextNode:
+        node = TextNode(text=node_id, id_=node_id)
+        node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+            node_id=source_id
+        )
+        return node
+
+    docstore = SimpleDocumentStore()
+    docstore.add_documents([_child("n1", "doc")])
+
+    with pytest.raises(ValueError):
+        docstore.add_documents(
+            [_child("n2", "doc"), _child("n1", "doc")], allow_update=False
+        )
+
+    assert not docstore.document_exists("n2")
+    assert docstore.get_ref_doc_info("doc").node_ids == ["n1"]
