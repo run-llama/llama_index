@@ -114,12 +114,13 @@ class DocumentContextExtractor(BaseExtractor):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        llm = llm or Settings.llm
         assert hasattr(
             llm, "achat"
         )  # not all LLMs have this, particularly the huggingfaceapi ones.
 
         super().__init__(
-            llm=llm or Settings.llm,
+            llm=llm,
             docstore=docstore,
             key=key,
             prompt=prompt,
@@ -258,6 +259,7 @@ class DocumentContextExtractor(BaseExtractor):
             if "not found" in str(e):
                 logging.warning(f"Document {doc_id} not found in docstore")
                 return None
+            raise
         if not doc:
             logging.warning(f"Document {doc_id} not found in docstore")
             return None
@@ -299,24 +301,20 @@ class DocumentContextExtractor(BaseExtractor):
             List of metadata dictionaries with generated context
 
         """
-        metadata_list: List[Dict] = []
-        for _ in nodes:
-            metadata_list.append({})
-        metadata_map = {
-            node.node_id: metadata_dict
-            for metadata_dict, node in zip(metadata_list, nodes)
-        }
+        metadata_list: List[Dict] = [{} for _ in nodes]
 
         # sorting takes a tiny amount of time - 0.4s for 1_000_000 nodes. but 1_000_000 nodes takes potentially hours to process
         # considering sorting CAN save the users hundreds of dollars in API costs, we just sort and leave no option to do otherwise.
         # The math always works out in the user's favor and we can't guarantee things are sorted in the first place.
-        sorted_nodes = sorted(
-            nodes, key=lambda n: n.source_node.node_id if n.source_node else ""
+        sorted_indexed_nodes = sorted(
+            enumerate(nodes),
+            key=lambda item: item[1].source_node.node_id if item[1].source_node else "",
         )
 
         # iterate over all the nodes and generate the jobs
         node_tasks: List[Coroutine[Any, Any, Any]] = []
-        for node in sorted_nodes:
+        doc_cache: Dict[str, Optional[Union[Node, TextNode]]] = {}
+        for idx, node in sorted_indexed_nodes:
             if not (node.source_node and is_text_node(node)):
                 continue
 
@@ -324,13 +322,14 @@ class DocumentContextExtractor(BaseExtractor):
             if self.key in node.metadata:
                 continue
 
-            doc: Optional[Union[Node, TextNode]] = await self._get_document(
-                node.source_node.node_id
-            )
+            doc_id = node.source_node.node_id
+            if doc_id not in doc_cache:
+                doc_cache[doc_id] = await self._get_document(doc_id)
+            doc = doc_cache[doc_id]
             if not doc:
                 continue
 
-            metadata = metadata_map[node.node_id]
+            metadata = metadata_list[idx]
             # this modifies metadata in-place, adding a new key to the dictionary - we needed do anytyhing with the return value
             task = self._agenerate_node_context(
                 node, metadata, doc, self.prompt, self.key
