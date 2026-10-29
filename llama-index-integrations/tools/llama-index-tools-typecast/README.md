@@ -32,7 +32,7 @@ This tool is designed to be used as a Tool in an Agent.
 
 ## Features
 
-- **Multiple Voice Models**: Support for various AI voice models (ssfm-v21, ssfm-v30)
+- **Multiple Voice Models**: Select ssfm-v21 (default), ssfm-v30, or ssfm-v31. SSFM 3.1 requires typecast-python 0.5.3 or later and a compatible voice from `get_voices(model="ssfm-v31")`; check the voice's supported emotions.
 - **Multi-language Support**: 27+ languages including English, Korean, Spanish, Japanese, Chinese, and more
 - **Emotion Control**: Adjust emotional expression (happy, sad, angry, normal, whisper, etc.) with intensity control
 - **Audio Customization**: Control volume, pitch, tempo, and output format (WAV/MP3)

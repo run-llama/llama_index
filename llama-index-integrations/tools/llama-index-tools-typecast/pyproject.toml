@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "Neosapience"}]
 dependencies = [
-    "typecast-python>=0.3.14",
+    "typecast-python>=0.5.3",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

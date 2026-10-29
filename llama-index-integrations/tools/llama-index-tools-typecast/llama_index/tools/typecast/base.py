@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from typecast.client import Typecast
-from typecast.models import Output, Prompt, TTSRequest, VoicesV2Filter
+from typecast.models import Output, PresetPrompt, Prompt, TTSRequest, VoicesV2Filter
 
 
 class TypecastToolSpec(BaseToolSpec):
@@ -35,7 +35,7 @@ class TypecastToolSpec(BaseToolSpec):
         Get list of available voices from Typecast (V3 API).
 
         Args:
-            model (Optional[str]): Filter by model name (e.g., "ssfm-v21", "ssfm-v30")
+            model (Optional[str]): Filter by model name (e.g., "ssfm-v21", "ssfm-v30", "ssfm-v31")
             gender (Optional[str]): Filter by gender ("male" or "female")
             age (Optional[str]): Filter by age group ("child", "teenager", "young_adult", "middle_age", "elder")
             use_case (Optional[str]): Filter by use case category (e.g., "Audiobook", "Game", "Podcast")
@@ -159,13 +159,16 @@ class TypecastToolSpec(BaseToolSpec):
         # Create client
         client = Typecast(host=self.host, api_key=self.api_key)
 
+        # SSFM 3.x uses the preset discriminator; preserve the legacy v21 prompt.
+        prompt_type = PresetPrompt if model in {"ssfm-v30", "ssfm-v31"} else Prompt
+
         # Build the request
         request = TTSRequest(
             voice_id=voice_id,
             text=text,
             model=model,
             language=language,
-            prompt=Prompt(
+            prompt=prompt_type(
                 emotion_preset=emotion_preset,
                 emotion_intensity=emotion_intensity,
             ),
