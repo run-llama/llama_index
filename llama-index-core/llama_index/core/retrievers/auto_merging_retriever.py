@@ -127,7 +127,8 @@ class AutoMergingRetriever(BaseRetriever):
     def _fill_in_nodes(
         self, nodes: List[NodeWithScore]
     ) -> Tuple[List[NodeWithScore], bool]:
-        """Fill in nodes.
+        """
+        Fill in nodes.
 
         Insert the single node that sits between two retrieved neighbours when it is
         missing from the results: node ``i`` points to it with its NEXT relationship
