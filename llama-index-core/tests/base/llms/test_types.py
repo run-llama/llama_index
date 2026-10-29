@@ -1278,6 +1278,24 @@ def test_document_block_from_path(tmp_path: Path, pdf_url: str):
     assert document.title == "input_document"
 
 
+@pytest.mark.parametrize(
+    ("block_cls", "filename", "attr", "expected"),
+    [
+        (ImageBlock, "test.PNG", "image_mimetype", "image/png"),
+        (AudioBlock, "test.MP3", "format", "mp3"),
+        (VideoBlock, "test.MP4", "video_mimetype", "video/mp4"),
+        (DocumentBlock, "test.PDF", "document_mimetype", "application/pdf"),
+    ],
+)
+def test_block_mimetype_from_uppercase_extension(
+    tmp_path: Path, block_cls, filename: str, attr: str, expected: str
+):
+    file_path = tmp_path / filename
+    file_path.write_bytes(b"\x00")
+    block = block_cls(path=file_path)
+    assert getattr(block, attr) == expected
+
+
 def test_document_block_from_url(pdf_url: str):
     document = DocumentBlock(url=pdf_url, title="dummy_pdf")
     file_buffer = document.resolve_document()
