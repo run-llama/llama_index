@@ -769,6 +769,8 @@ Create an ingestion API key in HoneyHive under **Settings > Project > API Keys**
 export HH_INGESTION_API_KEY="your-honeyhive-ingestion-key"
 ```
 
+For a dedicated or self-hosted deployment, also set `HH_API_URL`.
+
 Initialize the HoneyHive tracer and instrument LlamaIndex before you create any indexes, retrievers, or query engines:
 
 ```python
@@ -798,7 +800,7 @@ response = query_engine.query("What does HoneyHive trace?")
 print(response)
 ```
 
-In HoneyHive, the query appears as one trace. The retrieval, the query embedding, and the LLM call are nested under the query engine span.
+In HoneyHive, the retrieval, the query embedding, and the LLM call are nested under the query engine span.
 
 #### Guides
 
