@@ -123,7 +123,7 @@ class MarkdownReader(BaseReader):
         """Parse file into tuples."""
         fs = fs or LocalFileSystem()
         with fs.open(filepath, encoding="utf-8") as f:
-            content = f.read().decode(encoding="utf-8")
+            content = f.read().decode(encoding="utf-8", errors=errors)
         if self._remove_hyperlinks:
             content = self.remove_hyperlinks(content)
         if self._remove_images:
