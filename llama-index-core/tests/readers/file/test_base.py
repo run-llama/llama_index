@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest import mock
 
@@ -22,6 +23,25 @@ def test__format_file_timestamp():
     assert _format_file_timestamp(None) is None  # type: ignore
     assert _format_file_timestamp(0, include_time=False) == "1970-01-01"
     assert _format_file_timestamp(0, include_time=True) == "1970-01-01T00:00:00Z"
+
+
+def test__format_file_timestamp_out_of_range():
+    # Timestamps that cannot be converted return None instead of raising
+    assert _format_file_timestamp(float("inf")) is None
+    assert _format_file_timestamp(1e20, include_time=True) is None
+
+
+def test_SimpleDirectoryReader_pre_epoch_mtime(tmp_path):
+    file_path = tmp_path / "old.txt"
+    file_path.write_text("hello")
+    # 1969-12-31: datetime.fromtimestamp raises OSError for this on Windows
+    os.utime(file_path, (-86400, -86400))
+
+    docs = SimpleDirectoryReader(input_dir=tmp_path).load_data()
+
+    assert len(docs) == 1
+    assert docs[0].text == "hello"
+    assert docs[0].metadata["file_name"] == "old.txt"
 
 
 def test_default_file_metadata_func():

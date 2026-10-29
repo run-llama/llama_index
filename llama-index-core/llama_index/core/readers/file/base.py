@@ -127,7 +127,7 @@ def _format_file_timestamp(
 
     Returns:
         str: formatted timestamp
-        None: if the timestamp passed was None
+        None: if the timestamp passed was None or could not be converted
 
     """
     if timestamp is None:
@@ -138,7 +138,11 @@ def _format_file_timestamp(
     if isinstance(timestamp, datetime):
         timestamp_dt = timestamp.astimezone(timezone.utc)
     else:
-        timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        try:
+            timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        except (OSError, OverflowError, ValueError):
+            # e.g. pre-1970 (negative) timestamps raise OSError on Windows
+            return None
 
     if include_time:
         return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
