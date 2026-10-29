@@ -209,12 +209,12 @@ class PandasExcelReader(BaseReader):
 
             # Start from index 0 to include all data rows
             # The header is already in 'headers', not in the data rows
-            for _, row in df.iterrows():
+            for row in df.itertuples(index=False, name=None):
                 # Format each row as "header1: value1, header2: value2, ..."
                 formatted_row = self._field_separator.join(
                     [
-                        f"{header}{self._key_value_separator}{row[header]!s}"
-                        for header in headers
+                        f"{header}{self._key_value_separator}{value!s}"
+                        for header, value in zip(headers, row)
                     ]
                 )
                 text_list.append(formatted_row)
@@ -237,11 +237,11 @@ class PandasExcelReader(BaseReader):
                 headers = df.columns.tolist()
 
                 text_list = []
-                for _, row in df.iterrows():
+                for row in df.itertuples(index=False, name=None):
                     formatted_row = self._field_separator.join(
                         [
-                            f"{header}{self._key_value_separator}{row[header]!s}"
-                            for header in headers
+                            f"{header}{self._key_value_separator}{value!s}"
+                            for header, value in zip(headers, row)
                         ]
                     )
                     text_list.append(formatted_row)
