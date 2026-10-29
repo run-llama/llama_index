@@ -12,7 +12,7 @@ pip install llama-index-llms-cometapi
 
 ### Get API Key
 
-1. Visit [CometAPI Console](https://api.cometapi.com/console/token)
+1. Visit [CometAPI Console](https://www.cometapi.com/console/token)
 2. Sign up for an account (If you don't already have a CometAPI account)
 3. Generate your API key
 
@@ -102,7 +102,7 @@ CometAPI supports various state-of-the-art models:
 - `grok-4-0709`
 - `qwen3-30b-a3b`
 
-For complete list, visit: https://api.cometapi.com/pricing
+For complete list, visit: https://www.cometapi.com/pricing/
 
 ## Model Configuration
 
@@ -119,5 +119,5 @@ print(response)
 ## Documentation
 
 - [CometAPI Website](https://www.cometapi.com/)
-- [API Documentation](https://api.cometapi.com/doc)
-- [Model Pricing](https://api.cometapi.com/pricing)
+- [API Documentation](https://apidoc.cometapi.com/)
+- [Model Pricing](https://www.cometapi.com/pricing/)
