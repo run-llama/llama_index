@@ -751,6 +751,60 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### HoneyHive
+
+[HoneyHive](https://www.honeyhive.ai) is an AI observability and evaluation platform for LLM applications and agents. This integration uses the OpenInference LlamaIndex instrumentation to send OpenTelemetry (OTel) spans to HoneyHive for query engines, retrievers, embeddings, LLM calls, and agents.
+
+#### Usage Pattern
+
+Install `llama-index`, the HoneyHive SDK, and the OpenInference LlamaIndex instrumentation:
+
+```bash
+pip install llama-index honeyhive openinference-instrumentation-llama-index
+```
+
+Create an ingestion API key in HoneyHive under **Settings > Project > API Keys** (Ingestion tab), then set it in your environment:
+
+```bash
+export HH_INGESTION_API_KEY="your-honeyhive-ingestion-key"
+```
+
+Initialize the HoneyHive tracer and instrument LlamaIndex before you create any indexes, retrievers, or query engines:
+
+```python
+from honeyhive import HoneyHiveTracer
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+
+# Reads HH_INGESTION_API_KEY from your environment
+tracer = HoneyHiveTracer.init()
+LlamaIndexInstrumentor().instrument(tracer_provider=tracer.provider)
+```
+
+Pass `tracer_provider=tracer.provider` so that spans go to HoneyHive. Then run your application as usual. This example needs an `OPENAI_API_KEY`:
+
+```python
+from llama_index.core import Document, Settings, VectorStoreIndex
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai import OpenAI
+
+Settings.llm = OpenAI(model="gpt-4o-mini")
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+
+documents = [Document(text="HoneyHive traces LlamaIndex query engines.")]
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What does HoneyHive trace?")
+print(response)
+```
+
+In HoneyHive, the query appears as one trace. The retrieval, the query embedding, and the LLM call are nested under the query engine span.
+
+#### Guides
+
+- [HoneyHive LlamaIndex Integration Guide](https://docs.honeyhive.ai/v2/integrations/llamaindex)
+- [HoneyHive Tracing Quickstart](https://docs.honeyhive.ai/v2/introduction/tracing-quickstart)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
@@ -839,44 +893,6 @@ tru_query_engine.query("What did the author do growing up?")
 - [Trulens Guide](/python/framework/community/integrations/trulens)
 - [Quickstart Guide with LlamaIndex + TruLens](https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
 - [Google Colab](https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
-
-### HoneyHive
-
-HoneyHive allows users to trace the execution flow of any LLM workflow. Users can then debug and analyze their traces, or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
-
-#### Usage Pattern
-
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler(
-    "honeyhive",
-    project="My HoneyHive Project",
-    name="My LLM Workflow Name",
-    api_key="MY HONEYHIVE API KEY",
-)
-
-# NOTE: No need to do the following
-from llama_index.core.callbacks import CallbackManager
-
-# from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
-from llama_index.core import Settings
-
-# hh_tracer = HoneyHiveLlamaIndexTracer(
-#     project="My HoneyHive Project",
-#     name="My LLM Workflow Name",
-#     api_key="MY HONEYHIVE API KEY",
-# )
-# Settings.callback_manager = CallbackManager([hh_tracer])
-```
-
-![](./../../_static/integrations/honeyhive.png)
-![](./../../_static/integrations/perfetto.png)
-_Use Perfetto to debug and analyze your HoneyHive traces_
-
-#### Guides
-
-- [HoneyHive Callback Handler](/python/examples/observability/honeyhivellamaindextracer)
 
 ### PromptLayer
 
