@@ -65,7 +65,6 @@ def clickhouse_client() -> Generator:
     clickhouse_client.command(f"DROP DATABASE {TEST_DB}")
 
 
-@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse not available")
 @pytest.fixture()
 def clickhouse_store(table_name: str, clickhouse_client: Any) -> ClickHouseVectorStore:
     return ClickHouseVectorStore(

@@ -1,6 +1,6 @@
 """LLM reranker."""
 
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import logging
 
 from llama_index.core.bridge.pydantic import (
@@ -9,6 +9,7 @@ from llama_index.core.bridge.pydantic import (
     PrivateAttr,
     SerializeAsAny,
 )
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
 )
@@ -23,7 +24,7 @@ from llama_index.core.instrumentation.events.rerank import (
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import STRUCTURED_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 
 
@@ -140,11 +141,56 @@ class StructuredLLMRerank(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "StructuredLLMRerank"
 
-    def _postprocess_nodes(
+    def _get_node_batches(self, nodes: List[NodeWithScore]) -> List[List[BaseNode]]:
+        return [
+            [node.node for node in nodes[idx : idx + self.choice_batch_size]]
+            for idx in range(0, len(nodes), self.choice_batch_size)
+        ]
+
+    def _get_predict_kwargs(
+        self, nodes_batch: List[BaseNode], query_str: str
+    ) -> Dict[str, Any]:
+        return {
+            "output_cls": self._document_relevance_list_cls,
+            "prompt": self.choice_select_prompt,
+            "context_str": self._format_node_batch_fn(nodes_batch),
+            "query_str": query_str,
+        }
+
+    def _parse_batch_result(
         self,
-        nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
+        result: Union[BaseModel, str],
+        nodes_batch: List[BaseNode],
+        batch_idx: int,
     ) -> List[NodeWithScore]:
+        """Score a single batch of nodes from its structured prediction."""
+        # in case structured prediction fails, a str of the raised exception is returned
+        if isinstance(result, str):
+            start_idx = batch_idx * self.choice_batch_size
+            msg = (
+                f"Structured prediction failed for nodes "
+                f"{start_idx} - {start_idx + self.choice_batch_size}: {result}"
+            )
+            if self._raise_on_structured_prediction_failure:
+                raise ValueError(msg)
+            logger.warning(msg)
+            # add all nodes with score 0
+            return [NodeWithScore(node=node, score=0.0) for node in nodes_batch]
+
+        raw_choices, relevances = self._parse_choice_select_answer_fn(
+            result, len(nodes_batch)
+        )
+        choice_idxs = [int(choice) - 1 for choice in raw_choices]
+        choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
+        relevances = relevances or [1.0 for _ in choice_nodes]
+        return [
+            NodeWithScore(node=node, score=relevance)
+            for node, relevance in zip(choice_nodes, relevances)
+        ]
+
+    def _rerank_start_event(
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
+    ) -> None:
         dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
@@ -154,66 +200,92 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             )
         )
 
+    def _reranking_event_payload(
+        self, nodes: List[NodeWithScore], query_bundle: QueryBundle
+    ) -> Dict[str, Any]:
+        return {
+            EventPayload.NODES: nodes,
+            EventPayload.MODEL_NAME: self.llm.metadata.model_name,
+            EventPayload.QUERY_STR: query_bundle.query_str,
+            EventPayload.TOP_K: self.top_n,
+        }
+
+    def _sort_and_truncate(
+        self, initial_results: List[NodeWithScore]
+    ) -> List[NodeWithScore]:
+        return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
+            : self.top_n
+        ]
+
+    def _postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        self._rerank_start_event(nodes, query_bundle)
+
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
         if len(nodes) == 0:
             return []
 
+        node_batches = self._get_node_batches(nodes)
         initial_results: List[NodeWithScore] = []
         with self.callback_manager.event(
             CBEventType.RERANKING,
-            payload={
-                EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.llm.metadata.model_name,
-                EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
-            },
+            payload=self._reranking_event_payload(nodes, query_bundle),
         ) as event:
-            for idx in range(0, len(nodes), self.choice_batch_size):
-                nodes_batch = [
-                    node.node for node in nodes[idx : idx + self.choice_batch_size]
-                ]
-
-                query_str = query_bundle.query_str
-                fmt_batch_str = self._format_node_batch_fn(nodes_batch)
+            for batch_idx, nodes_batch in enumerate(node_batches):
                 # call each batch independently
                 result: Union[BaseModel, str] = self.llm.structured_predict(
-                    output_cls=self._document_relevance_list_cls,
-                    prompt=self.choice_select_prompt,
-                    context_str=fmt_batch_str,
-                    query_str=query_str,
+                    **self._get_predict_kwargs(nodes_batch, query_bundle.query_str)
                 )
-                # in case structured prediction fails, a str of the raised exception is returned
-                if isinstance(result, str):
-                    if self._raise_on_structured_prediction_failure:
-                        raise ValueError(
-                            f"Structured prediction failed for nodes {idx} - {idx + self.choice_batch_size}: {result}"
-                        )
-                    logger.warning(
-                        f"Structured prediction failed for nodes {idx} - {idx + self.choice_batch_size}: {result}"
-                    )
-                    # add all nodes with score 0
-                    initial_results.extend(
-                        [NodeWithScore(node=node, score=0.0) for node in nodes_batch]
-                    )
-                    continue
-
-                raw_choices, relevances = self._parse_choice_select_answer_fn(
-                    result, len(nodes_batch)
-                )
-                choice_idxs = [int(choice) - 1 for choice in raw_choices]
-                choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
-                relevances = relevances or [1.0 for _ in choice_nodes]
                 initial_results.extend(
-                    [
-                        NodeWithScore(node=node, score=relevance)
-                        for node, relevance in zip(choice_nodes, relevances)
-                    ]
+                    self._parse_batch_result(result, nodes_batch, batch_idx)
                 )
 
-            reranked_nodes = sorted(
-                initial_results, key=lambda x: x.score or 0.0, reverse=True
-            )[: self.top_n]
+            reranked_nodes = self._sort_and_truncate(initial_results)
+            event.on_end(payload={EventPayload.NODES: reranked_nodes})
+
+        dispatcher.event(ReRankEndEvent(nodes=reranked_nodes))
+        return reranked_nodes
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        self._rerank_start_event(nodes, query_bundle)
+
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
+        if len(nodes) == 0:
+            return []
+
+        node_batches = self._get_node_batches(nodes)
+        initial_results: List[NodeWithScore] = []
+        with self.callback_manager.event(
+            CBEventType.RERANKING,
+            payload=self._reranking_event_payload(nodes, query_bundle),
+        ) as event:
+            # call each batch independently, in parallel
+            results: List[Union[BaseModel, str]] = await run_jobs(
+                [
+                    self.llm.astructured_predict(
+                        **self._get_predict_kwargs(nodes_batch, query_bundle.query_str)
+                    )
+                    for nodes_batch in node_batches
+                ]
+            )
+
+            for batch_idx, (result, nodes_batch) in enumerate(
+                zip(results, node_batches)
+            ):
+                initial_results.extend(
+                    self._parse_batch_result(result, nodes_batch, batch_idx)
+                )
+
+            reranked_nodes = self._sort_and_truncate(initial_results)
             event.on_end(payload={EventPayload.NODES: reranked_nodes})
 
         dispatcher.event(ReRankEndEvent(nodes=reranked_nodes))
