@@ -29,6 +29,7 @@ def test__format_file_timestamp_out_of_range():
     # Timestamps that cannot be converted return None instead of raising
     assert _format_file_timestamp(float("inf")) is None
     assert _format_file_timestamp(1e20, include_time=True) is None
+    assert _format_file_timestamp(float("nan")) is None
 
 
 def test_SimpleDirectoryReader_pre_epoch_mtime(tmp_path):
