@@ -154,6 +154,9 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
+        if not metadata_str:
+            return self.split_text(text)
+
         metadata_len = len(self._tokenizer(metadata_str))
         effective_chunk_size = self.chunk_size - metadata_len
         if effective_chunk_size <= 0:
