@@ -1,4 +1,5 @@
 from typing import Generator
+from unittest.mock import MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -272,3 +273,56 @@ def test_get_keys(redis_chat_store: RedisChatStore):
 
     assert len(keys) == 1
     assert keys[0] == REDIS_KEY
+
+
+def _mock_redis_store():
+    """Build a RedisChatStore backed by mock clients, no live Redis needed."""
+    sync = MagicMock()
+    async_ = MagicMock()
+    store = RedisChatStore(redis_client=sync, aredis_client=async_)
+    return store, sync, async_
+
+
+def test_delete_message_returns_chat_message():
+    """delete_message must return a ChatMessage, not the raw serialized bytes."""
+    store, sync, _ = _mock_redis_store()
+    user = ChatMessage(role=MessageRole.USER, content="hello")
+    assistant = ChatMessage(role=MessageRole.ASSISTANT, content="bye")
+    sync.lrange.return_value = [
+        user.model_dump_json().encode("utf-8"),
+        assistant.model_dump_json().encode("utf-8"),
+    ]
+
+    removed = store.delete_message("key", 0)
+
+    assert isinstance(removed, ChatMessage)
+    assert removed.content == "hello"
+    assert removed.role == "user"
+
+
+def test_delete_last_message_returns_chat_message():
+    """delete_last_message must return a ChatMessage, not the raw serialized bytes."""
+    store, sync, _ = _mock_redis_store()
+    user = ChatMessage(role=MessageRole.USER, content="hello")
+    sync.rpop.return_value = user.model_dump_json().encode("utf-8")
+
+    removed = store.delete_last_message("key")
+
+    assert isinstance(removed, ChatMessage)
+    assert removed.content == "hello"
+
+
+def test_delete_last_message_returns_none_when_empty():
+    """delete_last_message returns None when there is nothing to pop."""
+    store, sync, _ = _mock_redis_store()
+    sync.rpop.return_value = None
+
+    assert store.delete_last_message("key") is None
+
+
+def test_delete_message_returns_none_for_invalid_index():
+    """delete_message returns None for an out-of-range index."""
+    store, sync, _ = _mock_redis_store()
+    sync.lrange.return_value = []
+
+    assert store.delete_message("key", 0) is None
