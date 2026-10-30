@@ -207,27 +207,35 @@ class SQLiteChatStore(BaseChatStore):
         self._create_tables_if_not_exists(base)
 
     def set_messages(self, key: str, messages: list[ChatMessage]) -> None:
-        """Set messages for a key."""
+        """Set messages for a key, replacing any previously stored messages."""
         with self._session() as session:
             session.execute(
-                insert(self._table_class),
-                [
-                    {"key": key, "value": message.model_dump(mode="json")}
-                    for message in messages
-                ],
+                delete(self._table_class).where(self._table_class.key == key)
             )
+            if messages:
+                session.execute(
+                    insert(self._table_class),
+                    [
+                        {"key": key, "value": message.model_dump(mode="json")}
+                        for message in messages
+                    ],
+                )
             session.commit()
 
     async def aset_messages(self, key: str, messages: list[ChatMessage]) -> None:
-        """Async version of Get messages for a key."""
+        """Async version of Set messages for a key, replacing any previously stored messages."""
         async with self._async_session() as session:
             await session.execute(
-                insert(self._table_class),
-                [
-                    {"key": key, "value": message.model_dump(mode="json")}
-                    for message in messages
-                ],
+                delete(self._table_class).where(self._table_class.key == key)
             )
+            if messages:
+                await session.execute(
+                    insert(self._table_class),
+                    [
+                        {"key": key, "value": message.model_dump(mode="json")}
+                        for message in messages
+                    ],
+                )
             await session.commit()
 
     def get_messages(self, key: str) -> list[ChatMessage]:
