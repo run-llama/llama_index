@@ -67,6 +67,31 @@ def test_set_and_retrieve_messages(sqlite_chat_store: SQLiteChatStore):
     assert retrieved_messages[1].content == "Second message"
 
 
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+def test_set_messages_replaces_existing_messages(sqlite_chat_store: SQLiteChatStore):
+    key = "test_set_replace_key"
+    sqlite_chat_store.set_messages(key, [ChatMessage(content="Old", role="user")])
+
+    sqlite_chat_store.set_messages(key, [ChatMessage(content="New", role="user")])
+
+    retrieved_messages = sqlite_chat_store.get_messages(key)
+    assert [message.content for message in retrieved_messages] == ["New"]
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+def test_set_messages_with_empty_list_clears_key(sqlite_chat_store: SQLiteChatStore):
+    key = "test_set_empty_key"
+    sqlite_chat_store.set_messages(key, [ChatMessage(content="Old", role="user")])
+
+    sqlite_chat_store.set_messages(key, [])
+
+    assert sqlite_chat_store.get_messages(key) == []
+
+
 def test_delete_messages(sqlite_chat_store: SQLiteChatStore):
     messages = [ChatMessage(content="Message to delete", role="user")]
     key = "test_delete_key"
