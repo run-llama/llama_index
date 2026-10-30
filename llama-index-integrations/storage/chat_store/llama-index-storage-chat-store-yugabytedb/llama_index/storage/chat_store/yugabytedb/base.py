@@ -267,15 +267,14 @@ class YugabyteDBChatStore(BaseChatStore):
     def add_message(self, key: str, message: ChatMessage) -> None:
         """Add a message for a key."""
         with self._session() as session:
-            stmt = (
-                insert(self._table_class)
-                .values(
-                    key=bindparam("key"), value=cast(bindparam("value"), ARRAY(JSONB))
-                )
-                .on_conflict_do_update(
-                    index_elements=["key"],
-                    set_={"value": cast(bindparam("value"), ARRAY(JSONB))},
-                )
+            stmt = text(
+                f"""
+                INSERT INTO {self.schema_name}.{self._table_class.__tablename__} (key, value)
+                VALUES (:key, :value)
+                ON CONFLICT (key)
+                DO UPDATE SET
+                    value = array_cat({self._table_class.__tablename__}.value, :value);
+                """
             )
             params = {"key": key, "value": [message.model_dump_json()]}
             session.execute(stmt, params)
@@ -304,7 +303,7 @@ class YugabyteDBChatStore(BaseChatStore):
 
             stmt = text(
                 f"""
-                UPDATE {self._table_class.__tablename__}
+                UPDATE {self.schema_name}.{self._table_class.__tablename__}
                 SET value = array_cat(
                                {self._table_class.__tablename__}.value[: :idx],
                                {self._table_class.__tablename__}.value[:idx+2:]
@@ -335,7 +334,7 @@ class YugabyteDBChatStore(BaseChatStore):
 
             stmt = text(
                 f"""
-                UPDATE {self._table_class.__tablename__}
+                UPDATE {self.schema_name}.{self._table_class.__tablename__}
                 SET value = value[1:array_length(value, 1) - 1]
                 WHERE key = :key;
                 """
