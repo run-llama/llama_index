@@ -242,7 +242,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
             previous_node: Optional[BaseNode] = None
             for split_node in split_nodes:
-                if previous_node:
+                if previous_node and self.include_prev_next_rel:
                     split_node.relationships[NodeRelationship.PREVIOUS] = (
                         previous_node.as_related_node_info()
                     )

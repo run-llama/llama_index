@@ -5,7 +5,7 @@ from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
     SemanticDoubleMergingSplitterNodeParser,
     LanguageConfig,
 )
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, NodeRelationship
 
 doc = Document(
     text="Warsaw: Warsaw, the capital city of Poland, is a bustling metropolis located on the banks of the Vistula River. "
@@ -156,3 +156,43 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+def _simple_sentence_splitter(text: str) -> list[str]:
+    """NLTK-free splitter so the test does not depend on downloaded corpora."""
+    return [s.strip() for s in text.split(". ") if s.strip()]
+
+
+def test_include_prev_next_rel_false_omits_relationships() -> None:
+    """When include_prev_next_rel=False, PREVIOUS/NEXT relationships must not be set."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        include_prev_next_rel=False,
+        max_chunk_size=1,
+        sentence_splitter=_simple_sentence_splitter,
+    )
+    nodes = splitter.get_nodes_from_documents([doc])
+    assert len(nodes) >= 2
+    for node in nodes:
+        assert NodeRelationship.PREVIOUS not in node.relationships
+        assert NodeRelationship.NEXT not in node.relationships
+
+
+def test_include_prev_next_rel_true_sets_relationships() -> None:
+    """When include_prev_next_rel=True (default), PREVIOUS/NEXT relationships are set."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        include_prev_next_rel=True,
+        max_chunk_size=1,
+        sentence_splitter=_simple_sentence_splitter,
+    )
+    nodes = splitter.get_nodes_from_documents([doc])
+    assert len(nodes) >= 2
+    has_rel = any(
+        NodeRelationship.PREVIOUS in n.relationships
+        or NodeRelationship.NEXT in n.relationships
+        for n in nodes
+    )
+    assert has_rel
