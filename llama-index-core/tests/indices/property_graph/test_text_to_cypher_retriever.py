@@ -1,4 +1,5 @@
-"""Regression tests for TextToCypherRetriever response summarization.
+"""
+Regression tests for TextToCypherRetriever response summarization.
 
 Bug (issue #23673): with summarize_response=True, both retrieve_from_graph()
 and aretrieve_from_graph() passed the generated Cypher query in the `question`
@@ -36,12 +37,15 @@ class _MockGraphStore:
     def structured_query(self, query: str, param_map: Optional[dict] = None) -> Any:
         return [{"count": 42}]
 
-    async def astructured_query(self, query: str, param_map: Optional[dict] = None) -> Any:
+    async def astructured_query(
+        self, query: str, param_map: Optional[dict] = None
+    ) -> Any:
         return [{"count": 42}]
 
 
 class _RecordingLLM(CustomLLM):
-    """Records prompt_args of every predict/apredict call.
+    """
+    Records prompt_args of every predict/apredict call.
 
     The first call is the text-to-Cypher generation (returns a Cypher string);
     subsequent calls are summarization (return canned text). We only care about
@@ -54,7 +58,9 @@ class _RecordingLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(is_chat_model=False)
 
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(text=prompt)
 
     def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any):
@@ -99,7 +105,7 @@ def _make_retriever(summarize_response: bool = True, custom_summary: bool = Fals
 
 
 def test_sync_default_template_passes_original_question() -> None:
-    """sync + default summary template: summarizer must see the original question."""
+    """Sync + default summary template: summarizer must see the original question."""
     retriever, llm = _make_retriever()
     nodes = retriever.retrieve(QueryBundle(query_str=ORIGINAL_QUESTION))
     assert isinstance(nodes[0], NodeWithScore)
@@ -110,7 +116,7 @@ def test_sync_default_template_passes_original_question() -> None:
 
 
 def test_async_default_template_passes_original_question() -> None:
-    """async + default summary template: summarizer must see the original question."""
+    """Async + default summary template: summarizer must see the original question."""
     import asyncio
 
     retriever, llm = _make_retriever()
@@ -121,7 +127,7 @@ def test_async_default_template_passes_original_question() -> None:
 
 
 def test_sync_custom_template_passes_original_question() -> None:
-    """sync + custom summary template: summarizer must see the original question."""
+    """Sync + custom summary template: summarizer must see the original question."""
     retriever, llm = _make_retriever(custom_summary=True)
     retriever.retrieve(QueryBundle(query_str=ORIGINAL_QUESTION))
     assert len(llm.calls) == 2
@@ -129,7 +135,7 @@ def test_sync_custom_template_passes_original_question() -> None:
 
 
 def test_async_custom_template_passes_original_question() -> None:
-    """async + custom summary template: summarizer must see the original question."""
+    """Async + custom summary template: summarizer must see the original question."""
     import asyncio
 
     retriever, llm = _make_retriever(custom_summary=True)
