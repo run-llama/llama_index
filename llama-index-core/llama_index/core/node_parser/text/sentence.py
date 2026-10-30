@@ -183,7 +183,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         Has a preference for complete sentences, phrases, and minimal overlap.
         """
         if text == "":
-            return [text]
+            # An empty document has no chunks. Returning [text] here bypasses
+            # _postprocess_chunks() (which drops whitespace-only chunks) and emits a
+            # single empty chunk, which becomes a blank node. Whitespace-only text
+            # already returns [] through the normal path, so keep them consistent.
+            return []
 
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
