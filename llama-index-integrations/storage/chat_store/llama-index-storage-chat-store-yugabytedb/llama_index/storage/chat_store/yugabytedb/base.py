@@ -16,7 +16,7 @@ from llama_index.core.llms import ChatMessage
 from sqlalchemy.dialects.postgresql import JSON, ARRAY, JSONB, VARCHAR, insert
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from sqlalchemy import cast, bindparam
+from sqlalchemy import cast, bindparam, func
 
 
 def get_data_model(
@@ -267,15 +267,17 @@ class YugabyteDBChatStore(BaseChatStore):
     def add_message(self, key: str, message: ChatMessage) -> None:
         """Add a message for a key."""
         with self._session() as session:
-            stmt = (
-                insert(self._table_class)
-                .values(
-                    key=bindparam("key"), value=cast(bindparam("value"), ARRAY(JSONB))
-                )
-                .on_conflict_do_update(
-                    index_elements=["key"],
-                    set_={"value": cast(bindparam("value"), ARRAY(JSONB))},
-                )
+            stmt = insert(self._table_class).values(
+                key=bindparam("key"), value=cast(bindparam("value"), ARRAY(JSONB))
+            )
+            # Append to the existing messages instead of replacing them.
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["key"],
+                set_={
+                    "value": func.array_cat(
+                        self._table_class.value, stmt.excluded.value
+                    )
+                },
             )
             params = {"key": key, "value": [message.model_dump_json()]}
             session.execute(stmt, params)
