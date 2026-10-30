@@ -16,7 +16,9 @@ def test_truncate_text_empty_string_returns_empty(splitter: SentenceSplitter) ->
     assert truncate_text("", splitter) == ""
 
 
-def test_truncate_text_whitespace_only_returns_empty(splitter: SentenceSplitter) -> None:
+def test_truncate_text_whitespace_only_returns_empty(
+    splitter: SentenceSplitter,
+) -> None:
     """Whitespace-only text also yields no chunks."""
     assert truncate_text("   ", splitter) == ""
     assert truncate_text("\n\n", splitter) == ""
