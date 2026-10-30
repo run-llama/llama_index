@@ -5,6 +5,7 @@ import os
 import re
 import warnings
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from hashlib import sha256
@@ -259,6 +260,29 @@ class DocstoreStrategy(str, Enum):
     UPSERTS_AND_DELETE = "upserts_and_delete"
 
 
+@dataclass
+class UpsertPlanResult:
+    """
+    Result of ``IngestionPipeline.plan_upserts``.
+
+    Document IDs grouped by the upsert classification that ``run()`` would
+    apply against the document store:
+
+    - ``added``: documents not present in the store (would be ingested)
+    - ``updated``: documents present in the store with a changed hash
+      (would be replaced)
+    - ``unchanged``: documents present in the store with the same hash
+      (would be skipped)
+    - ``deletion_candidates``: stored documents missing from the input;
+      only populated for ``DocstoreStrategy.UPSERTS_AND_DELETE``
+    """
+
+    added: List[str]
+    updated: List[str]
+    unchanged: List[str]
+    deletion_candidates: List[str]
+
+
 class IngestionPipeline(BaseModel):
     """
     An ingestion pipeline that can be applied to data.
@@ -466,6 +490,69 @@ class IngestionPipeline(BaseModel):
 
         return nodes_to_run
 
+    def _classify_upserts(
+        self,
+        nodes: Sequence[BaseNode],
+    ) -> UpsertPlanResult:
+        """
+        Read-only classification of input nodes against the docstore.
+
+        Uses the same ID and hash comparison rules as ``_handle_upserts`` so
+        that a preview cannot drift from a real ingestion run. Only reads from
+        the document store: no transformations are run and nothing is written.
+
+        Args:
+            nodes: Input nodes to classify. Document IDs are grouped by
+                ``ref_doc_id`` when set, falling back to the node's own id.
+
+        Returns:
+            UpsertPlanResult with document IDs grouped into added, updated,
+            unchanged, and (for ``UPSERTS_AND_DELETE``) deletion_candidates.
+
+        """
+        assert self.docstore is not None
+
+        added: List[str] = []
+        updated: List[str] = []
+        unchanged: List[str] = []
+        doc_ids_from_nodes: set[str] = set()
+        seen_ref_doc_ids: set[str] = set()
+
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
+            doc_ids_from_nodes.add(ref_doc_id)
+            if ref_doc_id in seen_ref_doc_ids:
+                # multiple nodes can share the same source document; classify
+                # the group once, keyed by ref_doc_id
+                continue
+            seen_ref_doc_ids.add(ref_doc_id)
+            existing_hash = self.docstore.get_document_hash(ref_doc_id)
+            if not existing_hash:
+                # document doesn't exist in the store, so it would be added
+                added.append(ref_doc_id)
+            elif existing_hash != node.hash:
+                # document exists but its content changed, so it would be updated
+                updated.append(ref_doc_id)
+            else:
+                # document exists and is unchanged, so it would be skipped
+                unchanged.append(ref_doc_id)
+
+        deletion_candidates: List[str] = []
+        if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+            # Treat the input as a complete snapshot: stored documents no
+            # longer present in the input are candidates for deletion.
+            existing_doc_ids_before = set(
+                self.docstore.get_all_document_hashes().values()
+            )
+            deletion_candidates = list(existing_doc_ids_before - doc_ids_from_nodes)
+
+        return UpsertPlanResult(
+            added=added,
+            updated=updated,
+            unchanged=unchanged,
+            deletion_candidates=deletion_candidates,
+        )
+
     def _handle_upserts(
         self,
         nodes: Sequence[BaseNode],
@@ -473,32 +560,25 @@ class IngestionPipeline(BaseModel):
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
-        doc_ids_from_nodes = set()
+        plan = self._classify_upserts(nodes)
+
+        docs_to_upsert = set(plan.added) | set(plan.updated)
         deduped_nodes_to_run = []
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
-            doc_ids_from_nodes.add(ref_doc_id)
-            existing_hash = self.docstore.get_document_hash(ref_doc_id)
-            if not existing_hash:
-                # document doesn't exist, so add it
-                deduped_nodes_to_run.append(node)
-            elif existing_hash and existing_hash != node.hash:
+            if ref_doc_id not in docs_to_upsert:
+                continue
+            deduped_nodes_to_run.append(node)
+            if ref_doc_id in plan.updated:
+                # document changed: remove the old version before re-ingesting
                 self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-                deduped_nodes_to_run.append(node)
-            else:
-                continue  # document exists and is unchanged, so skip it
-
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
-            existing_doc_ids_before = set(
-                self.docstore.get_all_document_hashes().values()
-            )
-            doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
-            for ref_doc_id in doc_ids_to_delete:
+            for ref_doc_id in plan.deletion_candidates:
                 self.docstore.delete_document(ref_doc_id)
 
                 if self.vector_store is not None:
@@ -534,6 +614,71 @@ class IngestionPipeline(BaseModel):
             self.docstore.add_documents(nodes, store_text=store_doc_text)
         else:
             raise ValueError(f"Invalid docstore strategy: {effective_strategy}")
+
+    def plan_upserts(
+        self,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
+    ) -> UpsertPlanResult:
+        """
+        Read-only preview of the upsert changes ``run()`` would apply.
+
+        Classifies the input documents/nodes against the current document
+        store using the same ID and hash comparison rules as
+        ``_handle_upserts``, without running transformations, generating
+        embeddings, or writing to the docstore or vector store.
+
+        Deletion handling follows the configured docstore strategy:
+
+        - ``UPSERTS``: documents missing from the input are never flagged,
+          so ``deletion_candidates`` is always empty.
+        - ``UPSERTS_AND_DELETE``: the input is treated as a complete snapshot,
+          so previously stored documents no longer present in the input are
+          reported in ``deletion_candidates``.
+
+        Nodes are grouped by ``ref_doc_id`` when set (falling back to the
+        node's own id), so all chunks of the same source document share a
+        single entry.
+
+        Note that the plan is a snapshot of the current store state, not a
+        guarantee: the store may change between calling this method and
+        running ``run()``.
+
+        Args:
+            documents (Optional[List[Document]], optional): Documents to
+                classify. Defaults to None.
+            nodes (Optional[Sequence[BaseNode]], optional): Nodes to
+                classify. Defaults to None.
+
+        Returns:
+            UpsertPlanResult: document IDs grouped into added, updated,
+            unchanged, and deletion_candidates.
+
+        Raises:
+            ValueError: if no docstore is configured, or if the configured
+                docstore strategy is not supported for preview (only
+                ``UPSERTS`` and ``UPSERTS_AND_DELETE`` are supported).
+
+        """
+        if self.docstore is None:
+            raise ValueError(
+                "plan_upserts() requires a docstore to compare against. "
+                "Configure `pipeline.docstore` (e.g. SimpleDocumentStore()) "
+                "before calling plan_upserts()."
+            )
+
+        if self.docstore_strategy not in (
+            DocstoreStrategy.UPSERTS,
+            DocstoreStrategy.UPSERTS_AND_DELETE,
+        ):
+            raise ValueError(
+                f"plan_upserts() does not support docstore_strategy "
+                f"'{self.docstore_strategy.value}'. Only 'upserts' and "
+                "'upserts_and_delete' can be previewed."
+            )
+
+        input_nodes = self._prepare_inputs(documents, nodes)
+        return self._classify_upserts(input_nodes)
 
     @dispatcher.span
     def run(
