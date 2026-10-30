@@ -1,4 +1,5 @@
-"""Regression tests: disabled metadata must not consume the splitter budget.
+"""
+Regression tests: disabled metadata must not consume the splitter budget.
 
 Issue #23683: SentenceSplitter and TokenTextSplitter reserved space for a
 document's metadata even when constructed with include_metadata=False, so large
@@ -9,27 +10,11 @@ empty string when include_metadata is False.
 These tests use a character tokenizer (tokenizer=list) and need no API calls or
 downloaded resources, so they run deterministically in any environment.
 """
-import nltk
+
 import pytest
 
 from llama_index.core.node_parser.text import SentenceSplitter, TokenTextSplitter
 from llama_index.core.schema import Document
-
-
-def _nltk_punkt_available() -> bool:
-    try:
-        nltk.data.find("tokenizers/punkt")
-        return True
-    except LookupError:
-        return False
-
-
-# SentenceSplitter relies on NLTK "punkt" for sentence tokenization; skip when
-# that corpus is unavailable so the suite still runs in minimal environments.
-_skip_no_punkt = pytest.mark.skipif(
-    not _nltk_punkt_available(),
-    reason="NLTK 'punkt' data not available in this environment",
-)
 
 
 def _oversized_metadata_doc() -> Document:
@@ -59,10 +44,13 @@ async def test_token_splitter_disabled_metadata_no_error_async() -> None:
         assert node.metadata == {}
 
 
-@_skip_no_punkt
 def test_sentence_splitter_disabled_metadata_no_error() -> None:
     splitter = SentenceSplitter(
-        chunk_size=20, chunk_overlap=0, tokenizer=list, include_metadata=False
+        chunk_size=20,
+        chunk_overlap=0,
+        tokenizer=list,
+        chunking_tokenizer_fn=lambda text: [text],
+        include_metadata=False,
     )
     nodes = splitter.get_nodes_from_documents([_oversized_metadata_doc()])
     assert len(nodes) >= 1
@@ -70,11 +58,14 @@ def test_sentence_splitter_disabled_metadata_no_error() -> None:
         assert node.metadata == {}
 
 
-@_skip_no_punkt
 @pytest.mark.asyncio
 async def test_sentence_splitter_disabled_metadata_no_error_async() -> None:
     splitter = SentenceSplitter(
-        chunk_size=20, chunk_overlap=0, tokenizer=list, include_metadata=False
+        chunk_size=20,
+        chunk_overlap=0,
+        tokenizer=list,
+        chunking_tokenizer_fn=lambda text: [text],
+        include_metadata=False,
     )
     nodes = await splitter.aget_nodes_from_documents([_oversized_metadata_doc()])
     assert len(nodes) >= 1
@@ -90,3 +81,40 @@ def test_token_splitter_enabled_oversized_metadata_still_errors() -> None:
     )
     with pytest.raises(ValueError):
         splitter.get_nodes_from_documents([_oversized_metadata_doc()])
+
+
+@pytest.mark.parametrize("chunk_size", [1, 2, 3, 20])
+def test_disabled_metadata_uses_full_token_budget(chunk_size: int) -> None:
+    splitter = TokenTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        tokenizer=list,
+        include_metadata=False,
+    )
+    document = Document(text="abcdefghij", metadata={"context": "x" * 100})
+    nodes = splitter.get_nodes_from_documents([document])
+    assert [node.text for node in nodes] == splitter.split_text(document.text)
+    assert all(node.metadata == {} for node in nodes)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("chunk_size", [1, 2, 3, 20])
+async def test_disabled_metadata_uses_full_token_budget_async(chunk_size: int) -> None:
+    splitter = TokenTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        tokenizer=list,
+        include_metadata=False,
+    )
+    document = Document(text="abcdefghij", metadata={"context": "x" * 100})
+    nodes = await splitter.aget_nodes_from_documents([document])
+    assert [node.text for node in nodes] == splitter.split_text(document.text)
+    assert all(node.metadata == {} for node in nodes)
+
+
+def test_enabled_metadata_retains_format_budget() -> None:
+    splitter = TokenTextSplitter(
+        chunk_size=2, chunk_overlap=0, tokenizer=list, include_metadata=True
+    )
+    with pytest.raises(ValueError, match="Metadata length"):
+        splitter.get_nodes_from_documents([Document(text="abc")])
