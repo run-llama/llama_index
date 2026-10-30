@@ -1956,3 +1956,17 @@ def test_tool_call_block_format():
     # Currently, ToolCallBlock does not support template vars
     assert formatted_block.tool_name == "{tool_name}"
     assert formatted_block.tool_kwargs == {"param": "{param_value}"}
+
+
+def test_image_block_mimetype_from_uppercase_extension(tmp_path):
+    path = tmp_path / "IMG_0001.JPG"
+    path.write_bytes(b"fake jpeg")
+
+    assert ImageBlock(path=path).image_mimetype == "image/jpeg"
+
+
+def test_document_block_mimetype_from_uppercase_extension(tmp_path):
+    path = tmp_path / "report.PDF"
+    path.write_bytes(b"fake pdf")
+
+    assert DocumentBlock(path=path).document_mimetype == "application/pdf"
