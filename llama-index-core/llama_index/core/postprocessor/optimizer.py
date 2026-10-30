@@ -144,23 +144,27 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             if self.context_after is None:
                 self.context_after = 1
 
-            top_sentences = [
-                " ".join(
-                    split_text[
-                        max(idx - self.context_before, rangeMin) : min(
-                            idx + self.context_after + 1, rangeMax
-                        )
-                    ]
-                )
-                for idx in top_idxs
-            ]
+            # Iterate the top sentences in their original order and merge any
+            # context windows that overlap. Two adjacent top sentences would
+            # otherwise contribute the same sentence more than once, so the
+            # optimized text ended up with duplicated sentences.
+            ordered_top = sorted(zip(top_idxs, top_similarities))
 
-            logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
+            windows: List[List[int]] = []
+            for idx, _ in ordered_top:
+                start = max(idx - self.context_before, rangeMin)
+                end = min(idx + self.context_after + 1, rangeMax)
+                if windows and start <= windows[-1][1]:
+                    windows[-1][1] = max(windows[-1][1], end)
+                else:
+                    windows.append([start, end])
+
+            top_sentences = [" ".join(split_text[start:end]) for start, end in windows]
+
+            logger.debug(f"> Top {len(ordered_top)} sentences with scores:\n")
             if logger.isEnabledFor(logging.DEBUG):
-                for idx in range(len(top_idxs)):
-                    logger.debug(
-                        f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
-                    )
+                for rank, (idx, similarity) in enumerate(ordered_top):
+                    logger.debug(f"{rank}. {split_text[idx]} ({similarity})")
 
             nodes[node_idx].node.set_content(" ".join(top_sentences))
 
