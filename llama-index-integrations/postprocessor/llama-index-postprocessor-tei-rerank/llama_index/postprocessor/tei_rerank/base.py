@@ -39,7 +39,7 @@ class TextEmbeddingInference(BaseNodePostprocessor):
     )
     truncate_text: bool = Field(
         default=True,
-        description="Whether to truncate text or not when generating embeddings.",
+        description="Whether to truncate inputs that exceed the model's maximum sequence length.",
     )
     auth_token: Optional[Union[str, Callable[[str], str]]] = Field(
         default=None,
@@ -90,7 +90,7 @@ class TextEmbeddingInference(BaseNodePostprocessor):
             else:
                 headers["Authorization"] = self.auth_token
 
-        json_data = {"query": query, "texts": texts}
+        json_data = {"query": query, "texts": texts, "truncate": self.truncate_text}
 
         with httpx.Client() as client:
             response = client.post(
@@ -99,6 +99,7 @@ class TextEmbeddingInference(BaseNodePostprocessor):
                 json=json_data,
                 timeout=self.timeout,
             )
+            response.raise_for_status()
 
         return response.json()
 
