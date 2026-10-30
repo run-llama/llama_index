@@ -35,7 +35,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"
     )
-    backup_separators: List = Field(
+    backup_separators: Optional[List[str]] = Field(
         default_factory=list, description="Additional separators for splitting."
     )
 
