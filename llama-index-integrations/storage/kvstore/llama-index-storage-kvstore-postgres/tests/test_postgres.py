@@ -44,7 +44,7 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
 
         # Wait for PostgreSQL to be ready by polling
         connection_string = (
-            f"postgresql://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
+            f"postgresql+psycopg2://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
         )
         async_connection_string = (
             f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
