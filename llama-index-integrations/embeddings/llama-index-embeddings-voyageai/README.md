@@ -75,6 +75,8 @@ embedding_model = VoyageEmbedding(
     output_dtype="float",  # Options: "float", "int8", "uint8", "binary", "ubinary"
     output_dimension=512,  # Reduce dimensionality (256, 512, 1024, 2048)
     embed_batch_size=128,  # Batch size for processing
+    max_retries=3,  # Retry transient API failures using the VoyageAI SDK
+    timeout=30.0,  # Request timeout in seconds
 )
 
 # Use general text embedding with custom input type
@@ -82,6 +84,9 @@ embedding = embedding_model.get_general_text_embedding(
     "Your text here", input_type="query"
 )
 ```
+
+`max_retries` and `timeout` apply to both synchronous and asynchronous clients.
+They default to `0` (no retries) and `None` (no explicit timeout), respectively.
 
 ### Multimodal Embeddings
 
