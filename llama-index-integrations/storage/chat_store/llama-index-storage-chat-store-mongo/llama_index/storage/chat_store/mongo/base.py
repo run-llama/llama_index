@@ -21,6 +21,13 @@ def _dict_to_message(d: dict) -> ChatMessage:
     return ChatMessage.model_validate(d)
 
 
+def _normalize_insert_index(idx: int, count: int) -> int:
+    """Clamp an insert position the same way ``list.insert`` does."""
+    if idx < 0:
+        idx = max(count + idx, 0)
+    return min(idx, count)
+
+
 class MongoChatStore(BaseChatStore):
     """MongoDB chat store implementation."""
 
@@ -186,6 +193,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to add message for
             message: ChatMessage object to add
+            idx: Optional position to insert the message at (appends if None)
 
         """
         if idx is None:
@@ -194,6 +202,13 @@ class MongoChatStore(BaseChatStore):
                 {"session_id": key}, sort=[("index", -1)]
             )
             idx = 0 if highest_idx_doc is None else highest_idx_doc["index"] + 1
+        else:
+            # Insert at a position: shift the messages at and after it by one
+            count = self._collection.count_documents({"session_id": key})
+            idx = _normalize_insert_index(idx, count)
+            self._collection.update_many(
+                {"session_id": key, "index": {"$gte": idx}}, {"$inc": {"index": 1}}
+            )
 
         # Insert the new message with current timestamp
         self._collection.insert_one(
@@ -214,6 +229,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to add message for
             message: ChatMessage object to add
+            idx: Optional position to insert the message at (appends if None)
 
         """
         if idx is None:
@@ -222,6 +238,13 @@ class MongoChatStore(BaseChatStore):
                 {"session_id": key}, sort=[("index", -1)]
             )
             idx = 0 if highest_idx_doc is None else highest_idx_doc["index"] + 1
+        else:
+            # Insert at a position: shift the messages at and after it by one
+            count = await self._async_collection.count_documents({"session_id": key})
+            idx = _normalize_insert_index(idx, count)
+            await self._async_collection.update_many(
+                {"session_id": key, "index": {"$gte": idx}}, {"$inc": {"index": 1}}
+            )
 
         # Insert the new message with current timestamp
         await self._async_collection.insert_one(
