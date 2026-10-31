@@ -1105,7 +1105,7 @@ async def test_hybrid_query_with_special_characters(
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
-async def test_hybrid_query(
+async def test_hybrid_query_hnsw(
     pg_hnsw_hybrid: PGVectorStore,
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,

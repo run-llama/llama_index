@@ -636,7 +636,7 @@ async def test_hybrid_query(
 
 @pytest.mark.skipif(yugabytedb_not_available, reason="yugabytedb is not available")
 @pytest.mark.asyncio
-async def test_hybrid_query(
+async def test_hybrid_query_hnsw(
     yb_hnsw_hybrid: YBVectorStore, hybrid_node_embeddings: List[TextNode]
 ) -> None:
     yb_hnsw_hybrid.add(hybrid_node_embeddings)
