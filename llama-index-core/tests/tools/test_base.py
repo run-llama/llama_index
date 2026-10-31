@@ -1,6 +1,7 @@
 """Test tools."""
 
 import contextvars
+import functools
 import json
 from typing import List, Optional
 
@@ -238,6 +239,32 @@ async def test_function_tool_partial_params_async() -> None:
         "args": (),
         "kwargs": {"x": 1, "y": 3},
     }
+
+
+def test_function_tool_callable_object_without_name() -> None:
+    class Lookup:
+        """Look up a value."""
+
+        def __call__(self, query: str) -> str:
+            return f"found: {query}"
+
+    tool = FunctionTool.from_defaults(Lookup())
+
+    assert tool.metadata.name == "Lookup"
+    assert tool.metadata.description.startswith("Lookup")
+    assert tool(query="ticket").raw_output == "found: ticket"
+
+
+def test_function_tool_partial_without_name() -> None:
+    def lookup(query: str, suffix: str) -> str:
+        """Look up a value."""
+        return query + suffix
+
+    tool = FunctionTool.from_defaults(functools.partial(lookup, suffix="!"))
+
+    assert tool.metadata.name == "lookup"
+    assert tool.metadata.description.startswith("lookup")
+    assert tool(query="ticket").raw_output == "ticket!"
 
 
 def test_function_tool_ctx_param() -> None:
