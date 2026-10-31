@@ -5,7 +5,7 @@ from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
     SemanticDoubleMergingSplitterNodeParser,
     LanguageConfig,
 )
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, NodeRelationship
 
 doc = Document(
     text="Warsaw: Warsaw, the capital city of Poland, is a bustling metropolis located on the banks of the Vistula River. "
@@ -144,6 +144,21 @@ def test_embed_model_single_sentence_document() -> None:
     nodes = splitter.get_nodes_from_documents([single_doc])
     assert len(nodes) == 1
     assert nodes[0].get_content() == "Only one sentence here."
+
+
+def test_embed_model_can_disable_prev_next_relationships() -> None:
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=MockEmbedding(embed_dim=4),
+        max_chunk_size=0,
+        include_prev_next_rel=False,
+    )
+    nodes = splitter.get_nodes_from_documents(
+        [Document(text="First sentence. Second sentence. Third sentence.")]
+    )
+
+    assert len(nodes) == 3
+    assert all(NodeRelationship.PREVIOUS not in node.relationships for node in nodes)
+    assert all(NodeRelationship.NEXT not in node.relationships for node in nodes)
 
 
 def test_clean_text_advanced() -> None:
