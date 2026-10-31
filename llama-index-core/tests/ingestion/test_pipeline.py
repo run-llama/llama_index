@@ -665,3 +665,126 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+
+def _protected_pipeline(
+    protected_metadata_key: Any = "retain",
+) -> IngestionPipeline:
+    return IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=200, chunk_overlap=0),
+            MockEmbedding(embed_dim=4),
+        ],
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+        protected_metadata_key=protected_metadata_key,
+    )
+
+
+def _protected_documents() -> list[Document]:
+    return [
+        Document(
+            text="Patient record, keep for years.",
+            id_="keep",
+            metadata={"retain": True},
+        ),
+        Document(
+            text="Flag is false, so this is not protected.",
+            id_="false",
+            metadata={"retain": False},
+        ),
+        Document(text="Daily note without any flag.", id_="plain"),
+    ]
+
+
+def test_pipeline_upserts_and_delete_keeps_protected_docs() -> None:
+    pipeline = _protected_pipeline()
+    pipeline.run(documents=_protected_documents())
+    assert pipeline.docstore is not None
+    assert pipeline.vector_store is not None
+    assert {"keep", "false", "plain"} <= set(pipeline.docstore.docs)
+
+    # none of the documents is part of the next run
+    pipeline.run(documents=[Document(text="Something new.", id_="new")])
+
+    docs = pipeline.docstore.docs
+    assert "keep" in docs
+    assert "false" not in docs
+    assert "plain" not in docs
+    assert "new" in docs
+    # the protected doc keeps its hash, so a later run does not re-ingest it
+    assert pipeline.docstore.get_document_hash("keep") is not None
+    assert pipeline.docstore.get_document_hash("plain") is None
+    # vector store entries of the protected doc are untouched, others are gone
+    ref_doc_ids = set(pipeline.vector_store.data.text_id_to_ref_doc_id.values())  # type: ignore
+    assert "keep" in ref_doc_ids
+    assert "false" not in ref_doc_ids
+    assert "plain" not in ref_doc_ids
+
+
+def test_pipeline_upserts_and_delete_default_deletes_everything_missing() -> None:
+    pipeline = _protected_pipeline(protected_metadata_key=None)
+    pipeline.run(documents=_protected_documents())
+
+    # same flags, but the feature is off: behaviour is unchanged
+    pipeline.run(documents=[Document(text="Something new.", id_="new")])
+
+    assert pipeline.docstore is not None
+    assert set(pipeline.docstore.docs) == {"new"}
+
+
+def test_pipeline_upserts_and_delete_protected_doc_still_updates() -> None:
+    pipeline = _protected_pipeline()
+    pipeline.run(
+        documents=[Document(text="Version one.", id_="keep", metadata={"retain": True})]
+    )
+    nodes = pipeline.run(
+        documents=[Document(text="Version two.", id_="keep", metadata={"retain": True})]
+    )
+
+    assert len(nodes) == 1
+    assert pipeline.docstore is not None
+    assert pipeline.docstore.docs["keep"].text == "Version two."  # type: ignore
+
+
+def test_pipeline_upserts_and_delete_protected_flag_on_ref_doc() -> None:
+    """The flag is also found through the ref doc info when only chunks are stored."""
+    pipeline = _protected_pipeline()
+    nodes = _nodes_sharing_ref_doc("source-doc", 3)
+    for node in nodes:
+        node.metadata["retain"] = True
+    pipeline.run(nodes=nodes)
+
+    pipeline.run(documents=[Document(text="Something new.", id_="new")])
+
+    assert pipeline.docstore is not None
+    assert {"node-0", "node-1", "node-2"} <= set(pipeline.docstore.docs)
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_and_delete_keeps_protected_docs() -> None:
+    pipeline = _protected_pipeline()
+    await pipeline.arun(documents=_protected_documents())
+
+    await pipeline.arun(documents=[Document(text="Something new.", id_="new")])
+
+    assert pipeline.docstore is not None
+    docs = pipeline.docstore.docs
+    assert "keep" in docs
+    assert "false" not in docs
+    assert "plain" not in docs
+    assert "new" in docs
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_and_delete_default_deletes_everything_missing() -> (
+    None
+):
+    pipeline = _protected_pipeline(protected_metadata_key=None)
+    await pipeline.arun(documents=_protected_documents())
+
+    await pipeline.arun(documents=[Document(text="Something new.", id_="new")])
+
+    assert pipeline.docstore is not None
+    assert set(pipeline.docstore.docs) == {"new"}
