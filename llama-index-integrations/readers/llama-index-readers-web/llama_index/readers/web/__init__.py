@@ -20,6 +20,7 @@ from llama_index.readers.web.main_content_extractor.base import (
 )
 from llama_index.readers.web.news.base import NewsArticleReader
 from llama_index.readers.web.olostep_web.base import OlostepWebReader
+from llama_index.readers.web.outcrawl_web.base import OutcrawlWebReader
 from llama_index.readers.web.oxylabs_web.base import OxylabsWebReader
 from llama_index.readers.web.readability_web.base import (
     ReadabilityWebPageReader,
@@ -71,6 +72,7 @@ __all__ = [
     "MainContentExtractorReader",
     "NewsArticleReader",
     "OlostepWebReader",
+    "OutcrawlWebReader",
     "OxylabsWebReader",
     "ReadabilityWebPageReader",
     "RssReader",
