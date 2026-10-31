@@ -1,6 +1,6 @@
 """Query plan tool."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.response_synthesizers import (
@@ -148,64 +148,91 @@ class QueryPlanTool(BaseTool):
         self._custom_metadata = value
 
     def _execute_node(
-        self, node: QueryNode, nodes_dict: Dict[int, QueryNode]
+        self,
+        node: QueryNode,
+        nodes_dict: Dict[int, QueryNode],
+        executed_nodes: Optional[Dict[int, ToolOutput]] = None,
+        visiting: Optional[Set[int]] = None,
     ) -> ToolOutput:
         """Execute node."""
-        print_text(f"Executing node {node.model_dump_json()}\n", color="blue")
-        if len(node.dependencies) > 0:
-            print_text(
-                f"Executing {len(node.dependencies)} child nodes\n", color="pink"
-            )
-            child_query_nodes: List[QueryNode] = [
-                nodes_dict[dep] for dep in node.dependencies
-            ]
-            # execute the child nodes first
-            child_responses: List[ToolOutput] = [
-                self._execute_node(child, nodes_dict) for child in child_query_nodes
-            ]
-            # form the child Node/NodeWithScore objects
-            child_nodes = []
-            for child_query_node, child_response in zip(
-                child_query_nodes, child_responses
-            ):
-                node_text = (
-                    f"Query: {child_query_node.query_str}\n"
-                    f"Response: {child_response!s}\n"
-                )
-                child_node = TextNode(text=node_text)
-                child_nodes.append(child_node)
-            # use response synthesizer to combine results
-            child_nodes_with_scores = [
-                NodeWithScore(node=n, score=1.0) for n in child_nodes
-            ]
-            response_obj = self._response_synthesizer.synthesize(
-                query=node.query_str,
-                nodes=child_nodes_with_scores,
-            )
-            response = ToolOutput(
-                content=str(response_obj),
-                tool_name=node.query_str,
-                raw_input={"query": node.query_str},
-                raw_output=response_obj,
+        if executed_nodes is None:
+            executed_nodes = {}
+        if visiting is None:
+            visiting = set()
+
+        if node.id in executed_nodes:
+            return executed_nodes[node.id]
+        if node.id in visiting:
+            raise ValueError(
+                f"Cycle detected in query plan involving node {node.id}."
             )
 
-            if node.tool_name in self._query_tools_dict:
+        visiting.add(node.id)
+        try:
+            print_text(f"Executing node {node.model_dump_json()}\n", color="blue")
+            if len(node.dependencies) > 0:
+                print_text(
+                    f"Executing {len(node.dependencies)} child nodes\n", color="pink"
+                )
+                child_query_nodes: List[QueryNode] = [
+                    nodes_dict[dep] for dep in node.dependencies
+                ]
+                # execute the child nodes first
+                child_responses: List[ToolOutput] = [
+                    self._execute_node(
+                        child,
+                        nodes_dict,
+                        executed_nodes=executed_nodes,
+                        visiting=visiting,
+                    )
+                    for child in child_query_nodes
+                ]
+                # form the child Node/NodeWithScore objects
+                child_nodes = []
+                for child_query_node, child_response in zip(
+                    child_query_nodes, child_responses
+                ):
+                    node_text = (
+                        f"Query: {child_query_node.query_str}\n"
+                        f"Response: {child_response!s}\n"
+                    )
+                    child_node = TextNode(text=node_text)
+                    child_nodes.append(child_node)
+                # use response synthesizer to combine results
+                child_nodes_with_scores = [
+                    NodeWithScore(node=n, score=1.0) for n in child_nodes
+                ]
+                response_obj = self._response_synthesizer.synthesize(
+                    query=node.query_str,
+                    nodes=child_nodes_with_scores,
+                )
+                response = ToolOutput(
+                    content=str(response_obj),
+                    tool_name=node.query_str,
+                    raw_input={"query": node.query_str},
+                    raw_output=response_obj,
+                )
+
+                if node.tool_name in self._query_tools_dict:
+                    tool = self._query_tools_dict[node.tool_name]
+                    print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
+                    response = tool(node.query_str)
+
+            else:
+                # this is a leaf request, execute the query string using the specified tool
                 tool = self._query_tools_dict[node.tool_name]
                 print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
                 response = tool(node.query_str)
-
-        else:
-            # this is a leaf request, execute the query string using the specified tool
-            tool = self._query_tools_dict[node.tool_name]
-            print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
-            response = tool(node.query_str)
-        print_text(
-            "Executed query, got response.\n"
-            f"Query: {node.query_str}\n"
-            f"Response: {response!s}\n",
-            color="blue",
-        )
-        return response
+            print_text(
+                "Executed query, got response.\n"
+                f"Query: {node.query_str}\n"
+                f"Response: {response!s}\n",
+                color="blue",
+            )
+            executed_nodes[node.id] = response
+            return response
+        finally:
+            visiting.remove(node.id)
 
     def _find_root_nodes(self, nodes_dict: Dict[int, QueryNode]) -> List[QueryNode]:
         """Find root node."""
