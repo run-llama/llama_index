@@ -1023,7 +1023,7 @@ def test_vector_store_delete_nodes_by_id(
     ],
 )
 @params_delete_kwargs
-def tes_vector_store_delete_nodes(
+def test_vector_store_delete_nodes(
     mock_solr_vector_store: ApacheSolrVectorStore,
     input_nodes: Optional[list[str]],
     input_filters: Optional[MetadataFilters],
