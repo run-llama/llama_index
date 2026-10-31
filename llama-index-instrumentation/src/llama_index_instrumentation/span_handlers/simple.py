@@ -115,9 +115,7 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
             if not any(ns.id_ == s.parent_id for ns in all_spans):
                 warnings.warn(f"Parent with id {s.parent_id} missing from spans")
                 s.parent_id = f"{s.parent_id}-MISSING"
-                placeholder_spans.append(
-                    SimpleSpan(id_=s.parent_id, parent_id=None)
-                )
+                placeholder_spans.append(SimpleSpan(id_=s.parent_id, parent_id=None))
 
         all_spans.extend(placeholder_spans)
 
