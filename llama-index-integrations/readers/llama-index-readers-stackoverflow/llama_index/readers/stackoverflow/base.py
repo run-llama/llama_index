@@ -100,9 +100,13 @@ class StackoverflowReader(BaseReader):
         while has_more:
             url = self.build_url(page, doc_type)
             headers = {"X-API-Access-Token": self._api_key}
-            fp = os.path.join(self._cache_dir, f"{doc_type}_{page}.json")
+            fp = (
+                os.path.join(self._cache_dir, f"{doc_type}_{page}.json")
+                if self._cache_dir
+                else None
+            )
             response = {}
-            if self._cache_dir and os.path.exists(fp) and os.path.getsize(fp) > 0:
+            if fp and os.path.exists(fp) and os.path.getsize(fp) > 0:
                 try:
                     with open(fp) as f:
                         response = f.read()
@@ -112,10 +116,8 @@ class StackoverflowReader(BaseReader):
             if not response:
                 response = rate_limited_get(url, headers)
                 response.raise_for_status()
-                if self._cache_dir:
-                    with open(
-                        os.path.join(self._cache_dir, f"{doc_type}_{page}.json"), "w"
-                    ) as f:
+                if fp:
+                    with open(fp, "w") as f:
                         f.write(response.content.decode("utf-8"))
                     logger.info(f"Wrote {fp} to cache")
                 response = response.json()
@@ -137,9 +139,13 @@ class StackoverflowReader(BaseReader):
                 # if last_modified < self._last_index_time:
                 #     return data
 
+                # The API returns numeric ids, but Document ids must be strings.
+                # Articles carry article_id instead of post_id.
+                item_id = post.post_id if post.post_id is not None else post.article_id
+                id_kwargs = {"doc_id": str(item_id)} if item_id is not None else {}
                 post_document = Document(
                     text=post.body_markdown,
-                    doc_id=post.post_id,
+                    **id_kwargs,
                     extra_info={
                         "title": post.title,
                         "author": post.owner_display_name,
