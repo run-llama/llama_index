@@ -18,7 +18,7 @@ except ImportError:
     VIDEO_SUPPORT = False
 
 from llama_index.core.base.embeddings.base import Embedding
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.core.schema import ImageType
@@ -82,6 +82,9 @@ class VoyageEmbedding(MultiModalEmbedding):
         voyage_api_key (Optional[str]): Voyage API key. Defaults to None.
             You can either specify the key here or store it as an environment variable.
 
+        max_retries (int): Maximum retries for failed API requests. Defaults to 0.
+        timeout (Optional[float]): Request timeout in seconds. Defaults to None.
+
     """
 
     _client: voyageai.Client = PrivateAttr(None)
@@ -89,6 +92,10 @@ class VoyageEmbedding(MultiModalEmbedding):
     truncation: Optional[bool] = None
     output_dtype: Optional[str] = None
     output_dimension: Optional[int] = None
+    max_retries: int = Field(default=0, description="Maximum retries for API requests.")
+    timeout: Optional[float] = Field(
+        default=None, description="Request timeout in seconds."
+    )
 
     def __init__(
         self,
@@ -99,6 +106,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         output_dtype: Optional[str] = None,
         output_dimension: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        max_retries: int = 0,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ):
         if model_name in [
@@ -127,11 +136,17 @@ class VoyageEmbedding(MultiModalEmbedding):
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            max_retries=max_retries,
+            timeout=timeout,
             **kwargs,
         )
 
-        self._client = voyageai.Client(api_key=voyage_api_key)
-        self._aclient = voyageai.AsyncClient(api_key=voyage_api_key)
+        self._client = voyageai.Client(
+            api_key=voyage_api_key, max_retries=self.max_retries, timeout=self.timeout
+        )
+        self._aclient = voyageai.AsyncClient(
+            api_key=voyage_api_key, max_retries=self.max_retries, timeout=self.timeout
+        )
         self.truncation = truncation
         self.output_dtype = output_dtype
         self.output_dimension = output_dimension
