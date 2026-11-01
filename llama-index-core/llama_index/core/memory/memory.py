@@ -34,6 +34,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
+    PrivateAttr,
     model_validator,
     ConfigDict,
 )
@@ -256,6 +257,22 @@ class Memory(BaseMemory):
         default_factory=generate_chat_store_key,
         description="The key to use for storing messages in the chat store.",
     )
+
+    # Serializes the writes and resets of the FIFO queue. Without it a write that
+    # was already in flight when `reset` ran lands after the delete and the reset
+    # silently loses the race, so cleared history reappears on the next read.
+    # The lock is created per event loop: `Memory` can be driven from several
+    # loops, and an `asyncio.Lock` cannot be shared between them.
+    _mutation_lock: Optional[asyncio.Lock] = PrivateAttr(default=None)
+    _mutation_lock_loop: Optional[asyncio.AbstractEventLoop] = PrivateAttr(default=None)
+
+    def _get_mutation_lock(self) -> asyncio.Lock:
+        """Return the mutation lock, bound to the currently running loop."""
+        loop = asyncio.get_running_loop()
+        if self._mutation_lock is None or self._mutation_lock_loop is not loop:
+            self._mutation_lock = asyncio.Lock()
+            self._mutation_lock_loop = loop
+        return self._mutation_lock
 
     @classmethod
     def class_name(cls) -> str:
@@ -810,29 +827,32 @@ class Memory(BaseMemory):
 
     async def aput(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
-        # Add the message to the chat store
-        await self.sql_store.add_message(
-            self.session_id, message, status=MessageStatus.ACTIVE
-        )
+        async with self._get_mutation_lock():
+            # Add the message to the chat store
+            await self.sql_store.add_message(
+                self.session_id, message, status=MessageStatus.ACTIVE
+            )
 
-        # Ensure the active queue is managed
-        await self._manage_queue()
+            # Ensure the active queue is managed
+            await self._manage_queue()
 
     async def aput_messages(self, messages: List[ChatMessage]) -> None:
         """Add a list of messages to the chat store and process waterfall logic if needed."""
-        # Add the messages to the chat store
-        await self.sql_store.add_messages(
-            self.session_id, messages, status=MessageStatus.ACTIVE
-        )
+        async with self._get_mutation_lock():
+            # Add the messages to the chat store
+            await self.sql_store.add_messages(
+                self.session_id, messages, status=MessageStatus.ACTIVE
+            )
 
-        # Ensure the active queue is managed
-        await self._manage_queue()
+            # Ensure the active queue is managed
+            await self._manage_queue()
 
     async def aset(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""
-        await self.sql_store.set_messages(
-            self.session_id, messages, status=MessageStatus.ACTIVE
-        )
+        async with self._get_mutation_lock():
+            await self.sql_store.set_messages(
+                self.session_id, messages, status=MessageStatus.ACTIVE
+            )
 
     async def aget_all(
         self, status: Optional[MessageStatus] = None
@@ -841,8 +861,15 @@ class Memory(BaseMemory):
         return await self.sql_store.get_messages(self.session_id, status=status)
 
     async def areset(self, status: Optional[MessageStatus] = None) -> None:
-        """Reset the memory."""
-        await self.sql_store.delete_messages(self.session_id, status=status)
+        """
+        Reset the memory.
+
+        Waits for writes that are already in flight so that they cannot land
+        after the delete and bring the cleared history back; the reset always
+        wins over writes it overlaps with.
+        """
+        async with self._get_mutation_lock():
+            await self.sql_store.delete_messages(self.session_id, status=status)
 
     # ---- Sync method wrappers ----
 
