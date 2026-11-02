@@ -119,13 +119,17 @@ class JSONReader(BaseReader):
                         line for line in lines if not re.match(r"^[{}\[\],]*$", line)
                     ]
                     documents.append(
-                        Document(text="\n".join(useful_lines), metadata=extra_info)
+                        Document(
+                            text="\n".join(useful_lines), metadata=extra_info or {}
+                        )
                     )
 
                 elif self.levels_back is None and self.clean_json is False:
                     # If levels_back isn't set  and clean json is False, create documents without cleaning
                     json_output = json.dumps(data, ensure_ascii=self.ensure_ascii)
-                    documents.append(Document(text=json_output, metadata=extra_info))
+                    documents.append(
+                        Document(text=json_output, metadata=extra_info or {})
+                    )
 
                 elif self.levels_back is not None:
                     # If levels_back is set, we make the embeddings contain the labels
@@ -140,6 +144,6 @@ class JSONReader(BaseReader):
                         )
                     ]
                     documents.append(
-                        Document(text="\n".join(lines), metadata=extra_info)
+                        Document(text="\n".join(lines), metadata=extra_info or {})
                     )
             return documents
