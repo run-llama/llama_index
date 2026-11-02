@@ -47,6 +47,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             model=model,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+            trust_remote_code=trust_remote_code,
         )
         self._model = CrossEncoder(
             model,
