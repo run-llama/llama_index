@@ -194,3 +194,62 @@ def test_simple_chat_engine_astream_exception_handling():
         pytest.fail(
             "Exception was not correctly handled - ended up in asyncio cleanup performed during garbage collection"
         )
+
+
+def test_streaming_response_gen_avoids_busy_wait_and_propagates_exceptions() -> None:
+    import threading
+    import time
+
+    message = ChatMessage(role=MessageRole.ASSISTANT, content="")
+
+    def slow_chat_stream() -> Iterator[ChatResponse]:
+        for token in ["Hello", " ", "world", "!"]:
+            time.sleep(0.03)
+            yield ChatResponse(message=message, delta=token)
+
+    memory = MockMemory()
+    response = StreamingAgentChatResponse(chat_stream=slow_chat_stream())
+
+    get_calls = 0
+    orig_get = response.queue.get
+
+    def counting_get(*args: Any, **kwargs: Any) -> Any:
+        nonlocal get_calls
+        get_calls += 1
+        return orig_get(*args, **kwargs)
+
+    response.queue.get = counting_get  # type: ignore[method-assign]
+    response.write_response_to_history_thread = threading.Thread(
+        target=response.write_response_to_history,
+        args=(memory,),
+        daemon=True,
+    )
+    response.write_response_to_history_thread.start()
+
+    chunks = list(response.response_gen)
+    assert "".join(chunks) == "Hello world!"
+    assert response.response == "Hello world!"
+    assert get_calls < 50
+
+    class StreamError(RuntimeError):
+        pass
+
+    def failing_chat_stream() -> Iterator[ChatResponse]:
+        yield ChatResponse(message=message, delta="partial")
+        time.sleep(0.02)
+        raise StreamError("boom")
+
+    err_response = StreamingAgentChatResponse(chat_stream=failing_chat_stream())
+    err_response.write_response_to_history_thread = threading.Thread(
+        target=err_response.write_response_to_history,
+        args=(memory,),
+        daemon=True,
+    )
+    err_response.write_response_to_history_thread.start()
+
+    collected: list[str] = []
+    with pytest.raises(StreamError, match="boom"):
+        for chunk in err_response.response_gen:
+            collected.append(chunk)
+    assert collected == ["partial"]
+
