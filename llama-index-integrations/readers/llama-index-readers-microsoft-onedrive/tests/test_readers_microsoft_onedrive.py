@@ -1,9 +1,29 @@
+from types import SimpleNamespace
+
 import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_onedrive import OneDriveReader
+from llama_index.readers.microsoft_onedrive.base import _OneDriveResourcePayload
 
 test_client_id = "test_client_id"
 test_tenant_id = "test_tenant_id"
+
+
+def _report_item(year):
+    return {
+        "id": f"item-{year}",
+        "name": "report.txt",
+        "parentReference": {"path": f"/drive/root:/Contracts/{year}"},
+        "@microsoft.graph.downloadUrl": f"https://example.com/{year}",
+    }
+
+
+@pytest.fixture()
+def fake_downloads(monkeypatch):
+    monkeypatch.setattr(
+        "requests.get",
+        lambda url: SimpleNamespace(content=f"report from {url}".encode()),
+    )
 
 
 def test_class():
@@ -60,3 +80,36 @@ def test_mixins(real_onedrive_reader: OneDriveReader):
     file_content = real_onedrive_reader.read_file_content(resource)
     assert file_content is not None
     assert len(file_content) == resource_info["file_size"]
+
+
+def test_same_named_files_from_different_folders_are_all_loaded(
+    tmp_path, fake_downloads
+):
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+    items = [_report_item(2025), _report_item(2026)]
+    payloads = [
+        _OneDriveResourcePayload(
+            resource_info=reader._extract_metadata_for_file(item),
+            downloaded_file_path=reader._download_file_by_url(item, str(tmp_path)),
+        )
+        for item in items
+    ]
+
+    documents = reader._load_documents_with_metadata(payloads, str(tmp_path))
+
+    assert sorted((doc.metadata["file_path"], doc.text) for doc in documents) == [
+        ("/Contracts/2025/report.txt", "report from https://example.com/2025"),
+        ("/Contracts/2026/report.txt", "report from https://example.com/2026"),
+    ]
+
+
+def test_an_item_downloaded_twice_is_saved_to_the_same_file(tmp_path, fake_downloads):
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+    item = _report_item(2025)
+
+    first = reader._download_file_by_url(item, str(tmp_path))
+    second = reader._download_file_by_url(item, str(tmp_path))
+
+    assert first == second
+    assert first.endswith(".txt")
+    assert len(list(tmp_path.iterdir())) == 1
