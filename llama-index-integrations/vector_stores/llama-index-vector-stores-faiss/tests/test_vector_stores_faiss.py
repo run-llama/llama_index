@@ -178,6 +178,38 @@ class TestFaissMapVectorStore:
             == 1
         )
 
+    def test_add_after_delete_does_not_reuse_ids(
+        self, node_embeddings: List[TextNode]
+    ) -> None:
+        """Adding after a delete must not reuse the faiss id of a live node."""
+        vector_store = FaissMapVectorStore(faiss_index=get_map_index())
+        vector_store.add(node_embeddings)
+
+        # delete the first node, then add a new one
+        vector_store.delete_nodes(node_ids=["12c70eed-5779-4008-aba0-596e003f6443"])
+        new_node = TextNode(
+            text="qux", id_="new-node", embedding=text_to_embedding("qux")
+        )
+        vector_store.add([new_node])
+
+        # "baz" is still there and is still found by its own embedding
+        result = vector_store.query(
+            VectorStoreQuery(
+                query_embedding=text_to_embedding("baz"), similarity_top_k=1
+            )
+        )
+        assert result.ids == ["469e9537-7bc5-4669-9ff6-baa0ed086236"]
+
+        # deleting the new node leaves "baz" alone
+        vector_store.delete_nodes(node_ids=["new-node"])
+        result = vector_store.query(
+            VectorStoreQuery(
+                query_embedding=text_to_embedding("baz"), similarity_top_k=1
+            )
+        )
+        assert result.ids == ["469e9537-7bc5-4669-9ff6-baa0ed086236"]
+        assert vector_store._faiss_index.ntotal == 2
+
     def test_delete(self, node_embeddings: List[TextNode]) -> None:
         """Test deleting nodes from faiss map vector store."""
         vector_store = FaissMapVectorStore(faiss_index=get_map_index())
