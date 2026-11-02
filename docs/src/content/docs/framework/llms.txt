@@ -43,7 +43,7 @@ Retrieval-Augmented Generation (RAG) is a core technique for building data-backe
 
 There are five key stages within RAG:
 
-1. **Loading**: Getting your data from where it lives - whether it's text files, PDFs, another website, a database, or an API - into your workflow. [LlamaHub](https://llamahub.ai/) provides hundreds of connectors to choose from.
+1. **Loading**: Getting your data from where it lives - whether it's text files, PDFs, another website, a database, or an API - into your workflow. LlamaIndex provides [hundreds of connectors](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) to choose from.
 
 2. **Indexing**: Creating a data structure that allows for querying the data. For LLMs this nearly always means creating vector embeddings, numerical representations of the meaning of your data, as well as numerous other metadata strategies.
 
