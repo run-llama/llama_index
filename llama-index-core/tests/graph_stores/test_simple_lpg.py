@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+import pytest
+
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -51,6 +53,85 @@ def test_get() -> None:
     assert g.get_triplets(entity_names=["e2"]) == [(e1, r, e2)]
     assert g.get_triplets(relation_names=["r"]) == [(e1, r, e2)]
     assert g.get_triplets(properties={"key": "value"}) == [(e1, r, e2)]
+
+
+def _upsert_knows_relation_with_updated_properties(g: SimplePropertyGraphStore) -> None:
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    e3 = EntityNode(name="Carol")
+    g.upsert_nodes([e1, e2, e3])
+
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id=e1.id,
+                target_id=e2.id,
+                properties={"confidence": 0.1},
+            )
+        ]
+    )
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id=e1.id,
+                target_id=e2.id,
+                properties={"confidence": 0.9},
+            ),
+            Relation(
+                label="KNOWS",
+                source_id=e1.id,
+                target_id=e3.id,
+                properties={"confidence": 0.5},
+            ),
+        ]
+    )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 2
+    props_by_target = {t[2].id: t[1].properties for t in triplets}
+    assert props_by_target[e2.id] == {"confidence": 0.9}
+    assert props_by_target[e3.id] == {"confidence": 0.5}
+
+
+def test_upsert_relations_updates_existing_relation_properties() -> None:
+    """Issue #23679: re-upserting the same (source, label, target) updates properties."""
+    _upsert_knows_relation_with_updated_properties(SimplePropertyGraphStore())
+
+
+@pytest.mark.asyncio
+async def test_aupsert_relations_updates_existing_relation_properties() -> None:
+    """Issue #23679: async re-upsert of the same relation updates properties."""
+    g = SimplePropertyGraphStore()
+    e1 = EntityNode(name="Alice")
+    e2 = EntityNode(name="Bob")
+    g.upsert_nodes([e1, e2])
+
+    await g.aupsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id=e1.id,
+                target_id=e2.id,
+                properties={"confidence": 0.1},
+            )
+        ]
+    )
+    await g.aupsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id=e1.id,
+                target_id=e2.id,
+                properties={"confidence": 0.9},
+            )
+        ]
+    )
+
+    triplets = await g.aget_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
 
 
 def test_add_node() -> None:

@@ -161,12 +161,11 @@ class LabelledPropertyGraph(BaseModel):
     def add_triplet(self, triplet: Triplet) -> None:
         """Add a triplet."""
         subj, rel, obj = triplet
-        if (subj.id, rel.id, obj.id) in self.triplets:
-            return
+        if (subj.id, rel.id, obj.id) not in self.triplets:
+            self.triplets.add((subj.id, rel.id, obj.id))
+            self.nodes[subj.id] = subj
+            self.nodes[obj.id] = obj
 
-        self.triplets.add((subj.id, rel.id, obj.id))
-        self.nodes[subj.id] = subj
-        self.nodes[obj.id] = obj
         self.relations[self._get_relation_key(relation=rel)] = rel
 
     def add_node(self, node: LabelledNode) -> None:
