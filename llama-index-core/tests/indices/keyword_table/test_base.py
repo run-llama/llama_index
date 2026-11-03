@@ -182,3 +182,28 @@ def test_delete(patch_token_text_splitter) -> None:
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
+
+
+@patch(
+    "llama_index.core.indices.keyword_table.simple_base.simple_extract_keywords",
+    mock_extract_keywords,
+)
+def test_delete_nodes_batch(patch_token_text_splitter) -> None:
+    """Test deleting multiple nodes from KeywordTableIndex in a single batch."""
+    new_documents = [
+        Document(text="Hello world.\nThis is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+        Document(text="This is a test v2.", id_="test_id_3"),
+    ]
+    table = SimpleKeywordTableIndex.from_documents(new_documents)
+    all_node_ids = sorted(table.index_struct.node_ids)
+    assert len(all_node_ids) == 4
+    to_delete = all_node_ids[:2]
+
+    table.delete_nodes(to_delete, delete_from_docstore=True)
+
+    assert table.index_struct.node_ids == set(all_node_ids[2:])
+    assert all(len(ids) > 0 for ids in table.index_struct.table.values())
+    for deleted_id in to_delete:
+        assert table.docstore.get_document(deleted_id, raise_error=False) is None
+
