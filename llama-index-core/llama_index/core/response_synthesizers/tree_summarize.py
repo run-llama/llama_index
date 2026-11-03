@@ -43,6 +43,7 @@ class TreeSummarize(BaseSynthesizer):
         use_async: bool = False,
         verbose: bool = False,
         multimodal: bool = False,
+        empty_response: Optional[str] = None,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -51,6 +52,7 @@ class TreeSummarize(BaseSynthesizer):
             chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             output_cls=output_cls,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
         self._summary_template = summary_template or DEFAULT_TREE_SUMMARIZE_PROMPT_SEL

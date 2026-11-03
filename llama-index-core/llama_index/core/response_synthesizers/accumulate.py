@@ -33,6 +33,7 @@ class Accumulate(BaseSynthesizer):
         streaming: bool = False,
         use_async: bool = False,
         multimodal: bool = False,
+        empty_response: Optional[str] = None,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -41,6 +42,7 @@ class Accumulate(BaseSynthesizer):
             chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             output_cls=output_cls,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
