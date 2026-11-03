@@ -158,6 +158,7 @@ def test_insert(
     )
     assert left_root2.get_content() == "Hello world."
     assert right_root2.get_content() == "This is a test.\nThis is a new doc."
+
     left_root3 = _get_left_or_right_node(tree.docstore, tree.index_struct, right_root2)
     right_root3 = _get_left_or_right_node(
         tree.docstore, tree.index_struct, right_root2, left=False
@@ -200,3 +201,20 @@ def test_twice_insert_empty(patch_llm_predictor, patch_token_text_splitter) -> N
 def _mock_tokenizer(text: str) -> int:
     """Mock tokenizer that splits by spaces."""
     return len(text.split(" "))
+
+
+def test_index_graph_get_children_evaluates_node_id_to_index_once() -> None:
+    from llama_index.core.schema import TextNode
+
+    graph = IndexGraph()
+    parent = TextNode(text="parent", id_="parent_0")
+    children = [TextNode(text=f"child_{i}", id_=f"child_{i}") for i in range(10)]
+    for idx, child in enumerate(children):
+        graph.insert_under_parent(child, None, new_index=idx)
+    graph.insert(parent, index=10, children_nodes=children)
+
+    leaf = children[0]
+    graph.node_id_to_children_ids[leaf.node_id] = []
+    assert graph.get_children(leaf) == {}
+    assert graph.get_children(parent) == {i: f"child_{i}" for i in range(10)}
+
