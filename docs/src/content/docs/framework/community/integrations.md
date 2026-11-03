@@ -4,21 +4,19 @@ title: Integrations
 
 LlamaIndex has a number of community integrations, from vector stores, to prompt trackers, tracers, and more!
 
-## LlamaPacks -- Code Templates
-
-LlamaHub hosts a full suite of LlamaPacks -- templates for features that you can download, edit, and try out! This offers a quick way to learn about new features and try new techniques.
-
-The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Check out our [dedicated page](/python/framework/community/llama_packs).
-
 ## Data Loaders
 
-The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
+Data loaders (readers) live in the [`readers` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) of the LlamaIndex repo, one package per source. See the [data connectors guide](/python/framework/module_guides/loading/connector) for how to use them.
 
 ## Agent Tools
 
-The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
+Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+
+## LlamaPacks -- Code Templates
+
+LlamaPacks are deprecated. See the [dedicated page](/python/framework/community/llama_packs) for details.
 
 ## LLMs
 
