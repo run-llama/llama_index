@@ -770,9 +770,10 @@ class TextNode(BaseNode):
         if "text_resource" in kwargs:
             tr = kwargs.pop("text_resource")
             if isinstance(tr, MediaResource):
-                kwargs["text"] = tr.text
+                kwargs["text"] = tr.text or ""
             else:
-                kwargs["text"] = tr["text"]
+                # A serialized MediaResource may carry no text at all.
+                kwargs["text"] = tr.get("text") or ""
         super().__init__(*args, **kwargs)
 
     text: str = Field(default="", description="Text content of the node.")
