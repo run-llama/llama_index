@@ -196,7 +196,8 @@ class LegacyOfficeReader(BaseReader):
             if parsed is None:
                 raise ValueError(f"Failed to parse document: {file}")
 
-            content = str(parsed.get("content", "")).strip()
+            # Tika reports content=None (not "") when it extracts no text
+            content = (parsed.get("content") or "").strip()
             if not content:
                 raise ValueError(f"No content found in document: {file}")
 
