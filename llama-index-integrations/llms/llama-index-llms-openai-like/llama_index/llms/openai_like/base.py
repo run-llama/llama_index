@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -53,6 +53,9 @@ class OpenAILike(OpenAI):
             Default is 0.1.
         additional_kwargs (dict):
             Specify additional parameters to the request body.
+        extra_body (dict):
+            Extra OpenAI-compatible request body fields, such as provider-specific
+            reasoning controls.
         max_retries (int):
             How many times to retry the API call if it fails.
             Defaults to 3.
@@ -120,9 +123,29 @@ class OpenAILike(OpenAI):
             " disables inference of max_tokens."
         ),
     )
+    extra_body: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Extra OpenAI-compatible request body fields.",
+    )
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
+        if self.extra_body is not None:
+            additional_kwargs = dict(self.additional_kwargs or {})
+            existing_extra_body = additional_kwargs.get("extra_body")
+            if existing_extra_body is None:
+                additional_kwargs["extra_body"] = dict(self.extra_body)
+            elif isinstance(existing_extra_body, dict):
+                additional_kwargs["extra_body"] = {
+                    **existing_extra_body,
+                    **self.extra_body,
+                }
+            else:
+                raise ValueError(
+                    "additional_kwargs['extra_body'] must be a dict if provided."
+                )
+            self.additional_kwargs = additional_kwargs
+
         if isinstance(self.tokenizer, str):
             try:
                 import transformers  # noqa: F401
