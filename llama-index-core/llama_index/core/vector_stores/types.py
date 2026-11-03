@@ -22,6 +22,7 @@ from llama_index.core.bridge.pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    model_validator,
 )
 from llama_index.core.schema import BaseComponent, BaseNode, TextNode
 
@@ -113,6 +114,21 @@ class MetadataFilter(BaseModel):
         ]
     ]
     operator: FilterOperator = FilterOperator.EQ
+
+    @model_validator(mode="after")
+    def _key_must_be_a_field_name(self) -> "MetadataFilter":
+        """Reject an empty filter key.
+
+        An empty (or blank) key names no metadata field, so the filter it
+        produces silently selects nothing - or everything - at the store, far
+        from the query that was written wrong.
+        """
+        if not self.key.strip():
+            raise ValueError(
+                "MetadataFilter key must name the metadata field to filter on, "
+                f"got {self.key!r}."
+            )
+        return self
 
     @classmethod
     def from_dict(
