@@ -298,13 +298,30 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             await session.commit()
 
     async def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Delete a specific message by ID and return it (async)."""
+        """
+        Delete a specific message by positional index and return it (async).
+
+        ``idx`` is the 0-based position of the message in the conversation
+        history for ``key`` (the same ordering ``get_messages`` returns),
+        not the database row id.
+        """
+        if idx < 0:
+            return None
+
         session_factory, table = await self._initialize()
 
         async with session_factory() as session:
-            # First get the message
+            # Resolve the positional index to the row id first: the caller
+            # only ever sees positions, never the autoincrement primary key.
             result = await session.execute(
-                select(table).where(table.c.key == key, table.c.id == idx)
+                select(table)
+                .where(
+                    table.c.key == key,
+                    table.c.status == MessageStatus.ACTIVE.value,
+                )
+                .order_by(table.c.timestamp, table.c.id)
+                .offset(idx)
+                .limit(1)
             )
             row = result.fetchone()
 
@@ -314,8 +331,34 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             # Store the message we're about to delete
             message = ChatMessage.model_validate(row.data)
 
-            # Delete the message
-            await session.execute(delete(table).where(table.c.id == idx))
+            # Delete the message by its row id
+            await session.execute(delete(table).where(table.c.id == row.id))
+            await session.commit()
+
+            return message
+
+    async def delete_last_message(self, key: str) -> Optional[ChatMessage]:
+        """Delete the last message for a key and return it (async)."""
+        session_factory, table = await self._initialize()
+
+        async with session_factory() as session:
+            result = await session.execute(
+                select(table)
+                .where(
+                    table.c.key == key,
+                    table.c.status == MessageStatus.ACTIVE.value,
+                )
+                .order_by(table.c.timestamp.desc(), table.c.id.desc())
+                .limit(1)
+            )
+            row = result.fetchone()
+
+            if not row:
+                return None
+
+            message = ChatMessage.model_validate(row.data)
+
+            await session.execute(delete(table).where(table.c.id == row.id))
             await session.commit()
 
             return message
