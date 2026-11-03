@@ -58,3 +58,27 @@ http_client = BasicMCPClient("https://example.com/mcp")
 # Local process
 local_client = BasicMCPClient("python", args=["server.py"])
 ```
+
+## Find a model with Hugging Bay
+
+[Hugging Bay](https://huggingbay.xyz/skills/hugging-bay/SKILL.md) exposes public catalog reads through its Streamable HTTP MCP endpoint at `https://huggingbay.xyz/api/mcp`. This example selects only `find_runnable` before calling it, so the agent cannot access the profile's public write tools:
+
+```python
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+
+
+async def find_a_model():
+    client = BasicMCPClient("https://huggingbay.xyz/api/mcp")
+    spec = McpToolSpec(
+        client=client,
+        allowed_tools=["find_runnable"],
+        include_resources=False,
+    )
+    tools = await spec.to_tool_list_async()
+    find_runnable = next(
+        tool for tool in tools if tool.metadata.name == "find_runnable"
+    )
+    return await find_runnable.acall(task="chat", hardware="8gb-laptop")
+```
+
+`find_runnable` returns a fit estimate, not a measured run. For Hugging Face downloads from repositories currently mirrored by Hugging Bay, set `HF_ENDPOINT=https://hf.huggingbay.xyz` in the client's environment. The mirror serves hosted files; it does not run inference.
