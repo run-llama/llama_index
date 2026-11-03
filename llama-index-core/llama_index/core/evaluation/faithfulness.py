@@ -104,6 +104,10 @@ class FaithfulnessEvaluator(BaseEvaluator):
 
     This evaluator only considers the response string and the list of context strings.
 
+    A passing judge response must be YES, optionally followed by a period or
+    exclamation mark, ignoring case and surrounding whitespace. Other responses
+    are non-passing; the query engine's response is preserved as feedback.
+
     Args:
         raise_error(bool): Whether to raise an error when the response is invalid.
             Defaults to False.
@@ -184,7 +188,7 @@ class FaithfulnessEvaluator(BaseEvaluator):
 
         raw_response_txt = str(response_obj)
 
-        if "yes" in raw_response_txt.lower():
+        if raw_response_txt.strip().lower() in {"yes", "yes.", "yes!"}:
             passing = True
         else:
             passing = False
