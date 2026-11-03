@@ -1,7 +1,11 @@
 """Test indices/utils.py."""
 
 import pytest
-from llama_index.core.indices.utils import expand_tokens_with_subtokens
+from llama_index.core.indices.utils import (
+    expand_tokens_with_subtokens,
+    get_stopwords_set,
+)
+from llama_index.core.utils import globals_helper
 
 
 def test_expand_tokens_with_subtokens() -> None:
@@ -18,6 +22,37 @@ def test_expand_tokens_with_subtokens() -> None:
         "world",
         "bye",
     }
+
+
+def test_expand_tokens_with_subtokens_filters_stopwords() -> None:
+    """Test that stopword subtokens are dropped but the full token is kept."""
+    keywords = expand_tokens_with_subtokens({"the quick fox", "of"})
+    assert keywords == {"the quick fox", "quick", "fox", "of"}
+
+
+def test_get_stopwords_set() -> None:
+    """Test the cached stopword set mirrors the stopword list."""
+    stopwords = get_stopwords_set()
+    assert isinstance(stopwords, frozenset)
+    assert stopwords == set(globals_helper.stopwords)
+    assert "the" in stopwords
+    assert "llama" not in stopwords
+    assert get_stopwords_set() is stopwords
+
+
+def test_get_stopwords_set_tracks_stopword_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test the cached set is rebuilt when the underlying stopword list changes."""
+    original = get_stopwords_set()
+    monkeypatch.setattr(globals_helper, "_stopwords", ["foo", "bar"])
+    assert get_stopwords_set() == frozenset({"foo", "bar"})
+    assert expand_tokens_with_subtokens({"foo baz bar"}) == {
+        "foo baz bar",
+        "baz",
+    }
+    monkeypatch.undo()
+    assert get_stopwords_set() == original
 
 
 parse_choice_test_lines = [
