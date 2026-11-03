@@ -108,3 +108,34 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_mmr_embeddings_penalizes_every_selected_result() -> None:
+    """
+    A candidate is redundant if it repeats any result already selected.
+
+    The penalty was measured against the result selected last, so a near
+    duplicate of an earlier result stopped being penalised as soon as an
+    unrelated result was selected after it, and came back in the ranking.
+    """
+    query_embedding = [1.0, 0.0, 0.0, 0.0]
+    embeddings = [
+        [0.90, 0.44, 0.00, 0.00],  # A: the most relevant result
+        [0.88, 0.47, 0.00, 0.00],  # a near-duplicate of A
+        [0.70, 0.00, 0.71, 0.00],  # B: selected next, unrelated to A
+        [0.65, 0.00, 0.00, 0.76],  # C: unrelated to both A and B
+    ]
+
+    result_similarities, result_ids = get_top_k_mmr_embeddings(
+        query_embedding,
+        embeddings,
+        embedding_ids=["A", "A_duplicate", "B", "C"],
+        mmr_threshold=0.5,
+        similarity_top_k=3,
+    )
+
+    # Once B is selected in between, the duplicate is still redundant with A.
+    assert result_ids == ["A", "B", "C"]
+
+    # The scores are the MMR scores of the picks, so they never increase.
+    assert result_similarities == sorted(result_similarities, reverse=True)
