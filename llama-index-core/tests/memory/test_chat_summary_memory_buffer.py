@@ -437,3 +437,26 @@ def test_pickle() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults()
     bytes_ = pickle.dumps(memory)
     assert isinstance(pickle.loads(bytes_), ChatSummaryMemoryBuffer)
+
+
+def test_split_messages_single_tokenization_per_message() -> None:
+    """Ensure _split_messages_summary_or_full_text tokenizes each fitted message once."""
+    calls: List[str] = []
+
+    def counting_tokenizer(text: str) -> List[str]:
+        calls.append(text)
+        return text.split()
+
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="hello world"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="hi there"),
+    ]
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=messages,
+        token_limit=100,
+        tokenizer_fn=counting_tokenizer,
+    )
+    history = memory.get()
+    assert [m.content for m in history] == ["hello world", "hi there"]
+    assert len(calls) == 2
+
