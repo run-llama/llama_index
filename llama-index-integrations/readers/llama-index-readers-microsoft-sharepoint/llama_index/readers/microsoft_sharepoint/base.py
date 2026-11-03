@@ -389,6 +389,7 @@ class SharePointReader(
             sharepoint_site_name=self.sharepoint_site_name,
             sharepoint_site_id=self.sharepoint_site_id,
             sharepoint_folder_id=folder_id,
+            recursive=include_subfolders,
         )
 
         metadata = {}
@@ -748,9 +749,12 @@ class SharePointReader(
 
         return file_paths
 
-    def _list_drive_contents(self) -> List[Path]:
+    def _list_drive_contents(self, recursive: bool = True) -> List[Path]:
         """
         Helper method to fetch the contents of the drive.
+
+        Args:
+            recursive (bool): If True, files from all subfolders are listed.
 
         Returns:
             List[Path]: List of file paths.
@@ -766,9 +770,11 @@ class SharePointReader(
 
         for item in items:
             if "folder" in item:
+                if not recursive:
+                    continue
                 # Append folder path
                 folder_paths = self._list_folder_contents(
-                    item["id"], recursive=True, current_path=item["name"]
+                    item["id"], recursive=recursive, current_path=item["name"]
                 )
                 file_paths.extend(folder_paths)
             elif "file" in item:
@@ -839,7 +845,7 @@ class SharePointReader(
                 file_paths.extend(folder_contents)
             else:
                 # Fetch drive contents
-                drive_contents = self._list_drive_contents()
+                drive_contents = self._list_drive_contents(recursive=recursive)
                 file_paths.extend(drive_contents)
         except Exception as exp:
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
