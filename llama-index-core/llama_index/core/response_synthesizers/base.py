@@ -84,7 +84,9 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         self._callback_manager = callback_manager or Settings.callback_manager
         self._streaming = streaming
         self._output_cls = output_cls
-        self._empty_response = empty_response or "Empty Response"
+        self._empty_response = (
+            empty_response if empty_response is not None else "Empty Response"
+        )
         self._multimodal = multimodal
         self._prompt_helper: PromptHelper
         if multimodal:

@@ -215,6 +215,7 @@ class Refine(BaseSynthesizer):
             Callable[[BasePromptTemplate], BasePydanticProgram]
         ] = None,
         multimodal: bool = False,
+        empty_response: Optional[str] = None,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -222,6 +223,7 @@ class Refine(BaseSynthesizer):
             prompt_helper=prompt_helper,
             chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL

@@ -39,6 +39,7 @@ class Generation(BaseSynthesizer):
         simple_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
         multimodal: bool = False,
+        empty_response: Optional[str] = None,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -46,6 +47,7 @@ class Generation(BaseSynthesizer):
             prompt_helper=prompt_helper,
             chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
         self._input_prompt = simple_template or (

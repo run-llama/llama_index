@@ -57,6 +57,7 @@ def get_response_synthesizer(
     ] = None,
     verbose: bool = False,
     multimodal: bool = False,
+    empty_response: Optional[str] = None,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
     text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
@@ -102,6 +103,7 @@ def get_response_synthesizer(
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
             verbose=verbose,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.COMPACT:
@@ -119,6 +121,7 @@ def get_response_synthesizer(
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
             verbose=verbose,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.TREE_SUMMARIZE:
@@ -133,6 +136,7 @@ def get_response_synthesizer(
             streaming=streaming,
             use_async=use_async,
             verbose=verbose,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.SIMPLE_SUMMARIZE:
@@ -144,6 +148,7 @@ def get_response_synthesizer(
             text_qa_template=text_qa_template,
             chat_content_qa_template=chat_content_qa_template,
             streaming=streaming,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.GENERATION:
@@ -154,6 +159,7 @@ def get_response_synthesizer(
             chat_prompt_helper=chat_prompt_helper,
             simple_template=simple_template,
             streaming=streaming,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.ACCUMULATE:
@@ -167,6 +173,7 @@ def get_response_synthesizer(
             output_cls=output_cls,
             streaming=streaming,
             use_async=use_async,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.COMPACT_ACCUMULATE:
@@ -180,18 +187,21 @@ def get_response_synthesizer(
             output_cls=output_cls,
             streaming=streaming,
             use_async=use_async,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.NO_TEXT:
         return NoText(
             callback_manager=callback_manager,
             streaming=streaming,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.CONTEXT_ONLY:
         return ContextOnly(
             callback_manager=callback_manager,
             streaming=streaming,
+            empty_response=empty_response,
             multimodal=multimodal,
         )
     else:
