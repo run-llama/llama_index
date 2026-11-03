@@ -1,4 +1,5 @@
 import importlib.util
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from llama_index.core.node_parser.file.html import HTMLNodeParser
@@ -206,3 +207,19 @@ def test_no_empty_nodes_for_container_tags() -> None:
         "First paragraph.",
         "Second paragraph.",
     ]
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
+def test_source_document_hashed_once_per_document() -> None:
+    body = "\n".join(f"<h2>Header {i}</h2><p>Paragraph {i}</p>" for i in range(25))
+    doc = Document(text=f"<html><body>{body}</body></html>")
+    with patch.object(Document, "hash", new_callable=PropertyMock) as mock_hash:
+        mock_hash.return_value = "doc-hash"
+        splits = HTMLNodeParser(tags=["h2", "p"]).get_nodes_from_documents([doc])
+
+    assert len(splits) == 50
+    assert mock_hash.call_count == 1

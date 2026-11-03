@@ -1,3 +1,5 @@
+from unittest.mock import PropertyMock, patch
+
 from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.core.schema import Document
 
@@ -202,3 +204,13 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+def test_source_document_hashed_once_per_document() -> None:
+    text = "\n".join(f"# Header {i}\ncontent {i}" for i in range(50))
+    with patch.object(Document, "hash", new_callable=PropertyMock) as mock_hash:
+        mock_hash.return_value = "doc-hash"
+        nodes = MarkdownNodeParser().get_nodes_from_documents([Document(text=text)])
+
+    assert len(nodes) == 50
+    assert mock_hash.call_count == 1
