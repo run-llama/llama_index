@@ -1,4 +1,8 @@
+import json
 from unittest.mock import patch
+
+import httpx
+import pytest
 
 from llama_index.core import QueryBundle
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -62,3 +66,43 @@ def test_rerank_logic():
 
         assert new_nodes[0].node.metadata["retrieval_score"] == 0.5
         assert new_nodes[1].node.metadata["retrieval_score"] == 0.5
+
+
+def _mock_client(handler):
+    real_client = httpx.Client
+    return lambda *args, **kwargs: real_client(transport=httpx.MockTransport(handler))
+
+
+@pytest.mark.parametrize("truncate_text", [True, False])
+def test_call_api_sends_truncate(truncate_text):
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(json.loads(request.content))
+        return httpx.Response(200, json=[{"index": 0, "score": 0.9}])
+
+    kwargs = {} if truncate_text else {"truncate_text": False}
+    postprocessor = TextEmbeddingInference(**kwargs)
+    with patch("httpx.Client", _mock_client(handler)):
+        postprocessor._call_api("test query", ["text1"])
+
+    assert captured["truncate"] is truncate_text
+
+
+def test_call_api_raises_on_http_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            413,
+            json={
+                "error": "Input validation error: `inputs` must have less than 512 tokens. Given: 1024",
+                "error_type": "Validation",
+            },
+        )
+
+    nodes = [NodeWithScore(node=TextNode(text=f"text{i}")) for i in range(3)]
+    postprocessor = TextEmbeddingInference()
+    with patch("httpx.Client", _mock_client(handler)):
+        with pytest.raises(httpx.HTTPStatusError):
+            postprocessor.postprocess_nodes(
+                nodes, query_bundle=QueryBundle(query_str="test query")
+            )
