@@ -86,6 +86,19 @@ def test_text_node_with_text_resource():
     assert text_node.text == "This is a test"
 
 
+def test_text_node_with_text_resource_without_text():
+    # `MediaResource.text` is optional, so a resource that only carries a path
+    # must not break TextNode construction.
+    text_node = TextNode(text_resource=MediaResource(path="file.txt"))
+    assert text_node.text == ""
+
+    text_node = TextNode(text_resource={"path": "file.txt"})
+    assert text_node.text == ""
+
+    text_node = TextNode(text_resource=MediaResource(path="file.txt").model_dump())
+    assert text_node.text == ""
+
+
 def test_text_node_metadata_separator_consistency() -> None:
     """
     Test that metadata_separator works consistently on TextNode.
