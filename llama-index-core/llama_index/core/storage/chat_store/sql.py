@@ -369,20 +369,30 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
         return oldest_messages
 
-    async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
-        """Archive the oldest n messages for a key and return them (async)."""
+    async def archive_oldest_messages(
+        self,
+        key: str,
+        n: int,
+        exclude_roles: Optional[List[str]] = None,
+    ) -> List[ChatMessage]:
+        """
+        Archive the oldest n messages for a key and return them (async).
+
+        Messages whose role appears in ``exclude_roles`` are skipped so they
+        are never archived (e.g. ``["system"]`` keeps system prompts alive).
+        """
         session_factory, table = await self._initialize()
 
         async with session_factory() as session:
             # First get the oldest n messages
+            query = select(table).where(
+                table.c.key == key,
+                table.c.status == MessageStatus.ACTIVE.value,
+            )
+            if exclude_roles:
+                query = query.where(table.c.role.notin_(exclude_roles))
             result = await session.execute(
-                select(table)
-                .where(
-                    table.c.key == key,
-                    table.c.status == MessageStatus.ACTIVE.value,
-                )
-                .order_by(table.c.timestamp, table.c.id)
-                .limit(n)
+                query.order_by(table.c.timestamp, table.c.id).limit(n)
             )
             rows = result.fetchall()
 
