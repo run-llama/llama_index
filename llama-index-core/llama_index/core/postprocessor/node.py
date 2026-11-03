@@ -1,6 +1,7 @@
 """Node postprocessor."""
 
 import logging
+import math
 from typing import Dict, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import (
@@ -89,7 +90,7 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
             should_use_node = True
             if sim_cutoff_exists:
                 similarity = node.score
-                if similarity is None:
+                if similarity is None or math.isnan(similarity):
                     should_use_node = False
                 elif cast(float, similarity) < cast(float, self.similarity_cutoff):
                     should_use_node = False
