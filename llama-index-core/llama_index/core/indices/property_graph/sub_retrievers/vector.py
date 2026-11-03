@@ -174,13 +174,13 @@ class VectorContextRetriever(BasePGRetriever):
                     ignore_rels=[KG_SOURCE_REL],
                 )
 
+        score_by_kg_id: Dict[str, float] = {}
+        for kg_id, score in zip(kg_ids, scores):
+            score_by_kg_id.setdefault(kg_id, score)
+
         for triplet in triplets:
-            score1 = (
-                scores[kg_ids.index(triplet[0].id)] if triplet[0].id in kg_ids else 0.0
-            )
-            score2 = (
-                scores[kg_ids.index(triplet[2].id)] if triplet[2].id in kg_ids else 0.0
-            )
+            score1 = score_by_kg_id.get(triplet[0].id, 0.0)
+            score2 = score_by_kg_id.get(triplet[2].id, 0.0)
             new_scores.append(max(score1, score2))
 
         assert len(triplets) == len(new_scores)
@@ -246,13 +246,13 @@ class VectorContextRetriever(BasePGRetriever):
                     ignore_rels=[KG_SOURCE_REL],
                 )
 
+        score_by_kg_id: Dict[str, float] = {}
+        for kg_id, score in zip(kg_ids, scores):
+            score_by_kg_id.setdefault(kg_id, score)
+
         for triplet in triplets:
-            score1 = (
-                scores[kg_ids.index(triplet[0].id)] if triplet[0].id in kg_ids else 0.0
-            )
-            score2 = (
-                scores[kg_ids.index(triplet[2].id)] if triplet[2].id in kg_ids else 0.0
-            )
+            score1 = score_by_kg_id.get(triplet[0].id, 0.0)
+            score2 = score_by_kg_id.get(triplet[2].id, 0.0)
             new_scores.append(max(score1, score2))
 
         assert len(triplets) == len(new_scores)
