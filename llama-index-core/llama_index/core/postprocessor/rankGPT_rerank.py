@@ -177,20 +177,10 @@ class RankGPTRerank(BaseNodePostprocessor):
         return await self.llm.achat(messages)
 
     def _clean_response(self, response: str) -> str:
-        new_response = ""
-        for c in response:
-            if not c.isdigit():
-                new_response += " "
-            else:
-                new_response += c
-        return new_response.strip()
+        return "".join(c if c.isdigit() else " " for c in response).strip()
 
     def _remove_duplicate(self, response: List[int]) -> List[int]:
-        new_response = []
-        for c in response:
-            if c not in new_response:
-                new_response.append(c)
-        return new_response
+        return list(dict.fromkeys(response))
 
     def _receive_permutation(self, item: Dict[str, Any], permutation: str) -> List[int]:
         rank_end = len(item["hits"])
@@ -198,7 +188,8 @@ class RankGPTRerank(BaseNodePostprocessor):
         response = self._clean_response(permutation)
         response_list = [int(x) - 1 for x in response.split()]
         response_list = self._remove_duplicate(response_list)
-        response_list = [ss for ss in response_list if ss in range(rank_end)]
+        response_list = [ss for ss in response_list if 0 <= ss < rank_end]
+        seen = set(response_list)
         return response_list + [
-            tt for tt in range(rank_end) if tt not in response_list
+            tt for tt in range(rank_end) if tt not in seen
         ]  # add the rest of the rank
