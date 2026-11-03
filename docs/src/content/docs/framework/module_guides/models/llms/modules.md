@@ -21,6 +21,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [EverlyAI](/python/examples/llm/everlyai)
 - [Featherless AI](/python/examples/llm/featherlessai)
 - [Fireworks](/python/examples/llm/fireworks)
+- [FlexAI](/python/examples/llm/flexai)
 - [Friendli](/python/examples/llm/friendli)
 - [Google Gen AI](/python/examples/llm/google_genai)
 - [Gradient](/python/examples/llm/gradient_base_model)
