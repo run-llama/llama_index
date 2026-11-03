@@ -130,10 +130,17 @@ class VectorIndexRetriever(BaseRetriever):
     def _build_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
     ) -> VectorStoreQuery:
+        node_ids = self._node_ids
+        if node_ids is None and (
+            not self._vector_store.stores_text
+            or self._index._store_nodes_override
+        ):
+            node_ids = list(self._index.index_struct.nodes_dict.values())
+
         return VectorStoreQuery(
             query_embedding=query_bundle_with_embeddings.embedding,
             similarity_top_k=self._similarity_top_k,
-            node_ids=self._node_ids,
+            node_ids=node_ids,
             doc_ids=self._doc_ids,
             query_str=query_bundle_with_embeddings.query_str,
             mode=self._vector_store_query_mode,
