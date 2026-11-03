@@ -1,7 +1,16 @@
+import pytest
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.tools import FunctionTool
 from unittest.mock import patch
 from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI
+
+
+def test_missing_model_name_raises_value_error():
+    # InferenceClient.get_recommended_model was removed from
+    # huggingface_hub, so constructing without model_name must fail
+    # with a clear ValueError instead of AttributeError.
+    with pytest.raises(ValueError, match="model_name is required"):
+        HuggingFaceInferenceAPI(task="conversational")
 
 
 def test_embedding_class():
