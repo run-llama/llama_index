@@ -8,6 +8,17 @@ DEFAULT_COLLECTION = "data"
 DEFAULT_BATCH_SIZE = 1
 
 
+def validate_kvstore_key(key: object) -> None:
+    """Raise a named error when a key is not a string.
+
+    A store persisted as JSON turns a key such as ``123`` into ``"123"``, so the
+    value survives the roundtrip but the key it was written with no longer
+    reaches it. Keys are strings by contract, so say that when one is not.
+    """
+    if not isinstance(key, str):
+        raise ValueError(f"KVStore key must be a string, got {type(key).__name__}: {key!r}")
+
+
 class BaseKVStore(ABC):
     """Base key-value store."""
 
@@ -124,6 +135,7 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         """Put a key-value pair into the store."""
+        validate_kvstore_key(key)
         self._get_collection_mapping(collection)[key] = val.copy()
 
     async def aput(
