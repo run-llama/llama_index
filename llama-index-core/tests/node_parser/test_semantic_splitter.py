@@ -1,3 +1,5 @@
+import pytest
+from pydantic import ValidationError
 from typing import List
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -118,3 +120,24 @@ def test_split_and_permutated() -> None:
         sentences[2]["combined_sentence"]
         == "I can't carry it for you. But I can carry you!"
     )
+
+
+def test_breakpoint_percentile_threshold_bounds() -> None:
+    embeddings = MockEmbedding()
+
+    with pytest.raises(ValidationError):
+        SemanticSplitterNodeParser.from_defaults(
+            embed_model=embeddings, breakpoint_percentile_threshold=101
+        )
+
+    with pytest.raises(ValidationError):
+        SemanticSplitterNodeParser.from_defaults(
+            embed_model=embeddings, breakpoint_percentile_threshold=-1
+        )
+
+
+def test_buffer_size_must_be_non_negative() -> None:
+    embeddings = MockEmbedding()
+
+    with pytest.raises(ValidationError):
+        SemanticSplitterNodeParser.from_defaults(embed_model=embeddings, buffer_size=-1)

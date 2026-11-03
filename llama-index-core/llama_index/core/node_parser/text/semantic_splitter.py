@@ -60,6 +60,7 @@ class SemanticSplitterNodeParser(NodeParser):
 
     buffer_size: int = Field(
         default=1,
+        ge=0,
         description=(
             "The number of sentences to group together when evaluating semantic similarity. "
             "Set to 1 to consider each sentence individually. "
@@ -69,6 +70,8 @@ class SemanticSplitterNodeParser(NodeParser):
 
     breakpoint_percentile_threshold: int = Field(
         default=95,
+        ge=0,
+        le=100,
         description=(
             "The percentile of cosine dissimilarity that must be exceeded between a "
             "group of sentences and the next to form a node.  The smaller this "
