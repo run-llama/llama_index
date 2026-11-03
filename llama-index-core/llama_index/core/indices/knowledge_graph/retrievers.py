@@ -275,18 +275,22 @@ class KGTableRetriever(BaseRetriever):
 
         # remove any duplicates from keyword + embedding queries
         if self._retriever_mode == KGRetrieverMode.HYBRID:
-            rel_texts = list(set(rel_texts))
-
             # remove shorter rel_texts that are substrings of longer rel_texts
-            rel_texts.sort(key=len, reverse=True)
-            for i in range(len(rel_texts)):
-                for j in range(i + 1, len(rel_texts)):
-                    if rel_texts[j] in rel_texts[i]:
-                        rel_texts[j] = ""
-            rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
+            rel_texts = sorted(dict.fromkeys(rel_texts), key=len, reverse=True)
+            kept_rel_texts: List[str] = []
+            for rel_text in rel_texts:
+                if not rel_text:
+                    continue
+                if not any(rel_text in existing for existing in kept_rel_texts):
+                    kept_rel_texts.append(rel_text)
+                    if (
+                        self.max_knowledge_sequence is not None
+                        and len(kept_rel_texts) >= self.max_knowledge_sequence
+                    ):
+                        break
 
             # truncate rel_texts
-            rel_texts = rel_texts[: self.max_knowledge_sequence]
+            rel_texts = kept_rel_texts[: self.max_knowledge_sequence]
 
         # When include_text = True just get the actual content of all the nodes
         # (Nodes with actual keyword match, Nodes which are found from the depth search and Nodes founnd from top_k similarity)
