@@ -230,12 +230,12 @@ class DatabaseReader(BaseReader):
                     try:
                         # Ensure function receives the row data
                         id_: Optional[str] = document_id(row_values)
-                        if not isinstance(id_, str):
+                        if isinstance(id_, str):
+                            params["id_"] = id_
+                        elif id_ is not None:
                             logger.warning(
                                 f"document_id did not return a string for row {row_values}. Got: {type(id_)}"
                             )
-                        if id_ is not None:
-                            params["id_"] = id_
                     except Exception as e:
                         logger.warning(
                             f"document_id failed for row {row_values}: {e}",
