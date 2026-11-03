@@ -73,12 +73,9 @@ class SuperlinkedRetriever(BaseRetriever):
         # Build query params, allowing overrides via retriever metadata if needed later
         query_params: dict[str, Any] = {self.query_text_param: user_query}
 
-        try:
-            result = self.sl_client.query(
-                query_descriptor=self.sl_query, **query_params
-            )
-        except Exception:
-            return []
+        # A failed query raises rather than returning [], which is also what a query that
+        # matched nothing returns: a RAG pipeline cannot tell the two apart otherwise.
+        result = self.sl_client.query(query_descriptor=self.sl_query, **query_params)
 
         nodes: List[NodeWithScore] = []
         for entry in getattr(result, "entries", []) or []:
