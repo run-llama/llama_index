@@ -3,6 +3,7 @@
 from llama_index.readers.web.agentql_web.base import (
     AgentQLWebReader,
 )
+from llama_index.readers.web.alterlab_web.base import AlterLabWebReader
 from llama_index.readers.web.async_web.base import (
     AsyncWebPageReader,
 )
@@ -62,6 +63,7 @@ from llama_index.readers.web.zenrows_web.base import ZenRowsWebReader
 
 __all__ = [
     "AgentQLWebReader",
+    "AlterLabWebReader",
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",
     "BrowserbaseWebReader",
