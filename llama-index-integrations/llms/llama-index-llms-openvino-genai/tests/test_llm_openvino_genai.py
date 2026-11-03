@@ -23,3 +23,22 @@ def test_streaming_completion():
         intermediate_response = chunk
 
     assert len(intermediate_response.text) > 0
+
+
+def test_streamer_write_accepts_single_token(monkeypatch):
+    """write() must accept a single int token id, not only a list.
+
+    Regression test: the non-list branch appended an undefined name and
+    raised NameError on every single-token write.
+    """
+    from unittest.mock import MagicMock
+
+    import openvino_genai
+
+    monkeypatch.setattr(openvino_genai, "LLMPipeline", MagicMock())
+    ov_llm = OpenVINOGenAILLM(model_path="unused")
+    streamer = ov_llm._streamer
+    streamer.write(1)
+    assert streamer.tokens_cache == [1]
+    streamer.write([2, 3])
+    assert streamer.tokens_cache == [1, 2, 3]
