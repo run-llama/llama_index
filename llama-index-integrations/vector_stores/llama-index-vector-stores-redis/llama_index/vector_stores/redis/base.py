@@ -232,7 +232,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ):
                 raise ValueError(
                     f"Required field {name} must be present in the index "
-                    f"and of type {schema.fields[name].type}"
+                    f"and of type {field.type.value}"
                 )
 
     @property
