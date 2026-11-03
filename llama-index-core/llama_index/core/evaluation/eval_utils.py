@@ -89,10 +89,16 @@ def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
         # Return None or default values if the response is empty
         return None, "No response"
 
-    score_str, reasoning_str = eval_response.split("\n", 1)
+    # The eval template asks the judge for "<score>\n<reasoning>", but a judge
+    # may answer with only a score, or prepend blank lines. Splitting the raw
+    # string on the first newline raises ValueError in the score-only case and
+    # reads an empty score in the leading-blank-line case, so work from the
+    # stripped response and tolerate a missing reasoning line.
+    stripped_response = eval_response.strip()
+    score_str, _, reasoning_str = stripped_response.partition("\n")
 
     try:
-        score = float(score_str)
+        score = float(score_str.strip())
     except ValueError:
         score = None
 
