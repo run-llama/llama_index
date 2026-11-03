@@ -168,6 +168,14 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
     ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
+        self._llm_counts_list_id: int = id(self.llm_token_counts)
+        self._llm_counts_synced_len: int = 0
+        self._total_llm_token_count: int = 0
+        self._prompt_llm_token_count: int = 0
+        self._completion_llm_token_count: int = 0
+        self._embedding_counts_list_id: int = id(self.embedding_token_counts)
+        self._embedding_counts_synced_len: int = 0
+        self._total_embedding_token_count: int = 0
         self.token_budget = token_budget
         self.tokenizer = tokenizer or get_tokenizer()
 
@@ -180,6 +188,38 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
             logger=logger,
         )
 
+    def _sync_llm_counts(self) -> None:
+        counts = self.llm_token_counts
+        n = len(counts)
+        if id(counts) != self._llm_counts_list_id or n < self._llm_counts_synced_len:
+            self._llm_counts_list_id = id(counts)
+            self._llm_counts_synced_len = 0
+            self._total_llm_token_count = 0
+            self._prompt_llm_token_count = 0
+            self._completion_llm_token_count = 0
+        if self._llm_counts_synced_len < n:
+            for i in range(self._llm_counts_synced_len, n):
+                ev = counts[i]
+                self._total_llm_token_count += ev.total_token_count
+                self._prompt_llm_token_count += ev.prompt_token_count
+                self._completion_llm_token_count += ev.completion_token_count
+            self._llm_counts_synced_len = n
+
+    def _sync_embedding_counts(self) -> None:
+        counts = self.embedding_token_counts
+        n = len(counts)
+        if (
+            id(counts) != self._embedding_counts_list_id
+            or n < self._embedding_counts_synced_len
+        ):
+            self._embedding_counts_list_id = id(counts)
+            self._embedding_counts_synced_len = 0
+            self._total_embedding_token_count = 0
+        if self._embedding_counts_synced_len < n:
+            for i in range(self._embedding_counts_synced_len, n):
+                self._total_embedding_token_count += counts[i].total_token_count
+            self._embedding_counts_synced_len = n
+
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         return
 
@@ -191,14 +231,13 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
         return
 
     def _check_budget(self) -> None:
-        if (
-            self.token_budget is not None
-            and self.total_llm_token_count > self.token_budget
-        ):
-            raise ValueError(
-                f"Token budget exceeded! Limit: {self.token_budget}, "
-                f"Current: {self.total_llm_token_count}"
-            )
+        if self.token_budget is not None:
+            total = self.total_llm_token_count
+            if total > self.token_budget:
+                raise ValueError(
+                    f"Token budget exceeded! Limit: {self.token_budget}, "
+                    f"Current: {total}"
+                )
 
     def on_event_start(
         self,
@@ -231,6 +270,7 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
                     event_id=event_id,
                 )
             )
+            self._sync_llm_counts()
 
             if self._verbose:
                 self._print(
@@ -257,6 +297,7 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
                     )
                 )
                 total_chunk_tokens += self.embedding_token_counts[-1].total_token_count
+            self._sync_embedding_counts()
 
             if self._verbose:
                 self._print(f"Embedding Token Usage: {total_chunk_tokens}")
@@ -264,24 +305,36 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
     @property
     def total_llm_token_count(self) -> int:
         """Get the current total LLM token count."""
-        return sum([x.total_token_count for x in self.llm_token_counts])
+        self._sync_llm_counts()
+        return self._total_llm_token_count
 
     @property
     def prompt_llm_token_count(self) -> int:
         """Get the current total LLM prompt token count."""
-        return sum([x.prompt_token_count for x in self.llm_token_counts])
+        self._sync_llm_counts()
+        return self._prompt_llm_token_count
 
     @property
     def completion_llm_token_count(self) -> int:
         """Get the current total LLM completion token count."""
-        return sum([x.completion_token_count for x in self.llm_token_counts])
+        self._sync_llm_counts()
+        return self._completion_llm_token_count
 
     @property
     def total_embedding_token_count(self) -> int:
         """Get the current total Embedding token count."""
-        return sum([x.total_token_count for x in self.embedding_token_counts])
+        self._sync_embedding_counts()
+        return self._total_embedding_token_count
 
     def reset_counts(self) -> None:
         """Reset the token counts."""
         self.llm_token_counts = []
         self.embedding_token_counts = []
+        self._llm_counts_list_id = id(self.llm_token_counts)
+        self._llm_counts_synced_len = 0
+        self._total_llm_token_count = 0
+        self._prompt_llm_token_count = 0
+        self._completion_llm_token_count = 0
+        self._embedding_counts_list_id = id(self.embedding_token_counts)
+        self._embedding_counts_synced_len = 0
+        self._total_embedding_token_count = 0
