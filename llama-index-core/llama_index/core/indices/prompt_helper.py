@@ -169,7 +169,7 @@ class PromptHelper(BaseComponent):
     ) -> List["BaseTool"]:
         from llama_index.core.program.function_program import get_function_tool
 
-        tools = tools or []
+        tools = list(tools) if tools else []
         if isinstance(llm, StructuredLLM):
             tools.append(get_function_tool(llm.output_cls))
 
@@ -422,7 +422,7 @@ class ChatPromptHelper(BaseComponent):
     ) -> List["BaseTool"]:
         from llama_index.core.program.function_program import get_function_tool
 
-        tools = tools or []
+        tools = list(tools) if tools else []
         if isinstance(llm, StructuredLLM):
             tools.append(get_function_tool(llm.output_cls))
 
