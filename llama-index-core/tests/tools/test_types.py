@@ -25,6 +25,11 @@ def test_toolmetadata_openai_tool_description_max_length() -> None:
         ToolMetadata(invalid_description).to_openai_tool()
 
 
+def test_toolmetadata_openai_tool_none_description() -> None:
+    tool = ToolMetadata(None).to_openai_tool()
+    assert tool["function"]["description"] == ""
+
+
 def test_nested_tool_schema() -> None:
     tool = get_function_tool(Outer)
     schema = tool.metadata.get_parameters_dict()
