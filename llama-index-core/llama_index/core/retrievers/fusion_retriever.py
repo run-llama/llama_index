@@ -142,8 +142,9 @@ class QueryFusionRetriever(BaseRetriever):
         # adjust node scores
         reranked_nodes: List[NodeWithScore] = []
         for hash, score in reranked_results.items():
-            reranked_nodes.append(hash_to_node[hash])
-            reranked_nodes[-1].score = score
+            reranked_nodes.append(
+                hash_to_node[hash].model_copy(update={"score": score})
+            )
 
         return reranked_nodes
 
@@ -153,6 +154,11 @@ class QueryFusionRetriever(BaseRetriever):
         dist_based: Optional[bool] = False,
     ) -> List[NodeWithScore]:
         """Apply relative score fusion."""
+        results = {
+            query_tuple: [node_with_score.model_copy() for node_with_score in nodes]
+            for query_tuple, nodes in results.items()
+        }
+
         # MinMax scale scores of each result set (highest value becomes 1, lowest becomes 0)
         # then scale by the weight of the retriever
         min_max_scores = {}
@@ -225,7 +231,7 @@ class QueryFusionRetriever(BaseRetriever):
                     )
                     all_nodes[hash].score = max_score
                 else:
-                    all_nodes[hash] = node_with_score
+                    all_nodes[hash] = node_with_score.model_copy()
 
         return sorted(all_nodes.values(), key=lambda x: x.score or 0.0, reverse=True)
 

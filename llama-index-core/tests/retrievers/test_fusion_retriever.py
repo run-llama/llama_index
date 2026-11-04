@@ -12,6 +12,15 @@ class MockRetriever(BaseRetriever):
         return [NodeWithScore(node=TextNode(text="result"), score=1.0)]
 
 
+class ReusingRetriever(BaseRetriever):
+    def __init__(self, results):
+        super().__init__()
+        self.results = results
+
+    def _retrieve(self, query_bundle: QueryBundle):
+        return self.results
+
+
 @pytest.mark.asyncio
 async def test_aretrieve_uses_async_query_generation():
     async_called = []
@@ -33,3 +42,27 @@ async def test_aretrieve_uses_async_query_generation():
     await retriever.aretrieve("test query")
 
     assert async_called
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "reciprocal_rerank",
+        "relative_score",
+        "dist_based_score",
+        "simple",
+    ],
+)
+def test_fusion_does_not_mutate_retriever_results(mode):
+    source = NodeWithScore(node=TextNode(text="result"), score=0.5)
+    retriever = QueryFusionRetriever(
+        retrievers=[ReusingRetriever([source])],
+        mode=mode,
+        num_queries=1,
+        use_async=False,
+    )
+
+    result = retriever.retrieve("test query")
+
+    assert result[0] is not source
+    assert source.score == 0.5
