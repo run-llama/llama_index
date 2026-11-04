@@ -148,8 +148,13 @@ def download_file_by_id(box_client: BoxClient, box_file: File, temp_dir: str) ->
         BoxAPIError: If an error occurs while interacting with the Box API.
 
     """
-    # Save the downloaded file to the specified local directory.
-    file_path = os.path.join(temp_dir, box_file.name)
+    # Stage each file under its unique Box file ID. Box only requires names to
+    # be unique within a folder, so a recursive read can contain distinct files
+    # with the same name; a flat filename would silently overwrite the earlier
+    # file and drop its metadata.
+    file_dir = os.path.join(temp_dir, box_file.id)
+    os.makedirs(file_dir, exist_ok=True)
+    file_path = os.path.join(file_dir, os.path.basename(box_file.name))
 
     try:
         file_stream: ByteStream = box_client.downloads.download_file(box_file.id)

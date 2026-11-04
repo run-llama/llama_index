@@ -351,6 +351,7 @@ class BoxReader(BoxReaderBase):
 
             simple_loader = SimpleDirectoryReader(
                 input_dir=temp_dir,
+                recursive=True,
                 file_metadata=get_metadata,
                 file_extractor=self.file_extractor,
             )
