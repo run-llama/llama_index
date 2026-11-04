@@ -409,6 +409,12 @@ class ChromaVectorStore(BasePydanticVectorStore):
         else:
             where = kwargs.pop("where", None)
 
+        if query.doc_ids:
+            doc_filter = {"document_id": {"$in": query.doc_ids}}
+            where = {"$and": [where, doc_filter]} if where else doc_filter
+        if query.node_ids:
+            kwargs["ids"] = query.node_ids
+
         if not query.query_embedding:
             return self._get(limit=query.similarity_top_k, where=where, **kwargs)
 
