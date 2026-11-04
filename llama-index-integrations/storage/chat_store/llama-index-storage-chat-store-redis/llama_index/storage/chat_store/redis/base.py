@@ -8,6 +8,7 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 
+import redis.exceptions
 from redis.asyncio.client import Redis as AsyncRedis
 from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
 from redis.asyncio.sentinel import Sentinel as AsyncSentinel
