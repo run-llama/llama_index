@@ -118,7 +118,7 @@ API_REF_MEMBER_TEMPLATE = """        - {member}"""
 
 
 def main():
-    with open(MKDOCS_YML) as f:
+    with open(MKDOCS_YML, encoding="utf-8") as f:
         mkdocs = yaml.safe_load(f)
 
     # find all pyproject.toml files in the integration folders
@@ -175,7 +175,11 @@ def main():
                     )
                     module_name = import_path.split(".")[-1] + ".md"
                     os.makedirs(full_path, exist_ok=True)
-                    with open(os.path.join(full_path, module_name), "w") as f:
+                    with open(
+                        os.path.join(full_path, module_name),
+                        "w",
+                        encoding="utf-8",
+                    ) as f:
                         f.write(api_ref)
 
     # update search paths
@@ -193,7 +197,7 @@ def main():
                     ].append(search_path)
 
     # write the updated mkdocs.yml
-    with open(MKDOCS_YML, "w") as f:
+    with open(MKDOCS_YML, "w", encoding="utf-8") as f:
         yaml.dump(mkdocs, f)
 
     # copy over extra files
@@ -201,7 +205,9 @@ def main():
 
     # Ensure CHANGELOG had the proper astro header
     changelog_contents = ""
-    with open("./src/content/docs/framework/CHANGELOG.md", "r") as f:
+    with open(
+        "./src/content/docs/framework/CHANGELOG.md", "r", encoding="utf-8"
+    ) as f:
         changelog_contents = f.read()
 
     astro_header = "---\ntitle: ChangeLog\n---"
@@ -209,7 +215,9 @@ def main():
         "# ChangeLog\n", astro_header
     )
 
-    with open("./src/content/docs/framework/CHANGELOG.md", "w") as f:
+    with open(
+        "./src/content/docs/framework/CHANGELOG.md", "w", encoding="utf-8"
+    ) as f:
         f.write(changelog_contents)
 
 
