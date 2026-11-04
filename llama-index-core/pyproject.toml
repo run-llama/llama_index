@@ -55,7 +55,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "SQLAlchemy[asyncio]>=1.4.49",
+    "sqlalchemy[asyncio]>=1.4.49",
     "dataclasses-json",
     "deprecated>=1.2.9.3",
     "fsspec>=2023.5.0",
@@ -84,6 +84,7 @@ dependencies = [
     "setuptools>=80.9.0",
     "platformdirs",
     "tinytag>=2.2.0",
+    "llama-index-embeddings-openai>=0.6.0",
 ]
 
 [project.urls]
