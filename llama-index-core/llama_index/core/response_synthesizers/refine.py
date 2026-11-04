@@ -322,7 +322,13 @@ class Refine(BaseSynthesizer):
             list[FlexibleModel],
             None,
         ]
-        if not self._streaming:
+        if not self._streaming or (
+            # Streaming a user-provided output_cls through the default refine
+            # program would drop the structured output (the class may have no
+            # `answer` field to forward), so use the non-streaming structured
+            # synthesis path instead and return the parsed response.
+            isinstance(program, DefaultRefineProgram) and self._output_cls is not None
+        ):
             try:
                 structured_response = cast(
                     StructuredRefineResponse,
@@ -384,7 +390,13 @@ class Refine(BaseSynthesizer):
             list[FlexibleModel],
             None,
         ]
-        if not self._streaming:
+        if not self._streaming or (
+            # Streaming a user-provided output_cls through the default refine
+            # program would drop the structured output (the class may have no
+            # `answer` field to forward), so use the non-streaming structured
+            # synthesis path instead and return the parsed response.
+            isinstance(program, DefaultRefineProgram) and self._output_cls is not None
+        ):
             try:
                 structured_response = cast(
                     StructuredRefineResponse,
