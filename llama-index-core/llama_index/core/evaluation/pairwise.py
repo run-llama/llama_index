@@ -271,7 +271,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
                 resolved_eval_result = EvaluationResult(
                     query=eval_result.query,
                     response=eval_result.response,
-                    feedback=flipped_eval_result.response,
+                    feedback=flipped_eval_result.feedback,
                     invalid_result=True,
                     invalid_reason="Output cannot be parsed.",
                 )
