@@ -71,7 +71,7 @@ class SimpleChatStore(BaseChatStore):
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        if key not in self.store:
+        if key not in self.store or not self.store[key]:
             return None
         return self.store[key].pop()
 
