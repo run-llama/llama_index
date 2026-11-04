@@ -191,7 +191,7 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
         similarities = []
         for node_with_score in nodes:
             # embedding similarity score
-            score = node_with_score.score or 1.0
+            score = node_with_score.score if node_with_score.score is not None else 1.0
             node = node_with_score.node
             # time score
             if node.metadata is None:
