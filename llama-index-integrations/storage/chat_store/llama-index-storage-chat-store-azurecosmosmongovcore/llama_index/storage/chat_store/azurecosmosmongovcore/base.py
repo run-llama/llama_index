@@ -16,7 +16,7 @@ APP_NAME = "Llama-Index-CDBMongoVCore-ChatStore-Python"
 
 # Convert a ChatMessage to a JSON object
 def _message_to_dict(message: ChatMessage) -> dict:
-    return message.dict()
+    return message.model_dump()
 
 
 # Convert a list of ChatMessages to a list of JSON objects
@@ -104,7 +104,7 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Set messages for a key."""
-        self._collection.updateOne(
+        self._collection.update_one(
             {"_id": key},
             {"$set": {"messages": _messages_to_dict(messages)}},
             upsert=True,
@@ -121,14 +121,10 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
 
     def add_message(self, key: str, message: ChatMessage) -> None:
         """Add a message for a key."""
-        current_messages = _messages_to_dict(self.get_messages(key))
-        current_messages.append(_message_to_dict(message))
-
-        self._collection.insert_one(
-            {
-                "id": key,
-                "messages": current_messages,
-            }
+        self._collection.update_one(
+            {"_id": key},
+            {"$push": {"messages": _message_to_dict(message)}},
+            upsert=True,
         )
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
@@ -157,7 +153,7 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
-        return [doc["id"] for doc in self._collection.find({}, {"id": 1})]
+        return [doc["_id"] for doc in self._collection.find({}, {"_id": 1})]
 
     @classmethod
     def class_name(cls) -> str:
