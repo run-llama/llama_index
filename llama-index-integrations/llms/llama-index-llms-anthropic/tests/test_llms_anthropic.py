@@ -1,7 +1,7 @@
 import os
 import httpx
-from unittest.mock import MagicMock
-from typing import List
+from unittest.mock import AsyncMock, MagicMock
+from typing import Any, List
 
 import pytest
 from pathlib import Path
@@ -1074,3 +1074,142 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+# --- Instance-level thinking config for native structured prediction (#22358) ---
+
+THINKING_CONFIG = {"type": "enabled", "budget_tokens": 2000}
+STRUCT_PROMPT = PromptTemplate("Take a note about {topic}")
+
+
+def _mock_sync_parse_client(parsed_output: Any) -> MagicMock:
+    """Sync Anthropic client stub recording kwargs passed to beta.messages.parse."""
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.parsed_output = parsed_output
+    mock_response.stop_reason = None
+    mock_client.beta.messages.parse.return_value = mock_response
+    return mock_client
+
+
+def _mock_async_parse_client(parsed_output: Any) -> MagicMock:
+    """Async Anthropic client stub recording kwargs passed to beta.messages.parse."""
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.parsed_output = parsed_output
+    mock_response.stop_reason = None
+    mock_client.beta.messages.parse = AsyncMock(return_value=mock_response)
+    return mock_client
+
+
+def test_structured_predict_sends_instance_thinking_config() -> None:
+    """
+    Instance-level thinking_dict (and the temperature it requires) must reach
+    beta.messages.parse — the structured path bypasses _get_all_kwargs.
+    See https://github.com/run-llama/llama_index/issues/22358.
+    """
+    llm = Anthropic(
+        model="claude-sonnet-4-5", api_key="fake", thinking_dict=THINKING_CONFIG
+    )
+    llm._client = _mock_sync_parse_client(Note(content="x"))
+
+    result = llm.structured_predict(Note, STRUCT_PROMPT, topic="x")
+
+    assert result == Note(content="x")
+    call_kwargs = llm._client.beta.messages.parse.call_args.kwargs
+    assert call_kwargs["thinking"] == THINKING_CONFIG
+    assert call_kwargs["temperature"] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_astructured_predict_sends_instance_thinking_config() -> None:
+    llm = Anthropic(
+        model="claude-sonnet-4-5", api_key="fake", thinking_dict=THINKING_CONFIG
+    )
+    llm._aclient = _mock_async_parse_client(Note(content="x"))
+
+    result = await llm.astructured_predict(Note, STRUCT_PROMPT, topic="x")
+
+    assert result == Note(content="x")
+    call_kwargs = llm._aclient.beta.messages.parse.call_args.kwargs
+    assert call_kwargs["thinking"] == THINKING_CONFIG
+    assert call_kwargs["temperature"] == 1.0
+
+
+def test_stream_structured_predict_sends_instance_thinking_config() -> None:
+    llm = Anthropic(
+        model="claude-sonnet-4-5", api_key="fake", thinking_dict=THINKING_CONFIG
+    )
+    llm._client = _mock_sync_parse_client(Note(content="x"))
+
+    assert list(llm.stream_structured_predict(Note, STRUCT_PROMPT, topic="x")) == [
+        Note(content="x")
+    ]
+
+    call_kwargs = llm._client.beta.messages.parse.call_args.kwargs
+    assert call_kwargs["thinking"] == THINKING_CONFIG
+    assert call_kwargs["temperature"] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_astream_structured_predict_sends_instance_thinking_config() -> None:
+    llm = Anthropic(
+        model="claude-sonnet-4-5", api_key="fake", thinking_dict=THINKING_CONFIG
+    )
+    llm._aclient = _mock_async_parse_client(Note(content="x"))
+
+    gen = await llm.astream_structured_predict(Note, STRUCT_PROMPT, topic="x")
+    assert [item async for item in gen] == [Note(content="x")]
+
+    call_kwargs = llm._aclient.beta.messages.parse.call_args.kwargs
+    assert call_kwargs["thinking"] == THINKING_CONFIG
+    assert call_kwargs["temperature"] == 1.0
+
+
+def test_structured_predict_without_thinking_sends_no_thinking() -> None:
+    """An unconfigured instance must not gain thinking/temperature kwargs."""
+    llm = Anthropic(model="claude-sonnet-4-5", api_key="fake")
+    llm._client = _mock_sync_parse_client(Note(content="x"))
+
+    llm.structured_predict(Note, STRUCT_PROMPT, topic="x")
+
+    call_kwargs = llm._client.beta.messages.parse.call_args.kwargs
+    assert "thinking" not in call_kwargs
+    assert "temperature" not in call_kwargs
+
+
+def test_structured_predict_llm_kwargs_override_instance_thinking() -> None:
+    """Explicit per-call llm_kwargs take precedence over instance config."""
+    llm = Anthropic(
+        model="claude-sonnet-4-5", api_key="fake", thinking_dict=THINKING_CONFIG
+    )
+    llm._client = _mock_sync_parse_client(Note(content="x"))
+    per_call = {"type": "enabled", "budget_tokens": 8000}
+
+    llm.structured_predict(
+        Note,
+        STRUCT_PROMPT,
+        llm_kwargs={"thinking": per_call, "temperature": 1},
+        topic="x",
+    )
+
+    call_kwargs = llm._client.beta.messages.parse.call_args.kwargs
+    assert call_kwargs["thinking"] == per_call
+    assert call_kwargs["temperature"] == 1
+
+
+def test_structured_predict_no_temp_model_omits_temperature() -> None:
+    """
+    Extended thinking is still sent, but temperature is omitted for models that
+    reject it (ANTHROPIC_NO_TEMP_MODELS), mirroring the chat path.
+    """
+    llm = Anthropic(
+        model="claude-sonnet-5", api_key="fake", thinking_dict=THINKING_CONFIG
+    )
+    llm._client = _mock_sync_parse_client(Note(content="x"))
+
+    llm.structured_predict(Note, STRUCT_PROMPT, topic="x")
+
+    call_kwargs = llm._client.beta.messages.parse.call_args.kwargs
+    assert call_kwargs["thinking"] == THINKING_CONFIG
+    assert "temperature" not in call_kwargs
