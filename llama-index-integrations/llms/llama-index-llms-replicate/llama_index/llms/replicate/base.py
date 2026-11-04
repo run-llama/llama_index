@@ -94,6 +94,9 @@ class Replicate(CustomLLM):
         }
         if self.image != "":
             try:
+                # Note: This file handle is passed to the replicate API and should
+                # be closed by the API client after use. We use open() here rather
+                # than reading bytes to avoid loading large files into memory.
                 base_kwargs["image"] = open(self.image, "rb")
             except FileNotFoundError:
                 raise FileNotFoundError(
