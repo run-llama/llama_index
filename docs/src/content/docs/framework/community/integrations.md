@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Machine Library](https://github.com/SpaceFrontiers/machinelibrary-integrations/tree/main/python/llama-index-tools-machinelibrary) (`llama-index-tools-machinelibrary`): search scholarly papers, books, patents and standards, find passages inside a document, and read bounded full text with canonical source URIs
 
 ## LlamaPacks -- Code Templates
 
