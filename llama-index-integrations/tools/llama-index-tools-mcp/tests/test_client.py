@@ -310,3 +310,71 @@ async def test_streamable_http_tuple_unpack():
 
     # streamable_http_client was called for the https endpoint
     assert mock_shc.called
+
+
+def test_configure_tool_call_logs_callback_with_preconfigured_logging():
+    """
+    Regression test for #22996: tool_call_logs_callback receives logs even when
+    logging was already configured by the host application, and restores levels.
+    """
+    import logging
+
+    # Simulate an application that configured logging before calling BasicMCPClient
+    logging.basicConfig(level=logging.INFO, force=True)
+
+    client = BasicMCPClient("https://example.com/mcp")
+    mcp_logger = logging.getLogger("mcp")
+    httpx_logger = logging.getLogger("httpx")
+
+    initial_mcp_level = mcp_logger.level
+    initial_httpx_level = httpx_logger.level
+
+    with client._configure_tool_call_logs_callback() as handler:
+        mcp_logger.debug("mcp-test-log-event")
+        httpx_logger.debug("httpx-test-log-event")
+
+    log_output = handler.getvalue()
+    assert "mcp-test-log-event" in log_output
+    assert "httpx-test-log-event" in log_output
+
+    # Verify log levels were restored and handler was detached
+    assert mcp_logger.level == initial_mcp_level
+    assert httpx_logger.level == initial_httpx_level
+
+
+@pytest.mark.asyncio
+async def test_call_tool_invokes_logs_callback():
+    """
+    Test that call_tool properly captures and forwards logs to tool_call_logs_callback.
+    """
+    from unittest.mock import MagicMock
+    from contextlib import asynccontextmanager
+    import logging
+
+    received_logs = []
+
+    async def callback(logs: list):
+        received_logs.extend(logs)
+
+    client = BasicMCPClient("https://example.com/mcp", tool_call_logs_callback=callback)
+
+    mock_result = types.CallToolResult(
+        content=[types.TextContent(type="text", text="ok")]
+    )
+    mock_session = MagicMock()
+
+    async def mock_call_tool(*args, **kwargs):
+        logging.getLogger("mcp").debug("invoking tool test_tool")
+        return mock_result
+
+    mock_session.call_tool = mock_call_tool
+
+    @asynccontextmanager
+    async def fake_run_session():
+        yield mock_session
+
+    client._run_session = fake_run_session
+
+    res = await client.call_tool("test_tool")
+    assert res == mock_result
+    assert any("invoking tool test_tool" in log for log in received_logs)
