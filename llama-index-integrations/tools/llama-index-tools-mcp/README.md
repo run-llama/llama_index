@@ -113,7 +113,7 @@ from llama_index.tools.mcp import (
 tools = get_tools_from_mcp_url("http://127.0.0.1:8000/sse")
 
 # async
-tools = await get_tools_from_mcp_url("http://127.0.0.1:8000/sse")
+tools = await aget_tools_from_mcp_url("http://127.0.0.1:8000/sse")
 ```
 
 ## MCP Client Usage
@@ -234,11 +234,11 @@ This feature is only available for Streamable HTTP transport.
 ```python
 httpx_async_client = AsyncClient(
     # to avoid self-signed certificates failures
-    verify=false
+    verify=False
 )
 
 client = BasicMCPClient(
-    url="https://example.com/mcp", http_client=httpx_async_client
+    "https://example.com/mcp", http_client=httpx_async_client
 )
 client_with_oauth = BasicMCPClient.with_oauth(
     "https://api.example.com/mcp",
