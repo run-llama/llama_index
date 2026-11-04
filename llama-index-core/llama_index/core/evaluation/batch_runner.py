@@ -2,7 +2,7 @@ import asyncio
 from tenacity import retry, stop_after_attempt, wait_exponential
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
-from llama_index.core.async_utils import asyncio_module, asyncio_run
+from llama_index.core.async_utils import asyncio_run, get_asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
@@ -94,7 +94,7 @@ class BatchEvalRunner:
         self.workers = workers
         self.semaphore = asyncio.Semaphore(self.workers)
         self.show_progress = show_progress
-        self.asyncio_mod = asyncio_module(show_progress=self.show_progress)
+        self.asyncio_mod = get_asyncio_module(show_progress=self.show_progress)
 
     def _format_results(
         self, results: List[Tuple[str, EvaluationResult]]
