@@ -9,7 +9,12 @@ from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.retrievers import BaseRetriever
-from llama_index.core.schema import IndexNode, NodeWithScore, QueryBundle
+from llama_index.core.schema import (
+    BaseNode,
+    IndexNode,
+    NodeWithScore,
+    QueryBundle,
+)
 from llama_index.core.settings import Settings
 
 QUERY_GEN_PROMPT = (
@@ -213,21 +218,36 @@ class QueryFusionRetriever(BaseRetriever):
     def _simple_fusion(
         self, results: Dict[Tuple[str, int], List[NodeWithScore]]
     ) -> List[NodeWithScore]:
-        """Apply simple fusion."""
+        """
+        Apply simple fusion.
+
+        Fusion must not mutate retriever-owned wrappers: per-query caches can
+        return the same node hash via distinct wrappers with different scores,
+        and writing the dedup max into the first-seen wrapper corrupts that
+        query's cached results (issue #23351). Keep the first-seen node and the
+        running max in (node, score) tuples and build fresh wrappers for the
+        fused output instead.
+        """
         # Use a dict to de-duplicate nodes
-        all_nodes: Dict[str, NodeWithScore] = {}
+        all_nodes: Dict[str, Tuple[BaseNode, float]] = {}
         for nodes_with_scores in results.values():
             for node_with_score in nodes_with_scores:
                 hash = node_with_score.node.hash
+                score = node_with_score.score or 0.0
                 if hash in all_nodes:
-                    max_score = max(
-                        node_with_score.score or 0.0, all_nodes[hash].score or 0.0
-                    )
-                    all_nodes[hash].score = max_score
+                    node, max_score = all_nodes[hash]
+                    all_nodes[hash] = (node, max(score, max_score))
                 else:
-                    all_nodes[hash] = node_with_score
+                    all_nodes[hash] = (node_with_score.node, score)
 
-        return sorted(all_nodes.values(), key=lambda x: x.score or 0.0, reverse=True)
+        return sorted(
+            (
+                NodeWithScore(node=node, score=score)
+                for node, score in all_nodes.values()
+            ),
+            key=lambda x: x.score or 0.0,
+            reverse=True,
+        )
 
     def _run_nested_async_queries(
         self, queries: List[QueryBundle]
