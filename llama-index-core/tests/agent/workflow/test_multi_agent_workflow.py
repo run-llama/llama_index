@@ -726,3 +726,61 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_workflow_state_prompt_refreshes_after_tool_updates_state():
+    """AgentWorkflow refreshes the state prompt once a tool has changed the state."""
+    captured_user_messages: List[str] = []
+
+    async def update_counter(ctx: Context) -> str:
+        state = await ctx.store.get("state")
+        state["counter"] = 1
+        await ctx.store.set("state", state)
+        return "counter updated"
+
+    def response_generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        captured_user_messages.append(
+            next(str(m.content) for m in messages if m.role == MessageRole.USER)
+        )
+        if len(captured_user_messages) == 1:
+            return ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="updating",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(
+                            tool_id="one",
+                            tool_name="update_counter",
+                            tool_kwargs={},
+                        )
+                    ]
+                },
+            )
+        return ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[update_counter],
+        llm=MockFunctionCallingLLM(response_generator=response_generator),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+        initial_state={"counter": 0},
+        state_prompt="Current state: {state}. User message: {msg}",
+    )
+
+    memory = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda text: text.split())
+    await workflow.run(user_msg="test", memory=memory)
+
+    assert len(captured_user_messages) == 2
+    assert "'counter': 0" in captured_user_messages[0]
+    assert "'counter': 1" in captured_user_messages[1]
+    for message in captured_user_messages:
+        assert message.count("Current state:") == 1
+        assert message.endswith("User message: test")
+
+    stored = await memory.aget()
+    assert str(stored[0].content) == "test"

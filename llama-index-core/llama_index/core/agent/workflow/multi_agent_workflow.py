@@ -24,6 +24,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_NAME,
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
+    _apply_state_prompt,
     _get_waiting_for_event_exception,
 )
 from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
@@ -308,9 +309,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
-        # always set to false initially
-        await ctx.store.set("formatted_input_with_state", False)
-
     async def _get_llm_response(
         self,
         ctx: Context,
@@ -447,16 +445,13 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
 
         state = await ctx.store.get("state", default=None)
-        formatted_input_with_state = await ctx.store.get(
-            "formatted_input_with_state", default=False
-        )
-        if state and not formatted_input_with_state:
-            # update last message with current state
-            for block in llm_input[-1].blocks[::-1]:
-                if isinstance(block, TextBlock):
-                    block.text = self.state_prompt.format(state=state, msg=block.text)
-                    break
-            await ctx.store.set("formatted_input_with_state", True)
+        if state:
+            # Render the state into a copy of the last message rather than
+            # editing it in place: the messages come from memory, so editing
+            # them would rewrite the stored conversation. Copying also makes
+            # this safe to repeat, which is what keeps the state current after
+            # a tool has changed it.
+            llm_input = _apply_state_prompt(llm_input, state, self.state_prompt)
 
         return AgentSetup(
             input=llm_input,
