@@ -153,6 +153,11 @@ class QueryFusionRetriever(BaseRetriever):
         dist_based: Optional[bool] = False,
     ) -> List[NodeWithScore]:
         """Apply relative score fusion."""
+        # Scores are normalized per result set; cached results may share wrappers.
+        results = {
+            query_tuple: [node.model_copy() for node in nodes_with_scores]
+            for query_tuple, nodes_with_scores in results.items()
+        }
         # MinMax scale scores of each result set (highest value becomes 1, lowest becomes 0)
         # then scale by the weight of the retriever
         min_max_scores = {}
