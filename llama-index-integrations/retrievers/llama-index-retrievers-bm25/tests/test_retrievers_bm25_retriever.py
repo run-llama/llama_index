@@ -43,8 +43,9 @@ def test_large_value_of_top_k():
 
     # Passing a high value of similarity_top_k w.r.t Document example
     similarity_top_k = 20
+    # Keep zero-score nodes: this test is about capping top_k, not about scores
     retriever = BM25Retriever.from_defaults(
-        nodes=nodes, similarity_top_k=similarity_top_k
+        nodes=nodes, similarity_top_k=similarity_top_k, skip_zero_score=False
     )
     result_nodes = retriever.retrieve("What is llama index about?")
 
@@ -148,3 +149,46 @@ def test_persist_and_load():
         # Clean up the test_retriever directory
         if os.path.exists("test_retriever"):
             shutil.rmtree("test_retriever")
+
+
+def _office_nodes():
+    documents = [
+        Document(text="The office Wi-Fi password is sunflower42."),
+        Document(text="Visitors park in the garage on level two."),
+        Document(text="The canteen serves lunch from noon."),
+    ]
+    return SentenceSplitter(chunk_size=1024).get_nodes_from_documents(documents)
+
+
+def test_nodes_without_query_terms_are_skipped():
+    retriever = BM25Retriever.from_defaults(nodes=_office_nodes(), similarity_top_k=2)
+
+    assert retriever.retrieve("quarterly revenue forecast") == []
+
+    result_nodes = retriever.retrieve("garage")
+    assert [n.node.get_content() for n in result_nodes] == [
+        "Visitors park in the garage on level two."
+    ]
+    assert all(n.score > 0.0 for n in result_nodes)
+
+
+def test_zero_score_nodes_can_be_kept():
+    retriever = BM25Retriever.from_defaults(
+        nodes=_office_nodes(), similarity_top_k=2, skip_zero_score=False
+    )
+
+    result_nodes = retriever.retrieve("garage")
+    assert len(result_nodes) == 2
+    assert result_nodes[0].score > 0.0
+    assert result_nodes[1].score == 0.0
+
+
+def test_skip_zero_score_is_persisted(tmp_path):
+    retriever = BM25Retriever.from_defaults(
+        nodes=_office_nodes(), similarity_top_k=2, skip_zero_score=False
+    )
+    retriever.persist(str(tmp_path))
+
+    loaded = BM25Retriever.from_persist_dir(str(tmp_path))
+    assert loaded.skip_zero_score is False
+    assert len(loaded.retrieve("garage")) == 2
