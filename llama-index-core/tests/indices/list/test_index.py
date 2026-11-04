@@ -1,11 +1,11 @@
 """Test summary index."""
 
-from typing import Any, List
+from typing import Any, List, Sequence
 
 import pytest
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
-from llama_index.core.schema import Document
+from llama_index.core.schema import BaseNode, Document, TextNode
 
 
 def test_build_list(documents: List[Document], patch_token_text_splitter) -> None:
@@ -118,6 +118,26 @@ async def test_arefresh_ref_docs_applies_insert_kwargs_to_every_document(
 
     assert refreshed_docs == [True, True]
     assert captured_kwargs == [insert_kwargs, insert_kwargs]
+
+
+@pytest.mark.asyncio
+async def test_ainsert_nodes_forwards_insert_kwargs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ainsert_nodes should pass insert kwargs to _insert like insert_nodes does."""
+    summary_index = SummaryIndex([])
+    nodes = [TextNode(id_="1", text="One")]
+    captured_kwargs: List[dict[str, Any]] = []
+
+    def mock_insert(nodes: Sequence[BaseNode], **kwargs: Any) -> None:
+        captured_kwargs.append(kwargs)
+
+    monkeypatch.setattr(summary_index, "_insert", mock_insert)
+
+    summary_index.insert_nodes(nodes, foo="bar")
+    await summary_index.ainsert_nodes(nodes, foo="bar")
+
+    assert captured_kwargs == [{"foo": "bar"}, {"foo": "bar"}]
 
 
 @pytest.mark.asyncio
