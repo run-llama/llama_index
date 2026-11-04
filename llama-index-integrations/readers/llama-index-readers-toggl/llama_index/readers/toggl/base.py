@@ -24,7 +24,7 @@ class TogglReader(BaseReader):
         workspace_id: str,
         project_id: str,
         start_date: Optional[datetime.datetime] = None,
-        end_date: Optional[datetime.datetime] = datetime.datetime.now(),
+        end_date: Optional[datetime.datetime] = None,
         out_format: TogglOutFormat = TogglOutFormat.json,
     ) -> List[Document]:
         """
@@ -34,10 +34,13 @@ class TogglReader(BaseReader):
             workspace_id (str): The workspace ID.
             project_id (str): The project ID.
             start_date (Optional[datetime.datetime]): The start date.
-            end_date (Optional[datetime.datetime]): The end date.
+            end_date (Optional[datetime.datetime]): The end date. Defaults to
+                the time of the call.
             out_format (TogglOutFormat): The output format.
 
         """
+        if end_date is None:
+            end_date = datetime.datetime.now()
         return self.loop.run_until_complete(
             self.aload_data(workspace_id, project_id, start_date, end_date, out_format)
         )
