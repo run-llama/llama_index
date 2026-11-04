@@ -87,25 +87,26 @@ class Dispatcher(BaseModel):
         description="Id of current enclosing span. Used for creating `dispatch_event` partials.",
     )
 
-    def __init__(
-        self,
-        name: str = "",
-        event_handlers: List[BaseEventHandler] = [],
-        span_handlers: List[BaseSpanHandler] = [],
-        parent_name: str = "",
-        manager: Optional["Manager"] = None,
-        root_name: str = "root",
-        propagate: bool = True,
-    ):
-        super().__init__(
-            name=name,
-            event_handlers=event_handlers,
-            span_handlers=span_handlers,
-            parent_name=parent_name,
-            manager=manager,
-            root_name=root_name,
-            propagate=propagate,
-        )
+   def __init__(
+    self,
+    name: str = "",
+    event_handlers: Optional[List[BaseEventHandler]] = None,
+    span_handlers: Optional[List[BaseSpanHandler]] = None,
+    parent_name: str = "",
+    manager: Optional["Manager"] = None,
+    root_name: str = "root",
+    propagate: bool = True,
+):
+    super().__init__(
+        name=name,
+        event_handlers=event_handlers or [],
+        span_handlers=span_handlers or [],
+        parent_name=parent_name,
+        manager=manager,
+        root_name=root_name,
+        propagate=propagate,
+    )
+    
 
     @property
     def parent(self) -> "Dispatcher":
