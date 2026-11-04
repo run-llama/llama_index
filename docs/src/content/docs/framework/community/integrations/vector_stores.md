@@ -32,6 +32,7 @@ as the storage backend for `VectorStoreIndex`.
 - Google AlloyDB for PostgreSQL (`AlloyDBVectorStore`). [QuickStart](https://github.com/googleapis/llama-index-alloydb-pg-python/blob/main/samples/llama_index_vector_store.ipynb).
 - Google Cloud SQL for PostgreSQL (`PostgresVectorStore`). [Quickstart](https://github.com/googleapis/llama-index-cloud-sql-pg-python/blob/main/samples/llama_index_vector_store.ipynb)
 - Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
+- HouyiDB (`HouyiVectorStore`). [Installation](https://github.com/houyidb-community/houyidb/tree/main/sdk/python/llama-index-vector-stores-houyidb). [Python Client](https://pypi.org/project/llama-index-vector-stores-houyidb/).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
