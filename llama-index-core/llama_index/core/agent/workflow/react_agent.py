@@ -126,12 +126,17 @@ class ReActAgent(BaseWorkflowAgent):
         memory: BaseMemory,
     ) -> AgentOutput:
         """Take a single step with the React agent."""
-        # remove system prompt, since the react prompt will be combined with it
-        if llm_input[0].role == "system":
-            system_prompt = llm_input[0].content or ""
+        # The workflow prepends the agent's own system prompt, and the formatter
+        # renders that same prompt as its context, so drop the duplicate. Keep a
+        # system message the caller supplied through chat_history: it is not the
+        # agent prompt and the formatter does not render it.
+        if (
+            llm_input
+            and llm_input[0].role == "system"
+            and self.system_prompt
+            and (llm_input[0].content or "").strip() == self.system_prompt.strip()
+        ):
             llm_input = llm_input[1:]
-        else:
-            system_prompt = ""
 
         output_parser = self.output_parser
         react_chat_formatter = self.formatter
