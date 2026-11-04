@@ -20,6 +20,7 @@ from llama_index.core.readers.base import (
     ResourcesReaderMixin,
 )
 from llama_index.core.schema import Document
+from llama_index.readers.google._token_file import write_token_file
 
 logger = logging.getLogger(__name__)
 
@@ -193,8 +194,7 @@ class GoogleDriveReader(
 
             # Save the credentials for the next run
             if not self._is_cloud:
-                with open(self.token_path, "w", encoding="utf-8") as token:
-                    token.write(creds.to_json())
+                write_token_file(self.token_path, creds.to_json())
 
         return creds
 

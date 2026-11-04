@@ -9,6 +9,7 @@ from typing import Any, List, Optional
 
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.tools.google._token_file import write_token_file
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.compose",
@@ -136,8 +137,7 @@ class GmailToolSpec(BaseToolSpec):
                 creds = flow.run_local_server(port=8080)
             # Save the credentials for the next run
             if not self.is_cloud:
-                with open(self.token_path, "w") as token:
-                    token.write(creds.to_json())
+                write_token_file(self.token_path, creds.to_json())
 
         return creds
 
