@@ -33,6 +33,94 @@ def test_zhipuai_llm_metadata():
     assert llm.metadata.is_function_calling_model is False
 
 
+def test_glm_5_3_models_metadata():
+    api_key = "api_key_test"
+    # GLM-5.3 flagship
+    llm = ZhipuAI(model="glm-5.3", api_key=api_key)
+    assert llm.metadata.context_window == 128_000
+    assert llm.metadata.is_function_calling_model is True
+
+    # GLM-5.3-Flash
+    llm_flash = ZhipuAI(model="glm-5.3-flash", api_key=api_key)
+    assert llm_flash.metadata.context_window == 128_000
+    assert llm_flash.metadata.is_function_calling_model is True
+
+    # GLM-5V-Turbo
+    llm_v = ZhipuAI(model="glm-5v-turbo", api_key=api_key)
+    assert llm_v.metadata.context_window == 200_000
+    assert llm_v.metadata.is_function_calling_model is True
+
+    # GLM-4V-Plus
+    llm_4vp = ZhipuAI(model="glm-4v-plus", api_key=api_key)
+    assert llm_4vp.metadata.context_window == 128_000
+    assert llm_4vp.metadata.is_function_calling_model is True
+
+
+def test_glm_case_and_prefix_resilience():
+    api_key = "api_key_test"
+    # Upper-case aliases
+    llm_upper = ZhipuAI(model="GLM-5.3", api_key=api_key)
+    assert llm_upper.metadata.context_window == 128_000
+
+    llm_flash_upper = ZhipuAI(model="GLM-5.3-Flash", api_key=api_key)
+    assert llm_flash_upper.metadata.context_window == 128_000
+
+    llm_v_upper = ZhipuAI(model="GLM-5V-Turbo", api_key=api_key)
+    assert llm_v_upper.metadata.context_window == 200_000
+
+    # Prefix-qualified models (e.g., zai/glm-5.3)
+    llm_prefix = ZhipuAI(model="zai/glm-5.3", api_key=api_key)
+    assert llm_prefix.metadata.context_window == 128_000
+
+
+def test_unknown_model_safe_fallback():
+    api_key = "api_key_test"
+    # Should not raise ValueError, falls back gracefully to DEFAULT_CONTEXT_WINDOW
+    llm_custom = ZhipuAI(model="custom-finetuned-glm", api_key=api_key)
+    assert llm_custom.metadata.context_window == 128_000
+
+
+def test_api_key_environment_fallbacks():
+    # 1. ZHIPUAI_API_KEY
+    with mock.patch.dict(
+        os.environ, {"ZHIPUAI_API_KEY": "key_from_zhipuai_env"}, clear=True
+    ):
+        llm = ZhipuAI(model="glm-5.3")
+        assert llm.api_key == "key_from_zhipuai_env"
+
+    # 2. BIGMODEL_API_KEY
+    with mock.patch.dict(
+        os.environ, {"BIGMODEL_API_KEY": "key_from_bigmodel_env"}, clear=True
+    ):
+        llm = ZhipuAI(model="glm-5.3")
+        assert llm.api_key == "key_from_bigmodel_env"
+
+    # 3. ZAI_API_KEY
+    with mock.patch.dict(os.environ, {"ZAI_API_KEY": "key_from_zai_env"}, clear=True):
+        llm = ZhipuAI(model="glm-5.3")
+        assert llm.api_key == "key_from_zai_env"
+
+    # 4. Explicit parameter overrides environment variable
+    with mock.patch.dict(os.environ, {"ZHIPUAI_API_KEY": "env_key"}, clear=True):
+        llm = ZhipuAI(model="glm-5.3", api_key="explicit_key")
+        assert llm.api_key == "explicit_key"
+
+
+def test_base_url_configuration():
+    # Explicit parameter
+    llm = ZhipuAI(
+        model="glm-5.3", api_key="key", base_url="https://api.z.ai/api/paas/v4"
+    )
+    assert llm.base_url == "https://api.z.ai/api/paas/v4"
+
+    # From BIGMODEL_API_BASE
+    with mock.patch.dict(
+        os.environ, {"BIGMODEL_API_BASE": "https://custom.bigmodel.cn/api"}, clear=True
+    ):
+        llm = ZhipuAI(model="glm-5.3", api_key="key")
+        assert llm.base_url == "https://custom.bigmodel.cn/api"
+
+
 def test_zhipuai_completions_with_stop():
     mock_response = Completion(
         model="glm-4",
