@@ -5,6 +5,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, Generator, List, Optional, cast, Type
+from weakref import WeakKeyDictionary
 
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import (
@@ -23,6 +24,16 @@ logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
 empty_trace_ids: List[str] = []
 global_stack_trace_ids = ContextVar("trace_ids", default=empty_trace_ids)
+
+
+class _TraceMapKey:
+    """Weak identity key independent of a manager subclass's equality/hash."""
+
+
+# Root traces have isolated maps; their child tasks inherit the same map object.
+_active_trace_maps: ContextVar[
+    Optional[WeakKeyDictionary[_TraceMapKey, Dict[str, List[str]]]]
+] = ContextVar("active_trace_maps", default=None)
 
 
 class CallbackManager(BaseCallbackHandler, ABC):
@@ -84,6 +95,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
         self.handlers: List[BaseCallbackHandler] = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
+        self._trace_key = _TraceMapKey()
 
     def on_event_start(
         self,
@@ -103,7 +115,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
             self.start_trace("llama-index")
             parent_id = global_stack_trace.get()[-1]
         parent_id = cast(str, parent_id)
-        self._trace_map[parent_id].append(event_id)
+        self.trace_map[parent_id].append(event_id)
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
                 handler.on_event_start(
@@ -217,8 +229,12 @@ class CallbackManager(BaseCallbackHandler, ABC):
             if len(current_trace_stack_ids) == 0:
                 self._reset_trace_events()
 
-                for handler in self.handlers:
-                    handler.start_trace(trace_id=trace_id)
+                try:
+                    for handler in self.handlers:
+                        handler.start_trace(trace_id=trace_id)
+                except BaseException:
+                    self._clear_trace_map()
+                    raise
 
                 current_trace_stack_ids = [trace_id]
             else:
@@ -236,19 +252,48 @@ class CallbackManager(BaseCallbackHandler, ABC):
         if trace_id is not None and len(current_trace_stack_ids) > 0:
             current_trace_stack_ids.pop()
             if len(current_trace_stack_ids) == 0:
-                for handler in self.handlers:
-                    handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
-                current_trace_stack_ids = []
+                try:
+                    for handler in self.handlers:
+                        handler.end_trace(trace_id=trace_id, trace_map=self.trace_map)
+                finally:
+                    self._clear_trace_map()
+                    global_stack_trace_ids.set(current_trace_stack_ids)
+                return
 
         global_stack_trace_ids.set(current_trace_stack_ids)
 
     def _reset_trace_events(self) -> None:
         """Helper function to reset the current trace."""
-        self._trace_map = defaultdict(list)
+        trace_map: Dict[str, List[str]] = defaultdict(list)
+        self._trace_map = trace_map
+        current_maps = _active_trace_maps.get()
+        active_trace_maps = (
+            current_maps.copy() if current_maps is not None else WeakKeyDictionary()
+        )
+        active_trace_maps[self._get_trace_map_key()] = trace_map
+        _active_trace_maps.set(active_trace_maps)
         global_stack_trace.set([BASE_TRACE_EVENT])
+
+    def _get_trace_map_key(self) -> _TraceMapKey:
+        key: Optional[_TraceMapKey] = getattr(self, "_trace_key", None)
+        if key is None:
+            key = _TraceMapKey()
+            self._trace_key = key
+        return key
+
+    def _clear_trace_map(self) -> None:
+        """Drop this manager's active root map from the current context."""
+        current_maps = _active_trace_maps.get()
+        if current_maps is not None:
+            active_trace_maps = current_maps.copy()
+            active_trace_maps.pop(self._get_trace_map_key(), None)
+            _active_trace_maps.set(active_trace_maps)
 
     @property
     def trace_map(self) -> Dict[str, List[str]]:
+        active_trace_maps = _active_trace_maps.get()
+        if active_trace_maps is not None:
+            return active_trace_maps.get(self._get_trace_map_key(), self._trace_map)
         return self._trace_map
 
     @classmethod
