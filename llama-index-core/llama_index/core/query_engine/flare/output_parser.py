@@ -51,15 +51,21 @@ class QueryTaskOutputParser(BaseOutputParser):
 
     def parse(self, output: str) -> Any:
         """Parse output."""
+        if not output:
+            return []
+
         query_tasks = []
+        start_idx = None
         for idx, char in enumerate(output):
             if char == "[":
                 start_idx = idx
-            elif char == "]":
+            elif char == "]" and start_idx is not None:
                 end_idx = idx
                 raw_query_str = output[start_idx + 1 : end_idx]
-                query_str = raw_query_str.split("(")[1].split(")")[0]
-                query_tasks.append(QueryTask(query_str, start_idx, end_idx))
+                if "(" in raw_query_str and ")" in raw_query_str:
+                    query_str = raw_query_str.split("(", 1)[1].rsplit(")", 1)[0]
+                    query_tasks.append(QueryTask(query_str, start_idx, end_idx))
+                start_idx = None
         return query_tasks
 
     def format(self, output: str) -> str:
