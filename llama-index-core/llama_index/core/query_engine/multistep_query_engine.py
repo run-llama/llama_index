@@ -148,7 +148,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
             # TODO: make stop logic better
             stop_dict = {"query_bundle": updated_query_bundle}
-            if self._stop_fn(stop_dict):
+            if self._early_stopping and self._stop_fn(stop_dict):
                 should_stop = True
                 break
 
