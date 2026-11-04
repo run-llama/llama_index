@@ -9,6 +9,46 @@ with contextlib.suppress(ImportError):
 from llama_index.core.output_parsers.base import OutputParserException
 
 
+def _match_bracket(text: str, start: int, open_char: str, close_char: str) -> int:
+    """Return the index of the bracket that closes the one at ``start``.
+
+    Brackets inside JSON strings are ignored. Returns ``-1`` when the bracket
+    is never closed.
+    """
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char == open_char:
+            depth += 1
+        elif char == close_char:
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+
+def _looks_like_json_payload(candidate: str) -> bool:
+    """Whether ``candidate`` parses to a JSON object or an array of objects."""
+    try:
+        parsed = json.loads(candidate)
+    except json.JSONDecodeError:
+        return False
+    if isinstance(parsed, dict):
+        return True
+    return isinstance(parsed, list) and any(isinstance(item, dict) for item in parsed)
+
+
 def _marshal_llm_to_json(output: str) -> str:
     """
     Extract a substring containing valid JSON or array from a string.
@@ -26,14 +66,23 @@ def _marshal_llm_to_json(output: str) -> str:
     left_square = output.find("[")
     left_brace = output.find("{")
 
-    if (left_square < left_brace and left_square != -1) or left_brace == -1:
-        left = left_square
-        right = output.rfind("]")
-    else:
-        left = left_brace
-        right = output.rfind("}")
+    if left_square == -1 and left_brace == -1:
+        return output
 
-    return output[left : right + 1]
+    if left_square != -1 and (left_brace == -1 or left_square < left_brace):
+        end = _match_bracket(output, left_square, "[", "]")
+        candidate = output[left_square : end + 1] if end != -1 else ""
+        # A leading bracket group that is not a JSON payload (an inline citation
+        # such as "[1]" or "[Model-A]") is prose; keep looking for a JSON object.
+        if not candidate or left_brace == -1 or _looks_like_json_payload(candidate):
+            return candidate or output[left_square : output.rfind("]") + 1]
+
+    end = _match_bracket(output, left_brace, "{", "}")
+    return (
+        output[left_brace : end + 1]
+        if end != -1
+        else output[left_brace : output.rfind("}") + 1]
+    )
 
 
 def parse_json_markdown(text: str) -> Any:

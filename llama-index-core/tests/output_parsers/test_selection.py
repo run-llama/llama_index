@@ -80,3 +80,15 @@ def test_failed_parse(output_parser: SelectionOutputParser) -> None:
     )
     with pytest.raises(ValueError, match="Failed to convert*") as exc_info:
         output_parser.parse(output=no_json_in_response)
+
+
+def test_parse_with_sibling_metadata(output_parser: SelectionOutputParser) -> None:
+    output = (
+        '{"result": {"choice": 1, "reason": "optimal"}, '
+        '"metadata": {"usage": {"tokens": 100}}}'
+    )
+    parsed = output_parser.parse(output=output)
+    assert isinstance(parsed, StructuredOutput)
+    assert len(parsed.parsed_output) == 1
+    assert parsed.parsed_output[0].choice == 1
+    assert parsed.parsed_output[0].reason == "optimal"
