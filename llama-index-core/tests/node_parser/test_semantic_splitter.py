@@ -1,5 +1,7 @@
 from typing import List
 
+import pytest
+
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.node_parser.text.semantic_splitter import (
     SemanticSplitterNodeParser,
@@ -117,4 +119,66 @@ def test_split_and_permutated() -> None:
     assert (
         sentences[2]["combined_sentence"]
         == "I can't carry it for you. But I can carry you!"
+    )
+
+
+class RecordingEmbedding(MockEmbedding):
+    """Mock embedding that records the batches it is asked to embed."""
+
+    batches: List[List[str]] = []
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "RecordingEmbedding"
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        self.batches.append(texts)
+        return [self._get_text_embedding(text) for text in texts]
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        self.batches.append(texts)
+        return [await self._aget_text_embedding(text) for text in texts]
+
+
+@pytest.mark.parametrize("text", ["", "   \n\t "])
+def test_blank_document_produces_no_nodes(text: str) -> None:
+    embeddings = RecordingEmbedding(batches=[])
+
+    node_parser = SemanticSplitterNodeParser.from_defaults(embeddings)
+
+    assert node_parser.get_nodes_from_documents([Document(text=text)]) == []
+    assert embeddings.batches == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("text", ["", "   \n\t "])
+async def test_blank_document_produces_no_nodes_async(text: str) -> None:
+    embeddings = RecordingEmbedding(batches=[])
+
+    node_parser = SemanticSplitterNodeParser.from_defaults(embeddings)
+
+    nodes = await node_parser.aget_nodes_from_documents([Document(text=text)])
+
+    assert nodes == []
+    assert embeddings.batches == []
+
+
+def test_blank_document_does_not_affect_other_documents() -> None:
+    embeddings = MockEmbedding()
+
+    node_parser = SemanticSplitterNodeParser.from_defaults(embeddings)
+
+    nodes = node_parser.get_nodes_from_documents(
+        [
+            Document(text="  "),
+            Document(
+                text="They're taking the Hobbits to Isengard! I can't carry it for you. But I can carry you!"
+            ),
+        ]
+    )
+
+    assert len(nodes) == 1
+    assert (
+        nodes[0].get_content()
+        == "They're taking the Hobbits to Isengard! I can't carry it for you. But I can carry you!"
     )
