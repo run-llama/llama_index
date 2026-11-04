@@ -82,14 +82,39 @@ def metadata_filters_to_sql(filters: MetadataFilters | None) -> sql.SQL:
                 return sql.SQL("{} = {}").format(column_ref, sql.Literal(str(value)))
             elif operator == FilterOperator.NE:
                 return sql.SQL("{} != {}").format(column_ref, sql.Literal(str(value)))
-            elif operator == FilterOperator.GT:
-                return sql.SQL("({}) > {}").format(column_ref, sql.Literal(value))
-            elif operator == FilterOperator.LT:
-                return sql.SQL("({}) < {}").format(column_ref, sql.Literal(value))
-            elif operator == FilterOperator.GTE:
-                return sql.SQL("({}) >= {}").format(column_ref, sql.Literal(value))
-            elif operator == FilterOperator.LTE:
-                return sql.SQL("({}) <= {}").format(column_ref, sql.Literal(value))
+            elif operator in (
+                FilterOperator.GT,
+                FilterOperator.LT,
+                FilterOperator.GTE,
+                FilterOperator.LTE,
+            ):
+                comparison = {
+                    FilterOperator.GT: sql.SQL(">"),
+                    FilterOperator.LT: sql.SQL("<"),
+                    FilterOperator.GTE: sql.SQL(">="),
+                    FilterOperator.LTE: sql.SQL("<="),
+                }[operator]
+                # `->>` renders JSONB numbers as text. Comparing that text with
+                # a numeric literal fails in PostgreSQL (`operator does not
+                # exist: text > integer`) and comparing two texts orders them
+                # lexically, so numeric values are compared as floats instead.
+                # The `jsonb_typeof` guard keeps rows with a missing or
+                # non-numeric value out of the result rather than raising.
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    return sql.SQL(
+                        "(jsonb_typeof(metadata -> {key}) = 'number'"
+                        " AND ({column_ref})::float {comparison} {value})"
+                    ).format(
+                        key=sql.Literal(key),
+                        column_ref=column_ref,
+                        comparison=comparison,
+                        value=sql.Literal(float(value)),
+                    )
+                return sql.SQL("({column_ref}) {comparison} {value}").format(
+                    column_ref=column_ref,
+                    comparison=comparison,
+                    value=sql.Literal(value),
+                )
             elif operator == FilterOperator.IN:
                 if isinstance(value, list):
                     values = sql.SQL(", ").join([sql.Literal(str(v)) for v in value])
