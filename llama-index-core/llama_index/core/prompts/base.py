@@ -145,9 +145,7 @@ class PromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         function_mappings: Optional[Dict[str, Callable]] = None,
         **kwargs: Any,
     ) -> None:
-        if metadata is None:
-            metadata = {}
-        metadata["prompt_type"] = prompt_type
+        metadata = {**(metadata or {}), "prompt_type": prompt_type}
 
         template_vars = get_template_vars(template)
 
@@ -226,9 +224,7 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         function_mappings: Optional[Dict[str, Callable]] = None,
         **kwargs: Any,
     ):
-        if metadata is None:
-            metadata = {}
-        metadata["prompt_type"] = prompt_type
+        metadata = {**(metadata or {}), "prompt_type": prompt_type}
 
         template_vars = []
         for message_template in message_templates:
@@ -408,9 +404,7 @@ class LangchainPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         kwargs = selector.default_prompt.partial_variables
         template_vars = selector.default_prompt.input_variables
 
-        if metadata is None:
-            metadata = {}
-        metadata["prompt_type"] = prompt_type
+        metadata = {**(metadata or {}), "prompt_type": prompt_type}
 
         super().__init__(
             selector=selector,
