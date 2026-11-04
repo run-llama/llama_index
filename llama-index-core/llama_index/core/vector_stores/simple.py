@@ -257,7 +257,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
                 "Cannot filter stores that were persisted without metadata. "
                 "Please rebuild the store with metadata to enable filtering."
             )
-        # Prefilter nodes based on the query filter and node ID restrictions.
+        # Prefilter nodes based on metadata, node IDs, and source document IDs.
         query_filter_fn = build_metadata_filter_fn(
             lambda node_id: self.data.metadata_dict[node_id], query.filters
         )
@@ -273,17 +273,28 @@ class SimpleVectorStore(BasePydanticVectorStore):
             def node_filter_fn(node_id: str) -> bool:
                 return True
 
+        available_doc_ids = set(query.doc_ids) if query.doc_ids is not None else None
+
         node_ids = []
         embeddings = []
         # TODO: consolidate with get_query_text_embedding_similarities
         for node_id, embedding in self.data.embedding_dict.items():
-            if node_filter_fn(node_id) and query_filter_fn(node_id):
+            if (
+                node_filter_fn(node_id)
+                and (
+                    available_doc_ids is None
+                    or self.data.text_id_to_ref_doc_id.get(node_id) in available_doc_ids
+                )
+                and query_filter_fn(node_id)
+            ):
                 node_ids.append(node_id)
                 embeddings.append(embedding)
 
         query_embedding = cast(List[float], query.query_embedding)
 
         if query.mode in LEARNER_MODES:
+            if not embeddings:
+                return VectorStoreQueryResult(similarities=[], ids=[])
             top_similarities, top_ids = get_top_k_embeddings_learner(
                 query_embedding,
                 embeddings,
