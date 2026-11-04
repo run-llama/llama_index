@@ -691,10 +691,12 @@ class OpenAIResponses(FunctionCallingLLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        kwargs_dict = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(
             messages,
             model=self.model,
             is_responses_api=True,
+            store=kwargs_dict.get("store"),
         )
 
         def gen() -> ChatResponseGen:
@@ -706,7 +708,7 @@ class OpenAIResponses(FunctionCallingLLM):
             for event in self._client.responses.create(
                 input=message_dicts,
                 stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **kwargs_dict,
             ):
                 # Process the event and update state
                 (
@@ -809,10 +811,12 @@ class OpenAIResponses(FunctionCallingLLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        kwargs_dict = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(
             messages,
             model=self.model,
             is_responses_api=True,
+            store=kwargs_dict.get("store"),
         )
 
         async def gen() -> ChatResponseAsyncGen:
@@ -824,7 +828,7 @@ class OpenAIResponses(FunctionCallingLLM):
             response_stream = await self._aclient.responses.create(
                 input=message_dicts,
                 stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **kwargs_dict,
             )
 
             async for event in response_stream:

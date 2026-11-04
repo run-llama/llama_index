@@ -1,10 +1,10 @@
 import os
 import httpx
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from pathlib import Path
-from typing import List
+from typing import Any, List
 from llama_index.core.base.llms.types import (
     ChatMessage,
     MessageRole,
@@ -973,6 +973,82 @@ def response_output() -> List[ResponseOutputItem]:
             type="message",
         ),
     ]
+
+
+def _reasoning_history() -> List[ChatMessage]:
+    return [
+        ChatMessage(role=MessageRole.USER, content="What is 2+2?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="Simple arithmetic.",
+                    additional_information={"id": "rs_123"},
+                ),
+                TextBlock(text="4"),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="And times 3?"),
+    ]
+
+
+def _reasoning_count(input_items: List[dict]) -> int:
+    return [item.get("type") for item in input_items].count("reasoning")
+
+
+class _EmptyAsyncStream:
+    """An async iterable that yields no events, so the request can be inspected
+    without faking a full Responses-API event sequence."""
+
+    def __aiter__(self) -> "_EmptyAsyncStream":
+        return self
+
+    async def __anext__(self) -> Any:
+        raise StopAsyncIteration
+
+
+def test_stream_chat_keeps_reasoning_items_when_store_is_enabled(default_responses_llm):
+    llm = default_responses_llm
+    llm.store = True
+    llm._client = MagicMock()
+    llm._client.responses.create = MagicMock(return_value=[])
+
+    list(llm.stream_chat(_reasoning_history()))
+
+    sent_input = llm._client.responses.create.call_args.kwargs["input"]
+    assert _reasoning_count(sent_input) == 1
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_keeps_reasoning_items_when_store_is_enabled(
+    default_responses_llm,
+):
+    llm = default_responses_llm
+    llm.store = True
+    llm._aclient = MagicMock()
+    llm._aclient.responses.create = AsyncMock(
+        side_effect=lambda **_: _EmptyAsyncStream()
+    )
+
+    async for _ in await llm.astream_chat(_reasoning_history()):
+        pass
+
+    sent_input = llm._aclient.responses.create.call_args.kwargs["input"]
+    assert _reasoning_count(sent_input) == 1
+
+
+def test_stream_chat_omits_reasoning_items_when_store_is_disabled(
+    default_responses_llm,
+):
+    llm = default_responses_llm
+    llm.store = True
+    llm._client = MagicMock()
+    llm._client.responses.create = MagicMock(return_value=[])
+
+    list(llm.stream_chat(_reasoning_history(), store=False))
+
+    sent_input = llm._client.responses.create.call_args.kwargs["input"]
+    assert _reasoning_count(sent_input) == 0
 
 
 class OpenAIResponsesMock(OpenAIResponses):
