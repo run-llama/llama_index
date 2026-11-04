@@ -448,7 +448,10 @@ class OpenAI(FunctionCallingLLM):
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
-            "max_retries": self.max_retries,
+            # `max_retries` is enforced by `llm_retry_decorator` around the call.
+            # Handing the same value to the OpenAI client would make it retry a
+            # second time and multiply the attempts (3 retries -> 12 requests).
+            "max_retries": 0,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
@@ -546,7 +549,9 @@ class OpenAI(FunctionCallingLLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
-            for response in client.chat.completions.create(
+            for response in client.with_options(
+                max_retries=self.max_retries
+            ).chat.completions.create(
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
@@ -652,7 +657,9 @@ class OpenAI(FunctionCallingLLM):
 
         def gen() -> CompletionResponseGen:
             text = ""
-            for response in client.completions.create(
+            for response in client.with_options(
+                max_retries=self.max_retries
+            ).completions.create(
                 prompt=prompt,
                 **all_kwargs,
             ):
@@ -828,7 +835,9 @@ class OpenAI(FunctionCallingLLM):
 
             is_function = False
             first_chat_chunk = True
-            async for response in await aclient.chat.completions.create(
+            async for response in await aclient.with_options(
+                max_retries=self.max_retries
+            ).chat.completions.create(
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
@@ -946,7 +955,9 @@ class OpenAI(FunctionCallingLLM):
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
-            async for response in await aclient.completions.create(
+            async for response in await aclient.with_options(
+                max_retries=self.max_retries
+            ).completions.create(
                 prompt=prompt,
                 **all_kwargs,
             ):
