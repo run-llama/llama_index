@@ -26,6 +26,8 @@ import weaviate
 import weaviate.embedded
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilter,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
@@ -364,6 +366,51 @@ class TestWeaviateSync:
 
         assert len(results.nodes) == 1
         assert results.ids[0] == target_node_id
+
+    def test_query_with_ids_and_metadata_filters(self, vector_store):
+        nodes = [
+            TextNode(
+                text="Hello world.",
+                metadata={"lang": "en"},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc1")
+                },
+                embedding=[0.0, 0.0, 0.3],
+            ),
+            TextNode(
+                text="This is a test.",
+                metadata={"lang": "en"},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc2")
+                },
+                embedding=[0.3, 0.0, 0.0],
+            ),
+        ]
+        vector_store.add(nodes)
+        filters = MetadataFilters(filters=[MetadataFilter(key="lang", value="en")])
+
+        # doc_ids / node_ids must still restrict the search when filters are set
+        for restriction in (
+            {"node_ids": [nodes[1].node_id]},
+            {"doc_ids": ["doc2"]},
+        ):
+            query = VectorStoreQuery(
+                query_embedding=[0.0, 0.0, 0.3],
+                similarity_top_k=10,
+                filters=filters,
+                **restriction,
+            )
+            results = vector_store.query(query)
+            assert [node.text for node in results.nodes] == ["This is a test."]
+
+        # doc_ids and node_ids restrict the search together
+        query = VectorStoreQuery(
+            query_embedding=[0.0, 0.0, 0.3],
+            similarity_top_k=10,
+            doc_ids=["doc1"],
+            node_ids=[nodes[1].node_id],
+        )
+        assert vector_store.query(query).nodes == []
 
     def test_hybrid_search(self, vector_store_with_sample_nodes):
         query = VectorStoreQuery(
