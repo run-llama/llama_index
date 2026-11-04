@@ -29,6 +29,29 @@ class FailingMockLLM(MockLLM):
 
 
 @pytest.mark.asyncio
+async def test_extractor_sync_call_in_running_event_loop():
+    """
+    The sync __call__ must work even when an event loop is already running.
+
+    __call__ used to wrap acall in asyncio.run(), which raises
+    "asyncio.run() cannot be called from a running event loop" inside a
+    Jupyter kernel or an async web server. asyncio_run() runs the coroutine
+    in a worker thread when a loop is already running, so the synchronous
+    entrypoints keep working. This test is inside a running loop courtesy of
+    pytest-asyncio.
+    """
+    node = TextNode(text="Logan was born in Canada")
+
+    for extractor in (
+        SimpleLLMPathExtractor(llm=MockLLM()),
+        SchemaLLMPathExtractor(llm=MockLLM()),
+        DynamicLLMPathExtractor(llm=MockLLM()),
+    ):
+        result_nodes = extractor([node])
+        assert len(result_nodes) == 1
+
+
+@pytest.mark.asyncio
 async def test_simple_llm_extractor_error_handling(caplog):
     node = TextNode(text="Test node")
 

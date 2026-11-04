@@ -1,9 +1,8 @@
-import asyncio
 import logging
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import asyncio_run, run_jobs
 from llama_index.core.bridge.pydantic import create_model, field_validator
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -266,7 +265,7 @@ class SchemaLLMPathExtractor(TransformComponent):
         self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """Extract triplets from nodes."""
-        return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
+        return asyncio_run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
     def _prune_invalid_props(
         self, props: Dict[str, Any], allowed_props: Optional[List[str]]

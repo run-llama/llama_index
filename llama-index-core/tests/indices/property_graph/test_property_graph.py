@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock
 from typing import Any, List
 
+import pytest
+
 from llama_index.core import PropertyGraphIndex, Document, MockEmbedding
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
@@ -66,3 +68,32 @@ def test_construction() -> None:
     index.insert_nodes(kg_extractor([]))
 
     assert index._insert_nodes_to_vector_index.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_construction_in_running_event_loop() -> None:
+    """
+    Sync construction must work when an event loop is already running.
+
+    _insert_nodes drives its async transform and embedding paths with
+    asyncio_run (use_async and embed_kg_nodes both default to True). The
+    bare asyncio.run() it used before raised "asyncio.run() cannot be
+    called from a running event loop" under Jupyter or an async server;
+    asyncio_run offloads to a worker thread instead. pytest-asyncio gives
+    us the surrounding running loop.
+    """
+    graph_store = SimplePropertyGraphStore()
+    vector_store = SimpleVectorStore()
+    kg_extractor = MockKGExtractor()
+
+    index = PropertyGraphIndex.from_documents(
+        [Document.example()],
+        property_graph_store=graph_store,
+        vector_store=vector_store,
+        llm=MockLLM(),
+        embed_model=MockEmbedding(embed_dim=256),
+        kg_extractors=[kg_extractor],
+    )
+
+    kg_nodes = index.property_graph_store.get(ids=["Logan", "Canada"])
+    assert len(kg_nodes) == 2
