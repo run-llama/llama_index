@@ -398,7 +398,10 @@ class OpenAIResponses(FunctionCallingLLM):
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
-            "max_retries": self.max_retries,
+            # `max_retries` is enforced by `llm_retry_decorator` around the call.
+            # Handing the same value to the OpenAI client would make it retry a
+            # second time and multiply the attempts (3 retries -> 12 requests).
+            "max_retries": 0,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
@@ -703,7 +706,9 @@ class OpenAIResponses(FunctionCallingLLM):
             current_tool_call: Optional[ResponseFunctionToolCall] = None
             local_previous_response_id = self._previous_response_id
 
-            for event in self._client.responses.create(
+            for event in self._client.with_options(
+                max_retries=self.max_retries
+            ).responses.create(
                 input=message_dicts,
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
@@ -821,7 +826,9 @@ class OpenAIResponses(FunctionCallingLLM):
             current_tool_call: Optional[ResponseFunctionToolCall] = None
             local_previous_response_id = self._previous_response_id
 
-            response_stream = await self._aclient.responses.create(
+            response_stream = await self._aclient.with_options(
+                max_retries=self.max_retries
+            ).responses.create(
                 input=message_dicts,
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
@@ -978,7 +985,9 @@ class OpenAIResponses(FunctionCallingLLM):
         message_dicts = to_openai_message_dicts(
             messages, model=self.model, is_responses_api=True
         )
-        response = self._client.responses.parse(
+        response = self._client.with_options(
+            max_retries=self.max_retries
+        ).responses.parse(
             model=self._responses_model,
             input=message_dicts,
             text_format=output_cls,
@@ -1007,7 +1016,9 @@ class OpenAIResponses(FunctionCallingLLM):
         message_dicts = to_openai_message_dicts(
             messages, model=self.model, is_responses_api=True
         )
-        response = await self._aclient.responses.parse(
+        response = await self._aclient.with_options(
+            max_retries=self.max_retries
+        ).responses.parse(
             model=self._responses_model,
             input=message_dicts,
             text_format=output_cls,
