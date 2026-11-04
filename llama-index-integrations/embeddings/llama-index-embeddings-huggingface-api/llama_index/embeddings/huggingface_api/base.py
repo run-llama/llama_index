@@ -8,6 +8,7 @@ from huggingface_hub import (
     model_info,
 )
 from huggingface_hub.hf_api import ModelInfo
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.embeddings.base import (
     BaseEmbedding,
     Embedding,
@@ -173,33 +174,28 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         """
         Embed the input query synchronously.
 
-        NOTE: a new asyncio event loop is created internally for this.
+        NOTE: This is safe to call from within a running event loop
+        (e.g. Jupyter/ipykernel or an async web handler).
         """
-        return asyncio.run(self._aget_query_embedding(query))
+        return asyncio_run(self._aget_query_embedding(query))
 
     def _get_text_embedding(self, text: str) -> Embedding:
         """
         Embed the text query synchronously.
 
-        NOTE: a new asyncio event loop is created internally for this.
+        NOTE: This is safe to call from within a running event loop
+        (e.g. Jupyter/ipykernel or an async web handler).
         """
-        return asyncio.run(self._aget_text_embedding(text))
+        return asyncio_run(self._aget_text_embedding(text))
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """
         Embed the input sequence of text synchronously and in parallel.
 
-        NOTE: a new asyncio event loop is created internally for this.
+        NOTE: This is safe to call from within a running event loop
+        (e.g. Jupyter/ipykernel or an async web handler).
         """
-        loop = asyncio.new_event_loop()
-        try:
-            tasks = [
-                loop.create_task(self._aget_text_embedding(text)) for text in texts
-            ]
-            loop.run_until_complete(asyncio.wait(tasks))
-        finally:
-            loop.close()
-        return [task.result() for task in tasks]
+        return asyncio_run(self._aget_text_embeddings(texts))
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
         return await self._async_embed_single(
