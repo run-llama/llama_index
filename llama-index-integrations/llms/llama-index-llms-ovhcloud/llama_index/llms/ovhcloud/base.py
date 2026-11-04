@@ -8,7 +8,7 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai import OpenAI
-from .utils import Model
+from .utils import Model, get_available_models_dynamic
 
 DEFAULT_API_BASE = "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1"
 

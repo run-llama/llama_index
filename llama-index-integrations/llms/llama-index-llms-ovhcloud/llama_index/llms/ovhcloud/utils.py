@@ -1,3 +1,5 @@
+from typing import Any, List
+
 from llama_index.core.bridge.pydantic import BaseModel
 
 # OVHcloud AI Endpoints supported models
@@ -26,3 +28,17 @@ class Model(BaseModel):
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+
+def get_available_models_dynamic(client: Any) -> List[Model]:
+    """
+    Fetch the models served by OVHcloud AI Endpoints.
+
+    Args:
+        client: An OpenAI-compatible client pointed at OVHcloud AI Endpoints.
+
+    Returns:
+        The models reported by the `/models` endpoint.
+
+    """
+    return [Model(id=element.id) for element in client.models.list().data]
