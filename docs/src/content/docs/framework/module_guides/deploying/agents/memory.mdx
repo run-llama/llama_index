@@ -268,6 +268,19 @@ memory = Memory.from_defaults(
 )
 ```
 
+<Aside type="caution">
+  Memory rows are stored as plain data with no integrity protection, and
+  `memory.get()` trusts the table as-is. Reads return the rows for the session
+  `key` with `status == ACTIVE`, ordered by `(timestamp, id)`. This means a row
+  edited in place is still served as a genuine message, rewriting a `timestamp`
+  reorders the history, and changing `status` or `key` silently removes a
+  message from the context. Nothing binds a row to its owner either, so a
+  genuine row copied in from another session is served as part of this one. If
+  the database is shared, restored from backups, or written to by other
+  services, rely on database-level access control, or wrap the store with your
+  own verification using the `AsyncDBChatStore` interface described below.
+</Aside>
+
 ### Custom Chat Store
 
 If SQLAlchemy isn't a fit for your infrastructure, implement the `AsyncDBChatStore` interface and pass it as `chat_store`. The SQL-specific arguments (`table_name`, `async_database_uri`, `async_engine`, `db_schema`) are ignored when a `chat_store` is given.
