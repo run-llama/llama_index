@@ -286,3 +286,67 @@ async def test_allm_rerank_runs_batches_concurrently() -> None:
         f"expected all {n_batches} batches in flight concurrently, "
         f"saw at most {max_in_flight}"
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("raise_on_failure", [False, True])
+async def test_prediction_exception_respects_failure_policy(
+    monkeypatch, use_async: bool, raise_on_failure: bool
+) -> None:
+    prediction_error = ValueError("Invalid structured response")
+
+    def predict(self, **kwargs):
+        if kwargs["context_str"] == "invalid":
+            raise prediction_error
+        return DocumentRelevanceList(
+            documents=[DocumentWithRelevance(document_number=1, relevance=7)]
+        )
+
+    async def apredict(self, **kwargs):
+        return predict(self, **kwargs)
+
+    monkeypatch.setattr(MockFunctionCallingLLM, "structured_predict", predict)
+    monkeypatch.setattr(MockFunctionCallingLLM, "astructured_predict", apredict)
+    reranker = StructuredLLMRerank(
+        llm=MockFunctionCallingLLM(),
+        choice_batch_size=1,
+        format_node_batch_fn=mock_format_node_batch_fn,
+        raise_on_structured_prediction_failure=raise_on_failure,
+    )
+    nodes = [
+        NodeWithScore(node=TextNode(text="invalid"), score=0.9),
+        NodeWithScore(node=TextNode(text="valid"), score=0.1),
+    ]
+
+    async def rerank():
+        if use_async:
+            return await reranker.apostprocess_nodes(nodes, query_str="Question")
+        return reranker.postprocess_nodes(nodes, query_str="Question")
+
+    if raise_on_failure:
+        with pytest.raises(ValueError) as exc:
+            await rerank()
+        assert exc.value is prediction_error
+    else:
+        result = await rerank()
+        assert [node.get_content() for node in result] == ["valid", "invalid"]
+        assert [node.score for node in result] == [7.0, 0.0]
+        assert [node.score for node in nodes] == [0.9, 0.1]
+
+
+@pytest.mark.asyncio
+async def test_prediction_cancellation_is_not_suppressed(monkeypatch) -> None:
+    async def apredict(self, **kwargs):
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(MockFunctionCallingLLM, "astructured_predict", apredict)
+    reranker = StructuredLLMRerank(
+        llm=MockFunctionCallingLLM(),
+        raise_on_structured_prediction_failure=False,
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await reranker.apostprocess_nodes(
+            [NodeWithScore(node=TextNode(text="test"))], query_str="Question"
+        )
