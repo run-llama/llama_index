@@ -31,7 +31,7 @@ class Apertis(OpenAILike):
     the API key either as an environment variable `APERTIS_API_KEY` or directly
     in the class constructor.
 
-    You can obtain an API key at https://api.apertis.ai/token
+    You can obtain an API key at https://apertis.ai/setting?tab=keys
 
     Examples:
         `pip install llama-index-llms-apertis`
