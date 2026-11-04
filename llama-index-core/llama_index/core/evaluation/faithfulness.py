@@ -87,8 +87,8 @@ Context: Amazon initially launched as an online store for books but has since ex
 offering various products and services.
 Answer: YES
 
-Information: {query}
-Context: {reference_contexts}
+Information: {query_str}
+Context: {context_str}
 Answer:"""
 )
 
