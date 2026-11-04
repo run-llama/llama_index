@@ -203,3 +203,29 @@ def test_nested_metadata_filters_raise_error() -> None:
     # when the filter function is evaluated.
     with pytest.raises(ValueError, match="Nested MetadataFilters are not supported"):
         fn("n1")
+
+
+@pytest.mark.parametrize(
+    ("operator", "value", "expected"),
+    [
+        (FilterOperator.EQ, True, ["flag_true"]),
+        (FilterOperator.NE, True, ["flag_false", "one", "zero"]),
+        (FilterOperator.EQ, False, ["flag_false"]),
+        (FilterOperator.EQ, 1, ["one"]),
+    ],
+)
+def test_boolean_filters_do_not_match_numbers(
+    operator: FilterOperator, value: Any, expected: list
+) -> None:
+    metadata = {
+        "flag_true": {"flag": True},
+        "flag_false": {"flag": False},
+        "one": {"flag": 1},
+        "zero": {"flag": 0},
+    }
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="flag", operator=operator, value=value)]
+    )
+    fn = build_metadata_filter_fn(metadata.__getitem__, filters)
+
+    assert [node_id for node_id in metadata if fn(node_id)] == expected

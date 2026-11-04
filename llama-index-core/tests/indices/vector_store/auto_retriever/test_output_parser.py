@@ -90,3 +90,26 @@ def test_output_parser_invalid_type_raises_output_parser_exception() -> None:
         parser.parse(output_str)
 
     assert "Failed to validate query spec" in str(exc_info.value)
+
+
+def test_output_parser_keeps_boolean_filter() -> None:
+    """A boolean filter value must not make the whole query spec invalid."""
+    output_str = """\
+    ```json
+    {
+        "query": "articles",
+        "filters": [
+            {"key": "year", "value": 2024},
+            {"key": "is_published", "value": true}
+        ],
+        "top_k": null
+    }
+    ```
+    """
+
+    output = cast(StructuredOutput, VectorStoreQueryOutputParser().parse(output_str))
+
+    assert output.parsed_output.filters == [
+        ExactMatchFilter(key="year", value=2024),
+        ExactMatchFilter(key="is_published", value=True),
+    ]
