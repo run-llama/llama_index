@@ -1,12 +1,14 @@
 """Test vector store indexes."""
 
 import pickle
-from typing import Any, List, cast
+from typing import Any, List, Tuple, cast
 
+import pytest
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.core.schema import Document
+from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
@@ -321,3 +323,135 @@ def test_simple_pickle(
     all_ref_doc_info = new_index.ref_doc_info
     for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
         assert documents[idx].node_id == ref_doc_id
+
+
+def _build_shared_docstore_indexes(
+    document: Document, mock_embed_model: Any
+) -> Tuple[SimpleDocumentStore, VectorStoreIndex, VectorStoreIndex]:
+    """Build two vector indexes that share a single docstore."""
+    docstore = SimpleDocumentStore()
+    index_1 = VectorStoreIndex.from_documents(
+        documents=[document],
+        storage_context=StorageContext.from_defaults(
+            vector_store=SimpleVectorStore(), docstore=docstore
+        ),
+        embed_model=mock_embed_model,
+    )
+    index_2 = VectorStoreIndex.from_documents(
+        documents=[document],
+        storage_context=StorageContext.from_defaults(
+            vector_store=SimpleVectorStore(), docstore=docstore
+        ),
+        embed_model=mock_embed_model,
+    )
+    return docstore, index_1, index_2
+
+
+def _assert_index_nodes_contain(
+    docstore: SimpleDocumentStore,
+    index: VectorStoreIndex,
+    text: str,
+    document: Document,
+) -> None:
+    """Assert that an index holds exactly one up-to-date node for a document."""
+    node_ids = list(index.index_struct.nodes_dict.values())
+    nodes = docstore.get_nodes(node_ids)
+    assert len(nodes) == 1
+    assert nodes[0].get_content() == text
+    assert nodes[0].source_node is not None
+    assert nodes[0].source_node.hash == document.hash
+
+
+def test_refresh_ref_docs_with_shared_docstore(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """
+    Each vector index sharing a docstore must refresh against its own nodes.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/14943.
+    """
+    docstore, index_1, index_2 = _build_shared_docstore_indexes(
+        Document(text="Hello world.", id_="doc_id"), mock_embed_model
+    )
+
+    updated_document = Document(text="Hello world, again.", id_="doc_id")
+
+    # the first index updates the shared docstore hash
+    assert index_1.refresh_ref_docs([updated_document]) == [True]
+    # the second index must still refresh its own nodes
+    assert index_2.refresh_ref_docs([updated_document]) == [True]
+
+    # both indexes now hold the updated content
+    _assert_index_nodes_contain(
+        docstore, index_1, "Hello world, again.", updated_document
+    )
+    _assert_index_nodes_contain(
+        docstore, index_2, "Hello world, again.", updated_document
+    )
+
+    # the shared docstore tracks exactly one node per index, with no stale ids
+    ref_doc_info = docstore.get_ref_doc_info("doc_id")
+    assert ref_doc_info is not None
+    assert set(ref_doc_info.node_ids) == {
+        *index_1.index_struct.nodes_dict.values(),
+        *index_2.index_struct.nodes_dict.values(),
+    }
+
+    # refreshing an unchanged document is still a no-op
+    assert index_1.refresh_ref_docs([updated_document]) == [False]
+    assert index_2.refresh_ref_docs([updated_document]) == [False]
+
+
+def test_refresh_ref_docs_with_shared_docstore_inserts_missing_nodes(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """An index missing a ref doc that the shared docstore knows must insert it."""
+    document = Document(text="Hello world.", id_="doc_id")
+    docstore = SimpleDocumentStore()
+    VectorStoreIndex.from_documents(
+        documents=[document],
+        storage_context=StorageContext.from_defaults(
+            vector_store=SimpleVectorStore(), docstore=docstore
+        ),
+        embed_model=mock_embed_model,
+    )
+    index_2 = VectorStoreIndex(
+        nodes=[],
+        storage_context=StorageContext.from_defaults(
+            vector_store=SimpleVectorStore(), docstore=docstore
+        ),
+        embed_model=mock_embed_model,
+    )
+
+    # the docstore hash already matches, but this index has no nodes for the doc
+    assert index_2.refresh_ref_docs([document]) == [True]
+    _assert_index_nodes_contain(docstore, index_2, "Hello world.", document)
+
+
+@pytest.mark.asyncio
+async def test_arefresh_ref_docs_with_shared_docstore(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """Async variant: each index sharing a docstore refreshes its own nodes."""
+    docstore, index_1, index_2 = _build_shared_docstore_indexes(
+        Document(text="Hello world.", id_="doc_id"), mock_embed_model
+    )
+
+    updated_document = Document(text="Hello world, again.", id_="doc_id")
+
+    assert await index_1.arefresh_ref_docs([updated_document]) == [True]
+    assert await index_2.arefresh_ref_docs([updated_document]) == [True]
+
+    for index in (index_1, index_2):
+        node_ids = list(index.index_struct.nodes_dict.values())
+        nodes = await docstore.aget_nodes(node_ids)
+        assert len(nodes) == 1
+        assert nodes[0].get_content() == "Hello world, again."
+
+    # async deletes must keep the ref doc bookkeeping clean
+    ref_doc_info = await docstore.aget_ref_doc_info("doc_id")
+    assert ref_doc_info is not None
+    assert set(ref_doc_info.node_ids) == {
+        *index_1.index_struct.nodes_dict.values(),
+        *index_2.index_struct.nodes_dict.values(),
+    }
