@@ -79,8 +79,8 @@ class SlackReader(BasePydanticReader):
             earliest_date_timestamp = None or earliest_date_timestamp
         if latest_date is not None:
             latest_date_timestamp = latest_date.timestamp()
-        else:
-            latest_date_timestamp = datetime.now().timestamp() or latest_date_timestamp
+        elif latest_date_timestamp is None:
+            latest_date_timestamp = datetime.now().timestamp()
         if channel_types is not None:
             channel_types = channel_types
         else:
