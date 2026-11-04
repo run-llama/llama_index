@@ -57,6 +57,20 @@ def test_chinese_text(chinese_text: str) -> None:
     assert len(chunks) == 2
 
 
+def test_chinese_clause_separators_are_used_for_long_sentences() -> None:
+    """The fallback regex must keep Chinese clause separators with their clause."""
+    import re
+
+    from llama_index.core.node_parser.text.sentence import CHUNKING_REGEX
+
+    text = "这是第一段内容，包含一个很长的中文句子、使用多个分隔符；后面还有更多内容。"
+    chunks = re.findall(CHUNKING_REGEX, text)
+
+    assert any(chunk.endswith("，") for chunk in chunks)
+    assert any(chunk.endswith("、") for chunk in chunks)
+    assert any(chunk.endswith("；") for chunk in chunks)
+
+
 def test_contiguous_text(contiguous_text: str) -> None:
     splitter = SentenceSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
