@@ -112,15 +112,22 @@ class FaissMapVectorStore(FaissVectorStore):
 
         """
         new_ids = []
+        # Don't use ntotal as the next id: it goes down after a delete, so it can
+        # point at an id that is still in use.
+        next_faiss_id = max(
+            self._faiss_index.ntotal,
+            max(self._faiss_id_to_node_id_map, default=-1) + 1,
+        )
         for node in nodes:
             text_embedding = node.get_embedding()
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
-            self._node_id_to_faiss_id_map[node.id_] = self._faiss_index.ntotal
-            self._faiss_id_to_node_id_map[self._faiss_index.ntotal] = node.id_
+            self._node_id_to_faiss_id_map[node.id_] = next_faiss_id
+            self._faiss_id_to_node_id_map[next_faiss_id] = node.id_
             self._faiss_index.add_with_ids(
-                text_embedding_np, np.array([self._faiss_index.ntotal], dtype=np.int64)
+                text_embedding_np, np.array([next_faiss_id], dtype=np.int64)
             )
             new_ids.append(node.id_)
+            next_faiss_id += 1
         return new_ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
