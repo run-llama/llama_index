@@ -99,6 +99,42 @@ agent = FunctionAgent(llm=llm, tools=tool_spec.to_tool_list())
 
 See the [tools directory on GitHub](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) for a full list of community contributed tool specs.
 
+### Externally maintained tool specs
+
+New integration packages can be maintained in independent repositories, as described
+in the [contribution guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md).
+They use the same `BaseToolSpec.to_tool_list()` interface. Check the maintainer,
+installation source, credential requirements, and release status before use.
+
+- [Suno by Ace Data Cloud](https://github.com/AceDataCloud/SunoLlamaIndex): native
+  music generation and retrieval of the same asynchronous task. The independent
+  package is `llama-index-tools-suno-acedatacloud`, with
+  `from llama_index.tools.suno_acedatacloud import SunoToolSpec`. Its [v0.1.0 release](https://github.com/AceDataCloud/SunoLlamaIndex/releases/tag/v0.1.0)
+  provides an installable wheel and source archive. This integration is
+  maintained by Ace Data Cloud; it is not an official Suno product. Generation may
+  consume account credits. A pending audio preview is not a completed result.
+
+- [Seedance by Ace Data Cloud](https://github.com/AceDataCloud/SeedanceLlamaIndex):
+  native text-to-video, first-frame animation, and retrieval of the same task;
+  package `llama-index-tools-seedance-acedatacloud`.
+- [HappyHorse by Ace Data Cloud](https://github.com/AceDataCloud/HappyHorseLlamaIndex):
+  text-to-video and first-frame animation with explicit action-matched models;
+  package `llama-index-tools-happyhorse-acedatacloud`.
+- [GPT Image by Ace Data Cloud](https://github.com/AceDataCloud/GPTImageLlamaIndex):
+  image generation/editing and same-task retrieval; completed image tasks require
+  a `finished_at` timestamp. Package `llama-index-tools-gpt-image-acedatacloud`.
+- [Nano Banana by Ace Data Cloud](https://github.com/AceDataCloud/NanoBananaLlamaIndex):
+  image generation/editing and same-task retrieval;
+  package `llama-index-tools-nano-banana-acedatacloud`.
+
+These independently maintained packages provide synchronous and asynchronous native
+FunctionTools. Version 0.1.0 wheels and source archives are published on each linked repository’s
+GitHub Releases page; the README gives the exact installation URL. PyPI publication
+is pending registry project-creation limits, so a package-name install is not yet
+claimed. These entries do not imply default inclusion or endorsement. Each requires an
+Ace application token. Generation may consume credits; save the returned task ID
+and query it rather than submitting again while pending.
+
 ## Utility Tools
 
 Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using).

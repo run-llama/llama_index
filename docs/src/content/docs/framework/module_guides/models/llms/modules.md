@@ -65,3 +65,19 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [vLLM](/python/examples/llm/vllm)
 - [Xorbits Inference](/python/examples/llm/xinference_local_deployment)
 - [Yi](/python/examples/llm/yi)
+
+## Externally maintained integrations
+
+New LLM packages may be maintained outside the monorepo under the
+[contribution policy](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md).
+Check the source and publication status before installation.
+
+- [Ace Data Cloud](https://github.com/AceDataCloud/AceDataCloudModelProviderLlamaIndex):
+  independently maintained `llama-index-llms-acedatacloud`, imported as
+  `from llama_index.llms.acedatacloud import AceDataCloud`. The native class presets
+  the Ace endpoint and application-token environment variable; users explicitly
+  select the available model and context limit. Tool calling is opt-in for models
+  that support it. The [v0.1.0 release](https://github.com/AceDataCloud/AceDataCloudModelProviderLlamaIndex/releases/tag/v0.1.0)
+  provides an installable wheel and source archive; its README gives the versioned
+  installation URL. PyPI publication is pending registry project-creation limits.
+  This listing does not imply default inclusion or endorsement.
