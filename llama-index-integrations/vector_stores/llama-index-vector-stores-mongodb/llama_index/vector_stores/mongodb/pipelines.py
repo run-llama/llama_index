@@ -126,12 +126,13 @@ def filters_to_mql(
 
 
 def vector_search_stage(
-    query_vector: List[float],
+    query_vector: Optional[List[float]],
     search_field: str,
     index_name: str,
     limit: int = 4,
     filter: Optional[Dict[str, Any]] = None,
     oversampling_factor: int = 10,
+    query_text: Optional[str] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
@@ -143,6 +144,8 @@ def vector_search_stage(
 
     Args:
         query_vector: List of embedding vector
+        query_text: Text to embed using the model configured in an autoEmbed index.
+            When provided, replaces query_vector.
         search_field: Field in Collection containing embedding vectors
         index_name: Name of Atlas Vector Search Index tied to Collection
         limit: Number of documents to return
@@ -155,11 +158,14 @@ def vector_search_stage(
     """
     if filter is None:
         filter = {}
+    query_input: Dict[str, Any] = {"queryVector": query_vector}
+    if query_text is not None:
+        query_input = {"query": {"text": query_text}}
     return {
         "$vectorSearch": {
             "index": index_name,
             "path": search_field,
-            "queryVector": query_vector,
+            **query_input,
             "numCandidates": limit * oversampling_factor,
             "limit": limit,
             "filter": filter,
