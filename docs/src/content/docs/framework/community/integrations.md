@@ -13,6 +13,13 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [past dev](https://pypi.org/project/llama-index-tools-pastdotdev/): recall and ingest tools for long-term agent memory (external package)
+
+## Memory
+
+Memory blocks for the [`Memory` class](/python/framework/module_guides/deploying/agents/memory):
+
+- [past dev](https://pypi.org/project/llama-index-memory-pastdotdev/): a memory block that recalls and ingests long-term memory with the past dev Memory API (external package)
 
 ## LlamaPacks -- Code Templates
 
