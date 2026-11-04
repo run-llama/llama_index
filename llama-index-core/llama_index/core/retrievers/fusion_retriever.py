@@ -129,7 +129,9 @@ class QueryFusionRetriever(BaseRetriever):
                 sorted(nodes_with_scores, key=lambda x: x.score or 0.0, reverse=True)
             ):
                 hash = node_with_score.node.hash
-                hash_to_node[hash] = node_with_score
+                # Fusion owns the score it assigns, so avoid writing it back into
+                # a wrapper that may be cached and reused by the retriever.
+                hash_to_node[hash] = node_with_score.model_copy()
                 if hash not in fused_scores:
                     fused_scores[hash] = 0.0
                 fused_scores[hash] += 1.0 / (rank + k)
