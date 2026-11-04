@@ -79,6 +79,48 @@ async def test_adelete_and_aget(vector_store: QdrantVectorStore) -> None:
     assert len(existing_nodes) == 2
 
 
+ALL_NODE_IDS = [
+    "11111111-1111-1111-1111-111111111111",
+    "22222222-2222-2222-2222-222222222222",
+    "33333333-3333-3333-3333-333333333333",
+]
+
+# matches the first two nodes, but not the third one
+SOME_KEY_1_OR_2 = MetadataFilters(
+    filters=[
+        MetadataFilter(key="some_key", value=1),
+        MetadataFilter(key="some_key", value=2),
+    ],
+    condition=FilterCondition.OR,
+)
+
+
+def test_delete_and_get_nodes_with_node_ids_and_or_filters(
+    vector_store: QdrantVectorStore,
+) -> None:
+    # node_ids and filters must both match, even when the filters use OR
+    vector_store.delete_nodes(node_ids=[ALL_NODE_IDS[2]], filters=SOME_KEY_1_OR_2)
+    assert len(vector_store.get_nodes(node_ids=ALL_NODE_IDS)) == 3
+
+    nodes = vector_store.get_nodes(node_ids=[ALL_NODE_IDS[2]], filters=SOME_KEY_1_OR_2)
+    assert nodes == []
+
+
+@pytest.mark.asyncio
+async def test_adelete_and_aget_nodes_with_node_ids_and_or_filters(
+    vector_store: QdrantVectorStore,
+) -> None:
+    await vector_store.adelete_nodes(
+        node_ids=[ALL_NODE_IDS[2]], filters=SOME_KEY_1_OR_2
+    )
+    assert len(await vector_store.aget_nodes(node_ids=ALL_NODE_IDS)) == 3
+
+    nodes = await vector_store.aget_nodes(
+        node_ids=[ALL_NODE_IDS[2]], filters=SOME_KEY_1_OR_2
+    )
+    assert nodes == []
+
+
 @pytest.mark.asyncio
 async def test_aclear(vector_store: QdrantVectorStore) -> None:
     await vector_store.aclear()
