@@ -1,3 +1,6 @@
+import base64
+from urllib.parse import urlparse
+
 from banks import Prompt
 from banks.types import ContentBlockType as BanksContentBlockType
 from copy import deepcopy
@@ -19,6 +22,15 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.llms import ChatMessage
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.types import BaseOutputParser
+
+
+def _is_url(data: str) -> bool:
+    """Check whether a banks media payload is a URL rather than base64 data."""
+    return bool(urlparse(data).scheme)
+
+
+# banks DocumentFormat values mapped to mimetypes
+_DOCUMENT_FORMAT_MIMETYPES = {"pdf": "application/pdf", "txt": "text/plain"}
 
 
 class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
@@ -108,13 +120,40 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
                     elif bank_block.type == BanksContentBlockType.image_url:
                         llama_blocks.append(ImageBlock(url=bank_block.image_url.url))
                     elif bank_block.type == BanksContentBlockType.audio:
-                        llama_blocks.append(AudioBlock(url=bank_block.input_audio.data))
+                        input_audio = bank_block.input_audio
+                        if _is_url(input_audio.data):
+                            llama_blocks.append(AudioBlock(url=input_audio.data))
+                        else:
+                            llama_blocks.append(
+                                AudioBlock(
+                                    audio=base64.b64decode(input_audio.data),
+                                    format=input_audio.format,
+                                )
+                            )
                     elif bank_block.type == BanksContentBlockType.video:
-                        llama_blocks.append(VideoBlock(url=bank_block.input_video.data))
+                        input_video = bank_block.input_video
+                        if _is_url(input_video.data):
+                            llama_blocks.append(VideoBlock(url=input_video.data))
+                        else:
+                            llama_blocks.append(
+                                VideoBlock(
+                                    video=base64.b64decode(input_video.data),
+                                    video_mimetype=f"video/{input_video.format}",
+                                )
+                            )
                     elif bank_block.type == BanksContentBlockType.document:
-                        llama_blocks.append(
-                            DocumentBlock(url=bank_block.input_document.data)
-                        )
+                        input_document = bank_block.input_document
+                        if _is_url(input_document.data):
+                            llama_blocks.append(DocumentBlock(url=input_document.data))
+                        else:
+                            llama_blocks.append(
+                                DocumentBlock(
+                                    data=base64.b64decode(input_document.data),
+                                    document_mimetype=_DOCUMENT_FORMAT_MIMETYPES.get(
+                                        input_document.format
+                                    ),
+                                )
+                            )
                     else:
                         raise ValueError(
                             f"Unsupported content block type: {bank_block.type}"
