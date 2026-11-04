@@ -102,14 +102,22 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
                 "`pip install treelib`."
             )
 
-        all_spans = self.completed_spans + self.dropped_spans
+        # Work on copies: this is a read-only view, and rewriting parent ids on
+        # the stored spans would append another "-MISSING" on every call.
+        all_spans = [s.model_copy() for s in self.completed_spans + self.dropped_spans]
+
+        # Placeholder spans are collected separately so the list being iterated
+        # is not mutated while walking it.
+        placeholder_spans: List[SimpleSpan] = []
         for s in all_spans:
             if s.parent_id is None:
                 continue
             if not any(ns.id_ == s.parent_id for ns in all_spans):
                 warnings.warn(f"Parent with id {s.parent_id} missing from spans")
-                s.parent_id += "-MISSING"
-                all_spans.append(SimpleSpan(id_=s.parent_id, parent_id=None))
+                s.parent_id = f"{s.parent_id}-MISSING"
+                placeholder_spans.append(SimpleSpan(id_=s.parent_id, parent_id=None))
+
+        all_spans.extend(placeholder_spans)
 
         parents = self._get_parents()
         span_groups = []
