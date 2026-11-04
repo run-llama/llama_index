@@ -175,6 +175,11 @@ def test_image_node_mimetype() -> None:
     assert node2.image_mimetype == "image/png"
 
 
+def test_image_node_mimetype_uppercase_extension() -> None:
+    node = ImageNode(image_path="path.PNG")
+    assert node.image_mimetype == "image/png"
+
+
 def test_build_image_node_image_resource() -> None:
     ir = MediaResource(path="my-image.jpg", mimetype=None)
     tr = MediaResource(text="test data")
