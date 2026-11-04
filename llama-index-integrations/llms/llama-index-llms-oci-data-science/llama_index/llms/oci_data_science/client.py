@@ -43,6 +43,13 @@ _T = TypeVar("_T", bound="BaseClient")
 
 logger = logging.getLogger(__name__)
 
+# asyncio.create_task() only holds a weak reference to the returned Task, so
+# a task with no other strong reference can be garbage-collected before it
+# runs - a real risk for a task created from __del__, where the object
+# creating it is already being torn down. Keeping tasks here until they
+# finish (removed via the done callback) keeps them alive long enough to run.
+_background_close_tasks: set = set()
+
 
 class OCIAuth(httpx.Auth):
     """
@@ -619,7 +626,9 @@ class AsyncClient(BaseClient):
             if not self._client.is_closed:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    loop.create_task(self.close())
+                    task = loop.create_task(self.close())
+                    _background_close_tasks.add(task)
+                    task.add_done_callback(_background_close_tasks.discard)
                 else:
                     loop.run_until_complete(self.close())
         except Exception:

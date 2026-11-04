@@ -8,6 +8,7 @@ from llama_index.embeddings.oci_data_science.client import (
     Client,
     ExtendedRequestException,
     OCIAuth,
+    _background_close_tasks,
     _create_retry_decorator,
     _retry_decorator,
     _should_retry_exception,
@@ -514,3 +515,23 @@ class TestAsyncClient:
         client.close = AsyncMock()
         await client.__aexit__(None, None, None)  # Manually invoke __aexit__
         client.close.assert_called_once()
+
+    async def test_del_keeps_close_task_alive_until_it_completes(self):
+        """
+        __del__ creates a task for close() from inside a running loop.
+        asyncio.create_task() only keeps a *weak* reference to that task, so
+        with nothing else referencing it - as is the case in __del__, where
+        the object creating the task is itself being torn down - it can be
+        garbage-collected before it ever runs. __del__ must keep a strong
+        reference (here, _background_close_tasks) until the task is done.
+        """
+        self.client.close = AsyncMock()
+
+        self.client.__del__()
+
+        assert len(_background_close_tasks) == 1
+        (task,) = tuple(_background_close_tasks)
+        await task
+
+        self.client.close.assert_called_once()
+        assert len(_background_close_tasks) == 0
