@@ -22,6 +22,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Union,
@@ -49,6 +50,7 @@ from llama_index.core.bridge.pydantic import (
     field_serializer,
     field_validator,
     model_serializer,
+    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -260,17 +262,90 @@ class RelatedNodeInfo(BaseComponent):
 RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 
+def _source_relationship_key(relationships: Mapping[Any, Any]) -> Any:
+    """Return the SOURCE key used in a relationships mapping, if present."""
+    for key in (NodeRelationship.SOURCE, NodeRelationship.SOURCE.value, "SOURCE"):
+        if key in relationships:
+            return key
+    return None
+
+
+def _related_node_id(relation: Any) -> Optional[str]:
+    """Extract a node_id from a SOURCE relationship value."""
+    if isinstance(relation, RelatedNodeInfo):
+        return relation.node_id
+    if isinstance(relation, Mapping) and relation.get("node_id") is not None:
+        return str(relation["node_id"])
+    return None
+
+
 # Node classes for indexes
 class BaseNode(BaseComponent):
     """
     Base node Object.
 
-    Generic abstract interface for retrievable nodes
+    Generic abstract interface for retrievable nodes.
+
+    Note:
+        `ref_doc_id`, `document_id`, and (on non-Document nodes) `doc_id` are
+        not stored fields. They alias the SOURCE relationship:
+
+        ``node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=...)``
+
+        Passing them to a node constructor, or assigning ``node.ref_doc_id``,
+        sets that relationship. ``Document(doc_id=...)`` still maps to ``id_``.
 
     """
 
     # hash is computed on local field, during the validation process
     model_config = ConfigDict(populate_by_name=True, validate_assignment=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_legacy_identity_kwargs(cls, data: Any) -> Any:
+        """Map legacy identity kwargs onto the SOURCE relationship."""
+        if not isinstance(data, dict):
+            return data
+
+        is_document = any(base.__name__ == "Document" for base in cls.__mro__)
+        identity_values: dict[str, Any] = {}
+        for key in ("ref_doc_id", "document_id", "doc_id"):
+            if key not in data:
+                continue
+            if key == "doc_id" and is_document:
+                continue
+            value = data.pop(key)
+            if value is not None:
+                identity_values[key] = value
+
+        if not identity_values:
+            return data
+
+        unique_ids = {str(value) for value in identity_values.values()}
+        if len(unique_ids) > 1:
+            raise ValueError(
+                "ref_doc_id, document_id, and doc_id must refer to the same source "
+                f"node; got conflicting values: {identity_values}"
+            )
+        source_id = str(next(iter(unique_ids)))
+
+        relationships = data.get("relationships")
+        if relationships is None:
+            relationships = {}
+            data["relationships"] = relationships
+
+        source_key = _source_relationship_key(relationships)
+        if source_key is not None:
+            existing_id = _related_node_id(relationships[source_key])
+            if existing_id is not None and existing_id != source_id:
+                raise ValueError(
+                    "Cannot set identity kwargs when a SOURCE relationship already "
+                    f"exists with a different node_id ({existing_id!r} vs {source_id!r})."
+                )
+        else:
+            relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=source_id)
+
+        return data
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -403,6 +478,15 @@ class BaseNode(BaseComponent):
             raise ValueError("Source object must be a single RelatedNodeInfo object")
         return relation
 
+    @source_node.setter
+    def source_node(self, source_node: Optional[RelatedNodeInfo]) -> None:
+        if source_node is None:
+            self.relationships.pop(NodeRelationship.SOURCE, None)
+            return
+        if isinstance(source_node, list):
+            raise ValueError("Source object must be a single RelatedNodeInfo object")
+        self.relationships[NodeRelationship.SOURCE] = source_node
+
     @property
     def prev_node(self) -> Optional[RelatedNodeInfo]:
         """Prev node."""
@@ -454,6 +538,13 @@ class BaseNode(BaseComponent):
         if source_node is None:
             return None
         return source_node.node_id
+
+    @ref_doc_id.setter
+    def ref_doc_id(self, ref_doc_id: Optional[str]) -> None:
+        if ref_doc_id is None:
+            self.source_node = None
+            return
+        self.source_node = RelatedNodeInfo(node_id=ref_doc_id)
 
     @property
     @deprecated(
@@ -763,7 +854,14 @@ class Node(BaseNode):
 
 
 class TextNode(BaseNode):
-    """Provided for backward compatibility."""
+    """
+    Provided for backward compatibility.
+
+    Note:
+        Identity kwargs such as ``ref_doc_id`` are applied to the SOURCE
+        relationship. See ``BaseNode`` for details.
+
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""
