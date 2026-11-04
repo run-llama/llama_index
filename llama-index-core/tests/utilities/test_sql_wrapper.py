@@ -52,6 +52,25 @@ def test_get_table_columns(sql_database: SQLDatabase) -> None:
     assert [column["name"] for column in columns] == ["id", "name"]
 
 
+@pytest.mark.parametrize("schema", [None, "analytics"])
+def test_get_table_columns_uses_configured_schema(schema: str | None) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    try:
+        with engine.begin() as connection:
+            connection.exec_driver_sql("ATTACH DATABASE ':memory:' AS analytics")
+            connection.exec_driver_sql("CREATE TABLE records (default_value TEXT)")
+            connection.exec_driver_sql(
+                "CREATE TABLE analytics.records (analytics_value INTEGER)"
+            )
+
+        database = SQLDatabase(engine, schema=schema)
+        columns = database.get_table_columns("records")
+        expected = "analytics_value" if schema else "default_value"
+        assert [column["name"] for column in columns] == [expected]
+    finally:
+        engine.dispose()
+
+
 # Test get_single_table_info method
 def test_get_single_table_info(sql_database: SQLDatabase) -> None:
     assert sql_database.get_single_table_info("test_table") == (
