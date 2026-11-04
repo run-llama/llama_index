@@ -1,7 +1,7 @@
 import os
 import httpx
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from pathlib import Path
 from typing import List
@@ -90,6 +90,35 @@ def test_get_model_kwargs(default_responses_llm):
 
     custom_kwargs = llm._get_model_kwargs(top_p=0.8, max_output_tokens=100)
     assert custom_kwargs["max_output_tokens"] == 100
+
+
+@pytest.mark.asyncio
+async def test_achat_preserves_reasoning_items_when_store_enabled(default_responses_llm):
+    """Async Responses requests must match sync reasoning-item serialization."""
+    response = MagicMock(output=[], usage=MagicMock())
+    default_responses_llm._aclient.responses.create = AsyncMock(return_value=response)
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="What is 2+2?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="simple arithmetic",
+                    additional_information={"id": "rs_123"},
+                ),
+                TextBlock(text="4"),
+            ],
+        ),
+    ]
+
+    await default_responses_llm._achat(messages, store=True)
+
+    request = default_responses_llm._aclient.responses.create.await_args.kwargs
+    assert [item["type"] for item in request["input"]] == [
+        "user",
+        "reasoning",
+        "assistant",
+    ]
 
 
 def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
@@ -1024,3 +1053,4 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
