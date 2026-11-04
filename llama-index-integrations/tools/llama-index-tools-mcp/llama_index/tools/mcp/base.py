@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from mcp.client.session import ClientSession
@@ -14,6 +15,19 @@ from llama_index.tools.mcp.tool_spec_mixins import (
     TypeCreationMixin,
     FieldExtractionMixin,
 )
+
+
+_TEMPLATE_VAR_RE = re.compile(r"\{([^{}]+)\}")
+
+
+def _extract_template_vars(uri_template: str) -> List[str]:
+    """Return ordered, de-duplicated `{var}` placeholders from a URI template."""
+    seen: List[str] = []
+    for match in _TEMPLATE_VAR_RE.finditer(uri_template):
+        var = match.group(1)
+        if var not in seen:
+            seen.append(var)
+    return seen
 
 
 class McpToolSpec(
@@ -123,6 +137,22 @@ class McpToolSpec(
 
         return async_resource_fn
 
+    def _create_resource_template_fn(
+        self, uri_template: str, var_names: List[str]
+    ) -> Callable:
+        """
+        Create a resource-template call function that expands `{var}` placeholders
+        with keyword arguments before calling `read_resource`.
+        """
+
+        async def async_resource_template_fn(**kwargs: Any) -> Any:
+            expanded_uri = uri_template.format(
+                **{name: kwargs[name] for name in var_names}
+            )
+            return await self.client.read_resource(expanded_uri)
+
+        return async_resource_template_fn
+
     async def to_tool_list_async(self) -> List[FunctionTool]:
         """
         Asynchronous method to convert MCP tools to FunctionTool objects.
@@ -173,15 +203,43 @@ class McpToolSpec(
         if self.include_resources:
             resources_list = await self.fetch_resources()
             for resource in resources_list:
-                if hasattr(resource, "uri"):
+                tool_name = resource.name.replace("/", "_")
+                uri_template = getattr(resource, "uri_template", None) or getattr(
+                    resource, "template", None
+                )
+                if uri_template is not None:
+                    var_names = _extract_template_vars(uri_template)
+                    if var_names:
+                        fn = self._create_resource_template_fn(uri_template, var_names)
+                        model_schema = create_model(
+                            f"{tool_name}_Schema",
+                            **dict.fromkeys(var_names, (str, ...)),
+                        )
+                        function_tool_list.append(
+                            FunctionTool.from_defaults(
+                                async_fn=fn,
+                                tool_metadata=ToolMetadata(
+                                    name=tool_name,
+                                    description=resource.description,
+                                    fn_schema=model_schema,
+                                ),
+                            )
+                        )
+                        continue
+                    # Template with no `{var}` placeholders — treat as static URI.
+                    uri = uri_template
+                elif hasattr(resource, "uri"):
                     uri = resource.uri
-                elif hasattr(resource, "template"):
-                    uri = resource.template
-                fn = self._create_resource_fn(uri)
+                else:
+                    logging.warning(
+                        "Skipping MCP resource %r: no uri or uri_template attribute.",
+                        resource.name,
+                    )
+                    continue
                 function_tool_list.append(
                     FunctionTool.from_defaults(
-                        async_fn=fn,
-                        name=resource.name.replace("/", "_"),
+                        async_fn=self._create_resource_fn(uri),
+                        name=tool_name,
                         description=resource.description,
                     )
                 )
