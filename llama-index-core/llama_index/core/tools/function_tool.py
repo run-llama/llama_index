@@ -32,7 +32,10 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
-from llama_index.core.tools.utils import create_schema_from_function
+from llama_index.core.tools.utils import (
+    create_schema_from_function,
+    get_function_signature,
+)
 from llama_index.core.schema import BaseNode, Document
 from llama_index.core.workflow.context import Context
 
@@ -106,7 +109,7 @@ class FunctionTool(AsyncBaseTool):
         # Determine if the function requires context by inspecting its signature
         fn_to_inspect = fn or async_fn
         assert fn_to_inspect is not None
-        sig = inspect.signature(fn_to_inspect)
+        sig = get_function_signature(fn_to_inspect)
         self.requires_context = any(
             _is_context_param(param.annotation) for param in sig.parameters.values()
         )
@@ -191,7 +194,7 @@ class FunctionTool(AsyncBaseTool):
             docstring = fn_to_parse.__doc__ or ""
 
             # Get function signature
-            fn_sig = inspect.signature(fn_to_parse)
+            fn_sig = get_function_signature(fn_to_parse)
             fn_params = set(fn_sig.parameters.keys())
 
             # 1. Extract docstring param descriptions
