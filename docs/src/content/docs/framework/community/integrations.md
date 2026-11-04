@@ -27,6 +27,8 @@ We support [a huge number of LLMs](/python/framework/module_guides/models/llms/m
 Check out our [one-click observability](/python/framework/module_guides/observability) page
 for full tracing integrations.
 
+- [Drex for LlamaIndex](https://github.com/nace-ai/llama-index-nace)
+
 ## Experiment Tracking
 
 - [Kiln](https://github.com/Kiln-AI/Kiln/tree/main/libs/core#taking-kiln-rag-to-production)
