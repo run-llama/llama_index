@@ -1,5 +1,7 @@
+import asyncio
 import json
 import pytest
+from pydantic_core import PydanticSerializationError
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.storage.chat_store.sql import (
@@ -15,6 +17,144 @@ def chat_store() -> SQLAlchemyChatStore:
         table_name="test_messages",
         async_database_uri="sqlite+aiosqlite:///:memory:",
     )
+
+
+@pytest.mark.asyncio
+async def test_concurrent_initialization_waits_for_data_restore(
+    chat_store: SQLAlchemyChatStore, monkeypatch: pytest.MonkeyPatch
+):
+    chat_store._db_data = [
+        {
+            "key": "user1",
+            "timestamp": 1,
+            "role": "user",
+            "status": MessageStatus.ACTIVE.value,
+            "data": ChatMessage(role="user", content="restored").model_dump(
+                mode="json"
+            ),
+        }
+    ]
+    tables_ready = asyncio.Event()
+    finish_setup = asyncio.Event()
+    setup_tables = SQLAlchemyChatStore._setup_tables
+
+    async def paused_setup_tables(self, engine):
+        table = await setup_tables(self, engine)
+        tables_ready.set()
+        await finish_setup.wait()
+        return table
+
+    monkeypatch.setattr(SQLAlchemyChatStore, "_setup_tables", paused_setup_tables)
+    first = asyncio.create_task(chat_store._initialize())
+    second = None
+    try:
+        await asyncio.wait_for(tables_ready.wait(), timeout=5)
+        second = asyncio.create_task(chat_store._initialize())
+        await asyncio.sleep(0)
+        assert not second.done()
+    finally:
+        finish_setup.set()
+        await asyncio.gather(first, *([second] if second is not None else []))
+
+    assert first.result() == second.result()
+    assert [m.content for m in await chat_store.get_messages("user1")] == ["restored"]
+    assert await chat_store.count_messages("user1") == 1
+    assert len(chat_store.model_dump()["db_data"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_concurrent_first_reads(chat_store: SQLAlchemyChatStore):
+    results = await asyncio.gather(
+        *(chat_store.get_messages("user1") for _ in range(5)), return_exceptions=True
+    )
+    assert results == [[] for _ in range(5)]
+
+    await chat_store.add_message("user1", ChatMessage(role="user", content="hello"))
+    assert [m.content for m in await chat_store.get_messages("user1")] == ["hello"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cancel", [False, True])
+async def test_initialization_waiter_retries_interrupted_setup(
+    chat_store: SQLAlchemyChatStore, monkeypatch: pytest.MonkeyPatch, cancel: bool
+):
+    chat_store._db_data = [
+        {
+            "key": "user1",
+            "timestamp": 1,
+            "role": "user",
+            "status": MessageStatus.ACTIVE.value,
+            "data": ChatMessage(role="user", content="restored").model_dump(
+                mode="json"
+            ),
+        }
+    ]
+    tables_ready = asyncio.Event()
+    interrupt_setup = asyncio.Event()
+    setup_tables = SQLAlchemyChatStore._setup_tables
+    attempts = 0
+
+    async def interrupted_setup_tables(self, engine):
+        nonlocal attempts
+        attempts += 1
+        table = await setup_tables(self, engine)
+        if attempts == 1:
+            tables_ready.set()
+            await interrupt_setup.wait()
+            raise RuntimeError("interrupted setup")
+        return table
+
+    monkeypatch.setattr(SQLAlchemyChatStore, "_setup_tables", interrupted_setup_tables)
+    first = asyncio.create_task(chat_store._initialize())
+    second = None
+    try:
+        await asyncio.wait_for(tables_ready.wait(), timeout=5)
+        second = asyncio.create_task(chat_store._initialize())
+        await asyncio.sleep(0)
+        if cancel:
+            first.cancel()
+        else:
+            interrupt_setup.set()
+        results = await asyncio.gather(first, second, return_exceptions=True)
+    finally:
+        interrupt_setup.set()
+        await asyncio.gather(
+            first, *([second] if second is not None else []), return_exceptions=True
+        )
+
+    assert isinstance(results[0], asyncio.CancelledError if cancel else RuntimeError)
+    assert not isinstance(results[1], BaseException)
+    assert attempts == 2
+    assert [m.content for m in await chat_store.get_messages("user1")] == ["restored"]
+
+
+@pytest.mark.asyncio
+async def test_serialize_during_initialization(
+    chat_store: SQLAlchemyChatStore, monkeypatch: pytest.MonkeyPatch
+):
+    tables_ready = asyncio.Event()
+    finish_setup = asyncio.Event()
+    setup_tables = SQLAlchemyChatStore._setup_tables
+
+    async def paused_setup_tables(self, engine):
+        table = await setup_tables(self, engine)
+        tables_ready.set()
+        await finish_setup.wait()
+        return table
+
+    monkeypatch.setattr(SQLAlchemyChatStore, "_setup_tables", paused_setup_tables)
+    initializing = asyncio.create_task(chat_store._initialize())
+    try:
+        await asyncio.wait_for(tables_ready.wait(), timeout=5)
+        with pytest.raises(
+            PydanticSerializationError, match="initialization to finish"
+        ):
+            chat_store.model_dump()
+    finally:
+        finish_setup.set()
+        await initializing
+
+    assert chat_store.model_dump()["db_data"] == []
 
 
 @pytest.mark.asyncio
