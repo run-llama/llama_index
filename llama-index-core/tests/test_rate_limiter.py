@@ -499,3 +499,41 @@ def test_sliding_window_embedding_calls_acquire() -> None:
     embed = MockEmbedding(embed_dim=8, rate_limiter=rl)
     result = embed.get_text_embedding("test")
     assert len(result) == 8
+
+
+def test_token_bucket_rejects_request_larger_than_bucket() -> None:
+    rl = TokenBucketRateLimiter(tokens_per_minute=100)
+    with pytest.raises(ValueError, match="exceeds the token bucket capacity"):
+        rl.acquire(num_tokens=200)
+
+
+@pytest.mark.asyncio
+async def test_token_bucket_async_rejects_request_larger_than_bucket() -> None:
+    rl = TokenBucketRateLimiter(tokens_per_minute=100)
+    with pytest.raises(ValueError, match="exceeds the token bucket capacity"):
+        await rl.async_acquire(num_tokens=200)
+
+
+def test_sliding_window_rejects_request_larger_than_window() -> None:
+    rl = SlidingWindowRateLimiter(tokens_per_minute=100)
+    with pytest.raises(ValueError, match="exceeds the sliding window token limit"):
+        rl.acquire(num_tokens=200)
+
+
+def test_sliding_window_burst_counts_toward_limit() -> None:
+    rl = SlidingWindowRateLimiter(tokens_per_minute=100, token_burst=50.0)
+    rl.acquire(num_tokens=150)  # fits with burst headroom
+    with pytest.raises(ValueError, match="exceeds the sliding window token limit"):
+        rl.acquire(num_tokens=151)
+
+
+@pytest.mark.asyncio
+async def test_sliding_window_async_rejects_request_larger_than_window() -> None:
+    rl = SlidingWindowRateLimiter(tokens_per_minute=100)
+    with pytest.raises(ValueError, match="exceeds the sliding window token limit"):
+        await rl.async_acquire(num_tokens=200)
+
+
+def test_token_bucket_request_within_capacity_still_acquires() -> None:
+    rl = TokenBucketRateLimiter(tokens_per_minute=100)
+    rl.acquire(num_tokens=100)  # exactly at capacity, no wait, no error

@@ -187,6 +187,11 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
                 consulted when ``tokens_per_minute`` is configured.
 
         """
+        if self.tokens_per_minute is not None and num_tokens > self._token_max_tokens:
+            raise ValueError(
+                f"num_tokens ({num_tokens}) exceeds the token bucket capacity "
+                f"({self._token_max_tokens:g}); the request can never be satisfied."
+            )
         while True:
             with self._lock:
                 self._refill()
@@ -205,6 +210,11 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
                 consulted when ``tokens_per_minute`` is configured.
 
         """
+        if self.tokens_per_minute is not None and num_tokens > self._token_max_tokens:
+            raise ValueError(
+                f"num_tokens ({num_tokens}) exceeds the token bucket capacity "
+                f"({self._token_max_tokens:g}); the request can never be satisfied."
+            )
         while True:
             with self._lock:
                 self._refill()
@@ -366,6 +376,15 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
                 consulted when ``tokens_per_minute`` is configured.
 
         """
+        if (
+            self.tokens_per_minute is not None
+            and num_tokens > self.tokens_per_minute + self.token_burst
+        ):
+            raise ValueError(
+                f"num_tokens ({num_tokens}) exceeds the sliding window token "
+                f"limit ({self.tokens_per_minute + self.token_burst:g}); the "
+                "request can never be satisfied."
+            )
         while True:
             now = time.monotonic()
             with self._lock:
@@ -386,6 +405,15 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
                 consulted when ``tokens_per_minute`` is configured.
 
         """
+        if (
+            self.tokens_per_minute is not None
+            and num_tokens > self.tokens_per_minute + self.token_burst
+        ):
+            raise ValueError(
+                f"num_tokens ({num_tokens}) exceeds the sliding window token "
+                f"limit ({self.tokens_per_minute + self.token_burst:g}); the "
+                "request can never be satisfied."
+            )
         while True:
             now = time.monotonic()
             with self._lock:
