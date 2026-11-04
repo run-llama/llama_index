@@ -68,7 +68,11 @@ MISTRAL_AI_REASONING_MODELS = (
     "magistral-small-latest",
 )
 
-MISTRALAI_CODE_MODELS = "codestral-latest"
+MISTRALAI_CODE_MODELS = (
+    "codestral-latest",
+    "codestral-2501",
+    "codestral-2508",
+)
 
 THINKING_REGEX = re.compile(r"^<think>\n(.*?)\n</think>\n")
 THINKING_START_REGEX = re.compile(r"^<think>\n")
