@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 
 import aiohttp
@@ -101,7 +102,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
             )
             response.raise_for_status()
             embeddings.extend(response.json()["embeddings"])
-        return embeddings
+        return self._normalize_embeddings(embeddings)
 
     def get_url(self):
         """
@@ -134,7 +135,18 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
                 ) as resp:
                     response = await resp.json()
                     embeddings.extend(response["embeddings"])
-        return embeddings
+        return self._normalize_embeddings(embeddings)
+
+    def _normalize_embeddings(self, embeddings: List[List[float]]) -> List[List[float]]:
+        if not self._normalize:
+            return embeddings
+        normalized = []
+        for embedding in embeddings:
+            norm = math.hypot(*embedding)
+            normalized.append(
+                [value / norm for value in embedding] if norm else embedding
+            )
+        return normalized
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """
