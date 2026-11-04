@@ -409,6 +409,14 @@ class OpensearchVectorClient:
         op = filter.operator
 
         equality_postfix = ".keyword" if self._is_text_field(value=filter.value) else ""
+        # Set operators receive a list, so the postfix depends on every element
+        # being a text value rather than on the list itself.
+        set_postfix = (
+            ".keyword"
+            if isinstance(filter.value, list)
+            and all(self._is_text_field(value=val) for val in filter.value)
+            else ""
+        )
 
         if op == FilterOperator.EQ:
             return {"term": {f"{key}{equality_postfix}": filter.value}}
@@ -426,18 +434,15 @@ class OpensearchVectorClient:
                 }
             }
         elif op in [FilterOperator.IN, FilterOperator.ANY]:
-            if isinstance(filter.value, list) and all(
-                self._is_text_field(val) for val in filter.value
-            ):
-                return {"terms": {f"{key}.keyword": filter.value}}
-            else:
-                return {"terms": {key: filter.value}}
+            return {"terms": {f"{key}{set_postfix}": filter.value}}
         elif op == FilterOperator.NIN:
-            return {"bool": {"must_not": {"terms": {key: filter.value}}}}
+            return {
+                "bool": {"must_not": {"terms": {f"{key}{set_postfix}": filter.value}}}
+            }
         elif op == FilterOperator.ALL:
             return {
                 "terms_set": {
-                    key: {
+                    f"{key}{set_postfix}": {
                         "terms": filter.value,
                         "minimum_should_match_script": {"source": "params.num_terms"},
                     }
