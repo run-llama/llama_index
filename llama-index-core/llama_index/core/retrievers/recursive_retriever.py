@@ -168,7 +168,7 @@ class RecursiveRetriever(BaseRetriever):
                 color="blue",
             )
         query_id = query_id or self._root_id
-        cur_similarity = cur_similarity or 1.0
+        cur_similarity = 1.0 if cur_similarity is None else cur_similarity
 
         obj = self._get_object(query_id)
         if isinstance(obj, BaseNode):
