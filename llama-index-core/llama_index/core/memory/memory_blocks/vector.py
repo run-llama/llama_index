@@ -120,25 +120,30 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         if not query_text:
             return ""
 
-        # Handle filtering by session_id
+        # Handle filtering by session_id.
+        # Build per-call query kwargs instead of mutating self.query_kwargs: the
+        # old code appended the session filter to the block's own config, so a
+        # later call with a *different* session_id kept querying with the stale
+        # filter (it only checked for the filter's existence, not its value).
+        query_kwargs = dict(self.query_kwargs)
         if session_id is not None:
-            filter = MetadataFilter(key="session_id", value=session_id)
-            if "filters" in self.query_kwargs and isinstance(
-                self.query_kwargs["filters"], MetadataFilters
-            ):
-                # only add session_id filter if it does not exist in the filters list
-                session_id_filter_exists = False
-                for metadata_filter in self.query_kwargs["filters"].filters:
-                    if (
-                        isinstance(metadata_filter, MetadataFilter)
-                        and metadata_filter.key == "session_id"
-                    ):
-                        session_id_filter_exists = True
-                        break
-                if not session_id_filter_exists:
-                    self.query_kwargs["filters"].filters.append(filter)
+            session_filter = MetadataFilter(key="session_id", value=session_id)
+            existing_filters = query_kwargs.get("filters")
+            if isinstance(existing_filters, MetadataFilters):
+                # drop any stale session_id filter, then apply the current one
+                filters = [
+                    f
+                    for f in existing_filters.filters
+                    if not (
+                        isinstance(f, MetadataFilter) and f.key == "session_id"
+                    )
+                ]
+                filters.append(session_filter)
+                query_kwargs["filters"] = MetadataFilters(
+                    filters=filters, condition=existing_filters.condition
+                )
             else:
-                self.query_kwargs["filters"] = MetadataFilters(filters=[filter])
+                query_kwargs["filters"] = MetadataFilters(filters=[session_filter])
 
         # Create and execute the query
         query_embedding = await self.embed_model.aget_query_embedding(query_text)
@@ -146,7 +151,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             query_str=query_text,
             query_embedding=query_embedding,
             similarity_top_k=self.similarity_top_k,
-            **self.query_kwargs,
+            **query_kwargs,
         )
 
         results = await self.vector_store.aquery(query)
