@@ -216,3 +216,56 @@ def test_create_retry_decorator_non_rate_limit_still_retries():
 
     assert result == "ok"
     assert call_count == 2
+
+
+# -- transport-independence of the Retry-After lookup --
+#
+# openai>=3 retyped ``APIStatusError.response`` from ``httpx.Response`` to
+# ``httpx2.Response``, so in production _parse_retry_after receives whichever
+# response class the installed openai major uses. It reads the header via
+# ``headers.get("retry-after")`` and relies on that lookup being
+# case-insensitive; these pin that assumption for both transports.
+
+try:
+    import httpx2
+except ImportError:  # openai<3 does not install httpx2
+    httpx2 = None
+
+
+def _response_classes():
+    classes = [pytest.param(httpx, id="httpx")]
+    if httpx2 is not None:
+        classes.append(pytest.param(httpx2, id="httpx2"))
+    return classes
+
+
+def _rate_limit_error_via(module, headers):
+    """Build a RateLimitError whose response comes from ``module`` (httpx/httpx2)."""
+    response = module.Response(
+        status_code=429,
+        headers=headers,
+        request=module.Request("POST", "https://api.openai.com/v1/chat/completions"),
+    )
+    return openai.RateLimitError(
+        message="Rate limit exceeded", response=response, body=None
+    )
+
+
+@pytest.mark.parametrize("module", _response_classes())
+@pytest.mark.parametrize("header_name", ["Retry-After", "retry-after", "RETRY-AFTER"])
+def test_parse_retry_after_is_transport_and_case_independent(module, header_name):
+    exc = _rate_limit_error_via(module, {header_name: "30"})
+    assert _parse_retry_after(exc) == 30.0
+
+
+@pytest.mark.parametrize("module", _response_classes())
+def test_parse_retry_after_missing_header_across_transports(module):
+    exc = _rate_limit_error_via(module, {})
+    assert _parse_retry_after(exc) is None
+
+
+@pytest.mark.parametrize("module", _response_classes())
+def test_wait_retry_after_honours_header_across_transports(module):
+    exc = _rate_limit_error_via(module, {"Retry-After": "12"})
+    wait = _WaitRetryAfter(fallback=wait_exponential(multiplier=1, min=4, max=10))
+    assert wait(_make_retry_state(exc)) == 12.0
