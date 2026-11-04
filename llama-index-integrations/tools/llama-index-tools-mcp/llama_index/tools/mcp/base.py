@@ -9,6 +9,7 @@ from pydantic import BaseModel, create_model
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
+from llama_index.tools.mcp.client import _list_all_tools
 from llama_index.tools.mcp.tool_spec_mixins import (
     TypeResolutionMixin,
     TypeCreationMixin,
@@ -58,7 +59,7 @@ class McpToolSpec(
             A list of tools, each tool object needs to contain name, description, input_schema properties.
 
         """
-        response = await self.client.list_tools()
+        response = await _list_all_tools(self.client)
         tools = response.tools if hasattr(response, "tools") else []
 
         if self.allowed_tools is None:
