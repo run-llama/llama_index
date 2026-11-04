@@ -259,6 +259,36 @@ def test_astream_chat_closes_async_client_context(
     client_instance.__aexit__.assert_awaited_once()
 
 
+def test_astream_complete_passes_stream_once(
+    loop: asyncio.AbstractEventLoop,
+    azure_llm_async_fixture,
+):
+    """astream_complete must not forward a second `stream` kwarg to astream_chat."""
+    llm = azure_llm_async_fixture.llm
+    client_instance = azure_llm_async_fixture.client_instance
+    entered_client = client_instance.__aenter__.return_value
+
+    async def stream_response():
+        chunk = mock.Mock()
+        chunk.choices = [mock.Mock(delta=mock.Mock(content="Yes, this is a test."))]
+        yield chunk
+
+    entered_client.complete = mock.AsyncMock(return_value=stream_response())
+
+    async def collect() -> str:
+        stream = await llm.astream_complete("Is this a test?")
+        buffer = ""
+        async for chunk in stream:
+            buffer += chunk.delta
+        return buffer
+
+    response = loop.run_until_complete(collect())
+
+    assert response == "Yes, this is a test."
+    _, call_kwargs = entered_client.complete.call_args
+    assert call_kwargs["stream"] is True
+
+
 @pytest.mark.skipif(
     not {
         "AZURE_INFERENCE_ENDPOINT",
