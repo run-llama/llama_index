@@ -35,6 +35,7 @@ class YoutubeTranscriptReader(BasePydanticReader):
 
         """
         results = []
+        ytt_api = YouTubeTranscriptApi()
         for link in ytlinks:
             video_id = self._extract_video_id(link)
             if not video_id:
@@ -47,10 +48,8 @@ class YoutubeTranscriptReader(BasePydanticReader):
                     "(with or without 'www.')\n"
                     "  youtu.be/{video_id\\} (never includes www subdomain)"
                 )
-            transcript_chunks = YouTubeTranscriptApi.get_transcript(
-                video_id, languages=languages
-            )
-            chunk_text = [chunk["text"] for chunk in transcript_chunks]
+            transcript_chunks = ytt_api.fetch(video_id, languages=languages or ["en"])
+            chunk_text = [chunk.text for chunk in transcript_chunks]
             transcript = "\n".join(chunk_text)
             results.append(
                 Document(
