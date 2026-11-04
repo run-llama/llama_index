@@ -315,8 +315,24 @@ class ReActAgent(BaseWorkflowAgent):
                     text_block = block
                     break
 
+            # A return_direct tool's output is not ReAct-formatted text, so the
+            # "Answer:" cleanup below must not be applied to it. The final text
+            # must match the observation, since handoff tools are also
+            # return_direct but are followed by a fresh LLM response.
+            from_return_direct_tool = (
+                text_block is not None
+                and len(current_reasoning) > 1
+                and isinstance(current_reasoning[-2], ObservationReasoningStep)
+                and current_reasoning[-2].return_direct
+                and current_reasoning[-2].observation == text_block.text
+            )
+
             # remove "Answer:" from the response (now checking text_block.text)
-            if text_block and "Answer:" in text_block.text:
+            if (
+                not from_return_direct_tool
+                and text_block
+                and "Answer:" in text_block.text
+            ):
                 start_idx = text_block.text.find("Answer:")
                 if start_idx != -1:
                     # Modify the .text attribute of the block, NOT response.content
