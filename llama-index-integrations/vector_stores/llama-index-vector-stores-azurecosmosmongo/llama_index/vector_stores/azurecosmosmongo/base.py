@@ -7,6 +7,7 @@ An index that is built on top of an existing vector store.
 
 import logging
 import os
+import warnings
 from typing import Any, Dict, List, Optional, cast
 
 import pymongo
@@ -103,6 +104,12 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             insert_kwargs: The kwargs used during `insert`.
 
         """
+        warnings.warn(
+            "AzureCosmosDBMongoDBVectorSearch is deprecated; use "
+            "AzureDocumentDBVectorSearch from llama_index.vector_stores.azuredocumentdb instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__()
 
         if mongodb_client is not None:

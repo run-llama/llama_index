@@ -1,5 +1,6 @@
 import logging
 import urllib.parse
+import warnings
 from abc import ABC
 from typing import List, Optional
 
@@ -45,6 +46,12 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
+        warnings.warn(
+            "AzureCosmosMongoVCoreChatStore is deprecated; use "
+            "AzureDocumentDBChatStore from llama_index.storage.chat_store.azuredocumentdb instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(
             mongo_client=mongo_client,
             uri=uri,
