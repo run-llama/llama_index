@@ -148,6 +148,9 @@ class CodeSplitter(TextSplitter):
         tokenizer: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
         parser: Any = None,
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
+        id_func: Optional[Callable[[int, Document], str]] = None,
     ) -> "CodeSplitter":
         """Create a CodeSplitter with default values."""
         return cls(
@@ -160,6 +163,9 @@ class CodeSplitter(TextSplitter):
             tokenizer=tokenizer,
             callback_manager=callback_manager,
             parser=parser,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
         )
 
     @classmethod
