@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Truth Bear GAUGE](https://github.com/CHANGCHINFU/llama-index-tools-truth-bear-gauge) ([PyPI](https://pypi.org/project/llama-index-tools-truth-bear-gauge/)): Independently maintained LlamaIndex tool spec with free `coverage_check` and `catalog_lookup` tools, and a paid `record_request` tool that returns an x402 payment challenge.
 
 ## LlamaPacks -- Code Templates
 
