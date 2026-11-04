@@ -1,0 +1,183 @@
+{
+  "search_plain": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "4"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": {
+        "q": "python asyncio tutorial"
+      }
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": "plain search, charged 1"
+  },
+  "search_repeat_deprecated_engine": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "deprecation": "@1782000000",
+      "link": "<https://serpex.dev/docs/api/search>; rel=\"deprecation\"; type=\"text/html\"",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "3"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": {
+        "q": "python asyncio tutorial",
+        "engine": "legacy-value",
+        "category": "web",
+        "time_range": "day",
+        "num_results": 3,
+        "language": "en"
+      }
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": "same query repeated within 5 min with legacy engine/category/time_range/num_results/language: accepted, ignored, free repeat, Deprecation header"
+  },
+  "search_content": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "1"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": {
+        "q": "what is retrieval augmented generation",
+        "include_content": true,
+        "content_results": 5
+      }
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": "include_content 5, all delivered, 3 credits"
+  },
+  "search_content_errors": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "3"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": {
+        "q": "example query",
+        "include_content": true,
+        "content_results": 5
+      }
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": "include_content 5, every fetch robots_disallowed, 1 credit (captured live; query and results replaced with placeholders)"
+  },
+  "search_no_results": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "3"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": {
+        "q": "\"zqxjv wplmk trnbq\" \"vyxhq zmplc\" kqwzx"
+      }
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": "unverified empty, not charged"
+  },
+  "error_400_content_results": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "4"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": {
+        "q": "x",
+        "include_content": true,
+        "content_results": 7
+      }
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": ""
+  },
+  "error_401_bad_key": {
+    "status": 401,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "auth": "invalid key"
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": ""
+  },
+  "error_429": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "retry-after": "1",
+      "x-ratelimit-limit": "5",
+      "x-ratelimit-remaining": "0"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/api/usage",
+      "note": "14 parallel calls on a 5 rps org"
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": ""
+  },
+  "error_500_malformed_json": {
+    "status": 500,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "request": {
+      "method": "POST",
+      "path": "/api/search",
+      "body": "{\"q\": "
+    },
+    "source": "live api.serpex.dev 2026-10-23",
+    "note": ""
+  },
+  "error_402_search": {
+    "status": 402,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "source": "backend origin/main 4d0bea6 apiController.ts:267-272",
+    "note": "exact body from code; not triggered live"
+  },
+  "error_500_search": {
+    "status": 500,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "source": "backend origin/main 4d0bea6 apiController.ts:776",
+    "note": "exact body from code; not triggered live"
+  },
+  "error_503_search": {
+    "status": 503,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "source": "backend origin/main 4d0bea6 apiController.ts:754-763",
+    "note": "exact body from code; not triggered live"
+  }
+}

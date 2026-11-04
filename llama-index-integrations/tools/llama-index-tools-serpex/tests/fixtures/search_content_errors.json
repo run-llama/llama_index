@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "number_of_results": 7,
+    "response_time": 3011,
+    "timestamp": "2026-10-23T06:29:44.079Z",
+    "credits_used": 1,
+    "from_cache": false,
+    "status": "success",
+    "content_requested": 5,
+    "content_delivered": 0
+  },
+  "id": "00000000-0000-4000-8000-000000000001",
+  "query": "example query",
+  "engines": ["auto"],
+  "results": [
+    {
+      "title": "Example Result 1",
+      "url": "https://example.com/p1",
+      "snippet": "A generic example snippet for result 1.",
+      "position": 1,
+      "engine": "auto",
+      "content_error": "robots_disallowed"
+    },
+    {
+      "title": "Example Result 2",
+      "url": "https://example.com/p2",
+      "snippet": "A generic example snippet for result 2.",
+      "position": 2,
+      "engine": "auto",
+      "content_error": "robots_disallowed"
+    },
+    {
+      "title": "Example Result 3",
+      "url": "https://example.com/p3",
+      "snippet": "A generic example snippet for result 3.",
+      "position": 3,
+      "engine": "auto",
+      "content_error": "robots_disallowed"
+    },
+    {
+      "title": "Example Result 4",
+      "url": "https://example.com/p4",
+      "snippet": "A generic example snippet for result 4.",
+      "position": 4,
+      "engine": "auto",
+      "content_error": "robots_disallowed"
+    },
+    {
+      "title": "Example Result 5",
+      "url": "https://example.com/p5",
+      "snippet": "A generic example snippet for result 5.",
+      "position": 5,
+      "engine": "auto",
+      "content_error": "robots_disallowed"
+    },
+    {
+      "title": "Example Result 6",
+      "url": "https://example.com/p6",
+      "snippet": "A generic example snippet for result 6.",
+      "position": 6,
+      "engine": "auto"
+    },
+    {
+      "title": "Example Result 7",
+      "url": "https://example.com/p7",
+      "snippet": "A generic example snippet for result 7.",
+      "position": 7,
+      "engine": "auto"
+    }
+  ]
+}
