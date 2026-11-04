@@ -1205,7 +1205,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -2075,7 +2075,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-docstore-postgres"
-version = "0.5.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2107,7 +2107,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-storage-kvstore-postgres", specifier = ">=0.4.0,<0.5" },
+    { name = "llama-index-storage-kvstore-postgres", specifier = ">=0.6.0,<0.7" },
 ]
 
 [package.metadata.requires-dev]
@@ -2134,16 +2134,16 @@ dev = [
 
 [[package]]
 name = "llama-index-storage-kvstore-postgres"
-version = "0.4.3"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asyncpg" },
     { name = "llama-index-core" },
     { name = "psycopg2-binary" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/17/2e0ca7a558377e06c9b75828d86eb0efdc02416ef5df2be1c963b64e9555/llama_index_storage_kvstore_postgres-0.4.3.tar.gz", hash = "sha256:a6ea957c8505807f08e5cc22725b189af675a8f40493ef2efc4aa7ce67833670", size = 5755, upload-time = "2025-11-10T19:58:43.207Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/e8/cc32fd5b566b2f950ea79a552e07122f4a00c62b8a15c1886e52c28a059c/llama_index_storage_kvstore_postgres-0.6.0.tar.gz", hash = "sha256:5b727e62d053dd0c9cf01ec7e878b127b547b484aeaeeb7696fdd1a2ecf5f8d7", size = 5873, upload-time = "2026-08-31T16:08:41.608Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/32/df7a2b90a77d4e2efd92b8fd8cd834cf9322795a93f27d80d0ae94929f4b/llama_index_storage_kvstore_postgres-0.4.3-py3-none-any.whl", hash = "sha256:831caff5d7e0f7a08236d992b35d568916991a540af57f16f184b0d996201ecf", size = 5413, upload-time = "2025-11-10T19:58:42.16Z" },
+    { url = "https://files.pythonhosted.org/packages/de/b5/cae59df68f03c4cf0a15df2bdf6a5f520e78503600d07cd98e64dbd79c7f/llama_index_storage_kvstore_postgres-0.6.0-py3-none-any.whl", hash = "sha256:313e82c1542c83ababaef3a494cdf4643c692fd517fb42b5de1e59fa00a04325", size = 5558, upload-time = "2026-08-31T16:08:40.702Z" },
 ]
 
 [[package]]
