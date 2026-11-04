@@ -154,6 +154,38 @@ async def test_apredict_and_call_throws_if_error_on_tool(
         await llm.apredict_and_call(tools=[person_tool], error_on_tool_error=True)
 
 
+@pytest.mark.asyncio
+async def test_apredict_and_call_unknown_tool(person_tool: FunctionTool) -> None:
+    """Test apredict_and_call runs valid tool calls alongside an unknown one."""
+    llm = MockFunctionCallingLLM(
+        [
+            ToolSelection(tool_id="1", tool_name="unknown", tool_kwargs={}),
+            ToolSelection(
+                tool_id="2",
+                tool_name=person_tool.metadata.name,
+                tool_kwargs={"name": "Ann"},
+            ),
+        ]
+    )
+    response = await llm.apredict_and_call(
+        tools=[person_tool], allow_parallel_tool_calls=True
+    )
+    assert [tool_output.is_error for tool_output in response.sources] == [
+        True,
+        False,
+    ]
+    assert response.sources[1].raw_output == Person(name="Ann")
+
+
+def test_predict_and_call_throws_if_unknown_tool(person_tool: FunctionTool) -> None:
+    """Test predict_and_call raises ValueError rather than KeyError for an unknown tool."""
+    llm = MockFunctionCallingLLM(
+        [ToolSelection(tool_id="1", tool_name="unknown", tool_kwargs={})]
+    )
+    with pytest.raises(ValueError, match="Tool unknown not found"):
+        llm.predict_and_call(tools=[person_tool], error_on_tool_error=True)
+
+
 def test_tool_required_compatibility_without_support(
     person_tool: FunctionTool, person_tool_selection: ToolSelection
 ) -> None:

@@ -85,6 +85,16 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
         )
 
 
+def _tool_not_found_output(tool_call: ToolSelection) -> ToolOutput:
+    return ToolOutput(
+        content=f"Tool {tool_call.tool_name} not found. Please select a tool that is available.",
+        tool_name=tool_call.tool_name,
+        raw_input=tool_call.tool_kwargs,
+        raw_output=None,
+        is_error=True,
+    )
+
+
 def call_tool_with_selection(
     tool_call: ToolSelection,
     tools: Sequence["BaseTool"],
@@ -98,8 +108,10 @@ def call_tool_with_selection(
         arguments_str = json.dumps(tool_call.tool_kwargs)
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
-    tool = tools_by_name[name]
-    output = call_tool(tool, tool_call.tool_kwargs)
+    if name not in tools_by_name:
+        output = _tool_not_found_output(tool_call)
+    else:
+        output = call_tool(tools_by_name[name], tool_call.tool_kwargs)
 
     if verbose:
         print("=== Function Output ===")
@@ -121,8 +133,10 @@ async def acall_tool_with_selection(
         arguments_str = json.dumps(tool_call.tool_kwargs)
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
-    tool = tools_by_name[name]
-    output = await acall_tool(tool, tool_call.tool_kwargs)
+    if name not in tools_by_name:
+        output = _tool_not_found_output(tool_call)
+    else:
+        output = await acall_tool(tools_by_name[name], tool_call.tool_kwargs)
 
     if verbose:
         print("=== Function Output ===")
