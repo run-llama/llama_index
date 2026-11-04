@@ -195,7 +195,10 @@ class SQLDatabase:
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
         """Insert data into a table."""
-        table = self._metadata.tables[table_name]
+        table_key = f"{self._schema}.{table_name}" if self._schema else table_name
+        table = self._metadata.tables.get(table_key)
+        if table is None:
+            table = self._metadata.tables[table_name]
         stmt = insert(table).values(**data)
         with self._engine.begin() as connection:
             connection.execute(stmt)
