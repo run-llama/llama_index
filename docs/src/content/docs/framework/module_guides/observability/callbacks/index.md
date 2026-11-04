@@ -35,7 +35,7 @@ Currently supported callbacks are as follows:
 
 - [TokenCountingHandler](/python/examples/observability/tokencountinghandler) -> Flexible token counting for prompt, completion, and embedding token usage. See [the migration details](/python/framework/module_guides/observability/callbacks/token_counting_migration)
 - [LlamaDebugHanlder](/python/examples/observability/llamadebughandler) -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
-- [WandbCallbackHandler](/python/examples/observability/wandbcallbackhandler) -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at [Wandb](https://docs.wandb.ai/guides/prompts/quickstart)
+- [WandbCallbackHandler](/python/examples/observability/wandbcallbackhandler) -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at [Wandb](https://weave-docs.wandb.ai/)
 - [AimCallback](/python/examples/observability/aimcallback) -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
 - [OpenInferenceCallbackHandler](/python/examples/observability/openinferencecallback) -> Tracking of AI model inferences. Example usage can be found in the notebook below.
 - [OpenAIFineTuningHandler](https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb) -> Records all LLM inputs and outputs. Then, provides a function `save_finetuning_events()` to save inputs and outputs in a format suitable for fine-tuning with OpenAI.
