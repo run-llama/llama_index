@@ -56,6 +56,10 @@ class QueryFusionRetriever(BaseRetriever):
         if retriever_weights is None:
             self._retriever_weights = [1.0 / len(retrievers)] * len(retrievers)
         else:
+            if len(retriever_weights) != len(retrievers):
+                raise ValueError(
+                    "retriever_weights must contain one weight per retriever"
+                )
             # Sum of retriever_weights must be 1
             total_weight = sum(retriever_weights)
             self._retriever_weights = [w / total_weight for w in retriever_weights]
