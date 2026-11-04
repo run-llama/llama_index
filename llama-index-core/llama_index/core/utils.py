@@ -592,6 +592,12 @@ def infer_torch_device() -> str:
         return "cuda"
     if torch.backends.mps.is_available():
         return "mps"
+    # #23667: Intel GPUs are exposed through torch.xpu, which the two checks
+    # above never look at, so an Intel Arc box that has a working XPU build
+    # silently fell back to CPU everywhere a default device is inferred.
+    xpu = getattr(torch, "xpu", None)
+    if xpu is not None and xpu.is_available():
+        return "xpu"
     return "cpu"
 
 
