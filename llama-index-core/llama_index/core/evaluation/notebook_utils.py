@@ -22,6 +22,9 @@ def get_retrieval_results_df(
             "pandas is required for this function. Please install it with `pip install pandas`."
         )
 
+    if len(names) != len(results_arr):
+        raise ValueError("names and results_arr must have same length.")
+
     metric_keys = metric_keys or DEFAULT_METRIC_KEYS
 
     avg_metrics_dict = defaultdict(list)
