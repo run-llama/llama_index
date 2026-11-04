@@ -1,5 +1,6 @@
 import pytest
 from typing import Any, Dict, List, Sequence
+from unittest.mock import patch
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.embeddings import MockEmbedding
@@ -181,15 +182,29 @@ async def test_message_without_text(vector_memory_block: VectorMemoryBlock):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("context_window", "expected_query"),
+    [
+        (1, "And Germany?"),
+        (2, "The capital of the UK is London. And Germany?"),
+        (3, "What about the UK? The capital of the UK is London. And Germany?"),
+        (5, "What about the UK? The capital of the UK is London. And Germany?"),
+        (0, "What about the UK? The capital of the UK is London. And Germany?"),
+        (-1, "What about the UK? The capital of the UK is London. And Germany?"),
+    ],
+)
 async def test_retrieval_context_window(
-    mock_vector_store: MockVectorStore, mock_embedding: MockEmbedding
+    mock_vector_store: MockVectorStore,
+    mock_embedding: MockEmbedding,
+    context_window: int,
+    expected_query: str,
 ):
     """Test the retrieval_context_window parameter."""
     # Create a memory block with a specific context window
     memory_block = VectorMemoryBlock(
         vector_store=mock_vector_store,
         embed_model=mock_embedding,
-        retrieval_context_window=2,
+        retrieval_context_window=context_window,
         similarity_top_k=2,
     )
 
@@ -210,13 +225,56 @@ async def test_retrieval_context_window(
         ChatMessage(role="user", content="And Germany?"),
     ]
 
-    # The retrieval should only use the last 2 messages
-    result = await memory_block.aget(messages=query_messages)
+    with (
+        patch.object(
+            MockEmbedding,
+            "aget_query_embedding",
+            wraps=mock_embedding.aget_query_embedding,
+        ) as embed_query,
+        patch.object(
+            MockVectorStore, "aquery", wraps=mock_vector_store.aquery
+        ) as vector_query,
+    ):
+        result = await memory_block.aget(messages=query_messages)
+
+    embed_query.assert_awaited_once_with(expected_query)
+    vector_query.assert_awaited_once()
+    assert vector_query.call_args.args[0].query_str == expected_query
 
     # Check that we got a result
     assert result != ""
-    # The result should be more related to UK/London than Paris
-    # In our mock implementation, it will just return all stored nodes
+
+
+@pytest.mark.asyncio
+async def test_single_message_context_without_text(
+    mock_vector_store: MockVectorStore, mock_embedding: MockEmbedding
+):
+    """Do not use older text when the latest message has no text."""
+    memory_block = VectorMemoryBlock(
+        vector_store=mock_vector_store,
+        embed_model=mock_embedding,
+        retrieval_context_window=1,
+    )
+    query_messages = [
+        ChatMessage(role="user", content="An earlier topic."),
+        ChatMessage(role="user", content=None, blocks=[]),
+    ]
+
+    with (
+        patch.object(
+            MockEmbedding,
+            "aget_query_embedding",
+            wraps=mock_embedding.aget_query_embedding,
+        ) as embed_query,
+        patch.object(
+            MockVectorStore, "aquery", wraps=mock_vector_store.aquery
+        ) as vector_query,
+    ):
+        result = await memory_block.aget(messages=query_messages)
+
+    assert result == ""
+    embed_query.assert_not_awaited()
+    vector_query.assert_not_awaited()
 
 
 @pytest.mark.asyncio
