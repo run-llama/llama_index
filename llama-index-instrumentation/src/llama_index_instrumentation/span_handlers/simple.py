@@ -38,8 +38,13 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         instance: Optional[Any] = None,
         result: Optional[Any] = None,
         **kwargs: Any,
-    ) -> SimpleSpan:
+    ) -> Optional[SimpleSpan]:
         """Logic for preparing to drop a span."""
+        # Matching prepare_to_drop_span: an unknown id is a no-op rather than a
+        # KeyError. A span can already be gone here, e.g. dropped by shutdown().
+        if id_ not in self.open_spans:
+            return None
+
         span = self.open_spans[id_]
         span = cast(SimpleSpan, span)
         span.end_time = datetime.now()
