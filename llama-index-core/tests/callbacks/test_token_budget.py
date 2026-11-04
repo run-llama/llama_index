@@ -72,3 +72,15 @@ def test_token_budget_via_callback_manager():
             CBEventType.LLM,
             payload={EventPayload.PROMPT: "p", EventPayload.COMPLETION: resp},
         )
+
+
+def test_get_tokens_from_response_accepts_non_mapping_raw() -> None:
+    from llama_index.core.callbacks.token_counting import get_tokens_from_response
+
+    class Dummy:
+        additional_kwargs = {}
+        raw = object()
+
+    prompt_tokens, completion_tokens = get_tokens_from_response(Dummy())
+    assert prompt_tokens == 0
+    assert completion_tokens == 0
