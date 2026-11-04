@@ -154,7 +154,7 @@ class SimpleGraphStore(GraphStore):
         """Get the schema of the Simple Graph store."""
         raise NotImplementedError("SimpleGraphStore does not support get_schema")
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = None) -> Any:
         """Query the Simple Graph store."""
         raise NotImplementedError("SimpleGraphStore does not support query")
 
