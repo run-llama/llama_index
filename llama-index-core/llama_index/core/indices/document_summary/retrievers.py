@@ -120,6 +120,45 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
 
         return results
 
+    async def _aretrieve(
+        self,
+        query_bundle: QueryBundle,
+    ) -> List[NodeWithScore]:
+        """Retrieve nodes asynchronously."""
+        summary_ids = self._index.index_struct.summary_ids
+
+        all_summary_ids: List[str] = []
+        all_relevances: List[float] = []
+        for idx in range(0, len(summary_ids), self._choice_batch_size):
+            summary_ids_batch = summary_ids[idx : idx + self._choice_batch_size]
+            summary_nodes = await self._index.docstore.aget_nodes(summary_ids_batch)
+            query_str = query_bundle.query_str
+            fmt_batch_str = self._format_node_batch_fn(summary_nodes)
+            raw_response = await self._llm.apredict(
+                self._choice_select_prompt,
+                context_str=fmt_batch_str,
+                query_str=query_str,
+            )
+            raw_choices, relevances = self._parse_choice_select_answer_fn(
+                raw_response, len(summary_nodes)
+            )
+            choice_idxs = [choice - 1 for choice in raw_choices]
+            choice_summary_ids = [summary_ids_batch[ci] for ci in choice_idxs]
+            all_summary_ids.extend(choice_summary_ids)
+            all_relevances.extend(relevances)
+
+        zipped_list = list(zip(all_summary_ids, all_relevances))
+        sorted_list = sorted(zipped_list, key=lambda x: x[1], reverse=True)
+        top_k_list = sorted_list[: self._choice_top_k]
+
+        results = []
+        for summary_id, relevance in top_k_list:
+            node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
+            nodes = await self._index.docstore.aget_nodes(node_ids)
+            results.extend([NodeWithScore(node=n, score=relevance) for n in nodes])
+
+        return results
+
 
 class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     """
