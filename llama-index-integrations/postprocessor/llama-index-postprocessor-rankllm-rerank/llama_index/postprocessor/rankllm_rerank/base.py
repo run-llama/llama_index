@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, TYPE_CHECKING
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.instrumentation import get_dispatcher
@@ -11,9 +11,23 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
-from rank_llm.rerank.rankllm import PromptMode
-from rank_llm.rerank.reranker import Reranker
-from rank_llm.data import Request, Query, Candidate
+if TYPE_CHECKING:
+    # Imported only for type checking. Importing rank_llm.rerank at runtime
+    # executes rank_llm/rerank/__init__.py, which eagerly imports vLLM-backed
+    # model code (rank-llm 0.25.7) and makes this module unimportable on
+    # machines without vLLM (e.g. macOS, where no vLLM wheels exist).
+    from rank_llm.rerank.rankllm import PromptMode
+
+
+def _default_prompt_mode() -> Any:
+    """Return the default prompt mode, importing rank_llm lazily.
+
+    Deferred out of module scope so that importing this integration does not
+    require vLLM to be installed.
+    """
+    from rank_llm.rerank.rankllm import PromptMode
+
+    return PromptMode.RANK_GPT
 
 
 class RankLLMRerank(BaseNodePostprocessor):
@@ -47,9 +61,9 @@ class RankLLMRerank(BaseNodePostprocessor):
     context_size: int = Field(
         description="Maximum number of tokens for the context window.", default=4096
     )
-    prompt_mode: PromptMode = Field(
+    prompt_mode: Any = Field(
         description="Prompt format and strategy used when invoking the reranking model.",
-        default=PromptMode.RANK_GPT,
+        default_factory=_default_prompt_mode,
     )
     num_gpus: int = Field(
         description="Number of GPUs to use for inference if applicable.", default=1
@@ -93,6 +107,20 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
+        # Imported here rather than at module scope: rank_llm/rerank/__init__.py
+        # eagerly imports vLLM-backed model code (rank-llm 0.25.7), so a
+        # module-level import would make this integration unimportable on
+        # machines without vLLM (e.g. macOS, where no vLLM wheels exist).
+        try:
+            from rank_llm.data import Candidate, Query, Request
+            from rank_llm.rerank.reranker import Reranker
+        except ImportError as e:
+            raise ImportError(
+                "RankLLMRerank requires the 'rank-llm' package to be installed "
+                "and importable. Note that rank-llm 0.25.7 also imports 'vllm' "
+                "at import time; either install vllm or upgrade rank-llm to a "
+                "version that guards that import."
+            ) from e
         kwargs = {
             "model_path": self.model,
             "default_model_coordinator": None,
