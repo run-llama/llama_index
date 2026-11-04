@@ -25,6 +25,19 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Feedback:"
 )
 
+DEFAULT_REFINE_TEMPLATE = PromptTemplate(
+    "We want to understand if the following response is relevant "
+    "to the query: \n {query_str}\n"
+    "We have provided an existing evaluation score: \n {existing_answer}\n"
+    "We have the opportunity to refine the existing evaluation "
+    "(only if needed) with some more context below.\n"
+    "------------\n"
+    "{context_msg}\n"
+    "------------\n"
+    "If the new context shows the response is relevant to the query, "
+    "assign a higher score. Otherwise, keep the existing score.\n"
+)
+
 _DEFAULT_SCORE_THRESHOLD = 2.0
 
 
@@ -69,6 +82,7 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
         llm: Optional[LLM] = None,
         raise_error: bool = False,
         eval_template: str | BasePromptTemplate | None = None,
+        refine_template: str | BasePromptTemplate | None = None,
         score_threshold: float = _DEFAULT_SCORE_THRESHOLD,
         parser_function: Callable[
             [str], Tuple[Optional[float], Optional[str]]
@@ -83,6 +97,12 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
             self._eval_template = PromptTemplate(eval_template)
         else:
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+
+        self._refine_template: BasePromptTemplate
+        if isinstance(refine_template, str):
+            self._refine_template = PromptTemplate(refine_template)
+        else:
+            self._refine_template = refine_template or DEFAULT_REFINE_TEMPLATE
 
         self.parser_function = parser_function
         self.score_threshold = score_threshold
