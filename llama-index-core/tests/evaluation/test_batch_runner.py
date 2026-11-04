@@ -1,5 +1,7 @@
 from typing import Any, Optional, Sequence
 
+import pytest
+
 from llama_index.core.base.response.schema import Response
 from llama_index.core.evaluation import BaseEvaluator
 from llama_index.core.evaluation.base import EvaluationResult
@@ -53,6 +55,24 @@ def get_eval_results(key, eval_results):
         if result.passing:
             correct += 1
     return correct / len(results)
+
+
+@pytest.mark.parametrize("workers", [0, -1])
+def test_batch_runner_rejects_nonpositive_workers(workers: int) -> None:
+    with pytest.raises(ValueError, match="workers must be greater than 0"):
+        BatchEvalRunner(evaluators={"test": MockEvaluator()}, workers=workers)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("workers", [1, 2])
+async def test_batch_runner_with_positive_workers(workers: int) -> None:
+    runner = BatchEvalRunner(evaluators={"test": MockEvaluator()}, workers=workers)
+    results = await runner.aevaluate_response_strs(
+        queries=["query1", "query2"], response_strs=["response1", "response2"]
+    )
+    assert [result.query for result in results["test"]] == ["query1", "query2"]
+    assert [result.response for result in results["test"]] == ["response1", "response2"]
+    assert all(result.passing for result in results["test"])
 
 
 def test_batch_runner() -> None:
