@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 import pytest
 from llama_index.core.schema import BaseComponent
@@ -50,6 +50,18 @@ def test__getstate__():
         "__pydantic_fields_set__": set(),
         "__pydantic_private__": {"_text": "test private attr"},
     }
+
+
+def test__getstate__does_not_mutate_the_instance():
+    class MyComponent(BaseComponent):
+        fn: Any = None
+
+    mc = MyComponent(fn=lambda x: x)
+
+    # the unpickleable field is left out of the pickled state ...
+    assert "fn" not in mc.__getstate__()["__dict__"]
+    # ... but the instance keeps it and stays usable
+    assert mc.fn(1) == 1
 
 
 def test__setstate__():
