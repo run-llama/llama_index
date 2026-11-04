@@ -197,3 +197,18 @@ def test_no_overflow_with_chinese_text_and_metadata() -> None:
             f"Node {i} has {content_length} tokens, exceeds chunk_size of 512. "
             f"This indicates the overflow bug is not fixed."
         )
+
+
+def test_stripped_chunks_stay_within_chunk_size() -> None:
+    """
+    Chunks must not exceed chunk_size after whitespace postprocessing.
+
+    The splitter budgets each chunk from the unstripped join of its splits, but
+    the emitted chunk is stripped, and stripping can change how the tokenizer
+    merges across split boundaries, so the emitted text can tokenize larger.
+    """
+    splitter = SentenceSplitter(chunk_size=64, chunk_overlap=8)
+    chunks = splitter.split_text("😀 " * 200)
+    assert chunks
+    for chunk in chunks:
+        assert len(splitter._tokenizer(chunk)) <= 64
