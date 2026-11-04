@@ -8,9 +8,9 @@ from llama_index.embeddings.dashscope.base import (
 
 
 __all__ = [
-    DashScopeTextEmbeddingType,
-    DashScopeTextEmbeddingModels,
-    DashScopeBatchTextEmbeddingModels,
-    DashScopeEmbedding,
-    DashScopeMultiModalEmbeddingModels,
+    "DashScopeTextEmbeddingType",
+    "DashScopeTextEmbeddingModels",
+    "DashScopeBatchTextEmbeddingModels",
+    "DashScopeEmbedding",
+    "DashScopeMultiModalEmbeddingModels",
 ]
