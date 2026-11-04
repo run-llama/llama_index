@@ -612,6 +612,7 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, (ContentBlockStopEvent, RawContentBlockStopEvent)):
                     if isinstance(cur_tool_call, ToolUseBlock):
                         cur_tool_calls.append(cur_tool_call)
+                        cur_tool_call = None
 
                     if cur_block is not None:
                         content.append(cur_block)
@@ -869,6 +870,7 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, (ContentBlockStopEvent, RawContentBlockStopEvent)):
                     if isinstance(cur_tool_call, ToolUseBlock):
                         cur_tool_calls.append(cur_tool_call)
+                        cur_tool_call = None
 
                     if cur_block is not None:
                         content.append(cur_block)
