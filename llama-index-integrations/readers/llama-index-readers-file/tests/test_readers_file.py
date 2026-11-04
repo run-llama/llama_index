@@ -6,6 +6,7 @@ import pytest
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import (
+    CSVReader,
     DocxReader,
     EpubReader,
     FlatReader,
@@ -120,3 +121,32 @@ def test_hwp_compressed_section_rejects_truncated_stream():
 
     with pytest.raises(zlib.error, match="ended before the stream was complete"):
         reader.get_text_from_section(load_file, "BodyText/Section0")
+
+
+def test_csv_reader_honours_explicit_encoding(tmp_path):
+    """
+    CSVReader must accept an encoding and use it, as PagedCSVReader does.
+
+    Without one it falls back to the platform default, which is cp1252 on
+    Windows and utf-8 on Linux, so the same file reads differently per platform.
+    """
+    file = tmp_path / "people.csv"
+    file.write_bytes("name,city\nJosé,Köln\n".encode("cp1252"))
+
+    docs = CSVReader(encoding="cp1252").load_data(file)
+
+    assert "José" in docs[0].text
+    assert "Köln" in docs[0].text
+
+
+def test_csv_reader_defaults_to_utf8(tmp_path):
+    """
+    Parity guard: the default stays utf-8 rather than the platform default.
+    """
+    file = tmp_path / "people.csv"
+    file.write_text("name,city\nJosé,Köln\n", encoding="utf-8")
+
+    docs = CSVReader().load_data(file)
+
+    assert "José" in docs[0].text
+    assert "Köln" in docs[0].text
