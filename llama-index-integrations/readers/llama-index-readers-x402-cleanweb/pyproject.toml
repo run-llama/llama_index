@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-mock>=3.11.1",
+    "ruff>=0.4.0",
+]
+
+[project]
+name = "llama-index-readers-x402-cleanweb"
+version = "0.1.0"
+description = "llama-index readers x402-cleanweb integration with 87% token reduction and prompt injection defense"
+authors = [{name = "nohosa001-pixel", email = "nohosa001@gmail.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "nohosa001-pixel"}]
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "requests>=2.31.0"
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.x402_cleanweb"
+
+[tool.llamahub.class_authors]
+X402CleanWebReader = "nohosa001-pixel"
