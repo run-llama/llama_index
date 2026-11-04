@@ -12,7 +12,7 @@ from llama_index.core.storage.chat_store.base import BaseChatStore
 def chat_message_serialization(
     chat_message: Any, handler: Any, info: Any
 ) -> Dict[str, Any]:
-    partial_result = handler(chat_message, info)
+    partial_result = handler(chat_message)
 
     for key, value in partial_result.get("additional_kwargs", {}).items():
         value = chat_message._recursive_serialization(value)

@@ -46,7 +46,7 @@ what is the comprehensive title for this document? Title: """
 
 
 def add_class_name(value: Any, handler: Callable, info: Any) -> Dict[str, Any]:
-    partial_result = handler(value, info)
+    partial_result = handler(value)
     if hasattr(value, "class_name"):
         partial_result.update({"class_name": value.class_name()})
     return partial_result
