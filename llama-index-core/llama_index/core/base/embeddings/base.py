@@ -94,7 +94,11 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     # Use Any to avoid import loops
     embeddings_cache: Optional[Any] = Field(
         default=None,
-        description="Cache for the embeddings: if None, the embeddings are not cached",
+        description=(
+            "Optional embeddings cache. Query and text embeddings are stored in "
+            "separate query_embeddings and text_embeddings collections. Entries "
+            "in the legacy embeddings collection are recomputed on first use."
+        ),
     )
     # Expected type: BaseRateLimiter (from llama_index.core.rate_limiter)
     rate_limiter: Optional[Any] = Field(
@@ -173,7 +177,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 query_embedding = self._get_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
-                    key=query, collection="embeddings"
+                    key=query, collection="query_embeddings"
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -185,7 +189,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     self.embeddings_cache.put(
                         key=query,
                         val={str(uuid.uuid4()): query_embedding},
-                        collection="embeddings",
+                        collection="query_embeddings",
                     )
             event.on_end(
                 payload={
@@ -219,7 +223,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 query_embedding = await self._aget_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
-                    key=query, collection="embeddings"
+                    key=query, collection="query_embeddings"
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -231,7 +235,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     await self.embeddings_cache.aput(
                         key=query,
                         val={str(uuid.uuid4()): query_embedding},
-                        collection="embeddings",
+                        collection="query_embeddings",
                     )
 
             event.on_end(
@@ -326,7 +330,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         # Tuples of (index, text) to be able to keep same order of embeddings
         non_cached_texts: List[Tuple[int, str]] = []
         for i, txt in enumerate(texts):
-            cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
+            cached_emb = self.embeddings_cache.get(
+                key=txt, collection="text_embeddings"
+            )
             if cached_emb is not None:
                 cached_key = next(iter(cached_emb.keys()))
                 embeddings[i] = cached_emb[cached_key]
@@ -343,7 +349,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 self.embeddings_cache.put(
                     key=texts[orig_i],
                     val={str(uuid.uuid4()): text_embedding},
-                    collection="embeddings",
+                    collection="text_embeddings",
                 )
         return cast(List[Embedding], embeddings)
 
@@ -359,7 +365,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         non_cached_texts: List[Tuple[int, str]] = []
         for i, txt in enumerate(texts):
             cached_emb = await self.embeddings_cache.aget(
-                key=txt, collection="embeddings"
+                key=txt, collection="text_embeddings"
             )
             if cached_emb is not None:
                 cached_key = next(iter(cached_emb.keys()))
@@ -377,7 +383,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 await self.embeddings_cache.aput(
                     key=texts[orig_i],
                     val={str(uuid.uuid4()): text_embedding},
-                    collection="embeddings",
+                    collection="text_embeddings",
                 )
         return cast(List[Embedding], embeddings)
 
@@ -406,7 +412,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 text_embedding = self._get_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
-                    key=text, collection="embeddings"
+                    key=text, collection="text_embeddings"
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -418,7 +424,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     self.embeddings_cache.put(
                         key=text,
                         val={str(uuid.uuid4()): text_embedding},
-                        collection="embeddings",
+                        collection="text_embeddings",
                     )
 
             event.on_end(
@@ -453,7 +459,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 text_embedding = await self._aget_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
-                    key=text, collection="embeddings"
+                    key=text, collection="text_embeddings"
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -465,7 +471,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     await self.embeddings_cache.aput(
                         key=text,
                         val={str(uuid.uuid4()): text_embedding},
-                        collection="embeddings",
+                        collection="text_embeddings",
                     )
 
             event.on_end(
