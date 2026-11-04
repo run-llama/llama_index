@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.readers.file.markdown.base import MarkdownReader
 
 
@@ -36,20 +38,42 @@ def test_parse_markdown_with_only_headers() -> None:
     assert reader.markdown_to_tups(markdown_text) == expected_tups
 
 
-def test_parse_markdown_with_headers_in_code_block() -> None:
+@pytest.mark.parametrize("fence", ["```", "~~~"])
+def test_parse_markdown_with_headers_in_code_block(fence: str) -> None:
     reader = MarkdownReader()
-    markdown_text = """# ABC
-```python
+    markdown_text = f"""# ABC
+{fence}python
 # This is a comment
 print("hello")
-```
+{fence}
 # DEF
 """
     expected_tups = [
-        ("ABC", '```python\n# This is a comment\nprint("hello")\n```'),
+        ("ABC", f'{fence}python\n# This is a comment\nprint("hello")\n{fence}'),
         ("DEF", ""),
     ]
     assert reader.markdown_to_tups(markdown_text) == expected_tups
+
+
+@pytest.mark.parametrize(
+    ("opening", "inner", "closing"),
+    [
+        ("~~~", "```", "~~~"),
+        ("```", "~~~", "```"),
+        ("~~~~", "~~~", "~~~~~"),
+        ("````", "```", "`````"),
+        ("~~~", "~~~text", "~~~"),
+    ],
+)
+def test_parse_markdown_keeps_nonclosing_fences_in_code_block(
+    opening: str, inner: str, closing: str
+) -> None:
+    code_block = f"{opening}markdown\n{inner}\n# Code comment\n{closing}"
+    markdown_text = f"# ABC\n{code_block}\n# DEF\ndef"
+    assert MarkdownReader().markdown_to_tups(markdown_text) == [
+        ("ABC", code_block),
+        ("DEF", "def"),
+    ]
 
 
 def test_parse_empty_markdown() -> None:

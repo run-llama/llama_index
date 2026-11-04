@@ -42,14 +42,22 @@ class MarkdownReader(BaseReader):
         lines = markdown_text.split("\n")
 
         current_lines = []
-        in_code_block = False
+        code_fence = ""
         headers = {}
         for line in lines:
-            # Toggle code block state
-            if line.startswith("```"):
-                in_code_block = not in_code_block
+            fence_match = re.match(r"^(`{3,}|~{3,})", line)
+            if fence_match:
+                fence = fence_match.group(1)
+                if not code_fence:
+                    code_fence = fence
+                elif (
+                    fence[0] == code_fence[0]
+                    and len(fence) >= len(code_fence)
+                    and not line[len(fence) :].strip()
+                ):
+                    code_fence = ""
 
-            if in_code_block:
+            if code_fence:
                 current_lines.append(line)
                 continue
             # Process headers only when not in a code block
