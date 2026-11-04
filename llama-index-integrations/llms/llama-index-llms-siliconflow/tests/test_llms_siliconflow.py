@@ -278,3 +278,93 @@ async def test_astream_chat():
             headers=llm._headers,
             timeout=llm.timeout,
         )
+
+
+def _sse_frame(delta_content: str) -> bytes:
+    payload = {
+        "id": "1",
+        "choices": [{"delta": {"role": "assistant", "content": delta_content}}],
+    }
+    return f"data: {json.dumps(payload)}\n".encode()
+
+
+async def _collect_astream_deltas(chunks):
+    class MockStreamContent:
+        async def iter_any(self):
+            for chunk in chunks:
+                yield chunk
+
+    class MockAsyncStreamResponse:
+        status = 200
+
+        def __init__(self):
+            self.content = MockStreamContent()
+
+        def raise_for_status(self):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+    llm = SiliconFlow(api_key="test_api_key")
+    messages = [ChatMessage(role=MessageRole.USER, content="Hello")]
+
+    with mock.patch(
+        "aiohttp.ClientSession.post", return_value=MockAsyncStreamResponse()
+    ):
+        stream = await llm.astream_chat(messages)
+        return [response async for response in stream]
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_content_containing_data_marker():
+    """A delta whose text includes "data: " must not be split into two events."""
+    text = "the log shows data: 42 here"
+
+    responses = await _collect_astream_deltas([_sse_frame(text), b"data: [DONE]\n"])
+
+    assert len(responses) == 1
+    assert responses[0].delta == text
+    assert responses[0].message.content == text
+    assert responses[0].raw["choices"][0]["delta"]["content"] == text
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_event_split_across_chunks():
+    """One SSE event delivered over two network reads must yield a single response."""
+    frame = _sse_frame("split across reads")
+    cut = frame.index(b'"content":') + len(b'"content":')
+
+    responses = await _collect_astream_deltas(
+        [frame[:cut], frame[cut:], b"data: [DONE]\n"]
+    )
+
+    assert len(responses) == 1
+    assert responses[0].delta == "split across reads"
+    assert responses[0].message.content == "split across reads"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_multiple_events_in_one_chunk():
+    """Several complete events in one read must each produce a response."""
+    responses = await _collect_astream_deltas(
+        [_sse_frame("first ") + _sse_frame("second"), b"data: [DONE]\n"]
+    )
+
+    assert [response.delta for response in responses] == ["first ", "second"]
+    assert responses[-1].message.content == "first second"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_ignores_comments_and_blank_lines():
+    """SSE comments and blank separators carry no payload."""
+    comments = b": keepalive\n\n"
+    responses = await _collect_astream_deltas(
+        [comments, _sse_frame("only event"), comments, b"data: [DONE]\n"]
+    )
+
+    assert len(responses) == 1
+    assert responses[0].delta == "only event"
