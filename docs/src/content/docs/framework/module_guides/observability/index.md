@@ -969,6 +969,37 @@ from llama_index.core import set_global_handler
 set_global_handler("agentops")
 ```
 
+### Asqav
+
+[Asqav](https://github.com/jagmarques/asqav-sdk) records LlamaIndex events as signed, hash-chained receipts, so you keep an audit trail of what a query engine or agent did that can be checked later, including by someone without an Asqav account. It uses the legacy `CallbackManager`.
+
+#### Install
+
+```shell
+pip install asqav
+```
+
+#### Usage Pattern
+
+```python
+import asqav
+from llama_index.core import Settings
+from llama_index.core.callbacks import CallbackManager
+from asqav.extras.llamaindex import AsqavLlamaIndexHandler
+
+asqav.init(api_key="<ASQAV_API_KEY>")
+
+Settings.callback_manager = CallbackManager(
+    [AsqavLlamaIndexHandler(agent_name="my-rag-app")]
+)
+```
+
+The handler signs the start and end of LLM, query, retrieval, synthesis, embedding, reranking, function call, agent step and sub-question events. Signing is fail-open: if Asqav cannot be reached, the error is logged and your application keeps running.
+
+#### Guides
+
+- [Handler source and usage](https://github.com/jagmarques/asqav-sdk/blob/main/python/src/asqav/extras/llamaindex.py)
+
 ### Simple (LLM Inputs/Outputs)
 
 This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
