@@ -86,9 +86,11 @@ class MistralAIEmbedding(BaseEmbedding):
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return (
-            await self._client.embeddings.create(
-                model=self.model_name,
-                inputs=[text],
+            (
+                await self._client.embeddings.create_async(
+                    model=self.model_name,
+                    inputs=[text],
+                )
             )
             .data[0]
             .embedding
