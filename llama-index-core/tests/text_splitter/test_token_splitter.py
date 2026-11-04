@@ -89,3 +89,11 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+def test_token_text_splitter_with_none_backup_separators():
+    splitter = TokenTextSplitter(
+        backup_separators=None
+    )
+
+    assert splitter.backup_separators == []
+    
