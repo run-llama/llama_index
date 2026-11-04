@@ -253,6 +253,17 @@ class OpenGaussStore(PGVectorStore):
             indexed_metadata_keys=indexed_metadata_keys,
         )
 
+        # both engine and async_engine must be provided, or both must be None
+        if engine is not None and async_engine is not None:
+            self._engine = engine
+            self._async_engine = async_engine
+        elif engine is None and async_engine is None:
+            pass
+        else:
+            raise ValueError(
+                "Both engine and async_engine must be provided, or both must be None"
+            )
+
     @classmethod
     def class_name(cls) -> str:
         return "OpenGaussStore"
