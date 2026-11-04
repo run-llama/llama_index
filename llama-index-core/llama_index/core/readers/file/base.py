@@ -365,6 +365,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     else:
                         rejected_files.add(_Path(str(file)))
 
+        # Hidden parts are only checked below input_dir, so an input_dir that
+        # itself lives inside a hidden directory (e.g. ~/.cache/docs) still works.
+        walk_root = _Path(self.fs._strip_protocol(str(input_dir)))
+
         file_refs: list[Union[Path, PurePosixPath]] = []
         limit = (
             self.num_files_limit
@@ -386,7 +390,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
             is_dir = self._is_directory(ref)
-            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
+            try:
+                ref_below_root = ref.relative_to(walk_root)
+            except ValueError:
+                ref_below_root = ref
+            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref_below_root)
             skip_because_empty = self.exclude_empty and self.is_empty_file(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
