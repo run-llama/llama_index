@@ -9,6 +9,10 @@ This loader loads patent abstract from `a list of patent numbers` with API provi
 > Note: The API now requires an API key which can be requested on [this page](https://patentsview-support.atlassian.net/servicedesk/customer/portal/1).
 > PatentsviewReader looks for its value in the environmental variable `PATENTSVIEW_API_KEY`
 
+> To use another host that serves the same `/api/v1/patent` endpoint and query
+> language, pass `base_url="https://host"` (scheme and host) or set
+> `PATENTSVIEW_BASE_URL`. The default is `https://search.patentsview.org`.
+
 ## Usage
 
 Here'a an example usage of PatentsviewReader.
