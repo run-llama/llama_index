@@ -92,6 +92,19 @@ def test_SimpleDirectoryReader_excluded(data_path):
     assert [f.name for f in r.input_files] == ["file_0.md", "file_0.xyz", "file_1.txt"]
 
 
+def test_SimpleDirectoryReader_excluded_dir_keeps_prefixed_siblings(tmp_path):
+    (tmp_path / "drafts").mkdir()
+    (tmp_path / "drafts" / "a.txt").write_text("a")
+    (tmp_path / "drafts" / "old").mkdir()
+    (tmp_path / "drafts" / "old" / "d.txt").write_text("d")
+    (tmp_path / "drafts_final").mkdir()
+    (tmp_path / "drafts_final" / "b.txt").write_text("b")
+    (tmp_path / "c.txt").write_text("c")
+
+    r = SimpleDirectoryReader(input_dir=tmp_path, recursive=True, exclude=["drafts"])
+    assert sorted(f.name for f in r.input_files) == ["b.txt", "c.txt"]
+
+
 def test_SimpleDirectoryReader_empty(data_path):
     with pytest.raises(ValueError, match="No files found in"):
         SimpleDirectoryReader(input_dir=data_path / "empty")
