@@ -84,6 +84,8 @@ def get_llm_token_counts(
     if EventPayload.PROMPT in payload:
         prompt = payload.get(EventPayload.PROMPT)
         completion = payload.get(EventPayload.COMPLETION)
+        prompt_str = "" if prompt is None else str(prompt)
+        completion_str = "" if completion is None else str(completion)
 
         if completion:
             # get from raw or additional_kwargs
@@ -92,16 +94,16 @@ def get_llm_token_counts(
             prompt_tokens, completion_tokens = 0, 0
 
         if prompt_tokens == 0:
-            prompt_tokens = token_counter.get_string_tokens(str(prompt))
+            prompt_tokens = token_counter.get_string_tokens(prompt_str)
 
         if completion_tokens == 0:
-            completion_tokens = token_counter.get_string_tokens(str(completion))
+            completion_tokens = token_counter.get_string_tokens(completion_str)
 
         return TokenCountingEvent(
             event_id=event_id,
-            prompt=str(prompt),
+            prompt=prompt_str,
             prompt_token_count=prompt_tokens,
-            completion=str(completion),
+            completion=completion_str,
             completion_token_count=completion_tokens,
         )
 
@@ -110,7 +112,7 @@ def get_llm_token_counts(
         messages_str = "\n".join([str(x) for x in messages])
 
         response = payload.get(EventPayload.RESPONSE)
-        response_str = str(response)
+        response_str = "" if response is None else str(response)
 
         if response:
             prompt_tokens, completion_tokens = get_tokens_from_response(response)
