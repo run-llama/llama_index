@@ -1073,6 +1073,30 @@ def test_del_calls_close() -> None:
     mock_sync.close.assert_called_once()
 
 
+@pytest.mark.asyncio
+async def test_close_keeps_async_close_task_alive_until_it_completes() -> None:
+    """
+    close(), called with a loop already running (e.g. from __del__ while
+    the client is being garbage-collected), schedules the async client's
+    close() via asyncio.create_task(). create_task() only keeps a *weak*
+    reference to the returned Task - with nothing else referencing it, the
+    task can be garbage-collected before it ever runs. close() must keep a
+    strong reference (here, _background_close_tasks) until the task is done.
+    """
+    from llama_index.vector_stores.opensearch.base import _background_close_tasks
+
+    client, mock_sync, mock_async = _make_client_with_mocks()
+
+    client.close()
+
+    assert len(_background_close_tasks) == 1
+    (task,) = tuple(_background_close_tasks)
+    await task
+
+    mock_async.close.assert_called_once()
+    assert len(_background_close_tasks) == 0
+
+
 def test_del_suppresses_exceptions() -> None:
     """Test that __del__ doesn't propagate errors."""
     client, mock_sync, mock_async = _make_client_with_mocks()
