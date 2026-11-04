@@ -1,5 +1,6 @@
 """Embedding utils for LlamaIndex."""
 
+import logging
 import os
 from typing import TYPE_CHECKING, List, Optional, Union
 
@@ -11,6 +12,9 @@ from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.utils import get_cache_dir
 
 EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
+
+
+logger = logging.getLogger(__name__)
 
 
 def save_embedding(embedding: List[float], file_path: str) -> None:
@@ -129,7 +133,7 @@ def resolve_embed_model(
             )
 
     if embed_model is None:
-        print("Embeddings have been explicitly disabled. Using MockEmbedding.")
+        logger.warning("Embeddings have been explicitly disabled. Using MockEmbedding.")
         embed_model = MockEmbedding(embed_dim=1)
 
     assert isinstance(embed_model, BaseEmbedding)
