@@ -145,6 +145,20 @@ class ReActAgent(BaseWorkflowAgent):
             chat_history=llm_input,
             current_reasoning=current_reasoning,
         )
+        # re-attach the system message that was removed from the chat history, so
+        # caller-supplied instructions are combined with (not replaced by) the
+        # react header instead of being dropped.
+        if system_prompt:
+            if input_chat and input_chat[0].role == "system":
+                header = input_chat[0].content or ""
+                if system_prompt not in header:
+                    input_chat[0] = ChatMessage(
+                        role="system", content=f"{system_prompt}\n\n{header}"
+                    )
+            else:
+                input_chat.insert(
+                    0, ChatMessage(role="system", content=system_prompt)
+                )
         # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
         # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
         # so just don't write events if the context is not running.
