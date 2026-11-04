@@ -338,7 +338,12 @@ class RedisVectorStore(BasePydanticVectorStore):
                 NODE_ID_FIELD_NAME: node.node_id,
                 DOC_ID_FIELD_NAME: node.ref_doc_id,
                 TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
-                VECTOR_FIELD_NAME: array_to_buffer(embedding, dtype="FLOAT32"),
+                VECTOR_FIELD_NAME: array_to_buffer(
+                    embedding,
+                    dtype=self._async_index.schema.fields[
+                        VECTOR_FIELD_NAME
+                    ].attrs.datatype.value,
+                ),
             }
             # parse and append metadata
             additional_metadata = node_to_metadata_dict(
@@ -396,7 +401,12 @@ class RedisVectorStore(BasePydanticVectorStore):
                 NODE_ID_FIELD_NAME: node.node_id,
                 DOC_ID_FIELD_NAME: node.ref_doc_id,
                 TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
-                VECTOR_FIELD_NAME: array_to_buffer(embedding, dtype="FLOAT32"),
+                VECTOR_FIELD_NAME: array_to_buffer(
+                    embedding,
+                    dtype=self._index.schema.fields[
+                        VECTOR_FIELD_NAME
+                    ].attrs.datatype.value,
+                ),
             }
             # parse and append metadata
             additional_metadata = node_to_metadata_dict(
@@ -762,6 +772,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         return VectorQuery(
             vector=query.query_embedding,
             vector_field_name=VECTOR_FIELD_NAME,
+            dtype=self._index.schema.fields[VECTOR_FIELD_NAME].attrs.datatype.value,
             num_results=query.similarity_top_k,
             filter_expression=filter_expression,
             return_fields=return_fields,
