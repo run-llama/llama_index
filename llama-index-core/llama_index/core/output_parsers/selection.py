@@ -56,6 +56,8 @@ class SelectionOutputParser(BaseOutputParser):
     def _format_output(self, output: List[dict]) -> List[dict]:
         output_json = []
         for json_dict in output:
+            if not isinstance(json_dict, dict):
+                continue
             valid = True
             for key in self.REQUIRED_KEYS:
                 if key not in json_dict:
