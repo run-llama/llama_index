@@ -100,3 +100,32 @@ def test_mean_agg_empty_list() -> None:
     """Test mean aggregation raises ValueError for empty list."""
     with pytest.raises(ValueError, match="No embeddings to aggregate"):
         mean_agg([])
+
+
+@pytest.mark.asyncio
+async def test_aget_agg_embedding_from_queries_concurrent() -> None:
+    """Test aget_agg_embedding_from_queries dispatches query embeddings concurrently."""
+    import asyncio
+
+    embed_model = MockEmbedding(embed_dim=5)
+    active = 0
+    max_active = 0
+
+    async def tracked_aget_query_embedding(query: str) -> List[float]:
+        nonlocal active, max_active
+        active += 1
+        max_active = max(max_active, active)
+        await asyncio.sleep(0.01)
+        active -= 1
+        return mock_get_text_embedding(query)
+
+    with patch.object(
+        MockEmbedding,
+        "_aget_query_embedding",
+        side_effect=tracked_aget_query_embedding,
+    ):
+        agg = await embed_model.aget_agg_embedding_from_queries(
+            ["Hello world.", "This is a test."]
+        )
+    assert max_active == 2
+    assert agg == [0.5, 0.5, 0.0, 0.0, 0.0]
