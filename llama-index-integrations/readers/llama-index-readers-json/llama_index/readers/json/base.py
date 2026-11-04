@@ -38,11 +38,13 @@ def _depth_first_yield(
                 new_path = path[:]
                 new_path.append(key)
                 yield from _depth_first_yield(
-                    value, levels_back, collapse_length, new_path
+                    value, levels_back, collapse_length, new_path, ensure_ascii
                 )
         elif isinstance(json_data, list):
             for _, value in enumerate(json_data):
-                yield from _depth_first_yield(value, levels_back, collapse_length, path)
+                yield from _depth_first_yield(
+                    value, levels_back, collapse_length, path, ensure_ascii
+                )
     else:
         new_path = path[-levels_back:]
         new_path.append(str(json_data))
