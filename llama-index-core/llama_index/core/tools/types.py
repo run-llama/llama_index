@@ -184,7 +184,7 @@ class BaseTool(DispatcherSpanMixin):
             langchain_tool_kwargs["name"] = self.metadata.name or ""
         if "description" not in langchain_tool_kwargs:
             langchain_tool_kwargs["description"] = self.metadata.description
-        if "fn_schema" not in langchain_tool_kwargs:
+        if "args_schema" not in langchain_tool_kwargs:
             langchain_tool_kwargs["args_schema"] = self.metadata.fn_schema
 
         # Callback dont exist on langchain
