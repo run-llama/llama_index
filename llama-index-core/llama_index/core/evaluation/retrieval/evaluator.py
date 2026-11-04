@@ -8,9 +8,18 @@ from llama_index.core.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalMode,
 )
-from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import ImageNode, TextNode
+from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
+
+
+def _nodes_to_ids_and_texts(
+    nodes: List[NodeWithScore],
+) -> Tuple[List[str], List[str]]:
+    """Split retrieved nodes into their ids and texts."""
+    return (
+        [node.node.node_id for node in nodes],
+        [node.text for node in nodes],
+    )
 
 
 class RetrieverEvaluator(BaseRetrievalEvaluator):
@@ -32,10 +41,13 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
         default=None, description="Optional post-processor"
     )
 
-    async def _aget_retrieved_ids_and_texts(
-        self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
-    ) -> Tuple[List[str], List[str]]:
-        """Get retrieved ids and texts, potentially applying a post-processor."""
+    async def aget_retrieved_nodes(self, query: str) -> List[NodeWithScore]:
+        """
+        Retrieve nodes for a query, potentially applying a post-processor.
+
+        Public extension point for evaluators that need the nodes themselves
+        rather than just their ids and texts, e.g. to group them.
+        """
         retrieved_nodes = await self.retriever.aretrieve(query)
 
         if self.node_postprocessors:
@@ -44,10 +56,13 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
                     retrieved_nodes, query_str=query
                 )
 
-        return (
-            [node.node.node_id for node in retrieved_nodes],
-            [node.text for node in retrieved_nodes],
-        )
+        return retrieved_nodes
+
+    async def _aget_retrieved_ids_and_texts(
+        self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
+    ) -> Tuple[List[str], List[str]]:
+        """Get retrieved ids and texts, potentially applying a post-processor."""
+        return _nodes_to_ids_and_texts(await self.aget_retrieved_nodes(query))
 
 
 class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
