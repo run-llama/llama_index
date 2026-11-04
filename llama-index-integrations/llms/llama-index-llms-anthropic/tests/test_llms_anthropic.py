@@ -1,30 +1,30 @@
 import os
-import httpx
-from unittest.mock import MagicMock
-from typing import List
-
-import pytest
 from pathlib import Path
-from pydantic import BaseModel, ValidationError
-from anthropic.types.beta.parsed_beta_message import ParsedBetaMessage
+from typing import List
+from unittest.mock import MagicMock
+
+import httpx
+import pytest
 from anthropic.types.beta import BetaUsage
-from llama_index.core.prompts import PromptTemplate
+from anthropic.types.beta.parsed_beta_message import ParsedBetaMessage
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import (
-    ChatMessage,
-    DocumentBlock,
-    TextBlock,
-    MessageRole,
-    ChatResponse,
-    CachePoint,
     CacheControl,
+    CachePoint,
+    ChatMessage,
+    ChatResponse,
+    DocumentBlock,
+    MessageRole,
+    TextBlock,
+    ThinkingBlock,
     ToolCallBlock,
 )
-from llama_index.core.base.llms.types import ThinkingBlock
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic.base import AnthropicChatResponse, _get_default_headers
 from llama_index.llms.anthropic.utils import messages_to_anthropic_messages
+from pydantic import BaseModel, ValidationError
 
 
 def test_text_inference_embedding_class():
@@ -685,6 +685,7 @@ def test_stream_chat_usage_and_stop_reason_mock():
     Related to issue #20194.
     """
     from unittest.mock import MagicMock
+
     from anthropic.types import TextDelta, Usage
 
     # Create mock events that simulate Anthropic streaming response
@@ -722,11 +723,11 @@ def test_stream_chat_usage_and_stop_reason_mock():
     # Create mock streaming response generator
     def mock_stream_generator():
         from anthropic.types import (
-            RawContentBlockDeltaEvent,
             ContentBlockStopEvent,
+            Message,
+            RawContentBlockDeltaEvent,
             RawMessageDeltaEvent,
             RawMessageStartEvent,
-            Message,
         )
 
         # Simulate streaming events
@@ -784,7 +785,8 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     Async version of test_stream_chat_usage_and_stop_reason_mock.
     Related to issue #20194.
     """
-    from unittest.mock import MagicMock, AsyncMock
+    from unittest.mock import AsyncMock, MagicMock
+
     from anthropic.types import TextDelta, Usage
 
     # Create mock events
@@ -806,11 +808,11 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     # Create async mock streaming response generator
     async def mock_async_stream_generator():
         from anthropic.types import (
-            RawContentBlockDeltaEvent,
             ContentBlockStopEvent,
+            Message,
+            RawContentBlockDeltaEvent,
             RawMessageDeltaEvent,
             RawMessageStartEvent,
-            Message,
         )
 
         yield MagicMock(
@@ -858,6 +860,155 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
     assert stop_reason is not None, "stop_reason should be captured in async streaming"
     assert stop_reason == "max_tokens"
+
+
+def _omitted_thinking_tool_loop_events() -> list:
+    """
+    Stream events for a `display: "omitted"` tool-loop turn:
+    thinking (signature only) -> text -> thinking (signature only) -> tool_use.
+    """
+    from anthropic.types import (
+        InputJSONDelta,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        SignatureDelta,
+        TextDelta,
+        ToolUseBlock,
+    )
+    from anthropic.types import TextBlock as AnthropicTextBlock
+    from anthropic.types import ThinkingBlock as AnthropicThinkingBlock
+
+    def start(index, content_block):
+        return RawContentBlockStartEvent(
+            content_block=content_block, index=index, type="content_block_start"
+        )
+
+    def delta(index, block_delta):
+        return RawContentBlockDeltaEvent(
+            delta=block_delta, index=index, type="content_block_delta"
+        )
+
+    def stop(index):
+        return RawContentBlockStopEvent(index=index, type="content_block_stop")
+
+    def omitted_thinking():
+        return AnthropicThinkingBlock(thinking="", signature="", type="thinking")
+
+    return [
+        start(0, omitted_thinking()),
+        delta(0, SignatureDelta(signature="sig-a", type="signature_delta")),
+        stop(0),
+        start(1, AnthropicTextBlock(text="", type="text")),
+        delta(1, TextDelta(text="Checking Paris.", type="text_delta")),
+        stop(1),
+        start(2, omitted_thinking()),
+        delta(2, SignatureDelta(signature="sig-b", type="signature_delta")),
+        stop(2),
+        start(
+            3,
+            ToolUseBlock(id="toolu_1", input={}, name="get_weather", type="tool_use"),
+        ),
+        delta(
+            3,
+            InputJSONDelta(partial_json='{"city": "Paris"}', type="input_json_delta"),
+        ),
+        stop(3),
+    ]
+
+
+def _assert_omitted_thinking_tool_loop_replayed(message: ChatMessage) -> None:
+    """
+    The streamed assistant message replays with every block, in order.
+    """
+    ant_messages, _ = messages_to_anthropic_messages(
+        [ChatMessage(role="user", content="Weather in Paris?"), message]
+    )
+
+    assert ant_messages[1]["role"] == "assistant"
+    assert ant_messages[1]["content"] == [
+        {"type": "thinking", "thinking": "", "signature": "sig-a"},
+        {"type": "text", "text": "Checking Paris."},
+        {"type": "thinking", "thinking": "", "signature": "sig-b"},
+        {
+            "type": "tool_use",
+            "id": "toolu_1",
+            "input": {"city": "Paris"},
+            "name": "get_weather",
+        },
+    ]
+
+
+def test_stream_chat_omitted_thinking_round_trip():
+    llm = Anthropic(model="claude-opus-5-5")
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = iter(
+        _omitted_thinking_tool_loop_events()
+    )
+    llm._client = mock_client
+
+    chunks = list(
+        llm.stream_chat([ChatMessage(role="user", content="Weather in Paris?")])
+    )
+
+    _assert_omitted_thinking_tool_loop_replayed(chunks[-1].message)
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_omitted_thinking_round_trip():
+    from unittest.mock import AsyncMock
+
+    async def mock_async_stream_generator():
+        for event in _omitted_thinking_tool_loop_events():
+            yield event
+
+    llm = Anthropic(model="claude-opus-5-5")
+    mock_async_client = AsyncMock()
+    mock_async_client.messages.create = AsyncMock(
+        return_value=mock_async_stream_generator()
+    )
+    llm._aclient = mock_async_client
+
+    stream_resp = await llm.astream_chat(
+        [ChatMessage(role="user", content="Weather in Paris?")]
+    )
+    chunks = [chunk async for chunk in stream_resp]
+
+    _assert_omitted_thinking_tool_loop_replayed(chunks[-1].message)
+
+
+def test_chat_omitted_thinking_round_trip():
+    from anthropic.types import Message, ToolUseBlock, Usage
+    from anthropic.types import TextBlock as AnthropicTextBlock
+    from anthropic.types import ThinkingBlock as AnthropicThinkingBlock
+
+    llm = Anthropic(model="claude-opus-5-5")
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = Message(
+        id="msg_1",
+        content=[
+            AnthropicThinkingBlock(thinking="", signature="sig-a", type="thinking"),
+            AnthropicTextBlock(text="Checking Paris.", type="text"),
+            AnthropicThinkingBlock(thinking="", signature="sig-b", type="thinking"),
+            ToolUseBlock(
+                id="toolu_1",
+                input={"city": "Paris"},
+                name="get_weather",
+                type="tool_use",
+            ),
+        ],
+        model="claude-opus-5-5",
+        role="assistant",
+        stop_reason="tool_use",
+        stop_sequence=None,
+        type="message",
+        usage=Usage(input_tokens=10, output_tokens=20),
+    )
+    llm._client = mock_client
+
+    response = llm.chat([ChatMessage(role="user", content="Weather in Paris?")])
+
+    _assert_omitted_thinking_tool_loop_replayed(response.message)
 
 
 @pytest.mark.skipif(

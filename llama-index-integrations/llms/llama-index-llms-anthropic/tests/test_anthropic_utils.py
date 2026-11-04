@@ -291,6 +291,86 @@ def test_is_anthropic_structured_output_supported() -> None:
     assert not is_anthropic_structured_output_supported("claude-sonnet-4-0")
 
 
+@pytest.mark.parametrize(
+    "to_anthropic_blocks",
+    [blocks_to_anthropic_blocks, blocks_to_anthropic_beta_blocks],
+)
+class TestThinkingBlockReplay:
+    """
+    Thinking blocks are replayed to Anthropic when they carry content or a signature.
+
+    Under Claude's `display: "omitted"` mode, thinking blocks come back with empty text
+    and the reasoning lives in the signature, so these must be replayed.
+    """
+
+    def test_signature_only_block_is_replayed_in_place(self, to_anthropic_blocks):
+        blocks = [
+            TextBlock(text="Let me check."),
+            ThinkingBlock(content="", additional_information={"signature": "sig-a"}),
+            ToolCallBlock(
+                tool_call_id="toolu_1",
+                tool_name="get_weather",
+                tool_kwargs={"city": "Paris"},
+            ),
+        ]
+        result = to_anthropic_blocks(blocks, {})
+
+        assert [block["type"] for block in result] == ["text", "thinking", "tool_use"]
+        assert result[1] == {"type": "thinking", "thinking": "", "signature": "sig-a"}
+
+    def test_signature_only_block_with_none_content_is_replayed(
+        self, to_anthropic_blocks
+    ):
+        blocks = [ThinkingBlock(additional_information={"signature": "sig-a"})]
+        result = to_anthropic_blocks(blocks, {})
+
+        assert result == [{"type": "thinking", "thinking": "", "signature": "sig-a"}]
+
+    def test_block_without_content_or_signature_is_skipped(self, to_anthropic_blocks):
+        blocks = [
+            ThinkingBlock(content=""),
+            ThinkingBlock(content="", additional_information={"signature": ""}),
+            TextBlock(text="Hello"),
+        ]
+        result = to_anthropic_blocks(blocks, {})
+
+        assert [block["type"] for block in result] == ["text"]
+
+    def test_block_with_content_but_no_signature_is_still_replayed(
+        self, to_anthropic_blocks
+    ):
+        blocks = [ThinkingBlock(content="Some reasoning")]
+        result = to_anthropic_blocks(blocks, {})
+
+        assert result == [
+            {"type": "thinking", "thinking": "Some reasoning", "signature": ""}
+        ]
+
+    def test_multiple_thinking_blocks_keep_order_and_signatures(
+        self, to_anthropic_blocks
+    ):
+        blocks = [
+            ThinkingBlock(content="", additional_information={"signature": "sig-a"}),
+            TextBlock(text="Checking Paris."),
+            ThinkingBlock(content="", additional_information={"signature": "sig-b"}),
+            ToolCallBlock(
+                tool_call_id="toolu_1",
+                tool_name="get_weather",
+                tool_kwargs={"city": "Paris"},
+            ),
+        ]
+        result = to_anthropic_blocks(blocks, {})
+
+        assert [block["type"] for block in result] == [
+            "thinking",
+            "text",
+            "thinking",
+            "tool_use",
+        ]
+        assert result[0]["signature"] == "sig-a"
+        assert result[2]["signature"] == "sig-b"
+
+
 class TestCacheControlOnlyLastBlock:
     """
     Test that cache_control is applied only to the last block.
