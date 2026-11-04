@@ -59,7 +59,7 @@ def html_to_df(html_str: str) -> Any:
 
     data = []
     for row in rows:
-        cols = row.xpath(".//td")
+        cols = row.xpath(".//td | .//th")
         cols = [c.text.strip() if c.text is not None else "" for c in cols]
         data.append(cols)
 
