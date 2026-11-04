@@ -103,7 +103,10 @@ class JSONReader(BaseReader):
                 load_data = []
                 if self.is_jsonl:
                     for line in f:
-                        load_data.append(json.loads(line.strip()))
+                        stripped = line.strip()
+                        if not stripped:
+                            continue
+                        load_data.append(json.loads(stripped))
                 else:
                     load_data = [json.load(f)]
 
