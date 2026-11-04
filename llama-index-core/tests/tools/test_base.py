@@ -2,12 +2,13 @@
 
 import contextvars
 import json
-from typing import List, Optional
+from typing import Coroutine, List, Optional
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
@@ -603,3 +604,66 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_async_fn_in_both_slots_does_not_return_a_coroutine() -> None:
+    """A coroutine function passed as `fn` alongside `async_fn` was called
+    without being awaited, so `call()` reported success and handed the LLM
+    '<coroutine object ...>' as the tool's content.
+    """
+
+    async def get_weather(city: str) -> str:
+        return f"It is sunny in {city}"
+
+    tool = FunctionTool.from_defaults(fn=get_weather, async_fn=get_weather)
+    output = tool.call(city="Paris")
+
+    assert output.is_error is False
+    assert output.content == "It is sunny in Paris"
+    assert not isinstance(output.raw_output, Coroutine)
+
+
+def test_tool_spec_tuple_form_with_async_method_is_awaited() -> None:
+    """BaseToolSpec's ("sync_name", "async_name") form passes the first entry
+    as `fn` with no coroutine check, so an async method reached the same bug
+    without anyone calling from_defaults directly.
+    """
+
+    class WeatherSpec(BaseToolSpec):
+        spec_functions = [("get_weather", "get_weather")]
+
+        async def get_weather(self, city: str) -> str:
+            return f"It is sunny in {city}"
+
+    tool = WeatherSpec().to_tool_list()[0]
+    assert tool.call(city="Paris").content == "It is sunny in Paris"
+
+
+@pytest.mark.asyncio
+async def test_async_fn_in_both_slots_acall_unchanged() -> None:
+    """The async path was always correct and must stay that way."""
+
+    async def get_weather(city: str) -> str:
+        return f"It is sunny in {city}"
+
+    tool = FunctionTool.from_defaults(fn=get_weather, async_fn=get_weather)
+    assert (await tool.acall(city="Paris")).content == "It is sunny in Paris"
+
+
+def test_sync_fn_with_async_fn_still_uses_sync_fn() -> None:
+    """When `fn` really is synchronous it must still be used verbatim for
+    call(), not routed through the event loop.
+    """
+    calls: List[str] = []
+
+    def sync_impl(city: str) -> str:
+        calls.append("sync")
+        return f"sync {city}"
+
+    async def async_impl(city: str) -> str:
+        calls.append("async")
+        return f"async {city}"
+
+    tool = FunctionTool.from_defaults(fn=sync_impl, async_fn=async_impl)
+    assert tool.call(city="Paris").content == "sync Paris"
+    assert calls == ["sync"]
