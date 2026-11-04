@@ -20,6 +20,7 @@ from llama_index.core.utils import (
     get_tokenizer,
     iter_batch,
     print_text,
+    resolve_binary,
     retry_on_exceptions_with_backoff,
     truncate_text,
 )
@@ -353,3 +354,39 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_resolve_binary_data_url_percent_encoding() -> None:
+    """Percent-encoded data: URLs should be decoded before use."""
+    import base64
+
+    # Non-base64 text data URL with percent-encoded characters. "%20" must be
+    # decoded to a space rather than kept literally.
+    text_url = "data:text/plain,Hello%20World%21"
+    assert resolve_binary(url=text_url).read() == b"Hello World!"
+    # as_base64=True should base64-encode the *decoded* bytes.
+    assert resolve_binary(url=text_url, as_base64=True).read() == base64.b64encode(
+        b"Hello World!"
+    )
+
+    # Base64 data URL where "+" is percent-escaped as "%2B" (as happens when a
+    # data URL is embedded in a larger URL). It must be percent-decoded before
+    # base64 decoding, otherwise the payload is corrupted. This payload's base64
+    # begins with "+", so without percent-decoding the leading "%2B" corrupts
+    # the output.
+    raw = b"\xf8\x00\xfb\xff"
+    b64 = base64.b64encode(raw).decode("ascii")
+    assert b64.startswith("+")
+    escaped_b64 = b64.replace("+", "%2B")
+    base64_url = f"data:application/octet-stream;base64,{escaped_b64}"
+    assert resolve_binary(url=base64_url).read() == raw
+    assert resolve_binary(url=base64_url, as_base64=True).read() == base64.b64encode(
+        raw
+    )
+
+    # Regression: URLs without any percent-encoding still work.
+    plain_text_url = "data:text/plain,hello"
+    assert resolve_binary(url=plain_text_url).read() == b"hello"
+    plain_b64 = base64.b64encode(b"hello world").decode("ascii")
+    plain_b64_url = f"data:text/plain;base64,{plain_b64}"
+    assert resolve_binary(url=plain_b64_url).read() == b"hello world"
