@@ -21,6 +21,21 @@ def test_expand_tokens_with_subtokens() -> None:
     }
 
 
+def test_extract_keywords_skips_empty_entries() -> None:
+    """Test that trailing or repeated commas do not produce empty keywords."""
+    response = "KEYWORDS: foo, bar,"
+    keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
+    assert keywords == {"foo", "bar"}
+
+    response = "KEYWORDS: foo,, , bar, "
+    keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
+    assert keywords == {"foo", "bar"}
+
+    assert extract_keywords_given_response("KEYWORDS: ,", start_token="KEYWORDS:") == (
+        set()
+    )
+
+
 def test_extract_keywords_with_start_delimiter() -> None:
     """Test extract keywords with start delimiter."""
     response = "KEYWORDS: foo, bar, foobar"

@@ -69,7 +69,10 @@ def extract_keywords_given_response(
         rk = k
         if lowercase:
             rk = rk.lower()
-        results.append(rk.strip())
+        rk = rk.strip()
+        # skip empty entries (e.g. from a trailing comma in the LLM output)
+        if rk:
+            results.append(rk)
 
     # if keyword consists of multiple words, split into subwords
     # (removing stopwords)
