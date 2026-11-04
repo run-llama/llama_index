@@ -231,6 +231,16 @@ class LLM(BaseLLM):
 
     # -- Utils --
 
+    def to_payload(self) -> Dict[str, Any]:
+        payload = super().to_payload()
+        model = getattr(self, "model", None)
+        if model is not None:
+            payload["model"] = model
+        temperature = getattr(self, "temperature", None)
+        if temperature is not None:
+            payload["temperature"] = temperature
+        return payload
+
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> None:
