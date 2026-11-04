@@ -12,6 +12,7 @@ from llama_index.core.postprocessor.structured_llm_rerank import (
     StructuredLLMRerank,
     DocumentWithRelevance,
     DocumentRelevanceList,
+    default_parse_structured_choice_select_answer,
 )
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle, TextNode
@@ -286,3 +287,17 @@ async def test_allm_rerank_runs_batches_concurrently() -> None:
         f"expected all {n_batches} batches in flight concurrently, "
         f"saw at most {max_in_flight}"
     )
+
+
+@pytest.mark.parametrize("document_number", [0, -1])
+def test_parse_structured_choice_select_answer_drops_non_positive_numbers(
+    document_number: int,
+) -> None:
+    answer = DocumentRelevanceList(
+        documents=[
+            DocumentWithRelevance(document_number=document_number, relevance=9),
+            DocumentWithRelevance(document_number=2, relevance=7),
+        ]
+    )
+
+    assert default_parse_structured_choice_select_answer(answer, 3) == ([2], [7])
