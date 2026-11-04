@@ -9,7 +9,10 @@ from llama_index.core.base.base_selector import (
 from llama_index.core.program import FunctionCallingProgram
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import QueryBundle
-from llama_index.core.selectors.llm_selectors import _build_choices_text
+from llama_index.core.selectors.llm_selectors import (
+    _build_choices_text,
+    _validate_selector_result,
+)
 from llama_index.core.selectors.prompts import (
     DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
     DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
@@ -21,20 +24,24 @@ if TYPE_CHECKING:
     from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
 
-def _pydantic_output_to_selector_result(output: Any) -> SelectorResult:
+def _pydantic_output_to_selector_result(
+    output: Any, num_choices: int
+) -> SelectorResult:
     """
     Convert pydantic output to selector result.
     Takes into account zero-indexing on answer indexes.
     """
     if isinstance(output, SingleSelection):
         output.index -= 1
-        return SelectorResult(selections=[output])
+        selections = [output]
     elif isinstance(output, MultiSelection):
         for idx in range(len(output.selections)):
             output.selections[idx].index -= 1
-        return SelectorResult(selections=output.selections)
+        selections = output.selections
     else:
         raise ValueError(f"Unsupported output type: {type(output)}")
+
+    return _validate_selector_result(selections, num_choices)
 
 
 class PydanticSingleSelector(BaseSelector):
@@ -81,7 +88,7 @@ class PydanticSingleSelector(BaseSelector):
         )
 
         # parse output
-        return _pydantic_output_to_selector_result(prediction)
+        return _pydantic_output_to_selector_result(prediction, len(choices))
 
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
@@ -97,7 +104,7 @@ class PydanticSingleSelector(BaseSelector):
         )
 
         # parse output
-        return _pydantic_output_to_selector_result(prediction)
+        return _pydantic_output_to_selector_result(prediction, len(choices))
 
 
 class PydanticMultiSelector(BaseSelector):
@@ -150,7 +157,7 @@ class PydanticMultiSelector(BaseSelector):
         )
 
         # parse output
-        return _pydantic_output_to_selector_result(prediction)
+        return _pydantic_output_to_selector_result(prediction, len(choices))
 
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
