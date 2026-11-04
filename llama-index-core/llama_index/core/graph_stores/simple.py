@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
+from llama_index.core._persistence import _atomic_write
 from llama_index.core.graph_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
@@ -147,7 +148,7 @@ class SimpleGraphStore(GraphStore):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w", encoding="utf-8") as f:
+        with _atomic_write(persist_path, fs) as f:
             json.dump(self._data.to_dict(), f)
 
     def get_schema(self, refresh: bool = False) -> str:
