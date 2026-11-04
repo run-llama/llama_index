@@ -39,6 +39,13 @@ from llama_index.vector_stores.azureaisearch.azureaisearch_utils import (
 
 logger = logging.getLogger(__name__)
 
+# asyncio.create_task() only holds a weak reference to the returned Task, so
+# a task with no other strong reference (as in close(), called from __del__
+# with the client itself already being torn down) can be garbage-collected
+# before it runs. Keeping tasks here until they finish (removed via the done
+# callback) keeps them alive long enough to actually close the connection.
+_background_close_tasks: set = set()
+
 # Odata supports basic filters: eq, ne, gt, lt, ge, le
 BASIC_ODATA_FILTER_MAP = {
     FilterOperator.EQ: "eq",
@@ -852,7 +859,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 asyncio.run(self._async_search_client.close())
             else:
                 # Running loop: schedule async close (not awaited)
-                loop.create_task(self._async_search_client.close())
+                task = loop.create_task(self._async_search_client.close())
+                _background_close_tasks.add(task)
+                task.add_done_callback(_background_close_tasks.discard)
 
     async def aclose(self) -> None:
         """
