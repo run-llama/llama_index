@@ -79,7 +79,10 @@ def get_text_embedding(
     embedding_results = [None] * len(text)
     if response.status_code == HTTPStatus.OK:
         for emb in response.output["embeddings"]:
-            embedding_results[emb["text_index"]] = emb["embedding"]
+            # Compatible with both the old version of text_index and the new version of index
+            idx = emb.get("text_index", emb.get("index"))
+            if idx is not None:
+                embedding_results[idx] = emb["embedding"]
     else:
         logger.error("Calling TextEmbedding failed, details: %s" % response)
 
