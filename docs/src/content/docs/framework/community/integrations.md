@@ -22,6 +22,10 @@ LlamaPacks are deprecated. See the [dedicated page](/python/framework/community/
 
 We support [a huge number of LLMs](/python/framework/module_guides/models/llms/modules).
 
+## Node Postprocessors
+
+- [ctxprune](https://github.com/riceharvest/ctxprune): context compression that deletes low-value tokens from retrieved nodes while keeping identifiers intact (`CtxpruneNodePostprocessor`, `pip install ctxprune`)
+
 ## Observability/Tracing/Evaluation
 
 Check out our [one-click observability](/python/framework/module_guides/observability) page
