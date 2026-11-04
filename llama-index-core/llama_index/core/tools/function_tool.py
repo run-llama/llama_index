@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import functools
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -187,8 +188,15 @@ class FunctionTool(AsyncBaseTool):
         if tool_metadata is None:
             fn_to_parse = fn or async_fn
             assert fn_to_parse is not None, "fn must be provided"
-            name = name or fn_to_parse.__name__
-            docstring = fn_to_parse.__doc__ or ""
+            name_source = fn_to_parse
+            while isinstance(name_source, functools.partial):
+                name_source = name_source.func
+            name = (
+                name
+                or getattr(name_source, "__name__", None)
+                or type(name_source).__name__
+            )
+            docstring = name_source.__doc__ or ""
 
             # Get function signature
             fn_sig = inspect.signature(fn_to_parse)
