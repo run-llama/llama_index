@@ -28,7 +28,7 @@ def test_additional_kwargs_wrong_dtype(chat_model: str, mode: dict) -> None:
 
 
 @pytest.mark.integration
-def test_additional_kwargs_wrong_dtype(chat_model: str, mode: dict) -> None:
+def test_additional_kwargs_unknown_kwarg(chat_model: str, mode: dict) -> None:
     client = NVIDIA(chat_model, **mode)
     with pytest.raises(Exception) as exc_info:
         client.complete(
