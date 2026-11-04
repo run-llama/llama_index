@@ -229,7 +229,7 @@ class AzureChatStore(BaseChatStore):
             {
                 "PartitionKey": self.metadata_partition_key,
                 "RowKey": key,
-                "LastMessageRowKey": self._to_row_key(messages_len - 1),
+                "LastMessageRowKey": self._to_row_key(max(messages_len - 1, 0)),
                 "MessageCount": messages_len,
             },
             UpdateMode.REPLACE,
@@ -267,6 +267,13 @@ class AzureChatStore(BaseChatStore):
 
         if idx is not None and idx > next_index:
             raise ValueError(f"Index out of bounds: {idx}")
+        elif idx is not None and idx < next_index:
+            # Inserting before existing messages: row keys encode the position,
+            # so rewrite the conversation to shift the following messages.
+            messages = await self.aget_messages(key)
+            messages.insert(idx, message)
+            await self.aset_messages(key, messages)
+            return
         elif idx is None:
             idx = next_index
 
@@ -303,6 +310,10 @@ class AzureChatStore(BaseChatStore):
         all_entities = []
         async for entity in entities:
             all_entities.append(entity)
+        deleted_messages = [
+            ChatMessage.model_validate(deserialize(self.service_mode, entity))
+            for entity in all_entities
+        ]
 
         await chat_client.submit_transaction(
             (TransactionOperation.DELETE, entity) for entity in all_entities
@@ -314,6 +325,7 @@ class AzureChatStore(BaseChatStore):
         await metadata_client.upsert_entity(
             self._get_default_metadata(key), UpdateMode.REPLACE
         )
+        return deleted_messages
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
@@ -321,32 +333,18 @@ class AzureChatStore(BaseChatStore):
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Asynchronously delete specific message for a key."""
-        # Fetch metadata to get the message count
-        metadata_client = await self._atable_service_client.create_table_if_not_exists(
-            self.metadata_table_name
-        )
-        metadata = await metadata_client.get_entity(
-            partition_key=self.metadata_partition_key, row_key=key
-        )
-
-        # Index out of bounds
-        message_count = int(metadata["MessageCount"])
-        if idx >= message_count:
+        messages = await self.aget_messages(key)
+        if idx < 0 or idx >= len(messages):
             return None
 
-        # Delete the message
-        chat_client = await self._atable_service_client.create_table_if_not_exists(
-            self.chat_table_name
-        )
-        await chat_client.delete_entity(
-            partition_key=key, row_key=self._to_row_key(idx)
-        )
-
-        # Update metadata if last message was deleted
-        if idx == message_count - 1:
-            metadata["LastMessageRowKey"] = self._to_row_key(idx - 1)
-            metadata["MessageCount"] = message_count - 1
-            await metadata_client.upsert_entity(metadata, mode=UpdateMode.MERGE)
+        deleted_message = messages[idx]
+        if idx == len(messages) - 1:
+            await self.adelete_last_message(key)
+        else:
+            # Row keys encode the message position, so rewrite the remaining
+            # messages to keep them contiguous and the metadata consistent.
+            await self.aset_messages(key, messages[:idx] + messages[idx + 1 :])
+        return deleted_message
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
@@ -357,14 +355,23 @@ class AzureChatStore(BaseChatStore):
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
-        # Retrieve metadata to get the last message row key
-        metadata = await metadata_client.get_entity(
-            partition_key=self.metadata_partition_key, row_key=key
-        )
+        metadata = await self._get_or_default_metadata(metadata_client, key)
+        message_count = int(metadata["MessageCount"])
+        if message_count == 0:
+            return None
         last_row_key = metadata["LastMessageRowKey"]
 
         chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
+        )
+        try:
+            entity = await chat_client.get_entity(
+                partition_key=key, row_key=last_row_key
+            )
+        except ResourceNotFoundError:
+            return None
+        deleted_message = ChatMessage.model_validate(
+            deserialize(self.service_mode, entity)
         )
         # Delete the last message
         await chat_client.delete_entity(partition_key=key, row_key=last_row_key)
@@ -374,8 +381,9 @@ class AzureChatStore(BaseChatStore):
         metadata["LastMessageRowKey"] = self._to_row_key(
             last_row_key_num - 1 if last_row_key_num > 0 else 0
         )
-        metadata["MessageCount"] = int(metadata["MessageCount"]) - 1
+        metadata["MessageCount"] = message_count - 1
         await metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
+        return deleted_message
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
