@@ -144,3 +144,24 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_upsert_relations_updates_properties() -> None:
+    g = SimplePropertyGraphStore()
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2")
+    g.upsert_nodes([e1, e2])
+
+    for confidence in (0.1, 0.9):
+        g.upsert_relations([
+            Relation(
+                label="KNOWS",
+                source_id=e1.id,
+                target_id=e2.id,
+                properties={"confidence": confidence},
+            )
+        ])
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
