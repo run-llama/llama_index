@@ -232,33 +232,18 @@ class SemanticSplitterNodeParser(NodeParser):
     def _build_sentence_groups(
         self, text_splits: List[str]
     ) -> List[SentenceCombination]:
-        sentences: List[SentenceCombination] = [
+        buffer_size = self.buffer_size
+        return [
             {
                 "sentence": x,
                 "index": i,
-                "combined_sentence": "",
+                "combined_sentence": "".join(
+                    text_splits[max(0, i - buffer_size) : i + buffer_size + 1]
+                ),
                 "combined_sentence_embedding": [],
             }
             for i, x in enumerate(text_splits)
         ]
-
-        # Group sentences and calculate embeddings for sentence groups
-        for i in range(len(sentences)):
-            combined_sentence = ""
-
-            for j in range(i - self.buffer_size, i):
-                if j >= 0:
-                    combined_sentence += sentences[j]["sentence"]
-
-            combined_sentence += sentences[i]["sentence"]
-
-            for j in range(i + 1, i + 1 + self.buffer_size):
-                if j < len(sentences):
-                    combined_sentence += sentences[j]["sentence"]
-
-            sentences[i]["combined_sentence"] = combined_sentence
-
-        return sentences
 
     def _calculate_distances_between_sentence_groups(
         self, sentences: List[SentenceCombination]
