@@ -74,7 +74,7 @@ def get_text_embedding(
     if isinstance(text, str):
         text = [text]
     response = dashscope.TextEmbedding.call(
-        model=model, input=text, api_key=api_key, kwargs=kwargs
+        model=model, input=text, api_key=api_key, **kwargs
     )
     embedding_results = [None] * len(text)
     if response.status_code == HTTPStatus.OK:
@@ -109,7 +109,7 @@ def get_batch_text_embedding(
     except ImportError:
         raise ImportError("DashScope requires `pip install dashscope")
     response = dashscope.BatchTextEmbedding.call(
-        model=model, url=url, api_key=api_key, kwargs=kwargs
+        model=model, url=url, api_key=api_key, **kwargs
     )
     if response.status_code == HTTPStatus.OK:
         return response.output["url"]
@@ -144,7 +144,7 @@ def get_multimodal_embedding(
     except ImportError:
         raise ImportError("DashScope requires `pip install dashscope")
     response = dashscope.MultiModalEmbedding.call(
-        model=model, input=input, api_key=api_key, kwargs=kwargs
+        model=model, input=input, api_key=api_key, **kwargs
     )
     if response.status_code == HTTPStatus.OK:
         return response.output["embedding"]
