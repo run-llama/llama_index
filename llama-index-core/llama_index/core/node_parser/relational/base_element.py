@@ -287,7 +287,10 @@ class BaseElementNodeParser(NodeParser):
             query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
                 response = await query_engine.aquery(summary_query_str)
-                return cast(PydanticResponse, response).response
+                if isinstance(response, PydanticResponse):
+                    return response.response
+                else:
+                    raise ValueError(f"Expected PydanticResponse, got {type(response)}")
             except (ValidationError, ValueError):
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
