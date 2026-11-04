@@ -115,25 +115,26 @@ class SentenceWindowNodeParser(NodeParser):
             )
 
             # add window to each node
-            for i, node in enumerate(nodes):
-                window_nodes = nodes[
-                    max(0, i - self.window_size) : min(
-                        i + self.window_size + 1, len(nodes)
+            if self.include_metadata:
+                for i, node in enumerate(nodes):
+                    window_nodes = nodes[
+                        max(0, i - self.window_size) : min(
+                            i + self.window_size + 1, len(nodes)
+                        )
+                    ]
+
+                    node.metadata[self.window_metadata_key] = " ".join(
+                        [n.text for n in window_nodes]
                     )
-                ]
+                    node.metadata[self.original_text_metadata_key] = node.text
 
-                node.metadata[self.window_metadata_key] = " ".join(
-                    [n.text for n in window_nodes]
-                )
-                node.metadata[self.original_text_metadata_key] = node.text
-
-                # exclude window metadata from embed and llm
-                node.excluded_embed_metadata_keys.extend(
-                    [self.window_metadata_key, self.original_text_metadata_key]
-                )
-                node.excluded_llm_metadata_keys.extend(
-                    [self.window_metadata_key, self.original_text_metadata_key]
-                )
+                    # exclude window metadata from embed and llm
+                    node.excluded_embed_metadata_keys.extend(
+                        [self.window_metadata_key, self.original_text_metadata_key]
+                    )
+                    node.excluded_llm_metadata_keys.extend(
+                        [self.window_metadata_key, self.original_text_metadata_key]
+                    )
 
             all_nodes.extend(nodes)
 
