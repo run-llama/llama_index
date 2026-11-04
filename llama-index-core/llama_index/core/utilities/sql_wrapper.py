@@ -83,7 +83,7 @@ class SQLDatabase:
                     f"ignore_tables {missing_tables} not found in database"
                 )
         usable_tables = self.get_usable_table_names()
-        self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
+        self._usable_tables = set(usable_tables)
 
         if not isinstance(sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
