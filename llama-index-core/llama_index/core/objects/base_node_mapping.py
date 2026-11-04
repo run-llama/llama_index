@@ -51,6 +51,36 @@ class _RestrictedUnpickler(pickle.Unpickler):
         )
 
 
+def _iter_disallowed_classes(
+    obj: Any, _seen: Optional[set] = None
+) -> set[tuple[str, str]]:
+    """
+    Collect (module, class) pairs in obj that the load allowlist rejects.
+
+    Mirrors _RestrictedUnpickler's allowlist so persist() can fail fast
+    instead of writing a file that from_persist_dir() will refuse to read.
+    """
+    if _seen is None:
+        _seen = set()
+    found: set[tuple[str, str]] = set()
+    cls = type(obj)
+    key = (cls.__module__, cls.__name__)
+    if key not in _SAFE_PICKLE_CLASSES:
+        found.add(key)
+        return found
+    if id(obj) in _seen:
+        return found
+    _seen.add(id(obj))
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            found |= _iter_disallowed_classes(k, _seen)
+            found |= _iter_disallowed_classes(v, _seen)
+    elif isinstance(obj, (list, tuple, set, frozenset)):
+        for item in obj:
+            found |= _iter_disallowed_classes(item, _seen)
+    return found
+
+
 OT = TypeVar("OT")
 
 
@@ -195,8 +225,22 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         Persist object node mapping.
 
         NOTE: This may fail depending on whether the object types are
-        pickle-able.
+        pickle-able. Only objects whose classes are in the load allowlist
+        (_SAFE_PICKLE_CLASSES) can round-trip: from_persist_dir() refuses
+        everything else, so persist() raises instead of writing a file it
+        could never read back.
         """
+        disallowed: set[tuple[str, str]] = set()
+        for obj in self._objs.values():
+            disallowed |= _iter_disallowed_classes(obj)
+        if disallowed:
+            names = ", ".join(sorted(f"{mod}.{name}" for mod, name in disallowed))
+            raise ValueError(
+                f"Cannot persist objects of type {names}: from_persist_dir() "
+                "only loads allowlisted classes, so the persisted file would "
+                "be unreadable. Convert custom objects to builtin types "
+                "before persisting."
+            )
         if not os.path.exists(persist_dir):
             os.makedirs(persist_dir)
         obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)

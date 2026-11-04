@@ -119,6 +119,39 @@ def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
         assert None not in node.metadata.values()
 
 
+def test_simple_object_node_mapping_persist_rejects_non_allowlisted_objects(
+    tmp_path,
+) -> None:
+    """persist() fails fast for objects from_persist_dir() would reject."""
+    node_mapping = SimpleObjectNodeMapping.from_objects([_TestObject(name="a")])
+
+    with pytest.raises(ValueError, match="_TestObject"):
+        node_mapping.persist(persist_dir=str(tmp_path))
+
+    assert not (tmp_path / "object_node_mapping.pickle").exists()
+
+
+def test_simple_object_node_mapping_persist_rejects_nested_custom_object(
+    tmp_path,
+) -> None:
+    """Custom objects nested in builtin containers are also rejected."""
+    node_mapping = SimpleObjectNodeMapping.from_objects([[_TestObject(name="a")]])
+
+    with pytest.raises(ValueError, match="_TestObject"):
+        node_mapping.persist(persist_dir=str(tmp_path))
+
+
+def test_simple_object_node_mapping_persist_nested_builtins(tmp_path) -> None:
+    """Builtin containers still round-trip."""
+    node_mapping = SimpleObjectNodeMapping.from_objects([["a", "b"], ("c", "d")])
+    node_mapping.persist(persist_dir=str(tmp_path))
+
+    loaded_node_mapping = SimpleObjectNodeMapping.from_persist_dir(
+        persist_dir=str(tmp_path)
+    )
+    assert node_mapping.obj_node_mapping == loaded_node_mapping.obj_node_mapping
+
+
 def test_simple_object_node_mapping_persist_rejects_unsafe_pickle(
     tmp_path,
 ) -> None:
