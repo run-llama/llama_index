@@ -144,11 +144,13 @@ class VertexEndpointEmbedding(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str, **kwargs: Any) -> Embedding:
         query = query.replace("\n", " ")
-        return await self._aget_embedding([query], **kwargs)[0]
+        embeddings = await self._aget_embedding([query], **kwargs)
+        return embeddings[0]
 
     async def _aget_text_embedding(self, text: str, **kwargs: Any) -> Embedding:
         text = text.replace("\n", " ")
-        return await self._aget_embedding([text], **kwargs)[0]
+        embeddings = await self._aget_embedding([text], **kwargs)
+        return embeddings[0]
 
     async def _aget_text_embeddings(
         self, texts: List[str], **kwargs: Any
