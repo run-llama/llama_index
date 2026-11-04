@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Solvecha](https://github.com/Solvecha/solvecha-skills/tree/main/python#agent-tools): external package (`pip install "solvecha[llamaindex]"`) with `FunctionTool`s that solve reCAPTCHA v2 image grids and text captchas. It does not return captcha tokens.
 
 ## LlamaPacks -- Code Templates
 
