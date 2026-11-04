@@ -170,6 +170,25 @@ As the memory is used, the short-term memory will fill up. Once the short-term m
 
 When memory is retrieved, the short-term and long-term memories are merged together. The `Memory` object will ensure that the short-term memory + long-term memory content is less than or equal to the `token_limit`. If it is longer, the `.truncate()` method will be called on the memory blocks, using the `priority` to determine the truncation order.
 
+Memory blocks are read sequentially by default. If your blocks perform independent
+I/O, such as querying separate vector stores, set `memory_blocks_concurrency` to a
+positive integer to overlap their reads:
+
+```python
+memory = Memory.from_defaults(
+    session_id="my_session",
+    token_limit=40000,
+    memory_blocks=blocks,
+    memory_blocks_concurrency=3,
+)
+```
+
+The limit applies to each retrieval, not across all sessions. Results keep their
+priority order, and token budgeting and truncation are unchanged. If a read fails
+or the retrieval is cancelled, remaining reads are cancelled and awaited before
+the error is propagated. Keep the default of `1` for blocks that depend on another
+block's reads or mutate shared input. This option does not change memory writes.
+
 <Aside type="tip">
   By default, tokens are counted using tiktoken. To customize this, you can set
   the `tokenizer_fn` argument to a custom callable that given a string, returns
