@@ -95,7 +95,7 @@ class CodeActAgent(BaseWorkflowAgent):
         ] = DEFAULT_CODE_ACT_PROMPT,
         streaming: bool = True,
     ):
-        tools = tools or []
+        tools = [*(tools or [])]
         tools.append(  # type: ignore
             FunctionTool.from_defaults(code_execute_fn, name=EXECUTE_TOOL_NAME)  # type: ignore
         )
