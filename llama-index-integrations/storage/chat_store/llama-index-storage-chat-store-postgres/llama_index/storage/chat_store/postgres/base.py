@@ -351,7 +351,7 @@ class PostgresChatStore(BaseChatStore):
 
             stmt = text(
                 f"""
-                UPDATE {self._table_class.__tablename__}
+                UPDATE {self.schema_name}.{self._table_class.__tablename__}
                 SET value = array_cat(
                                {self._table_class.__tablename__}.value[: :idx],
                                {self._table_class.__tablename__}.value[:idx+2:]
@@ -382,7 +382,7 @@ class PostgresChatStore(BaseChatStore):
 
             stmt = text(
                 f"""
-                UPDATE {self._table_class.__tablename__}
+                UPDATE {self.schema_name}.{self._table_class.__tablename__}
                 SET value = array_cat(
                                {self._table_class.__tablename__}.value[: :idx],
                                {self._table_class.__tablename__}.value[:idx+2:]
@@ -413,7 +413,7 @@ class PostgresChatStore(BaseChatStore):
 
             stmt = text(
                 f"""
-                UPDATE {self._table_class.__tablename__}
+                UPDATE {self.schema_name}.{self._table_class.__tablename__}
                 SET value = value[1:array_length(value, 1) - 1]
                 WHERE key = :key;
                 """
@@ -440,7 +440,7 @@ class PostgresChatStore(BaseChatStore):
 
             stmt = text(
                 f"""
-                        UPDATE {self._table_class.__tablename__}
+                        UPDATE {self.schema_name}.{self._table_class.__tablename__}
                         SET value = value[1:array_length(value, 1) - 1]
                         WHERE key = :key;
                         """
