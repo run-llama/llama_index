@@ -443,11 +443,17 @@ class SharePointReader(
         # Create the directory if it does not exist and save the file.
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
-        file_path = os.path.join(download_dir, file_name)
+        resolved_download_dir = Path(download_dir).resolve()
+        file_path = (resolved_download_dir / file_name).resolve()
+        if not file_path.is_relative_to(resolved_download_dir):
+            raise ValueError(
+                f"Item name '{file_name}' resolves outside of the download "
+                f"directory '{download_dir}'."
+            )
         with open(file_path, "wb") as f:
             f.write(content)
 
-        return file_path
+        return str(file_path)
 
     def _get_permissions_info(self, item: Dict[str, Any]) -> Dict[str, str]:
         """
