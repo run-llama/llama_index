@@ -8,6 +8,10 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 Data loaders (readers) live in the [`readers` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) of the LlamaIndex repo, one package per source. See the [data connectors guide](/python/framework/module_guides/loading/connector) for how to use them.
 
+Readers maintained in their own repositories:
+
+- [Section Anything](https://github.com/Omniwot/section-anything/tree/main/packages/llama-index-readers-section-anything) (`SectionAnythingReader`, `pip install llama-index-readers-section-anything`): one Document per PDF section, with heading path, pages and parent/child links.
+
 ## Agent Tools
 
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
