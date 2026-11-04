@@ -1,7 +1,9 @@
 # Test.py
 
+import logging
 import os
 import pytest
+from unittest import mock
 import time
 import uuid
 from typing import List
@@ -499,3 +501,17 @@ def test_large_batch_insert():
     )
     time.sleep(5)
     assert len(store.as_retriever().retrieve("Node")) >= 10
+
+
+def test_namespace_setup_debug_logs_are_interpolated(caplog):
+    with mock.patch(
+        "llama_index.vector_stores.moorcheh.base.MoorchehClient"
+    ) as client_cls:
+        client_cls.return_value.list_namespaces.return_value = {
+            "namespaces": [{"namespace_name": "my-namespace"}]
+        }
+        with caplog.at_level(logging.DEBUG):
+            MoorchehVectorStore(api_key="test-key", namespace="my-namespace")
+
+    assert "Namespace 'my-namespace' already exists" in caplog.text
+    assert "{self.namespace}" not in caplog.text
