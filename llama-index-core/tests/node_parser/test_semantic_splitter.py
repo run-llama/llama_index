@@ -118,3 +118,20 @@ def test_split_and_permutated() -> None:
         sentences[2]["combined_sentence"]
         == "I can't carry it for you. But I can carry you!"
     )
+
+
+def test_build_sentence_groups_large_buffer_size() -> None:
+    embeddings = MockEmbedding()
+    node_parser = SemanticSplitterNodeParser.from_defaults(
+        embed_model=embeddings, buffer_size=5
+    )
+    text_splits = ["S0. ", "S1. ", "S2."]
+    sentences = node_parser._build_sentence_groups(text_splits)
+
+    assert len(sentences) == 3
+    for i, expected in enumerate(text_splits):
+        assert sentences[i]["sentence"] == expected
+        assert sentences[i]["index"] == i
+        assert sentences[i]["combined_sentence"] == "S0. S1. S2."
+        assert sentences[i]["combined_sentence_embedding"] == []
+
