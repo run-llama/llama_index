@@ -374,6 +374,9 @@ def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
     >>> list(iter_batch([1,2,3,4,5], 3))
     [[1, 2, 3], [4, 5]]
     """
+    if size <= 0:
+        raise ValueError("size must be greater than 0")
+
     source_iter = iter(iterable)
     while source_iter:
         b = list(islice(source_iter, size))

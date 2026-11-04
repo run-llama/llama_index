@@ -221,6 +221,13 @@ def test_iter_batch() -> None:
     assert list(iter_batch([], 3)) == []
 
 
+@pytest.mark.parametrize("values", [[1, 2, 3], []], ids=["non-empty", "empty"])
+@pytest.mark.parametrize("size", [0, -1], ids=["zero", "negative"])
+def test_iter_batch_rejects_non_positive_size(values: list[int], size: int) -> None:
+    with pytest.raises(ValueError, match="size must be greater than 0"):
+        list(iter_batch(values, size))
+
+
 def test_get_color_mapping() -> None:
     """Test get_color_mapping function."""
     items = ["item1", "item2", "item3", "item4"]
