@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Pidgeon](https://github.com/pidgeon-ai/pidgeon-python/tree/main/llamaindex) (`llama-index-tools-pidgeon`): email inboxes for agents. Send, read and search mail, wait for a verification code, and write drafts for a person to send
 
 ## LlamaPacks -- Code Templates
 
