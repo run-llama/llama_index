@@ -137,6 +137,62 @@ def test_add_message(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo not installed")
+def test_add_message_at_index(mongo_chat_store: MongoChatStore):
+    """Test inserting a message at a position shifts the later messages."""
+    key = "test_add_message_at_index"
+    mongo_chat_store.set_messages(
+        key=key,
+        messages=[
+            ChatMessage(role="user", content="first"),
+            ChatMessage(role="user", content="second"),
+        ],
+    )
+
+    mongo_chat_store.add_message(
+        key=key, message=ChatMessage(role="user", content="new"), idx=0
+    )
+    mongo_chat_store.add_message(
+        key=key, message=ChatMessage(role="user", content="middle"), idx=2
+    )
+    mongo_chat_store.add_message(
+        key=key, message=ChatMessage(role="user", content="last"), idx=10
+    )
+
+    contents = [m.content for m in mongo_chat_store.get_messages(key=key)]
+    assert contents == ["new", "first", "middle", "second", "last"]
+
+    # Positions stay consistent with what get_messages returns
+    deleted = mongo_chat_store.delete_message(key=key, idx=1)
+    assert deleted.content == "first"
+    contents = [m.content for m in mongo_chat_store.get_messages(key=key)]
+    assert contents == ["new", "middle", "second", "last"]
+
+
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
+async def test_async_add_message_at_index(mongo_chat_store: MongoChatStore):
+    """Test inserting a message at a position asynchronously."""
+    key = "test_async_add_message_at_index"
+    await mongo_chat_store.aset_messages(
+        key=key,
+        messages=[
+            ChatMessage(role="user", content="first"),
+            ChatMessage(role="user", content="second"),
+        ],
+    )
+
+    await mongo_chat_store.async_add_message(
+        key=key, message=ChatMessage(role="user", content="new"), idx=0
+    )
+    await mongo_chat_store.async_add_message(
+        key=key, message=ChatMessage(role="user", content="before last"), idx=-1
+    )
+
+    contents = [m.content for m in await mongo_chat_store.aget_messages(key=key)]
+    assert contents == ["new", "first", "before last", "second"]
+
+
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_delete_messages(mongo_chat_store: MongoChatStore):
     """Test deleting all messages from a chat session."""
     # Create a chat with messages

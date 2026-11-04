@@ -29,7 +29,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-mongo"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index storage-chat-store mongo integration"
 authors = [{name = "Vrushab Ghodke", email = "vrushab.ghodke@gmail.com"}]
 requires-python = ">=3.10,<4.0"
