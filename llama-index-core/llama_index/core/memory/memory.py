@@ -36,6 +36,7 @@ from llama_index.core.bridge.pydantic import (
     Field,
     model_validator,
     ConfigDict,
+    PrivateAttr,
 )
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts import RichPromptTemplate
@@ -185,6 +186,23 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
         return None
 
 
+class _MemoryLockState:
+    """Runtime synchronization state, never copied or serialized with memory."""
+
+    def __init__(self) -> None:
+        self.lock: Optional[asyncio.Lock] = None
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "_MemoryLockState":
+        copied = type(self)()
+        memo[id(self)] = copied
+        return copied
+
+    def __getstate__(self) -> Dict[str, Any]:
+        # Pickled memory must also start with fresh, unbound synchronization.
+        return {"lock": None, "loop": None}
+
+
 class Memory(BaseMemory):
     """
     A memory module that waterfalls into memory blocks.
@@ -256,6 +274,32 @@ class Memory(BaseMemory):
         default_factory=generate_chat_store_key,
         description="The key to use for storing messages in the chat store.",
     )
+
+    # Serializes aput/aput_messages/aset on this instance per event loop. The waterfall in
+    # _manage_queue is a read-modify-write over the chat store (snapshot the
+    # active queue, then archive_oldest_messages(n)); two concurrent puts on
+    # the same session otherwise archive against a stale snapshot and drop
+    # active messages that were never meant to be flushed.
+    _manage_lock_state: _MemoryLockState = PrivateAttr(default_factory=_MemoryLockState)
+
+    def _get_manage_lock(self) -> asyncio.Lock:
+        """
+        Return the queue-management lock for the current event loop.
+
+        asyncio.Lock binds to the running loop on first contention, and the
+        sync wrappers below spin up a fresh loop per call via asyncio_run,
+        so the lock is re-created whenever the loop changes. Within one loop
+        there is no await between the check and the assignment, so concurrent
+        coroutines in that loop all get the same lock.
+        """
+        loop = asyncio.get_running_loop()
+        state = self._manage_lock_state
+        lock = state.lock
+        if lock is None or state.loop is not loop:
+            lock = asyncio.Lock()
+            state.lock = lock
+            state.loop = loop
+        return lock
 
     @classmethod
     def class_name(cls) -> str:
@@ -810,29 +854,34 @@ class Memory(BaseMemory):
 
     async def aput(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
-        # Add the message to the chat store
-        await self.sql_store.add_message(
-            self.session_id, message, status=MessageStatus.ACTIVE
-        )
+        # Hold the manage lock so the waterfall's snapshot/archive cycle is
+        # atomic with respect to other puts on this session
+        async with self._get_manage_lock():
+            # Add the message to the chat store
+            await self.sql_store.add_message(
+                self.session_id, message, status=MessageStatus.ACTIVE
+            )
 
-        # Ensure the active queue is managed
-        await self._manage_queue()
+            # Ensure the active queue is managed
+            await self._manage_queue()
 
     async def aput_messages(self, messages: List[ChatMessage]) -> None:
         """Add a list of messages to the chat store and process waterfall logic if needed."""
-        # Add the messages to the chat store
-        await self.sql_store.add_messages(
-            self.session_id, messages, status=MessageStatus.ACTIVE
-        )
+        async with self._get_manage_lock():
+            # Add the messages to the chat store
+            await self.sql_store.add_messages(
+                self.session_id, messages, status=MessageStatus.ACTIVE
+            )
 
-        # Ensure the active queue is managed
-        await self._manage_queue()
+            # Ensure the active queue is managed
+            await self._manage_queue()
 
     async def aset(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""
-        await self.sql_store.set_messages(
-            self.session_id, messages, status=MessageStatus.ACTIVE
-        )
+        async with self._get_manage_lock():
+            await self.sql_store.set_messages(
+                self.session_id, messages, status=MessageStatus.ACTIVE
+            )
 
     async def aget_all(
         self, status: Optional[MessageStatus] = None
