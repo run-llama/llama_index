@@ -10,6 +10,7 @@ from llama_index.readers.web.beautiful_soup_web.base import (
     BeautifulSoupWebReader,
 )
 from llama_index.readers.web.browserbase_web.base import BrowserbaseWebReader
+from llama_index.readers.web.dompruner_web.base import DomPrunerWebReader
 from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 from llama_index.readers.web.hyperbrowser_web.base import HyperbrowserWebReader
 from llama_index.readers.web.knowledge_base.base import (
@@ -65,6 +66,7 @@ __all__ = [
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",
     "BrowserbaseWebReader",
+    "DomPrunerWebReader",
     "FireCrawlWebReader",
     "HyperbrowserWebReader",
     "KnowledgeBaseWebReader",
