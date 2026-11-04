@@ -15,7 +15,7 @@ To install the required package, run:
 ```python
 import os
 
-os.environ["OPENAI_API_KEY"] = "sk-..."
+os.environ["KEYWORDSAI_API_KEY"] = "sk-..."
 ```
 
 ## Basic Usage

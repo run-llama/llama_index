@@ -91,12 +91,10 @@ class KeywordsAI(OpenAI):
 
         ```python
         import os
-        import openai
 
         os.environ["KEYWORDSAI_API_KEY"] = "sk-..."
-        openai.api_key = os.environ["KEYWORDSAI_API_KEY"]
 
-        from llama_index.llms.keywordai import KeywordsAI
+        from llama_index.llms.keywordsai import KeywordsAI
 
         llm = KeywordsAI(model="gpt-3.5-turbo")
 
