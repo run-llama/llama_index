@@ -3,7 +3,9 @@
 from typing import List, Annotated
 import datetime
 
-from llama_index.core.bridge.pydantic import Field
+import pytest
+
+from llama_index.core.bridge.pydantic import Field, ValidationError
 from llama_index.core.tools.utils import create_schema_from_function
 
 
@@ -96,6 +98,76 @@ def test_create_schema_from_function_with_field_annotated() -> None:
 
     instance = schema(x=5)
     assert instance.x == 5  # type: ignore
+
+
+def test_create_schema_from_function_keeps_annotated_field_constraints() -> None:
+    """
+    `Annotated[T, Field(...)]` constraints must reach the schema and validation.
+
+    Regression test: the `FieldInfo` built for the parameter carried only the
+    description and `json_schema_extra`, so `ge`/`le` never reached the tool schema and
+    out-of-range arguments were accepted silently.
+    """
+
+    def tmp_function(
+        seats: Annotated[int, Field(description="number of seats", ge=1, le=8)],
+    ) -> str:
+        return str(seats)
+
+    schema = create_schema_from_function("TestSchema", tmp_function)
+    properties = schema.model_json_schema()["properties"]
+
+    assert properties["seats"]["description"] == "number of seats"
+    assert properties["seats"]["minimum"] == 1
+    assert properties["seats"]["maximum"] == 8
+    assert schema.model_json_schema()["required"] == ["seats"]
+
+    assert schema(seats=8).seats == 8  # type: ignore
+    with pytest.raises(ValidationError):
+        schema(seats=9)
+
+
+def test_create_schema_from_function_keeps_annotated_field_constraints_with_default() -> (
+    None
+):
+    """The same holds when the parameter also has a Python default."""
+
+    def tmp_function(
+        name: Annotated[str, Field(description="guest name", min_length=2)] = "ok",
+    ) -> str:
+        return name
+
+    schema = create_schema_from_function("TestSchema", tmp_function)
+    properties = schema.model_json_schema()["properties"]
+
+    assert properties["name"]["minLength"] == 2
+    assert properties["name"]["description"] == "guest name"
+    assert properties["name"]["default"] == "ok"
+
+    with pytest.raises(ValidationError):
+        schema(name="a")
+
+
+def test_annotated_field_can_be_reused_across_schemas() -> None:
+    """
+    Merging constraints must not mutate the `FieldInfo` the caller shared.
+
+    If it did, the second schema would inherit whatever the first one recorded.
+    """
+    shared_field = Field(description="An integer", ge=1)
+
+    def first(x: Annotated[int, shared_field]) -> str:
+        return str(x)
+
+    def second(y: Annotated[int, shared_field], z: str = "z") -> str:
+        return str(y)
+
+    first_schema = create_schema_from_function("FirstSchema", first)
+    second_schema = create_schema_from_function("SecondSchema", second)
+
+    assert first_schema.model_json_schema()["properties"]["x"]["minimum"] == 1
+    assert second_schema.model_json_schema()["properties"]["y"]["minimum"] == 1
+    assert shared_field.description == "An integer"
 
 
 def test_create_schema_skips_variadic_args_kwargs() -> None:
