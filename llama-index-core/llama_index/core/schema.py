@@ -600,7 +600,9 @@ class MediaResource(BaseModel):
     ) -> Optional[str]:
         if path is None:
             return path
-        return str(path)
+        # Serialize in POSIX form so a persisted resource is portable between
+        # operating systems; str() would embed the platform separator.
+        return path.as_posix()
 
     @property
     def hash(self) -> str:
@@ -1369,7 +1371,7 @@ class ImageDocument(Document):
     @property
     def image_path(self) -> str | None:
         if self.image_resource and self.image_resource.path:
-            return str(self.image_resource.path)
+            return self.image_resource.path.as_posix()
         return None
 
     @image_path.setter
