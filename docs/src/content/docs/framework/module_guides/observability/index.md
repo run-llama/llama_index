@@ -213,6 +213,44 @@ You will now be able to see any traces, logs, and metrics that are automatically
 - [SigNoz LlamaIndex Integration Docs](https://signoz.io/docs/llamaindex-observability/)
 - [SigNoz LLamaIndex Q&A RAG Demo](https://github.com/SigNoz/llamaindex-rag-opentelemetry-demo)
 
+### Dash0
+
+[Dash0](https://www.dash0.com/) is an OpenTelemetry-native observability platform for traces, metrics, and logs. To send LlamaIndex traces to Dash0, use [OpenLLMetry](https://github.com/traceloop/openllmetry), which instruments LlamaIndex and the LLM SDKs it calls. OpenLLMetry records the model, token usage, and prompts with the OpenTelemetry GenAI attributes, which Dash0 shows in the span details and uses for token usage and cost metrics.
+
+#### Usage Pattern
+
+Install the OpenLLMetry SDK:
+
+```bash
+pip install traceloop-sdk
+```
+
+Then initialize it with your Dash0 endpoint and auth token before running your LlamaIndex code:
+
+```python
+from traceloop.sdk import Traceloop
+
+Traceloop.init(
+    app_name="my-llamaindex-app",
+    api_endpoint="https://ingress.eu-west-1.aws.dash0.com",
+    headers={
+        "Authorization": "Bearer <your_auth_token>",
+        "Dash0-Dataset": "default",
+    },
+)
+```
+
+- Set `api_endpoint` to the OTLP via HTTP endpoint shown in your Dash0 organization settings. OpenLLMetry appends `/v1/traces`.
+- Replace `<your_auth_token>` with a Dash0 [auth token](https://www.dash0.com/docs/dash0/miscellaneous/glossary/auth-tokens) that has ingest permission.
+- `Dash0-Dataset` is optional. Without it, Dash0 writes to the auth token's default [dataset](https://www.dash0.com/docs/dash0/miscellaneous/glossary/datasets).
+
+OpenLLMetry records prompts and responses by default. Set `TRACELOOP_TRACE_CONTENT=false` to leave them out.
+
+#### Guides
+
+- [Dash0 OpenLLMetry integration](https://www.dash0.com/hub/integrations/int_openllmetry/overview)
+- [GenAI spans in Dash0](https://www.dash0.com/docs/dash0/telemetry/tracing/about-gen-ai-spans)
+
 ### Weights and Biases (W&B) Weave
 
 [W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, experimenting with, evaluating, deploying, and improving LLM applications. Designed for scalability and flexibility, Weave supports every stage of your application development workflow.
