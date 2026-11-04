@@ -58,13 +58,15 @@ class NotionPageReader(BasePydanticReader):
         """Read a block."""
         done = False
         result_lines_arr = []
-        cur_block_id = block_id
+        next_cursor = None
+        block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
         while not done:
-            block_url = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
             query_dict: Dict[str, Any] = {}
+            if next_cursor is not None:
+                query_dict["start_cursor"] = next_cursor
 
             res = self._request_with_retry(
-                "GET", block_url, headers=self.headers, json=query_dict
+                "GET", block_url, headers=self.headers, params=query_dict
             )
             data = res.json()
 
@@ -96,7 +98,7 @@ class NotionPageReader(BasePydanticReader):
                 done = True
                 break
             else:
-                cur_block_id = data["next_cursor"]
+                next_cursor = data["next_cursor"]
 
         return "\n".join(result_lines_arr)
 
@@ -106,6 +108,7 @@ class NotionPageReader(BasePydanticReader):
         url: str,
         headers: Dict[str, str],
         json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
         """Make a request with retry and rate limit handling."""
         max_retries = 5
@@ -113,7 +116,9 @@ class NotionPageReader(BasePydanticReader):
 
         for attempt in range(max_retries):
             try:
-                response = requests.request(method, url, headers=headers, json=json)
+                response = requests.request(
+                    method, url, headers=headers, json=json, params=params
+                )
                 response.raise_for_status()
                 return response
             except requests.exceptions.HTTPError:
