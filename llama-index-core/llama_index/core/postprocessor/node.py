@@ -1,6 +1,7 @@
 """Node postprocessor."""
 
 import logging
+from collections import deque
 from typing import Dict, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import (
@@ -202,28 +203,41 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
-        all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
-        sorted_nodes: List[NodeWithScore] = []
-        for node in all_nodes_values:
-            # variable to check if cand node is inserted
-            node_inserted = False
-            for i, cand in enumerate(sorted_nodes):
-                node_id = node.node.node_id
-                # prepend to current candidate
-                prev_node_info = cand.node.prev_node
-                next_node_info = cand.node.next_node
-                if prev_node_info is not None and node_id == prev_node_info.node_id:
-                    node_inserted = True
-                    sorted_nodes.insert(i, node)
-                    break
-                # append to current candidate
-                elif next_node_info is not None and node_id == next_node_info.node_id:
-                    node_inserted = True
-                    sorted_nodes.insert(i + 1, node)
-                    break
+        previous_nodes: Dict[str, str] = {}
+        next_nodes: Dict[str, str] = {}
+        for node_id, node in all_nodes.items():
+            previous = node.node.prev_node
+            following = node.node.next_node
+            if previous is not None and previous.node_id in all_nodes:
+                previous_nodes[node_id] = previous.node_id
+                next_nodes[previous.node_id] = node_id
+            if following is not None and following.node_id in all_nodes:
+                next_nodes[node_id] = following.node_id
+                previous_nodes[following.node_id] = node_id
 
-            if not node_inserted:
-                sorted_nodes.append(node)
+        # Order each selected chain as a whole, keeping disconnected chains in
+        # first-encounter order. Do not fetch nodes across gaps in the result.
+        sorted_nodes: List[NodeWithScore] = []
+        visited = set()
+        for node_id in all_nodes:
+            if node_id in visited:
+                continue
+            chain = deque([node_id])
+            visited.add(node_id)
+
+            previous_id = previous_nodes.get(node_id)
+            while previous_id is not None and previous_id not in visited:
+                chain.appendleft(previous_id)
+                visited.add(previous_id)
+                previous_id = previous_nodes.get(previous_id)
+
+            next_id = next_nodes.get(node_id)
+            while next_id is not None and next_id not in visited:
+                chain.append(next_id)
+                visited.add(next_id)
+                next_id = next_nodes.get(next_id)
+
+            sorted_nodes.extend(all_nodes[chain_id] for chain_id in chain)
 
         return sorted_nodes
 
