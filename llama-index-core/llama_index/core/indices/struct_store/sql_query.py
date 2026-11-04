@@ -465,7 +465,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(AsyncStreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.text for node in retrieved_nodes])
+            if self._markdown_response:
+                response_str = self._format_result_markdown(retrieved_nodes)
+            else:
+                response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
 
