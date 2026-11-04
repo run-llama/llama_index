@@ -15,7 +15,7 @@ A minimal example:
 
 ```python
 import hnswlib
-from llama_index.vector_stores_hnswlib import HnswlibVectorStore
+from llama_index.vector_stores.hnswlib import HnswlibVectorStore
 
 space = "ip"  # distance function
 dim = 768  # embedding dimension
