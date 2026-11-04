@@ -209,6 +209,9 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             if "name" in node_dict:
                 kg_nodes[id] = EntityNode.model_validate(node_dict)
             elif "text" in node_dict:
+                if node_dict.get("id_") is None:
+                    # Preserve the identity used by persisted relation endpoints.
+                    node_dict = {**node_dict, "id_": id}
                 kg_nodes[id] = ChunkNode.model_validate(node_dict)
             else:
                 raise ValueError(f"Could not infer node type for data: {node_dict!s}")
