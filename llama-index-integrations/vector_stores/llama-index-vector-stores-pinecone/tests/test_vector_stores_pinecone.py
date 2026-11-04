@@ -3,14 +3,14 @@ import pytest
 import time
 import uuid
 
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import FetchResponse, Pinecone, ServerlessSpec, Vector
 from types import SimpleNamespace
 from typing import List
 from unittest.mock import create_autospec
 
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.embeddings import MockEmbedding
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilter,
@@ -160,12 +160,119 @@ def test_delete_nodes_without_selectors_does_nothing(mock_store, mock_index):
     ids=["id_pages", "entry_pages"],
 )
 def test_delete_prefix_fallback_flattens_listed_ids(mock_store, mock_index, pages):
-    mock_index.delete.side_effect = [RuntimeError("delete by filter unsupported"), None]
+    mock_index.delete.side_effect = [
+        RuntimeError("delete by filter unsupported"),
+        None,
+        None,
+    ]
     mock_index.list.return_value = iter(pages)
+    mock_index.fetch.side_effect = lambda *, ids, **kwargs: FetchResponse(
+        vectors={
+            node_id: Vector(
+                id=node_id, values=[0.1] * MOCK_EMBED_DIM, metadata={"doc_id": "doc"}
+            )
+            for node_id in ids
+        }
+    )
 
     mock_store.delete("doc")
 
-    assert mock_index.delete.call_args.kwargs["ids"] == ["doc#a", "doc#b", "doc#c"]
+    assert [call.kwargs["ids"] for call in mock_index.delete.call_args_list[1:]] == [
+        ["doc#a", "doc#b"],
+        ["doc#c"],
+    ]
+    mock_index.list.assert_called_once_with(prefix="doc#", namespace=None)
+
+
+@pytest.mark.parametrize("entry_pages", [False, True], ids=["id_pages", "entry_pages"])
+@pytest.mark.parametrize("ref_doc_id", ["doc1", "doc1#revision"])
+def test_delete_fallback_preserves_other_documents(mock_index, entry_pages, ref_doc_id):
+    store = PineconeVectorStore(pinecone_index=mock_index, namespace="documents")
+    document_ids = [ref_doc_id, ref_doc_id + "0", ref_doc_id + "#revision"]
+    stored = {}
+    for document_id in document_ids:
+        node = mock_node()
+        node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+            node_id=document_id
+        )
+        store.add([node])
+        entry = mock_index.upsert.call_args.kwargs["vectors"][0]
+        stored[entry["id"]] = entry
+
+    def delete(*, filter=None, ids=None, **kwargs):
+        if filter is not None:
+            raise RuntimeError("delete by filter unsupported")
+        for node_id in ids:
+            stored.pop(node_id)
+
+    def list_pages(*, prefix, **kwargs):
+        for node_id in stored.copy():
+            if node_id.startswith(prefix):
+                yield [SimpleNamespace(id=node_id) if entry_pages else node_id]
+
+    mock_index.delete.side_effect = delete
+    mock_index.list.side_effect = list_pages
+    mock_index.fetch.side_effect = lambda *, ids, **kwargs: FetchResponse(
+        vectors={
+            node_id: Vector(
+                id=node_id,
+                values=stored[node_id]["values"],
+                metadata=stored[node_id]["metadata"],
+            )
+            for node_id in ids
+        },
+        namespace=kwargs["namespace"],
+    )
+
+    store.delete(ref_doc_id, timeout=5)
+
+    assert set(stored) == {f"{document_id}#node-1" for document_id in document_ids[1:]}
+    mock_index.list.assert_called_once_with(
+        prefix=f"{ref_doc_id}#", namespace="documents"
+    )
+    for call in mock_index.fetch.call_args_list:
+        assert call.kwargs["namespace"] == "documents"
+    for call in mock_index.delete.call_args_list:
+        assert call.kwargs["namespace"] == "documents"
+        assert call.kwargs["timeout"] == 5
+
+
+def test_delete_by_metadata_does_not_list_or_fetch(mock_store, mock_index):
+    mock_store.delete("doc1", timeout=5)
+
+    mock_index.delete.assert_called_once_with(
+        filter={"doc_id": {"$eq": "doc1"}}, namespace=None, timeout=5
+    )
+    mock_index.list.assert_not_called()
+    mock_index.fetch.assert_not_called()
+
+
+@pytest.mark.parametrize("metadata", [None, {}, {"doc_id": "doc10"}])
+def test_delete_fallback_requires_matching_document_metadata(
+    mock_store, mock_index, metadata
+):
+    mock_index.delete.side_effect = RuntimeError("delete by filter unsupported")
+    mock_index.list.return_value = iter([["doc1#node-1"]])
+    mock_index.fetch.return_value = FetchResponse(
+        vectors={
+            "doc1#node-1": Vector(id="doc1#node-1", values=[0.1], metadata=metadata)
+        }
+    )
+
+    mock_store.delete("doc1")
+
+    assert mock_index.delete.call_count == 1
+
+
+def test_delete_fallback_propagates_fetch_errors(mock_store, mock_index):
+    mock_index.delete.side_effect = RuntimeError("delete by filter unsupported")
+    mock_index.list.return_value = iter([["doc1#node-1"]])
+    mock_index.fetch.side_effect = ConnectionError("fetch failed")
+
+    with pytest.raises(ConnectionError, match="fetch failed"):
+        mock_store.delete("doc1")
+
+    assert mock_index.delete.call_count == 1
 
 
 def test_query_matches_installed_client_signature(mock_store, mock_index):
