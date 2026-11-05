@@ -426,8 +426,13 @@ class AGUIChatWorkflow(Workflow):
             if tool_result.tool_name not in all_frontend_names
         ]
 
+        # Only backend tool results are persisted server-side. Frontend tool
+        # results are supplied by the client on the callback run (AG-UI
+        # contract): emitting a server-side result for a frontend tool call
+        # marks it as already resolved, so the client never executes its
+        # handler.
         new_tool_messages = []
-        for tool_result in [*backend_tool_calls, *frontend_tool_calls]:
+        for tool_result in backend_tool_calls:
             new_tool_messages.append(
                 ChatMessage(
                     role="tool",

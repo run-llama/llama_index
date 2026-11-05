@@ -4,14 +4,15 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "httpx<0.28.0",
+    "openai>=2,<3",
+    "httpx",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest>=8.2.1,<9",
-    "pytest-asyncio>=0.23.6,<0.24",
+    "pytest",
+    "pytest-asyncio",
     "pytest-mock==3.11.1",
     "respx>=0.21.1,<0.22",
     "ruff==0.11.11",
@@ -36,7 +37,7 @@ test_integration = [
 
 [project]
 name = "llama-index-embeddings-nvidia"
-version = "0.5.1"
+version = "0.6.0"
 description = "llama-index embeddings nvidia integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
