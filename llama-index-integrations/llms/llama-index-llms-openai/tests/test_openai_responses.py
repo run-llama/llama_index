@@ -16,7 +16,11 @@ from llama_index.core.base.llms.types import (
 )
 
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
-from llama_index.llms.openai.utils import to_openai_message_dicts, O1_MODELS
+from llama_index.llms.openai.utils import (
+    O1_MODELS,
+    RESPONSES_API_ONLY_MODELS,
+    to_openai_message_dicts,
+)
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
 from openai.types.responses.response_reasoning_item import Content, Summary
@@ -112,6 +116,51 @@ def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
         assert kwargs["reasoning"] == {"effort": "low"}
     else:
         assert "reasoning" not in kwargs
+
+
+@pytest.mark.parametrize("model", sorted(RESPONSES_API_ONLY_MODELS))
+def test_get_model_kwargs_reasoning_for_responses_only_models(model):
+    """Responses-only reasoning models must forward reasoning_options."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(
+                model=model,
+                api_key="fake-api-key",
+                reasoning_options={"effort": "high"},
+            )
+
+    kwargs = llm._get_model_kwargs()
+
+    assert kwargs["reasoning"] == {"effort": "high"}
+    for param in ("top_p", "temperature", "presence_penalty", "frequency_penalty"):
+        assert param not in kwargs
+
+
+@pytest.mark.parametrize("model", sorted(RESPONSES_API_ONLY_MODELS))
+def test_get_model_kwargs_excludes_sampling_params_for_responses_only_models(model):
+    """Responses-only reasoning models must never send sampling parameters."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model=model, api_key="fake-api-key")
+
+    kwargs = llm._get_model_kwargs()
+
+    assert "reasoning" not in kwargs
+    for param in ("top_p", "temperature", "presence_penalty", "frequency_penalty"):
+        assert param not in kwargs
+
+
+def test_get_model_kwargs_keeps_sampling_params_for_non_reasoning_model():
+    """Non-reasoning models must keep sending sampling parameters."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model="gpt-4o-mini", api_key="fake-api-key")
+
+    kwargs = llm._get_model_kwargs()
+
+    assert kwargs["temperature"] == 0.1
+    assert kwargs["top_p"] == 1.0
+    assert "reasoning" not in kwargs
 
 
 @pytest.mark.parametrize(

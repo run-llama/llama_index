@@ -100,6 +100,14 @@ RESPONSES_API_ONLY_MODELS = {
     "gpt-5.4-pro": 1050000,
 }
 
+# Reasoning models that accept the Responses API `reasoning` parameter.
+# Some of them are only available through the Responses API, so they are not
+# part of O1_MODELS.
+REASONING_MODELS = {
+    **O1_MODELS,
+    **RESPONSES_API_ONLY_MODELS,
+}
+
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
     "o1-preview",
     "o1-preview-2024-09-12",
