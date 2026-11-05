@@ -1,0 +1,9 @@
+{
+  "name": "provecart",
+  "package_name": "llama-index-tools-provecart",
+  "description": "ProveCart pre-payment verification tools for LlamaIndex: check an agent-built cart, booking, or reservation against the customer's signed instructions before payment (MATCH / REVIEW / BLOCK with corrections), and read the public Verified Agent certification record.",
+  "import_path": "llama_index.tools.provecart",
+  "class_name": "ProveCartToolSpec",
+  "homepage": "https://provecart.com/agents",
+  "documentation": "https://provecart.com/portal/docs"
+}
