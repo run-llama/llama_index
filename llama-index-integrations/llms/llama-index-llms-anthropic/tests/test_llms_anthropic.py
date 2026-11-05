@@ -1074,3 +1074,10 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+def test_fable_5_1_can_be_used_without_temperature():
+    """Claude Fable 5.1 is accepted and, like Fable 5, is sent without temperature."""
+    llm = Anthropic(model="claude-fable-5-1")
+    assert llm.metadata.context_window == 1000000
+    assert "temperature" not in llm._model_kwargs
