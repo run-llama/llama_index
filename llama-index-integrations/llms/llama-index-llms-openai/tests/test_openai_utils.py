@@ -640,6 +640,26 @@ def test_gpt_5_4_pro_responses_api_only() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("model_name", "expected_context_size"),
+    [
+        ("gpt-5.2-pro", 400000),
+        ("gpt-5.2-pro-2025-12-11", 400000),
+        ("gpt-5.4-pro", 1050000),
+    ],
+)
+def test_responses_api_only_models_have_context_size(
+    model_name: str, expected_context_size: int
+) -> None:
+    """Responses-API-only models resolve a context size even though they are
+    kept out of ALL_AVAILABLE_MODELS, so OpenAIResponses.metadata works (#23968).
+    """
+    assert model_name not in ALL_AVAILABLE_MODELS, (
+        f"{model_name} should stay out of ALL_AVAILABLE_MODELS"
+    )
+    assert openai_modelname_to_contextsize(model_name) == expected_context_size
+
+
 def test_responses_api_assistant_text_preserved_with_tool_calls() -> None:
     """Test that assistant text content is included alongside tool calls.
 
