@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from llama_index.core.schema import Document, TextNode, NodeRelationship,RelatedNodeInfo
+from llama_index.core.schema import Document, TextNode, NodeRelationship, RelatedNodeInfo
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
 
