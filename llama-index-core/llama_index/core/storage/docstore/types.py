@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Sequence, overload
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, overload
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
@@ -103,6 +103,38 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     async def aget_all_document_hashes(self) -> Dict[str, str]: ...
+
+    def get_all_document_ids(self) -> Set[str]:
+        """
+        Get the ids of all documents currently stored.
+
+        ``get_all_document_hashes`` is keyed by content hash, so it collapses
+        documents that share a hash onto a single id. This method instead keeps
+        one entry per stored document (including documents with identical
+        content), which is what the ingestion pipeline needs when deleting
+        documents that are no longer present.
+        """
+        doc_ids: Set[str] = set((self.get_all_ref_doc_info() or {}).keys())
+        doc_ids.update(
+            doc_id for doc_id, doc in self.docs.items() if doc.ref_doc_id is None
+        )
+        # Preserve ids only visible through the hash index (e.g. backends that
+        # do not retain node text).
+        doc_ids.update(self.get_all_document_hashes().values())
+        return doc_ids
+
+    async def aget_all_document_ids(self) -> Set[str]:
+        """
+        Get the ids of all documents currently stored.
+
+        See ``get_all_document_ids``.
+        """
+        doc_ids: Set[str] = set((await self.aget_all_ref_doc_info() or {}).keys())
+        doc_ids.update(
+            doc_id for doc_id, doc in self.docs.items() if doc.ref_doc_id is None
+        )
+        doc_ids.update((await self.aget_all_document_hashes()).values())
+        return doc_ids
 
     # ==== Ref Docs =====
     @abstractmethod
