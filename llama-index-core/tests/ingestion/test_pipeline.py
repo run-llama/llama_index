@@ -317,6 +317,55 @@ def test_pipeline_upserts_keep_all_nodes_per_doc() -> None:
     )
 
 
+def _run_upserts_and_delete(docs: list[Document], rerun: list[Document]) -> list[str]:
+    docstore = SimpleDocumentStore()
+    pipeline = IngestionPipeline(
+        transformations=[],
+        docstore=docstore,
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    )
+    pipeline.run(documents=docs)
+    pipeline.run(documents=rerun)
+    return sorted(docstore.docs)
+
+
+def test_pipeline_upserts_and_delete_removes_doc_with_duplicate_hash() -> None:
+    """
+    Regression test: documents with identical content have the same hash, but
+    distinct ids. The delete pass used to derive the stored ids from a
+    hash -> doc_id mapping, which collapses such documents onto a single id, so
+    a removed document was silently kept.
+    """
+    doc_a = Document(text="identical content", id_="doc_A")
+    doc_b = Document(text="identical content", id_="doc_B")
+    assert doc_a.hash == doc_b.hash
+
+    # Re-ingesting either document must delete the other, symmetrically.
+    assert _run_upserts_and_delete([doc_a, doc_b], [doc_b]) == ["doc_B"]
+    assert _run_upserts_and_delete([doc_a, doc_b], [doc_a]) == ["doc_A"]
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_and_delete_removes_doc_with_duplicate_hash() -> (
+    None
+):
+    doc_a = Document(text="identical content", id_="doc_A")
+    doc_b = Document(text="identical content", id_="doc_B")
+
+    docstore = SimpleDocumentStore()
+    pipeline = IngestionPipeline(
+        transformations=[],
+        docstore=docstore,
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    )
+    await pipeline.arun(documents=[doc_a, doc_b])
+    await pipeline.arun(documents=[doc_b])
+
+    assert sorted(docstore.docs) == ["doc_B"]
+
+
 @pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
 def test_pipeline_parallel_cache_populated() -> None:
     num_workers = 2
