@@ -39,7 +39,7 @@ reader = SnowflakeReader(
     schema="your_schema",
     warehouse="your_warehouse",
     role="your_role",  # Optional role setting
-    proxy="http://proxusername:proxypassword@myproxy:port",  # Optional proxy setting
+    proxy="http://<username>:<password>@myproxy:port",  # Optional proxy setting
 )
 
 query = "SELECT * FROM your_table"

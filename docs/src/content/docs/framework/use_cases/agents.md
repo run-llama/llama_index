@@ -57,4 +57,4 @@ If you want to leverage core agentic ingredients in your workflow, LlamaIndex ha
 
 ## Ecosystem
 
-- **Community-Built Agents**: We offer a collection of 40+ agent tools for use with your agent in [LlamaHub](https://llamahub.ai/) 🦙.
+- **Community-Built Agents**: We offer a collection of 40+ agent tools for use with your agent in our [tool integrations](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools).
