@@ -88,6 +88,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.program.utils import FlexibleModel
 from llama_index.llms.openai.utils import (
     O1_MODELS,
+    REASONING_MODELS,
     create_retry_decorator,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -421,10 +422,12 @@ class OpenAIResponses(FunctionCallingLLM):
             "user": self.user,
         }
 
-        if self.model in O1_MODELS and self.reasoning_options is not None:
+        is_reasoning_model = self.model in REASONING_MODELS
+
+        if is_reasoning_model and self.reasoning_options is not None:
             model_kwargs["reasoning"] = self.reasoning_options
 
-        if self.reasoning_options is not None or self.model in O1_MODELS:
+        if self.reasoning_options is not None or is_reasoning_model:
             params_to_exclude_for_reasoning = {
                 "top_p",
                 "temperature",
