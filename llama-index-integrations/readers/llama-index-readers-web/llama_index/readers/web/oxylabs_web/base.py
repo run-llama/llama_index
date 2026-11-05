@@ -1,6 +1,7 @@
 """Oxylabs Web Reader."""
 
 import asyncio
+import warnings
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from platform import architecture, python_version
 from importlib.metadata import version
@@ -26,7 +27,7 @@ class OxylabsWebReader(BasePydanticReader):
     """
     Scrape any website with Oxylabs Web Scraper API and get results in Markdown format.
 
-    [See the API documentation](https://developers.oxylabs.io/scraper-apis/web-scraper-api/other-websites)
+    [See the API documentation](https://developers.oxylabs.io/api-targets/any-domain)
 
     Args:
         username: Oxylabs API username.
@@ -54,8 +55,8 @@ class OxylabsWebReader(BasePydanticReader):
 
     """
 
-    timeout_s: int = 100
-    oxylabs_scraper_url: str = "https://realtime.oxylabs.io/v1/queries"
+    is_remote: bool = True
+
     api: "RealtimeAPI"
     async_api: "AsyncAPI"
     default_config: dict[str, Any] = Field(default_factory=get_default_config)
@@ -95,6 +96,29 @@ class OxylabsWebReader(BasePydanticReader):
             text=text,
         )
 
+    def _documents_from_responses(
+        self, urls: list[str], responses: list[Any]
+    ) -> List[Document]:
+        """
+        Build documents, reporting any url the API returned no result for.
+
+        Without the warning a failed url is indistinguishable from one that
+        was never requested, so a partially successful load looks complete.
+        """
+        documents = []
+
+        for url, response in zip(urls, responses):
+            if not response:
+                warnings.warn(
+                    f"Oxylabs returned no result for {url!r}. Skipping it.",
+                    stacklevel=3,
+                )
+                continue
+
+            documents.append(self._get_document_from_response(response))
+
+        return documents
+
     async def aload_data(
         self,
         urls: list[str],
@@ -106,7 +130,7 @@ class OxylabsWebReader(BasePydanticReader):
         Args:
             urls: List of URLs to load.
             additional_params: Dictionary of scraper parameters as described
-                [here](https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional)
+                [here](https://developers.oxylabs.io/products/web-scraper-api/features)
 
         """
         if additional_params is None:
@@ -122,11 +146,7 @@ class OxylabsWebReader(BasePydanticReader):
             ]
         )
 
-        return [
-            self._get_document_from_response(response)
-            for response in responses
-            if response
-        ]
+        return self._documents_from_responses(urls, responses)
 
     def load_data(
         self,
@@ -139,7 +159,7 @@ class OxylabsWebReader(BasePydanticReader):
         Args:
             urls: List of URLs to load.
             additional_params: Dictionary of scraper parameters as described
-                [here](https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional)
+                [here](https://developers.oxylabs.io/products/web-scraper-api/features)
 
         """
         if additional_params is None:
@@ -153,8 +173,4 @@ class OxylabsWebReader(BasePydanticReader):
             for url in urls
         ]
 
-        return [
-            self._get_document_from_response(response)
-            for response in responses
-            if response
-        ]
+        return self._documents_from_responses(urls, responses)
