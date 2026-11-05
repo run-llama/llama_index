@@ -23,10 +23,11 @@ from llama_index.core.base.llms.types import (
     ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI, OpenAIResponses
 from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
+    RESPONSES_API_ONLY_MODELS,
     from_openai_completion_logprobs,
     from_openai_message_dicts,
     from_openai_messages,
@@ -638,6 +639,23 @@ def test_gpt_5_4_pro_responses_api_only() -> None:
     assert is_json_schema_supported(model_name) is True, (
         f"{model_name} should support JSON schema"
     )
+
+
+@pytest.mark.parametrize("model_name", sorted(RESPONSES_API_ONLY_MODELS))
+def test_responses_api_only_models_have_context_size(model_name: str) -> None:
+    """Responses-API-only models still resolve a context window."""
+    assert (
+        openai_modelname_to_contextsize(model_name)
+        == RESPONSES_API_ONLY_MODELS[model_name]
+    )
+
+
+def test_openai_responses_metadata_for_responses_api_only_model() -> None:
+    """OpenAIResponses.metadata works for models absent from ALL_AVAILABLE_MODELS."""
+    llm = OpenAIResponses(model="gpt-5.4-pro", api_key="fake")
+
+    assert not is_chatcomp_api_supported(llm.model)
+    assert llm.metadata.context_window == RESPONSES_API_ONLY_MODELS["gpt-5.4-pro"]
 
 
 def test_responses_api_assistant_text_preserved_with_tool_calls() -> None:
