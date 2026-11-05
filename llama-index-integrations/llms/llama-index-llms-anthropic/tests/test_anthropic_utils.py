@@ -473,3 +473,23 @@ def test_haiku_5_5_has_1m_context_window(model: str) -> None:
     assert anthropic_modelname_to_contextsize(model) == 1000000
     assert is_anthropic_prompt_caching_supported_model(model.removeprefix("anthropic."))
     assert is_anthropic_structured_output_supported(model.removeprefix("anthropic."))
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-fable-5-1",
+        "anthropic.claude-fable-5-1",
+        "us.anthropic.claude-fable-5-1",
+    ],
+)
+def test_fable_5_1_has_1m_context_window(model: str) -> None:
+    """Fable 5.1 is registered with a 1M context window on every provider."""
+    assert anthropic_modelname_to_contextsize(model) == 1000000
+
+
+@pytest.mark.parametrize("model", ["claude-fable-5", "claude-fable-5-1"])
+def test_fable_supports_prompt_caching_and_structured_output(model: str) -> None:
+    """Fable models support prompt caching and structured outputs."""
+    assert is_anthropic_prompt_caching_supported_model(model)
+    assert is_anthropic_structured_output_supported(model)
