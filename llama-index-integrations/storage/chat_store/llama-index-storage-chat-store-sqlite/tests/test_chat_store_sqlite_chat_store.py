@@ -228,3 +228,72 @@ async def test_async_delete_last_message(sqlite_chat_store: SQLiteChatStore):
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+def test_set_messages_replaces_existing_messages(sqlite_chat_store: SQLiteChatStore):
+    sqlite_chat_store.set_messages(
+        "a",
+        [
+            ChatMessage(content="old 1", role="user"),
+            ChatMessage(content="old 2", role="assistant"),
+        ],
+    )
+    sqlite_chat_store.set_messages("b", [ChatMessage(content="other key", role="user")])
+
+    sqlite_chat_store.set_messages("a", [ChatMessage(content="new", role="user")])
+
+    assert [m.content for m in sqlite_chat_store.get_messages("a")] == ["new"]
+    assert [m.content for m in sqlite_chat_store.get_messages("b")] == ["other key"]
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+def test_set_messages_with_empty_list_clears_the_key(
+    sqlite_chat_store: SQLiteChatStore,
+):
+    sqlite_chat_store.set_messages("a", [ChatMessage(content="old", role="user")])
+    sqlite_chat_store.set_messages("b", [ChatMessage(content="other key", role="user")])
+
+    sqlite_chat_store.set_messages("a", [])
+
+    assert sqlite_chat_store.get_messages("a") == []
+    assert [m.content for m in sqlite_chat_store.get_messages("b")] == ["other key"]
+    # an empty set on a key that was never stored is a no-op, not an error
+    sqlite_chat_store.set_messages("never-stored", [])
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+@pytest.mark.asyncio
+async def test_async_set_messages_replaces_existing_messages(
+    sqlite_chat_store: SQLiteChatStore,
+):
+    await sqlite_chat_store.aset_messages(
+        "a",
+        [
+            ChatMessage(content="old 1", role="user"),
+            ChatMessage(content="old 2", role="assistant"),
+        ],
+    )
+    await sqlite_chat_store.aset_messages(
+        "b", [ChatMessage(content="other key", role="user")]
+    )
+
+    await sqlite_chat_store.aset_messages(
+        "a", [ChatMessage(content="new", role="user")]
+    )
+    assert [m.content for m in await sqlite_chat_store.aget_messages("a")] == ["new"]
+    assert [m.content for m in await sqlite_chat_store.aget_messages("b")] == [
+        "other key"
+    ]
+
+    await sqlite_chat_store.aset_messages("a", [])
+    assert await sqlite_chat_store.aget_messages("a") == []
+    assert [m.content for m in await sqlite_chat_store.aget_messages("b")] == [
+        "other key"
+    ]
