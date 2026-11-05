@@ -9,7 +9,7 @@ class OxylabsGoogleSearchReader(OxylabsGoogleBaseReader):
     """
     Get Google Search results data.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/google/search/search
+    https://developers.oxylabs.io/api-targets/search-engines/google/search/search
     """
 
     def __init__(self, username: str, password: str, **data) -> None:
