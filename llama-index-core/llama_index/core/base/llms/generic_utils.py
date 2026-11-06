@@ -113,7 +113,7 @@ def chat_response_to_completion_response(
     chat_response: ChatResponse,
 ) -> CompletionResponse:
     """Convert a chat response to a completion response."""
-    additional_kwargs = chat_response.message.additional_kwargs
+    additional_kwargs = dict(chat_response.message.additional_kwargs)
     additional_kwargs.update(chat_response.additional_kwargs)
 
     return CompletionResponse(
@@ -130,7 +130,7 @@ def stream_chat_response_to_completion_response(
 
     def gen() -> CompletionResponseGen:
         for response in chat_response_gen:
-            additional_kwargs = response.message.additional_kwargs
+            additional_kwargs = dict(response.message.additional_kwargs)
             additional_kwargs.update(response.additional_kwargs)
 
             yield CompletionResponse(
@@ -295,7 +295,7 @@ def astream_chat_response_to_completion_response(
 
     async def gen() -> CompletionResponseAsyncGen:
         async for response in chat_response_gen:
-            additional_kwargs = response.message.additional_kwargs
+            additional_kwargs = dict(response.message.additional_kwargs)
             additional_kwargs.update(response.additional_kwargs)
 
             yield CompletionResponse(
