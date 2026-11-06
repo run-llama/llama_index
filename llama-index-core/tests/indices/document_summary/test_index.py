@@ -62,6 +62,24 @@ def test_delete_nodes(
     assert len(index.vector_store._data.embedding_dict) == 2  # type: ignore
 
 
+@pytest.mark.asyncio
+async def test_adelete_nodes(
+    index: DocumentSummaryIndex,
+) -> None:
+    """Test asynchronously deleting nodes."""
+    nodes = list(index.index_struct.node_id_to_summary_id.keys())
+    await index.adelete_nodes([nodes[0], nodes[1]])
+
+    assert len(index.ref_doc_info) == 2
+    assert len(index.index_struct.doc_id_to_summary_id) == 2
+    assert len(index.index_struct.node_id_to_summary_id) == 2
+    assert len(index.index_struct.summary_id_to_node_ids) == 2
+    assert len(index.vector_store._data.embedding_dict) == 2  # type: ignore
+
+    results = index.as_retriever(similarity_top_k=4).retrieve("Test query")
+    assert {result.node.node_id for result in results} == set(nodes[2:])
+
+
 def test_delete_nodes_ignores_invalid_node_ids(
     index: DocumentSummaryIndex,
 ) -> None:

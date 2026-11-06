@@ -281,6 +281,19 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         for doc_id in remove_docs:
             self.delete_ref_doc(doc_id)
 
+    async def adelete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronously delete a list of nodes from the index."""
+        self.delete_nodes(
+            node_ids,
+            delete_from_docstore=delete_from_docstore,
+            **delete_kwargs,
+        )
+
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
