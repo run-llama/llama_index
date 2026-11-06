@@ -29,7 +29,7 @@ name = "llama-index-llms-helicone"
 version = "0.3.1"
 description = "llama-index llms helicone (OpenAI-compatible) integration"
 authors = [{name = "Hammad Shami", email = "hammad@helicone.ai"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -29,7 +29,7 @@ name = "llama-index-llms-octoai"
 version = "0.7.0"
 description = "llama-index llms octoai integration"
 authors = [{name = "hanscl"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -33,7 +33,7 @@ authors = [
     {name = "Pan Xia", email = "pan.xia@oracle.com"},
     {name = "Rave Harpaz", email = "rave.harpaz@oracle.com"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
