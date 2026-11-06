@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "thejessezhang"}]
 dependencies = [
-    "arxiv>=2.1.0,<3",
+    "arxiv>=3.0.0,<4",
     "llama-index-core>=0.13.0,<0.15",
     "defusedxml>=0.7.1,<0.8",
 ]

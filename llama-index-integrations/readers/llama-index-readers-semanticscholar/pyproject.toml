@@ -42,7 +42,7 @@ keywords = [
 dependencies = [
     "semanticscholar==0.4.1",
     "arxiv==1.4.8",
-    "pypdf2==3.0.1",
+    "pypdf>=6.21.4,<8",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

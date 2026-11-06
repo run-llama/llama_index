@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-llms-llama-cpp>=0.5.0,<0.6",
-    "llama-index-llms-huggingface>=0.6.0,<0.7",
+    "llama-index-llms-huggingface>=0.8.0,<0.9",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

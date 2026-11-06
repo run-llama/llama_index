@@ -34,11 +34,16 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "ajhofmann"}]
 dependencies = [
-    "multion>=0.3.11,<0.4",
+    "multion>=1.3.8,<2",
     "pytesseract>=0.3.10,<0.4",
-    "pillow>=10.2.0,<11",
+    "pillow>=13.0.0,<14",
     "llama-index-core>=0.13.0,<0.15",
 ]
+
+[tool.uv]
+# multion 1.x pulls agentops 0.2.x, which hard-pins requests==2.31.0 and
+# packaging==23.2 (both below patched releases for the dev/CI lock).
+override-dependencies = ["requests>=2.33.0", "packaging>=24.2"]
 
 [tool.codespell]
 check-filenames = true

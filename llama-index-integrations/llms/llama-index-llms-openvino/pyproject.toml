@@ -35,7 +35,7 @@ requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-huggingface>=0.6.0,<0.7",
+    "llama-index-llms-huggingface>=0.8.0,<0.9",
     "optimum[openvino]>=1.21.2",
     "llama-index-core>=0.13.0,<0.15",
 ]

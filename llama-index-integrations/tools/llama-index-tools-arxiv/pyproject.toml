@@ -39,7 +39,7 @@ keywords = [
     "science",
 ]
 dependencies = [
-    "arxiv>=2.1.0,<3",
+    "arxiv>=3.0.0,<4",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

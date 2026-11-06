@@ -72,3 +72,6 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.uv]
+override-dependencies = ["filelock>=4.2.1"]

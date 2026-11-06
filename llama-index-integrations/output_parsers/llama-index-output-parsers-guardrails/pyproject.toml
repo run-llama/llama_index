@@ -33,7 +33,7 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "guardrails-ai>=0.4.1,<0.5",
+    "guardrails-ai>=0.6.8,<0.7",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

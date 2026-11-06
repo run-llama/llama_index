@@ -41,7 +41,7 @@ keywords = [
 ]
 dependencies = [
     "llama-index-embeddings-openai>=0.6.0,<0.7",
-    "gcsfs>=2024.0.0,<2026",
+    "gcsfs>=2024.0.0,<2027",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

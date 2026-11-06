@@ -1100,11 +1100,11 @@ wheels = [
 
 [[package]]
 name = "filelock"
-version = "3.32.4"
+version = "4.2.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6d/30/03b03951873a1a0ffc7e8ca0e10c15597b59e8d0e39260704cd2ea087bc4/filelock-3.32.4.tar.gz", hash = "sha256:2bde2e4cf732e0153406d8a7bc80620ecf5e621fe0d25e41143c4e3b4733ff30", size = 222126, upload-time = "2026-08-23T17:37:55.363Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/1d/d730c664fcb4f1d264a722722a3134cf0881854f73c1fd58abf87572f232/filelock-4.2.9.tar.gz", hash = "sha256:96530b7c538d4ea08493ab067247aab7948c54d8cd622cce711c97cccc5d9896", size = 663116, upload-time = "2026-11-04T18:37:10.014Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/a4/9b63d595d748e3aff8812b65eacc1a2c4bd90b7c2012e08e72373b4835eb/filelock-3.32.4-py3-none-any.whl", hash = "sha256:22e58ca3b1ae3b98993b762d7338367ae64fe50252bf78d59da3bfebcdf1cedd", size = 99864, upload-time = "2026-08-23T17:37:53.913Z" },
+    { url = "https://files.pythonhosted.org/packages/00/05/76184fe08339723d643ab47887a8e4de8f2921ca4e008617ab7490af7857/filelock-4.2.9-py3-none-any.whl", hash = "sha256:a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9", size = 164734, upload-time = "2026-11-04T18:37:08.273Z" },
 ]
 
 [[package]]
@@ -1167,16 +1167,15 @@ wheels = [
 
 [[package]]
 name = "fpdf2"
-version = "2.7.8"
+version = "2.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "defusedxml" },
     { name = "fonttools" },
     { name = "pillow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/22/e3/aca53302c60eab2e3d03125027b3fd1497926f14ca9ce80576940f020830/fpdf2-2.7.8.tar.gz", hash = "sha256:21733fe27cc75021e5a4d7d69de95e185adf9717b1f9b1e14aa27d277d5c10fd", size = 228317, upload-time = "2024-02-10T04:30:47.232Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/be/440da8ede1cf7aaff73be5c5a6d0dc6f2938df6604ffbc313f9c6dc63f55/fpdf2-2.9.0.tar.gz", hash = "sha256:af2e7e06a5a2f9e32e24b146b56f58166142dfff45f55370ab03bfac9c8e3e21", size = 408671, upload-time = "2026-10-29T23:13:20.353Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/71/3bbd5bae6b0a04af113a5847c53596cdd306c4fb338691905cd5ee3d6314/fpdf2-2.7.8-py2.py3-none-any.whl", hash = "sha256:b09a297cbb14878ec4443ea2bef504d15e5cf4d92903118f013cb05e204fd491", size = 203684, upload-time = "2024-02-10T04:30:44.65Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/b0/f0e770163d0e635c81e8ba117686e31c6b172715e1185ff00ea2eb0b2f3d/fpdf2-2.9.0-py3-none-any.whl", hash = "sha256:e57f9eb183a61bbfc1a16ccb3eb68654f9ef3de0d9a78e37015a0df2eb29ab89", size = 360586, upload-time = "2026-10-29T23:13:18.341Z" },
 ]
 
 [[package]]
@@ -2027,7 +2026,7 @@ dev = [
     { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=26.5.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
-    { name = "fpdf2", specifier = "==2.7.8" },
+    { name = "fpdf2", specifier = ">=2.8.8" },
     { name = "ipython", specifier = "==8.10.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2" },
     { name = "mypy", specifier = "==0.991" },

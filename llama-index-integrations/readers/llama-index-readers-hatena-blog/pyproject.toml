@@ -40,7 +40,7 @@ keywords = [
 dependencies = [
     "requests>=2.31.0,<3",
     "beautifulsoup4>=4.12.3,<5",
-    "lxml>=5.1.0,<6",
+    "lxml>=6.1.0,<7",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "torch>=2.2.0,<3",
-    "transformers>=4.37.2,<6",
+    "transformers>=5.10.0,<6",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

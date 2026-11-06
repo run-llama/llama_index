@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "fpdf2==2.7.8",
+    "fpdf2>=2.8.8",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
