@@ -41,7 +41,7 @@ authors = [
     {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
     {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
