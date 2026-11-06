@@ -1,6 +1,11 @@
 """Embeddings."""
 
-from llama_index.core.callbacks.schema import CBEventType
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ToolCallBlock,
+)
+from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.callbacks.token_counting import TokenCountingHandler
 
 TEST_PAYLOAD = {"chunks": ["one"], "formatted_prompt": "two", "response": "three"}
@@ -48,3 +53,49 @@ def test_on_event_end() -> None:
     # Embedding should be one (single token chunk)
     assert handler.total_llm_token_count == 2
     assert handler.total_embedding_token_count == 1
+
+
+def _completion_token_count(message: ChatMessage) -> int:
+    """Completion tokens estimated for a response with no usage data."""
+    handler = TokenCountingHandler()
+    handler.on_event_end(
+        CBEventType.LLM,
+        payload={
+            EventPayload.MESSAGES: [
+                ChatMessage(role="user", content="Weather in Paris?")
+            ],
+            EventPayload.RESPONSE: ChatResponse(message=message),
+        },
+        event_id=TEST_ID,
+    )
+    assert len(handler.llm_token_counts) == 1
+    return handler.llm_token_counts[0].completion_token_count
+
+
+def test_tool_call_completion_counts_tool_call() -> None:
+    """A tool-call-only completion must count the tool name/arguments.
+
+    Regression test for #24016: str(response) renders such a reply as the
+    literal "assistant: None" (3 tokens), the same as an empty reply.
+    """
+    arguments = (
+        '{"city": "Paris", "unit": "celsius", "days": 3, '
+        '"include": ["humidity", "wind", "uv_index"]}'
+    )
+    tool_call_message = ChatMessage(
+        role="assistant",
+        blocks=[
+            ToolCallBlock(
+                tool_call_id="call_1",
+                tool_name="get_weather",
+                tool_kwargs=arguments,
+            )
+        ],
+    )
+    empty_message = ChatMessage(role="assistant")
+
+    tool_call_count = _completion_token_count(tool_call_message)
+    empty_count = _completion_token_count(empty_message)
+
+    assert tool_call_count > empty_count
+    assert tool_call_count > 3

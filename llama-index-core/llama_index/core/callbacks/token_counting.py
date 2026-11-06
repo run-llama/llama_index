@@ -121,7 +121,17 @@ def get_llm_token_counts(
             prompt_tokens = token_counter.estimate_tokens_in_messages(messages)
 
         if completion_tokens == 0:
-            completion_tokens = token_counter.get_string_tokens(response_str)
+            # Estimate from the response message, not str(response): a
+            # tool-call-only reply renders as "assistant: None", so the
+            # tool name/arguments would otherwise not be counted at all
+            # (#24016). This mirrors the prompt-side estimate above.
+            response_message = getattr(response, "message", None)
+            if response_message is not None:
+                completion_tokens = token_counter.estimate_tokens_in_messages(
+                    [response_message]
+                )
+            else:
+                completion_tokens = token_counter.get_string_tokens(response_str)
 
         return TokenCountingEvent(
             event_id=event_id,
