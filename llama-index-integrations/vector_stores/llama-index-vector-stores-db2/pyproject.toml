@@ -29,7 +29,7 @@ name = "llama-index-vector-stores-db2"
 version = "0.4.0"
 description = "llama-index vector_stores db2 database integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -33,7 +33,7 @@ authors = [
     {name = "Adithya Krishnan", email = "me@krishadi.com"},
     {name = "Bill Easton", email = "williamseaston@gmail.com"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "krish-adi"}]
