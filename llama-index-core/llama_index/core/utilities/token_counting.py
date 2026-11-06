@@ -3,8 +3,13 @@
 
 from typing import Any, Callable, Dict, List, Optional
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, ToolCallBlock
 from llama_index.core.utils import get_tokenizer
+
+
+def _has_tool_call_blocks(message: ChatMessage) -> bool:
+    """Whether the message already carries its tool calls as ToolCallBlocks."""
+    return any(isinstance(block, ToolCallBlock) for block in message.blocks)
 
 
 class TokenCounter:
@@ -64,7 +69,12 @@ class TokenCounter:
 
                 tokens += 3  # Additional tokens for function call
 
-            if "tool_calls" in additional_kwargs:
+            # Only count tool calls from additional_kwargs when they are not also
+            # represented as ToolCallBlocks. Integrations such as OpenAI store each
+            # tool call both as a ToolCallBlock (already counted by estimate_tokens
+            # above) and in additional_kwargs for backward compatibility, which
+            # would otherwise double-count them.
+            if "tool_calls" in additional_kwargs and not _has_tool_call_blocks(message):
                 tool_calls = additional_kwargs.get("tool_calls", []) or []
                 for tool_call in tool_calls:
                     if (
@@ -115,7 +125,9 @@ class TokenCounter:
 
                 tokens += 3  # Additional tokens for function call
 
-            if "tool_calls" in additional_kwargs:
+            # See the note in estimate_tokens_in_messages: skip tool calls that are
+            # already represented as ToolCallBlocks to avoid double-counting.
+            if "tool_calls" in additional_kwargs and not _has_tool_call_blocks(message):
                 tool_calls = additional_kwargs.get("tool_calls", []) or []
                 for tool_call in tool_calls:
                     if (
