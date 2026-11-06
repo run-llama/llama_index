@@ -185,16 +185,17 @@ class LabelledPropertyGraph(BaseModel):
         )
 
     def delete_triplet(self, triplet: Triplet) -> None:
-        """Delete a triplet."""
+        """
+        Delete a triplet and its relation.
+
+        The subject and object nodes are kept: they may be stored on their own
+        or take part in other triplets. Delete them with `delete_node`.
+        """
         subj, rel, obj = triplet
         if (subj.id, rel.id, obj.id) not in self.triplets:
             return
 
         self.triplets.remove((subj.id, rel.id, obj.id))
-        if subj.id in self.nodes:
-            del self.nodes[subj.id]
-        if obj.id in self.nodes:
-            del self.nodes[obj.id]
 
         rel_key = self._get_relation_key(relation=rel)
         if rel_key in self.relations:
