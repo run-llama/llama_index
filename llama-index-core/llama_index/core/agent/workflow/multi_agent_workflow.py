@@ -268,12 +268,19 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
     async def _init_context(self, ctx: Context, ev: StartEvent) -> None:
         """Initialize the context once, if needed."""
-        if not await ctx.store.get("memory", default=None):
-            default_memory = ev.get("memory", default=None)
-            default_memory = default_memory or ChatMemoryBuffer.from_defaults(
-                llm=self.agents[self.root_agent].llm or Settings.llm
+        supplied_memory = ev.get("memory", default=None)
+        if supplied_memory is not None:
+            # A memory passed to run() always wins. A reused Context holds a
+            # deserialized copy of the previous run's memory, which would
+            # otherwise silently shadow the caller's object.
+            await ctx.store.set("memory", supplied_memory)
+        elif not await ctx.store.get("memory", default=None):
+            await ctx.store.set(
+                "memory",
+                ChatMemoryBuffer.from_defaults(
+                    llm=self.agents[self.root_agent].llm or Settings.llm
+                ),
             )
-            await ctx.store.set("memory", default_memory)
         if not await ctx.store.get("agents", default=None):
             await ctx.store.set("agents", list(self.agents.keys()))
         if not await ctx.store.get("can_handoff_to", default=None):
