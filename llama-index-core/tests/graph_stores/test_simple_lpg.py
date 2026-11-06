@@ -53,6 +53,29 @@ def test_get() -> None:
     assert g.get_triplets(properties={"key": "value"}) == [(e1, r, e2)]
 
 
+def test_get_empty_ids_returns_no_nodes() -> None:
+    """An explicit empty id list means "no nodes", not "all nodes".
+
+    Regression test for #23979: a filtered vector search that matches
+    nothing yields kg_ids == [], and get(ids=[]) used to return the whole
+    graph, leaking unfiltered facts into the retriever.
+    """
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2", properties={"key": "value"})
+    r = Relation(label="r", source_id=e1.id, target_id=e2.id)
+
+    g.upsert_nodes([e1, e2])
+    g.upsert_relations([r])
+
+    assert g.get(ids=[]) == []
+    assert g.get(ids=[e1.id]) == [e1]
+    # None (the default) still means "no id filter".
+    assert {n.id for n in g.get(ids=None)} == {e1.id, e2.id}
+    assert {n.id for n in g.get()} == {e1.id, e2.id}
+
+
 def test_add_node() -> None:
     g = SimplePropertyGraphStore()
 
