@@ -184,12 +184,14 @@ def get_response_synthesizer(
         )
     elif response_mode == ResponseMode.NO_TEXT:
         return NoText(
+            llm=llm,
             callback_manager=callback_manager,
             streaming=streaming,
             multimodal=multimodal,
         )
     elif response_mode == ResponseMode.CONTEXT_ONLY:
         return ContextOnly(
+            llm=llm,
             callback_manager=callback_manager,
             streaming=streaming,
             multimodal=multimodal,

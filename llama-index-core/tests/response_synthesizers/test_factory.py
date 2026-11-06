@@ -2,6 +2,7 @@ from llama_index.core import Settings
 from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.response_synthesizers import get_response_synthesizer
+from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.base.llms.types import LLMMetadata
 import pytest
 
@@ -125,3 +126,28 @@ def test_prompt_helper_preserves_behavior_when_settings_llm_is_configured():
     assert synthesizer._prompt_helper.num_output == 543
     assert synthesizer._chat_prompt_helper.context_window == 12345
     assert synthesizer._chat_prompt_helper.num_output == 543
+
+
+def test_no_text_and_context_only_use_supplied_llm():
+    # Regression test for #24030: NO_TEXT and CONTEXT_ONLY must honour the
+    # LLM passed to get_response_synthesizer instead of falling back to
+    # Settings.llm (which raises "Could not load OpenAI model" when no
+    # API key / global LLM is configured). The autouse reset_settings
+    # fixture leaves Settings._llm unset, so any fallback would raise.
+    mock_llm = MockLLM()
+
+    for mode in (ResponseMode.NO_TEXT, ResponseMode.CONTEXT_ONLY):
+        synthesizer = get_response_synthesizer(llm=mock_llm, response_mode=mode)
+        assert synthesizer._llm is mock_llm
+
+    no_text = get_response_synthesizer(
+        llm=mock_llm, response_mode=ResponseMode.NO_TEXT
+    )
+    assert no_text.get_response("q", ["chunk one", "chunk two"]) == ""
+
+    context_only = get_response_synthesizer(
+        llm=mock_llm, response_mode=ResponseMode.CONTEXT_ONLY
+    )
+    assert context_only.get_response("q", ["chunk one", "chunk two"]) == (
+        "chunk one\n\nchunk two"
+    )
