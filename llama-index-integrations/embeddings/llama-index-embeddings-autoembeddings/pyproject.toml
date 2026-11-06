@@ -30,7 +30,7 @@ name = "llama-index-embeddings-autoembeddings"
 version = "0.4.0"
 description = "llama-index embeddings AutoEmbeddings integration"
 authors = [{name = "Clelia Astra Bertelli", email = "astraberte9@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

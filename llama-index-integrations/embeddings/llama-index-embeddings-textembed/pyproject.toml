@@ -29,7 +29,7 @@ name = "llama-index-embeddings-textembed"
 version = "0.5.0"
 description = "Integration of TextEmbed with llama-index for embeddings."
 authors = [{name = "Keval Dekivadiya", email = "kevaldekivadiya2415@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

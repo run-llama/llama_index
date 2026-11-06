@@ -33,7 +33,7 @@ authors = [
     {name = "Jared Van Bortel", email = "jared@nomic.ai"},
     {name = "Zach Nussbaum", email = "zach@nomic.ai"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
