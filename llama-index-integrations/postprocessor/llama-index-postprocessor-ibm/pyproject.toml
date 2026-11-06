@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.4",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest",
     "pytest-asyncio",
     "pytest-cov>=6.1.1",
@@ -30,7 +30,7 @@ name = "llama-index-postprocessor-ibm"
 version = "0.4.0"
 description = "llama-index postprocessor IBM watsonx.ai integration"
 authors = [{name = "IBM"}]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
