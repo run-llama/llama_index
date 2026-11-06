@@ -1,13 +1,18 @@
 """Test utils."""
 
 from pathlib import Path
-from typing import Optional, Type, Union
+from typing import Callable, Optional, Type, Union
 from unittest import mock
 import os
+import pickle
+import subprocess
+import sys
 import time
 
+import llama_index.core
 import pytest
 from _pytest.capture import CaptureFixture
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
@@ -21,6 +26,7 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    set_global_tokenizer,
     truncate_text,
 )
 
@@ -35,6 +41,64 @@ def test_tokenizer() -> None:
     text = "hello world foo bar"
     tokenizer = get_tokenizer()
     assert len(tokenizer(text)) == 4
+
+
+@pytest.mark.parametrize("factory", [get_tokenizer, SentenceSplitter])
+def test_tokenizer_pickle_in_offline_process(
+    factory: Callable,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(llama_index.core, "global_tokenizer", None)
+    monkeypatch.delenv("TIKTOKEN_CACHE_DIR", raising=False)
+    monkeypatch.setenv("DATA_GYM_CACHE_DIR", str(tmp_path))
+    value = factory()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import pickle
+import sys
+from unittest.mock import patch
+from llama_index.core.node_parser import SentenceSplitter
+
+with patch('requests.get', side_effect=AssertionError('Unexpected tokenizer download')):
+    restored = pickle.loads(sys.stdin.buffer.read())
+    if isinstance(restored, SentenceSplitter):
+        assert restored.split_text('hello world') == ['hello world']
+    else:
+        assert restored('hello world') == [15339, 1917]
+""",
+        ],
+        input=pickle.dumps(value),
+        capture_output=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr.decode()
+
+
+@pytest.mark.parametrize("cache_dir", ["custom-cache", ""])
+def test_tokenizer_preserves_explicit_cache_dir(
+    cache_dir: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(llama_index.core, "global_tokenizer", None)
+    monkeypatch.setenv("TIKTOKEN_CACHE_DIR", cache_dir)
+    with mock.patch("tiktoken.encoding_for_model"):
+        get_tokenizer()
+    assert os.environ["TIKTOKEN_CACHE_DIR"] == cache_dir
+
+
+def test_custom_tokenizer_does_not_set_cache_dir(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(llama_index.core, "global_tokenizer", None)
+    monkeypatch.delenv("TIKTOKEN_CACHE_DIR", raising=False)
+    set_global_tokenizer(str.split)
+
+    assert get_tokenizer()("hello world") == ["hello", "world"]
+    assert "TIKTOKEN_CACHE_DIR" not in os.environ
 
 
 call_count = 0
