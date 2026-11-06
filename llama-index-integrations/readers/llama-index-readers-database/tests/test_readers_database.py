@@ -142,3 +142,31 @@ async def test_aload_data_async(sqlite_engine):
     assert len(docs) == 2
     assert docs[0].text_resource and docs[0].text_resource.text
     assert docs[0].text_resource.text.startswith("id: 1")
+
+
+@pytest.mark.parametrize(
+    "columns_factory",
+    [list, tuple, iter, lambda columns: (column for column in columns)],
+    ids=["list", "tuple", "iterator", "generator"],
+)
+@pytest.mark.parametrize("lazy", [False, True])
+def test_metadata_columns_iterable_is_reused_for_every_row(
+    sqlite_engine, columns_factory, lazy
+):
+    reader = DatabaseReader(engine=sqlite_engine)
+    columns = columns_factory(["name", ("id", "item_id")])
+    load = reader.lazy_load_data if lazy else reader.load_data
+
+    documents = list(
+        load(
+            "SELECT id, name, value FROM items ORDER BY id",
+            metadata_cols=columns,
+            excluded_text_cols=iter(["value"]),
+        )
+    )
+
+    assert [doc.metadata for doc in documents] == [
+        {"name": "foo", "item_id": 1},
+        {"name": "bar", "item_id": 2},
+    ]
+    assert [doc.text for doc in documents] == ["id: 1, name: foo", "id: 2, name: bar"]
