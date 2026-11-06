@@ -29,7 +29,7 @@ name = "llama-index-tools-valyu"
 version = "0.7.0"
 description = "llama-index tools valyu integration"
 authors = [{name = "Alex Ng", email = "alexander.ng@valyu.network"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "alexngys"}]

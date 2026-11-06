@@ -32,7 +32,7 @@ name = "llama-index-tools-mcp"
 version = "0.6.0"
 description = "llama-index tools mcp integration"
 authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}, {name = "Sebastian Kalisz"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "psiace"}]

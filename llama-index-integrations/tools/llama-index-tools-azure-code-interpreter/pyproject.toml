@@ -29,7 +29,7 @@ name = "llama-index-tools-azure-code-interpreter"
 version = "0.7.0"
 description = "llama-index tools azure dynamic sessions integration for code interpreter"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "ajhofmann"}]
