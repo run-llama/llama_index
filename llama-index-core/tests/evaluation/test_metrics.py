@@ -212,7 +212,9 @@ def test_ndcg(expected_ids, retrieved_ids, mode, expected_result):
         (["id1", "id2", "id3"], ["id1", "id1", "id2"], True, 2.0 / 3.0),
     ],
 )
-def test_hit_rate_duplicates(expected_ids, retrieved_ids, use_granular, expected_result):
+def test_hit_rate_duplicates(
+    expected_ids, retrieved_ids, use_granular, expected_result
+):
     hr = HitRate()
     hr.use_granular_hit_rate = use_granular
     result = hr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
@@ -225,7 +227,12 @@ def test_hit_rate_duplicates(expected_ids, retrieved_ids, use_granular, expected
         # Duplicate retrieved doc should use first occurrence position
         (["id1"], ["id1", "id1"], True, 1.0),
         # After dedup: ["id1", "id2"], id1 at pos 0 (1/1), id2 at pos 1 (1/2)
-        (["id1", "id2"], ["id1", "id1", "id2", "id2"], True, (1.0 / 1.0 + 1.0 / 2.0) / 2.0),
+        (
+            ["id1", "id2"],
+            ["id1", "id1", "id2", "id2"],
+            True,
+            (1.0 / 1.0 + 1.0 / 2.0) / 2.0,
+        ),
         (["id1"], ["id2", "id1", "id1"], True, 1.0 / 2.0),
     ],
 )
