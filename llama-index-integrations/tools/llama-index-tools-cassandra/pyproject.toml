@@ -29,7 +29,7 @@ name = "llama-index-tools-cassandra"
 version = "0.6.0"
 description = "llama-index tools Apache Cassandra® integration"
 authors = [{name = "Patrick McFadin", email = "patrick@datastax.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
