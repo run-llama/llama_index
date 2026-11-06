@@ -474,6 +474,25 @@ class SimpleVectorStoreTest(unittest.TestCase):
         result = simple_vector_store.query(query)
         self.assertEqual(result.ids, [_NODE_ID_WEIGHT_3_RANK_C])
 
+    def test_delete_nodes_with_filters_and_missing_ids(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+        filters = MetadataFilters(filters=[ExactMatchFilter(key="rank", value="c")])
+        simple_vector_store.delete_nodes(
+            node_ids=[
+                _NODE_ID_WEIGHT_1_RANK_A,
+                _NODE_ID_WEIGHT_2_RANK_C,
+                "non-existent-node-id",
+            ],
+            filters=filters,
+        )
+        query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
+        result = simple_vector_store.query(query)
+        self.assertCountEqual(
+            result.ids,
+            [_NODE_ID_WEIGHT_1_RANK_A, _NODE_ID_WEIGHT_3_RANK_C],
+        )
+
 
 def test_from_persist_dir(persist_dir: str) -> None:
     vector_store = SimpleVectorStore.from_persist_dir(persist_dir=persist_dir)
