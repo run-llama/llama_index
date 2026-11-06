@@ -37,3 +37,55 @@ async def test_mixed_insert_batches_keep_image_retrieval_available(tmp_path, use
 
     await insert(TextNode(text="Follow-up note"))
     assert [hit.node.node_id for hit in await retrieve_images()] == ["diagram"]
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.asyncio
+async def test_text_insert_enables_retrieval_in_image_only_index(tmp_path, use_async):
+    embedding = MockMultiModalEmbedding(embed_dim=4)
+    index = MultiModalVectorStoreIndex(
+        [
+            ImageNode(
+                image_path=str(tmp_path / "diagram.png"), metadata={"kind": "diagram"}
+            )
+        ],
+        embed_model=embedding,
+        image_embed_model=embedding,
+    )
+    assert index.is_text_vector_store_empty
+
+    note = TextNode(id_="note", text="Inventory note")
+    if use_async:
+        await index.ainsert_nodes([note])
+        hits = await index.as_retriever().atext_retrieve(note.text)
+    else:
+        index.insert_nodes([note])
+        hits = index.as_retriever().text_retrieve(note.text)
+
+    assert not index.is_text_vector_store_empty
+    assert [hit.node.node_id for hit in hits] == ["note"]
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.asyncio
+async def test_captioned_image_insert_enables_both_stores(tmp_path, use_async):
+    embedding = MockMultiModalEmbedding(embed_dim=4)
+    index = MultiModalVectorStoreIndex(
+        [],
+        embed_model=embedding,
+        image_embed_model=embedding,
+        is_text_vector_store_empty=True,
+        is_image_vector_store_empty=True,
+    )
+    assert index.is_text_vector_store_empty and index.is_image_vector_store_empty
+    image = ImageNode(
+        text="Inventory diagram", image_path=str(tmp_path / "diagram.png")
+    )
+
+    if use_async:
+        await index.ainsert_nodes([image])
+    else:
+        index.insert_nodes([image])
+
+    assert not index.is_text_vector_store_empty
+    assert not index.is_image_vector_store_empty
