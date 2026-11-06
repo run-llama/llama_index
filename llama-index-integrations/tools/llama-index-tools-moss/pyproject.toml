@@ -2,6 +2,15 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov>=6.1.1",
+    "pytest-asyncio",
+    "llama-index-llms-openai",
+    "pre-commit",
+]
+
 [project]
 name = "llama-index-tools-moss"
 version = "0.3.0"
@@ -14,14 +23,6 @@ maintainers = []
 dependencies = [
     "inferedge-moss",
     "llama-index-core>=0.13.0,<0.15",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-asyncio",
-    "llama-index-llms-openai",
-    "pre-commit",
 ]
 
 [tool.hatch.build.targets.sdist]
