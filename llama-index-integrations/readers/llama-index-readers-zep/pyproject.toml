@@ -29,7 +29,7 @@ name = "llama-index-readers-zep"
 version = "0.5.1"
 description = "llama-index readers zep integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "zep"}]

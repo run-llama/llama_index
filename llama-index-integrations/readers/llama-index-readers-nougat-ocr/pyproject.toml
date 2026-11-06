@@ -31,7 +31,7 @@ name = "llama-index-readers-nougat-ocr"
 version = "0.6.0"
 description = "llama-index readers nougat_ocr integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "GPL-2.0-or-later"
 maintainers = [{name = "mdarshad1000"}]

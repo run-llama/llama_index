@@ -29,7 +29,7 @@ name = "llama-index-readers-document360"
 version = "0.5.0"
 description = "llama-index readers document360 integration"
 authors = [{name = "PLACE INC", email = "ai@place.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-core>=0.13.0,<0.15"]
