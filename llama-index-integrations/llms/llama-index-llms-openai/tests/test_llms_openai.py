@@ -1,10 +1,12 @@
 import os
-from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.tools import FunctionTool
+
 import pytest
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.types import ToolCallBlock
+from llama_index.core.tools import FunctionTool
+
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import resolve_tool_choice
-from llama_index.core.base.llms.types import ToolCallBlock
 
 
 def test_text_inference_embedding_class():
@@ -210,3 +212,108 @@ def test_streaming_with_usage_tokens():
     assert intermediate_response.additional_kwargs["prompt_tokens"] > 0
     assert intermediate_response.additional_kwargs["completion_tokens"] > 0
     assert intermediate_response.additional_kwargs["total_tokens"] > 0
+
+
+def test_structured_predict_tool_choice_pydantic_program_mode_llm():
+    import json
+
+    import httpx
+    from llama_index.core.prompts import PromptTemplate
+    from llama_index.core.types import PydanticProgramMode
+    from pydantic import BaseModel
+
+    class Total(BaseModel):
+        total_units: int
+
+    sent = []
+
+    def capture(request):
+        sent.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "id": "chatcmpl-test",
+                "object": "chat.completion",
+                "created": 1234567,
+                "model": "gpt-3.5-turbo",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": '{"total_units": 30}',
+                        },
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    llm = OpenAI(
+        model="gpt-3.5-turbo",
+        api_key="fake-key",
+        pydantic_program_mode=PydanticProgramMode.LLM,
+        http_client=httpx.Client(transport=httpx.MockTransport(capture)),
+        max_retries=0,
+    )
+
+    result = llm.structured_predict(
+        Total, PromptTemplate("Sum: {text}"), text="A: 10, B: 20"
+    )
+    assert result.total_units == 30
+    assert len(sent) == 1
+    assert "tool_choice" not in sent[0] or sent[0].get("tool_choice") is None
+    assert sent[0].get("tools") is None
+
+
+@pytest.mark.asyncio
+async def test_astructured_predict_tool_choice_pydantic_program_mode_llm():
+    import json
+
+    import httpx
+    from llama_index.core.prompts import PromptTemplate
+    from llama_index.core.types import PydanticProgramMode
+    from pydantic import BaseModel
+
+    class Total(BaseModel):
+        total_units: int
+
+    sent = []
+
+    async def capture(request):
+        sent.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "id": "chatcmpl-test",
+                "object": "chat.completion",
+                "created": 1234567,
+                "model": "gpt-3.5-turbo",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": '{"total_units": 42}',
+                        },
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    llm = OpenAI(
+        model="gpt-3.5-turbo",
+        api_key="fake-key",
+        pydantic_program_mode=PydanticProgramMode.LLM,
+        async_http_client=httpx.AsyncClient(transport=httpx.MockTransport(capture)),
+        max_retries=0,
+    )
+
+    result = await llm.astructured_predict(
+        Total, PromptTemplate("Sum: {text}"), text="A: 20, B: 22"
+    )
+    assert result.total_units == 42
+    assert len(sent) == 1
+    assert "tool_choice" not in sent[0] or sent[0].get("tool_choice") is None
+    assert sent[0].get("tools") is None

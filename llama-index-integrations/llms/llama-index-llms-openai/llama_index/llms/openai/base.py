@@ -1147,9 +1147,12 @@ class OpenAI(FunctionCallingLLM):
 
         # when uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
+        if self.pydantic_program_mode != PydanticProgramMode.LLM:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
+            )
         return super().structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
@@ -1173,9 +1176,12 @@ class OpenAI(FunctionCallingLLM):
 
         # when uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
+        if self.pydantic_program_mode != PydanticProgramMode.LLM:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
+            )
         return await super().astructured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
@@ -1201,11 +1207,12 @@ class OpenAI(FunctionCallingLLM):
                 curr = process_streaming_content_incremental(response, output_cls, curr)
                 yield curr
         else:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            if self.pydantic_program_mode != PydanticProgramMode.LLM:
+                llm_kwargs["tool_choice"] = (
+                    "required"
+                    if "tool_choice" not in llm_kwargs
+                    else llm_kwargs["tool_choice"]
+                )
             yield from super()._structured_stream_call(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
@@ -1241,11 +1248,12 @@ class OpenAI(FunctionCallingLLM):
 
             return gen()
         else:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            if self.pydantic_program_mode != PydanticProgramMode.LLM:
+                llm_kwargs["tool_choice"] = (
+                    "required"
+                    if "tool_choice" not in llm_kwargs
+                    else llm_kwargs["tool_choice"]
+                )
             return await super()._structured_astream_call(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
