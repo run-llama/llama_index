@@ -30,7 +30,7 @@ name = "llama-index-utils-azure"
 version = "0.6.0"
 description = "llama-index utils azure"
 authors = [{name = "Fran Aguilera", email = "falven2000@hotmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "falven"}]

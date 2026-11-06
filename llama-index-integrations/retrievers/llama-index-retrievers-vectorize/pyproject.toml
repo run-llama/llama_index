@@ -20,7 +20,7 @@ keywords = ["llama-index", "vectorize", "retrieval", "search"]
 authors = [
     {name = "Vectorize", email = "contact@vectorize.io"},
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "vectorize-client>=0.1.3",
