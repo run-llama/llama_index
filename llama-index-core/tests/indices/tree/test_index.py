@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.core.indices.tree.base import TreeIndex
-from llama_index.core.schema import BaseNode, Document
+from llama_index.core.llms import MockLLM
+from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.storage.docstore import BaseDocumentStore
 
 
@@ -195,6 +196,18 @@ def test_twice_insert_empty(patch_llm_predictor, patch_token_text_splitter) -> N
     new_doc_second = Document(text="This is a new doc2.", id_="new_doc_2")
     tree.insert(new_doc_second)
     assert len(tree.index_struct.all_nodes) == 2
+
+
+def test_insert_preserves_leaf_retrieval_after_root_consolidation() -> None:
+    tree = TreeIndex(nodes=[], llm=MockLLM(), num_children=2)
+    node_ids = ("alpha", "beta", "gamma")
+
+    for node_id in node_ids:
+        tree.insert_nodes([TextNode(id_=node_id, text=f"{node_id} record")])
+
+    results = tree.as_retriever(child_branch_factor=3).retrieve("record")
+
+    assert sorted(result.node_id for result in results) == list(node_ids)
 
 
 def _mock_tokenizer(text: str) -> int:
