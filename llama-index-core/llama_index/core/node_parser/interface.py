@@ -30,7 +30,20 @@ from llama_index.core.utils import get_tqdm_iterable
 def _validate_id_func(v: Any) -> Any:
     if v is None:
         return default_id_func
-    return v
+    if callable(v):
+        return v
+    # Restore the form produced by _serialize_id_func. Only the built-in
+    # default is restorable by name; a custom id_func cannot be rebuilt from
+    # its name alone, so fail with a clear message instead of letting pydantic
+    # reject the dict as not callable.
+    if isinstance(v, dict) and "id_func_name" in v:
+        if v["id_func_name"] == default_id_func.__name__:
+            return default_id_func
+        raise ValueError(
+            f"Cannot restore a serialized id_func named {v['id_func_name']!r}; "
+            f"only {default_id_func.__name__!r} is restorable by name. Pass a callable instead."
+        )
+    raise ValueError(f"id_func must be callable or None, got {type(v).__name__}")
 
 
 def _serialize_id_func(f: Callable) -> Any:
