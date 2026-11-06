@@ -168,6 +168,7 @@ class DatabaseReader(BaseReader):
             use `metadata_cols=[('db_col_name', 'meta_key_name')]`.
 
         """
+        metadata_cols = tuple(metadata_cols or ())
         exclude_set: Set[str] = set(excluded_text_cols or [])
         missing_columns: Set[str] = set()
         invalid_columns: Set[str] = set()
