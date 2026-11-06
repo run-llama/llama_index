@@ -51,6 +51,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Perplexity](/python/examples/llm/perplexity)
 - [Pipeshift](/python/examples/llm/pipeshift)
 - [PremAI](/python/examples/llm/premai)
+- [PopNow](/python/examples/llm/popnow)
 - [Portkey](/python/examples/llm/portkey)
 - [Predibase](/python/examples/llm/predibase)
 - [Replicate Llama2](/python/examples/llm/llama_2)
