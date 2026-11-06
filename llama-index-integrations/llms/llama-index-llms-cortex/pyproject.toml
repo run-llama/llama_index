@@ -33,7 +33,7 @@ authors = [
     {name = "Christopher Klapperich", email = "cklapperichmn@gmail.com"},
     {name = "Quinton Mays", email = "qmazedev@gmail.com"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

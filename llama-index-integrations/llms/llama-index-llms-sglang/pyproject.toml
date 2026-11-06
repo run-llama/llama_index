@@ -30,7 +30,7 @@ name = "llama-index-llms-sglang"
 version = "0.3.0"
 description = "llama-index llms sglang integration"
 authors = [{name = "Advik Sharma", email = "scince5678@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-core>=0.13.0,<0.15", "requests>=2.31.0"]

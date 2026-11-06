@@ -29,7 +29,7 @@ name = "llama-index-llms-paieas"
 version = "0.6.1"
 description = "llama-index llms aliyun paieas integration"
 authors = [{name = "ZhangXiaowen", email = "zxw320697@alibaba-inc.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

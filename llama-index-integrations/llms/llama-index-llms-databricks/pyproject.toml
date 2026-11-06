@@ -29,7 +29,7 @@ name = "llama-index-llms-databricks"
 version = "0.6.1"
 description = "llama-index llms databricks integration"
 authors = [{name = "Abdulaziz Almuhaidib", email = "abdulaziz.almuhaidib.97@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

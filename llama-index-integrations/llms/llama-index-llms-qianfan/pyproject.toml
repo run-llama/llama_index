@@ -29,7 +29,7 @@ name = "llama-index-llms-qianfan"
 version = "0.6.0"
 description = "llama-index llms baidu qianfan integration"
 authors = [{name = "wencan", email = "wencan@live.cn"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

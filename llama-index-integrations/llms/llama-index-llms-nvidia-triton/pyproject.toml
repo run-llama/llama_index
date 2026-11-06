@@ -29,7 +29,7 @@ name = "llama-index-llms-nvidia-triton"
 version = "0.6.0"
 description = "llama-index llms nvidia triton integration"
 authors = [{name = "Rohith Ramakrishnan", email = "rrohith2001@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -30,7 +30,7 @@ name = "llama-index-llms-reka"
 version = "0.5.0"
 description = "llama-index llms reka integration"
 authors = [{name = "Alex Li", email = "alexli@reka.ai"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
