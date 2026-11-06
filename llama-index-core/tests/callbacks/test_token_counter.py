@@ -51,9 +51,11 @@ def test_on_event_end() -> None:
 
 
 def test_on_event_end_llm_tool_call_fallback() -> None:
-    """A tool-call reply has no text content; the usage-less fallback must
+    """
+    A tool-call reply has no text content; the usage-less fallback must
     still count and record the generated calls instead of "assistant: None"
-    (https://github.com/run-llama/llama_index/issues/24016)."""
+    (https://github.com/run-llama/llama_index/issues/24016).
+    """
     from openai.types.chat import ChatCompletionMessage
 
     from llama_index.core.base.llms.types import ChatMessage, ChatResponse
@@ -81,7 +83,9 @@ def test_on_event_end_llm_tool_call_fallback() -> None:
     handler.on_event_end(
         CBEventType.LLM,
         payload={
-            EventPayload.MESSAGES: [ChatMessage(role="user", content="Weather in Paris?")],
+            EventPayload.MESSAGES: [
+                ChatMessage(role="user", content="Weather in Paris?")
+            ],
             EventPayload.RESPONSE: ChatResponse(message=message),
         },
         event_id=TEST_ID,
