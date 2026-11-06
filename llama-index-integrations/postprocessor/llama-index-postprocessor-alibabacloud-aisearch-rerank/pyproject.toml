@@ -29,7 +29,7 @@ name = "llama-index-postprocessor-alibabacloud-aisearch-rerank"
 version = "0.5.0"
 description = "llama-index postprocessor alibabacloud_aisearch_rerank integration"
 authors = [{name = "llama-index"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

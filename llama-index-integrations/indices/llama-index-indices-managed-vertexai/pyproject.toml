@@ -29,7 +29,7 @@ name = "llama-index-indices-managed-vertexai"
 version = "0.5.0"
 description = "llama-index managed Vertex AI integration"
 authors = [{name = "Holt Skinner", email = "holtskinner@google.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

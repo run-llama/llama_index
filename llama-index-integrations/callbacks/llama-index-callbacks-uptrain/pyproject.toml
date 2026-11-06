@@ -29,7 +29,7 @@ name = "llama-index-callbacks-uptrain"
 version = "0.7.0"
 description = "UpTrain Callback for performing evaluations on the LlamaIndex pipeline"
 authors = [{name = "Dhruv Chawla", email = "dhruv@uptrain.ai"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "AGPL-3.0"
 dependencies = [
