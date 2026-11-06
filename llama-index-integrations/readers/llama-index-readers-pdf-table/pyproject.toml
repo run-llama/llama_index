@@ -29,7 +29,7 @@ name = "llama-index-readers-pdf-table"
 version = "0.6.0"
 description = "llama-index readers pdf_table integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 maintainers = [{name = "yy0867"}]

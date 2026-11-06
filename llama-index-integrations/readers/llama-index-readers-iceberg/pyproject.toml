@@ -29,7 +29,7 @@ name = "llama-index-readers-iceberg"
 version = "0.6.0"
 description = "llama-index readers iceberg integration"
 authors = [{name = "Abhijeeth Padarthi", email = "abhijeeth@fivetran.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

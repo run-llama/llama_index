@@ -30,7 +30,7 @@ name = "llama-index-readers-whisper"
 version = "0.5.0"
 description = "llama-index readers openai whisper integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "logan-markewich"}]
