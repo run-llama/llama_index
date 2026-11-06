@@ -121,7 +121,22 @@ def get_llm_token_counts(
             prompt_tokens = token_counter.estimate_tokens_in_messages(messages)
 
         if completion_tokens == 0:
-            completion_tokens = token_counter.get_string_tokens(response_str)
+            if response is not None:
+                # A tool-call reply has no text content: str() renders it as
+                # "assistant: None" and drops the generated calls entirely,
+                # while this estimator already measures tool-call blocks on
+                # the prompt side. Estimate from the message itself and
+                # record the calls so the completion is not a bare "None".
+                completion_tokens = token_counter.estimate_tokens_in_messages(
+                    [response.message]
+                )
+                rendered = "\n".join(
+                    str(block) for block in response.message.blocks if str(block)
+                )
+                if rendered:
+                    response_str = rendered
+            if completion_tokens == 0:
+                completion_tokens = token_counter.get_string_tokens(response_str)
 
         return TokenCountingEvent(
             event_id=event_id,
