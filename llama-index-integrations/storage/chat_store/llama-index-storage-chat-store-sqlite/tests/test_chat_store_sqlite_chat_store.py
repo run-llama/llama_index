@@ -228,3 +228,28 @@ async def test_async_delete_last_message(sqlite_chat_store: SQLiteChatStore):
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+def test_set_messages_replaces_stored_messages(
+    sqlite_chat_store: SQLiteChatStore,
+):
+    key = "test_replace_key"
+    sqlite_chat_store.set_messages(
+        key,
+        [
+            ChatMessage(content="First message", role="user"),
+            ChatMessage(content="Second message", role="user"),
+        ],
+    )
+
+    sqlite_chat_store.set_messages(key, [ChatMessage(content="Third message", role="user")])
+
+    retrieved_messages = sqlite_chat_store.get_messages(key)
+    assert [m.content for m in retrieved_messages] == ["Third message"]
+
+    # Setting an empty list must clear the stored history.
+    sqlite_chat_store.set_messages(key, [])
+    assert sqlite_chat_store.get_messages(key) == []
