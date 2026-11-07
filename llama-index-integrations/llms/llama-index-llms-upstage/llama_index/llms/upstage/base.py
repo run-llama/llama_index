@@ -5,9 +5,6 @@ import warnings
 
 import httpx
 from llama_index.readers.upstage import UpstageDocumentParseReader
-from llama_index.llms.openai.utils import (
-    create_retry_decorator,
-)
 from llama_index.core.base.llms.types import (
     LLMMetadata,
     ChatMessage,
@@ -35,14 +32,6 @@ from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
 
 DEFAULT_UPSTAGE_MODEL = "solar-mini"
-
-llm_retry_decorator = create_retry_decorator(
-    max_retries=6,
-    random_exponential=True,
-    stop_after_delay_seconds=60,
-    min_seconds=1,
-    max_seconds=20,
-)
 
 
 class Upstage(OpenAI):
@@ -301,24 +290,20 @@ class Upstage(OpenAI):
             return messages_list
         return messages
 
-    @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._chat(messages, **kwargs)
 
-    @llm_retry_decorator
     def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._achat(messages, **kwargs)
 
-    @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._stream_chat(messages, **kwargs)
 
-    @llm_retry_decorator
     def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
