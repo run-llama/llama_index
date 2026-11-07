@@ -217,7 +217,17 @@ class AnthropicProvider(Provider):
                 "system" in inference_parameters
                 and inference_parameters["system"] is not None
             ):
-                inference_parameters["system"] += system_message
+                configured_prompt = inference_parameters["system"]
+                if isinstance(system_message, list) and isinstance(
+                    configured_prompt, str
+                ):
+                    # a system prompt with cache_control comes as content blocks
+                    inference_parameters["system"] = [
+                        {"type": "text", "text": configured_prompt},
+                        *system_message,
+                    ]
+                else:
+                    inference_parameters["system"] += system_message
             else:
                 inference_parameters["system"] = system_message
 

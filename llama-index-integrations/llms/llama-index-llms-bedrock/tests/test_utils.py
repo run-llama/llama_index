@@ -53,3 +53,36 @@ from llama_index.llms.bedrock.utils import (
 def test_get_provider(model: str, provider_cls):
     """Test that get_provider returns the expected provider class."""
     assert isinstance(get_provider(model=model), provider_cls)
+
+
+def test_anthropic_request_body_combines_block_list_system_with_configured_prompt():
+    provider = AnthropicProvider()
+    cached_block = {
+        "type": "text",
+        "text": "Cached instructions.",
+        "cache_control": {"type": "ephemeral"},
+    }
+    prompt = [
+        {"role": "system", "content": [cached_block]},
+        {"role": "user", "content": "Hello"},
+    ]
+
+    body = provider.get_request_body(prompt, {"system": "Configured prompt."})
+
+    assert body["system"] == [
+        {"type": "text", "text": "Configured prompt."},
+        cached_block,
+    ]
+    assert body["messages"] == [{"role": "user", "content": "Hello"}]
+
+
+def test_anthropic_request_body_concatenates_string_system_with_configured_prompt():
+    provider = AnthropicProvider()
+    prompt = [
+        {"role": "system", "content": " Extra."},
+        {"role": "user", "content": "Hello"},
+    ]
+
+    body = provider.get_request_body(prompt, {"system": "Configured prompt."})
+
+    assert body["system"] == "Configured prompt. Extra."
