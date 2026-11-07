@@ -89,3 +89,26 @@ def test_llm_query(documents: List[Document], patch_token_text_splitter) -> None
 
     assert nodes[0].node.get_content() == "This is a test."
     assert nodes[1].node.get_content() == "This is a test v2."
+
+
+def test_as_retriever_accepts_object_map_override(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """A caller-supplied object_map must override the index default."""
+    from llama_index.core.indices.list.retrievers import SummaryIndexRetriever
+    from llama_index.core.schema import IndexNode, NodeWithScore, TextNode
+
+    index = SummaryIndex(
+        [IndexNode(id_="pointer", text="inventory", index_id="inventory")]
+    )
+    mapping = {
+        "inventory": NodeWithScore(
+            node=TextNode(id_="target", text="The lab has 29 microscopes."),
+            score=1.0,
+        )
+    }
+
+    retriever = index.as_retriever(object_map=mapping)
+    assert isinstance(retriever, SummaryIndexRetriever)
+    nodes = retriever.retrieve("microscopes")
+    assert [n.node.text for n in nodes] == ["The lab has 29 microscopes."]
