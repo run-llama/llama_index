@@ -176,3 +176,25 @@ def test_insert_fetched_nodes_with_nodes_present():
     # Should have replaced old node with the new one
     assert len(new_nodes) == 1
     assert new_nodes[0].text == "Updated text"
+
+
+def test_as_retriever_accepts_callback_manager_and_object_map_override(
+    documents: List[Document],
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+) -> None:
+    """Caller-supplied callback_manager / object_map must override the defaults."""
+    from llama_index.core.callbacks import CallbackManager
+
+    index = VectorStoreIndex.from_documents(documents, embed_model=mock_embed_model)
+    callbacks = CallbackManager([])
+
+    retriever = index.as_retriever(
+        callback_manager=callbacks, object_map={}, similarity_top_k=1
+    )
+    assert retriever.callback_manager is callbacks
+    assert retriever.object_map == {}
+
+    nodes = retriever.retrieve(QueryBundle("What is?"))
+    assert len(nodes) == 1

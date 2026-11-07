@@ -115,11 +115,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             VectorIndexRetriever,
         )
 
+        kwargs.setdefault("callback_manager", self._callback_manager)
+        kwargs.setdefault("object_map", self._object_map)
         return VectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
-            callback_manager=self._callback_manager,
-            object_map=self._object_map,
             **kwargs,
         )
 
