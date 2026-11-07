@@ -13,7 +13,7 @@ class SafeFormatter:
         self.format_dict = format_dict or {}
 
     def format(self, format_string: str) -> str:
-        return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
+        return re.sub(r"\{\{|\}\}|\{([^{}]+)\}", self._replace_match, format_string)
 
     def parse(self, format_string: str) -> List[str]:
         return re.findall(
@@ -21,6 +21,9 @@ class SafeFormatter:
         )
 
     def _replace_match(self, match: re.Match) -> str:
+        if match.group(1) is None:
+            return match.group(0)[0]
+
         key = match.group(1)
         value = self.format_dict.get(key, match.group(0))
         if isinstance(value, bytes):

@@ -55,6 +55,18 @@ def test_template() -> None:
     ]
 
 
+def test_template_escaped_braces() -> None:
+    prompt = PromptTemplate('Answer {question} as JSON: {{"answer": "yes"}}.')
+
+    assert prompt.format(question="Q") == 'Answer Q as JSON: {"answer": "yes"}.'
+
+
+def test_template_escaped_braces_do_not_format_inner_variable() -> None:
+    prompt = PromptTemplate("Keep {{value}} literal; format {value}.")
+
+    assert prompt.format(value="replaced") == "Keep {value} literal; format replaced."
+
+
 def test_template_output_parser(output_parser: BaseOutputParser) -> None:
     prompt_txt = "hello {text} {foo}"
     prompt = PromptTemplate(prompt_txt, output_parser=output_parser)
