@@ -258,3 +258,43 @@ def test_SimpleDirectoryReader_iter_data(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, recursive=True)
     docs = list(r.iter_data())
     assert len(docs) == 5
+
+
+def test_load_resource_takes_per_call_options(tmp_path):
+    path = tmp_path / "latin.txt"
+    path.write_text("café", encoding="latin-1")
+    reader = SimpleDirectoryReader(input_files=[path])
+
+    (document,) = reader.load_resource(
+        str(path), filename_as_id=True, encoding="latin-1"
+    )
+
+    assert document.text == "café"
+    assert document.id_ == str(path)
+
+
+@pytest.mark.asyncio
+async def test_aload_resource_takes_per_call_options(tmp_path):
+    path = tmp_path / "latin.txt"
+    path.write_text("café", encoding="latin-1")
+    reader = SimpleDirectoryReader(input_files=[path])
+
+    (document,) = await reader.aload_resource(
+        str(path), filename_as_id=True, encoding="latin-1"
+    )
+
+    assert document.text == "café"
+    assert document.id_ == str(path)
+
+
+def test_load_resources_forwards_per_call_options(tmp_path):
+    path = tmp_path / "latin.txt"
+    path.write_text("café", encoding="latin-1")
+    reader = SimpleDirectoryReader(input_files=[path])
+
+    documents = reader.load_resources(
+        [str(path)], filename_as_id=True, encoding="latin-1"
+    )
+
+    assert [document.text for document in documents] == ["café"]
+    assert [document.id_ for document in documents] == [str(path)]
