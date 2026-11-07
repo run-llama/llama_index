@@ -1,6 +1,7 @@
 """Test utils."""
 
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Optional, Type, Union
 from unittest import mock
 import os
@@ -21,8 +22,49 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    temp_set_attrs,
     truncate_text,
 )
+
+
+def test_temp_set_attrs_restores_values() -> None:
+    obj = SimpleNamespace(first="original", second=1)
+    with temp_set_attrs(obj, first="temporary", second=2):
+        assert (obj.first, obj.second) == ("temporary", 2)
+    assert (obj.first, obj.second) == ("original", 1)
+
+
+def test_temp_set_attrs_restores_values_after_body_exception() -> None:
+    obj = SimpleNamespace(value="original")
+    error = ValueError("body failed")
+    with pytest.raises(ValueError) as caught:
+        with temp_set_attrs(obj, value="temporary"):
+            raise error
+    assert caught.value is error
+    assert obj.value == "original"
+
+
+def test_temp_set_attrs_restores_values_after_setter_exception() -> None:
+    error = ValueError("invalid setting")
+
+    class Settings:
+        first = "original"
+
+        @property
+        def second(self) -> str:
+            return "unchanged"
+
+        @second.setter
+        def second(self, value: str) -> None:
+            raise error
+
+    obj = Settings()
+    with pytest.raises(ValueError) as caught:
+        with temp_set_attrs(obj, first="temporary", second="invalid"):
+            pytest.fail("The context body must not run after a setter fails")
+    assert caught.value is error
+    assert obj.first == "original"
+    assert obj.second == "unchanged"
 
 
 def test_tokenizer() -> None:
