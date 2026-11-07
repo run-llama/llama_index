@@ -168,7 +168,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
     ) -> List[ChatMessage]:
         """Get chat history."""
-        chat_history = self.get_all()
+        # Splitting pops messages; keep the stored history intact until success.
+        chat_history = self.get_all().copy()
         if len(chat_history) == 0:
             return []
 
@@ -178,22 +179,24 @@ class ChatSummaryMemoryBuffer(BaseMemory):
                 raise ValueError("Initial token count exceeds token limit")
             self._token_count = initial_token_count
 
-        (
-            chat_history_full_text,
-            chat_history_to_be_summarized,
-        ) = self._split_messages_summary_or_full_text(chat_history)
+        try:
+            (
+                chat_history_full_text,
+                chat_history_to_be_summarized,
+            ) = self._split_messages_summary_or_full_text(chat_history)
 
-        if self.llm is None or len(chat_history_to_be_summarized) == 0:
-            # Simply remove the message that don't fit the buffer anymore
-            updated_history = chat_history_full_text
-        else:
-            updated_history = [
-                self._summarize_oldest_chat_history(chat_history_to_be_summarized),
-                *chat_history_full_text,
-            ]
+            if self.llm is None or len(chat_history_to_be_summarized) == 0:
+                # Simply remove the message that don't fit the buffer anymore
+                updated_history = chat_history_full_text
+            else:
+                updated_history = [
+                    self._summarize_oldest_chat_history(chat_history_to_be_summarized),
+                    *chat_history_full_text,
+                ]
+        finally:
+            self._token_count = 0
 
         self.reset()
-        self._token_count = 0
         self.set(updated_history)
 
         return updated_history
