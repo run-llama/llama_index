@@ -89,3 +89,14 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_backup_separators_none_is_normalized():
+    """Explicit backup_separators=None must be accepted like Optional[List[str]]."""
+    from llama_index.core.node_parser import TokenTextSplitter
+
+    splitter = TokenTextSplitter(chunk_size=1024, backup_separators=None)
+    assert splitter.backup_separators == []
+    # Splitting still works with only the primary separator.
+    splits = splitter.split_text("one two three four five six seven eight")
+    assert "".join(splits) == "one two three four five six seven eight"

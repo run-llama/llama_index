@@ -68,6 +68,10 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             )
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
+        if backup_separators is None:
+            # The constructor annotation is Optional[List[str]]; None means
+            # no additional backup separators.
+            backup_separators = []
         super().__init__(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
