@@ -30,6 +30,20 @@ from llama_index.core.utils import get_tqdm_iterable
 def _validate_id_func(v: Any) -> Any:
     if v is None:
         return default_id_func
+    if isinstance(v, dict) and v.get("title") == "id_func":
+        # Serialized form written by _serialize_id_func. Only the default
+        # id_func can be restored; anything else cannot be resolved back to
+        # a callable object.
+        name = v.get("id_func_name")
+        if name == default_id_func.__name__:
+            return default_id_func
+        raise ValueError(
+            f"Cannot restore id_func {name!r} from its serialized form: only the"
+            " default id_func round-trips. Pass a callable id_func when"
+            " constructing the parser instead."
+        )
+    if not callable(v):
+        raise ValueError("id_func must be callable")
     return v
 
 
