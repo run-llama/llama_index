@@ -91,7 +91,7 @@ class SimpleWebPageReader(BasePydanticReader):
 
             metadata: Dict = {"url": url}
             if self._metadata_fn is not None:
-                metadata = self._metadata_fn(url)
+                metadata = dict(self._metadata_fn(url))
                 if "url" not in metadata:
                     metadata["url"] = url
 
