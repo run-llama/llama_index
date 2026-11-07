@@ -117,9 +117,19 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         if self._async_session_factory is not None and self._async_engine is not None:
             return self._async_engine, self._async_session_factory
         elif self.async_database_uri or self._async_engine:
-            self._async_engine = self._async_engine or create_async_engine(
-                self.async_database_uri
-            )
+            if self._async_engine is None:
+                engine_kwargs: Dict[str, Any] = {}
+                if self._is_in_memory_uri(self.async_database_uri):
+                    # All sessions share the single in-memory connection
+                    # (StaticPool). The default rollback at session return
+                    # would discard inserts that other sessions have executed
+                    # but not committed yet, silently dropping messages under
+                    # concurrency. Every store method commits explicitly, so
+                    # commit on return instead.
+                    engine_kwargs["pool_reset_on_return"] = "commit"
+                self._async_engine = create_async_engine(
+                    self.async_database_uri, **engine_kwargs
+                )
             if self.async_database_uri is None:
                 self.async_database_uri = self._async_engine.url
 

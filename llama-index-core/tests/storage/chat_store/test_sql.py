@@ -285,3 +285,27 @@ async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
     messages = await loaded_store.get_messages("dump_user2")
     assert len(messages) == 1
     assert messages[0].content == "message2"
+
+
+@pytest.mark.asyncio
+async def test_concurrent_add_messages_in_memory(chat_store: SQLAlchemyChatStore):
+    """Concurrent writes to the default in-memory store must not drop messages.
+
+    All sessions share the single StaticPool connection, so the pool-level
+    reset on session return must not roll back inserts other sessions have
+    executed but not committed yet.
+    """
+    import asyncio
+
+    # Create the table before fanning out.
+    await chat_store.add_message("key", ChatMessage(role="user", content="seed"))
+
+    await asyncio.gather(
+        *[
+            chat_store.add_message("key", ChatMessage(role="user", content=f"m{i}"))
+            for i in range(8)
+        ]
+    )
+
+    messages = await chat_store.get_messages("key")
+    assert [m.content for m in messages] == ["seed"] + [f"m{i}" for i in range(8)]
