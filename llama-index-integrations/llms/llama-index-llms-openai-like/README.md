@@ -27,10 +27,10 @@ llm = OpenAILike(
 ## Foundry Local
 
 Use Python 3.11-3.14 and install `llama-index-llms-openai-like` with
-Foundry Local 2.2.1 on Windows, macOS, or Linux:
+Foundry Local 2.3.1 on Windows, macOS, or Linux:
 
 ```bash
-pip install llama-index-llms-openai-like foundry-local-sdk==2.2.1
+pip install llama-index-llms-openai-like foundry-local-sdk==2.3.1
 ```
 
 The unified `foundry-local-sdk` package includes Windows support; the separate
@@ -65,6 +65,6 @@ llm = OpenAILike(
 Foundry Local itself is SDK-first and does not need to run as a web server unless
 you are connecting it to an OpenAI-compatible HTTP client like `OpenAILike`. This
 example uses the optional local `/v1` endpoint only for that compatibility layer.
-Foundry Local 2.2.1 uses typed sessions for native in-process inference, but its
+Foundry Local 2.3.1 uses typed sessions for native in-process inference, but its
 OpenAI-compatible HTTP API remains available. `OpenAILike` uses the
 chat-completions surface, not the native Session API or the Responses API.
