@@ -71,3 +71,31 @@ def test_from_args_multimodal__overrides_chat_templates() -> None:
 def test_from_args_default__not_multimodal() -> None:
     engine = RetrieverQueryEngine.from_args(retriever=MagicMock(), llm=MockLLM())
     assert engine._response_synthesizer._multimodal is False
+
+
+def test_from_args_forwards_callback_manager_to_synthesizer(
+    patch_llm_predictor, patch_token_text_splitter
+) -> None:
+    """A callback_manager passed to from_args must reach the response synthesizer."""
+    from llama_index.core.callbacks import CallbackManager
+    from llama_index.core import VectorStoreIndex
+    from llama_index.core.embeddings import MockEmbedding
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.query_engine.retriever_query_engine import (
+        RetrieverQueryEngine,
+    )
+
+    documents = [Document(text="This is a test.")]
+    index = VectorStoreIndex.from_documents(
+        documents, embed_model=MockEmbedding(embed_dim=4)
+    )
+    callback_manager = CallbackManager([])
+
+    query_engine = RetrieverQueryEngine.from_args(
+        index.as_retriever(),
+        llm=MockLLM(),
+        callback_manager=callback_manager,
+    )
+
+    assert query_engine.callback_manager is callback_manager
+    assert query_engine._response_synthesizer.callback_manager is callback_manager
