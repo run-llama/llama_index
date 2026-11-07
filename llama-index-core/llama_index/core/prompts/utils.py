@@ -13,20 +13,51 @@ class SafeFormatter:
         self.format_dict = format_dict or {}
 
     def format(self, format_string: str) -> str:
-        return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
+        """Format like str.format: {{ and }} are escapes for literal braces."""
+        result: List[str] = []
+        i = 0
+        n = len(format_string)
+        while i < n:
+            ch = format_string[i]
+            if ch == "{":
+                if i + 1 < n and format_string[i + 1] == "{":
+                    result.append("{")
+                    i += 2
+                    continue
+                end = format_string.find("}", i + 1)
+                if end != -1 and "{" not in format_string[i + 1 : end]:
+                    key = format_string[i + 1 : end]
+                    value = self.format_dict.get(key)
+                    if value is None:
+                        result.append(format_string[i : end + 1])
+                    elif isinstance(value, bytes):
+                        result.append(
+                            resolve_binary(value, as_base64=True)
+                            .read()
+                            .decode("utf-8")
+                        )
+                    else:
+                        result.append(str(value))
+                    i = end + 1
+                    continue
+                result.append(ch)
+                i += 1
+            elif ch == "}":
+                if i + 1 < n and format_string[i + 1] == "}":
+                    result.append("}")
+                    i += 2
+                    continue
+                result.append(ch)
+                i += 1
+            else:
+                result.append(ch)
+                i += 1
+        return "".join(result)
 
     def parse(self, format_string: str) -> List[str]:
         return re.findall(
             r"\{([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\}", format_string
         )
-
-    def _replace_match(self, match: re.Match) -> str:
-        key = match.group(1)
-        value = self.format_dict.get(key, match.group(0))
-        if isinstance(value, bytes):
-            return resolve_binary(value, as_base64=True).read().decode("utf-8")
-
-        return str(value)
 
 
 def format_string(string_to_format: str, **kwargs: str) -> str:
