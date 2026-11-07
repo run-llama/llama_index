@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+import pytest
+
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -144,3 +146,88 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_upsert_relations_updates_properties_on_existing_triplet() -> None:
+    """Re-upserting an existing (source, label, target) updates properties (issue #23679)."""
+    g = SimplePropertyGraphStore()
+
+    for confidence in (0.1, 0.9):
+        g.upsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id="Alice",
+                    target_id="Bob",
+                    properties={"confidence": confidence},
+                )
+            ]
+        )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
+    assert triplets[0][0].name == "Alice"
+    assert triplets[0][2].name == "Bob"
+
+
+@pytest.mark.asyncio
+async def test_aupsert_relations_updates_properties_on_existing_triplet() -> None:
+    """Async re-upsert of an existing triplet updates properties too (issue #23679)."""
+    g = SimplePropertyGraphStore()
+
+    for confidence in (0.1, 0.9):
+        await g.aupsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id="Alice",
+                    target_id="Bob",
+                    properties={"confidence": confidence},
+                )
+            ]
+        )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
+
+
+def test_upsert_relations_retains_unrelated_relations_and_node_properties() -> None:
+    """Updating one relation leaves other relations and endpoint properties intact."""
+    g = SimplePropertyGraphStore()
+    g.upsert_nodes([EntityNode(name="Alice", properties={"age": 30})])
+
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id="Alice",
+                target_id="Bob",
+                properties={"confidence": 0.1},
+            ),
+            Relation(label="LIKES", source_id="Alice", target_id="Carol"),
+        ]
+    )
+
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id="Alice",
+                target_id="Bob",
+                properties={"confidence": 0.9},
+            ),
+        ]
+    )
+
+    # The updated relation is stored with its new properties, without duplicating.
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties == {"confidence": 0.9}
+
+    # Unrelated relations and endpoint node properties are untouched.
+    assert len(g.get_triplets(relation_names=["LIKES"])) == 1
+    alice_nodes = g.get(ids=["Alice"])
+    assert len(alice_nodes) == 1
+    assert alice_nodes[0].properties == {"age": 30}
