@@ -286,6 +286,9 @@ class Vllm(LLM):
     ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
+        # vLLM >= 0.26 removed best_of; an explicit best_of=None must not reach it.
+        if params.get("best_of") is None:
+            params.pop("best_of", None)
 
         from vllm import SamplingParams
 
