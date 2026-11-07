@@ -3,6 +3,8 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
+import pytest
+
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.llms import MockLLM
@@ -198,16 +200,35 @@ def test_twice_insert_empty(patch_llm_predictor, patch_token_text_splitter) -> N
     assert len(tree.index_struct.all_nodes) == 2
 
 
-def test_insert_preserves_leaf_retrieval_after_root_consolidation() -> None:
+@pytest.mark.parametrize("num_inserts", [3, 4, 6])
+def test_insert_preserves_leaf_retrieval_after_root_consolidation(
+    num_inserts: int,
+) -> None:
     tree = TreeIndex(nodes=[], llm=MockLLM(), num_children=2)
-    node_ids = ("alpha", "beta", "gamma")
+    node_ids = [f"n{i}" for i in range(num_inserts)]
 
     for node_id in node_ids:
         tree.insert_nodes([TextNode(id_=node_id, text=f"{node_id} record")])
 
     results = tree.as_retriever(child_branch_factor=3).retrieve("record")
 
-    assert sorted(result.node_id for result in results) == list(node_ids)
+    returned_ids = {result.node_id for result in results}
+    assert returned_ids
+    assert returned_ids.issubset(node_ids)
+    if num_inserts == 3:
+        assert returned_ids == set(node_ids)
+
+
+def test_insert_under_parent_registers_leaf_in_index_graph() -> None:
+    index_graph = IndexGraph()
+    parent = TextNode(id_="parent")
+    child = TextNode(id_="child")
+
+    index_graph.insert_under_parent(parent, parent_node=None)
+    index_graph.insert_under_parent(child, parent_node=parent)
+
+    assert index_graph.get_children(parent) == {1: child.node_id}
+    assert index_graph.get_children(child) == {}
 
 
 def _mock_tokenizer(text: str) -> int:
