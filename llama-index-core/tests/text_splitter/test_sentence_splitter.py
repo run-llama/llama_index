@@ -197,3 +197,23 @@ def test_no_overflow_with_chinese_text_and_metadata() -> None:
             f"Node {i} has {content_length} tokens, exceeds chunk_size of 512. "
             f"This indicates the overflow bug is not fixed."
         )
+
+
+def test_merge_overlap_prepend_and_trim_order() -> None:
+    """Verify _merge preserves exact overlap order and trims front overlap when needed."""
+    from llama_index.core.node_parser.text.sentence import _Split
+
+    splitter = SentenceSplitter(chunk_size=10, chunk_overlap=8)
+    splits = [
+        _Split(text="A ", is_sentence=True, token_size=2),
+        _Split(text="B ", is_sentence=True, token_size=2),
+        _Split(text="C ", is_sentence=True, token_size=2),
+        _Split(text="D ", is_sentence=True, token_size=2),
+        _Split(text="E ", is_sentence=True, token_size=2),
+        # Next split is 7 tokens, so overlap [B, C, D, E] (8 tokens) must trim
+        # from the front until cur_chunk_len + 7 <= 10 (leaving only E of len 2).
+        _Split(text="LONG_SENTENCE", is_sentence=True, token_size=7),
+    ]
+    chunks = splitter._merge(splits, chunk_size=10)
+    assert chunks == ["A B C D E", "E LONG_SENTENCE"]
+
