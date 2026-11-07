@@ -9,11 +9,20 @@ from llama_index.core.utils import resolve_binary
 class SafeFormatter:
     """Safe string formatter that does not raise KeyError if key is missing."""
 
+    # An escaped brace first, then a field. Matching them together keeps the
+    # alternation ordered: "{{" wins over the field branch when scanning left
+    # to right, so a doubled brace is never mistaken for a field delimiter.
+    _field_pattern = re.compile(r"\{\{|\}\}|\{([^{}]+)\}")
+
     def __init__(self, format_dict: Optional[Dict[str, str]] = None):
         self.format_dict = format_dict or {}
 
     def format(self, format_string: str) -> str:
-        return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
+        # "{{" and "}}" are escapes for literal braces, the same way str.format
+        # treats them. They have to be matched in the same pass as the fields,
+        # otherwise "{{'a': 1}}" would look like a field named "'a': 1" and stay
+        # doubled in prompts that write their JSON examples that way.
+        return self._field_pattern.sub(self._replace_match, format_string)
 
     def parse(self, format_string: str) -> List[str]:
         return re.findall(
@@ -21,8 +30,13 @@ class SafeFormatter:
         )
 
     def _replace_match(self, match: re.Match) -> str:
+        matched = match.group(0)
+        if match.group(1) is None:
+            # Only reached for "{{"/"}}", which collapse to a single brace.
+            return matched[0]
+
         key = match.group(1)
-        value = self.format_dict.get(key, match.group(0))
+        value = self.format_dict.get(key, matched)
         if isinstance(value, bytes):
             return resolve_binary(value, as_base64=True).read().decode("utf-8")
 
