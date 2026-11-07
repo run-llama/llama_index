@@ -24,6 +24,37 @@ def test__format_file_timestamp():
     assert _format_file_timestamp(0, include_time=True) == "1970-01-01T00:00:00Z"
 
 
+def test__format_file_timestamp_negative():
+    """Pre-1970 timestamps must not raise on platforms that reject them."""
+    import sys
+
+    if sys.platform == "win32":
+        # Windows rejects negative timestamps with OSError.
+        assert _format_file_timestamp(-86400) is None
+    else:
+        assert _format_file_timestamp(-86400) == "1969-12-31"
+
+
+def test_load_data_with_pre_1970_mtime(tmp_path: Path):
+    """A file with a negative mtime must not block the directory load."""
+    import os
+    import sys
+
+    file = tmp_path / "old.txt"
+    file.write_text("hello")
+    old = 1.0 - 2 * 365 * 24 * 3600  # ~two years before 1970
+    try:
+        os.utime(file, (old, old))
+    except (OSError, OverflowError, ValueError):
+        pytest.skip("platform rejects setting pre-1970 mtimes")
+
+    docs = SimpleDirectoryReader(str(tmp_path), required_exts=[".txt"]).load_data()
+    assert len(docs) == 1
+    assert docs[0].get_content() == "hello"
+    if sys.platform == "win32":
+        assert docs[0].metadata.get("last_modified_date") is None
+
+
 def test_default_file_metadata_func():
     meta = default_file_metadata_func(__file__)
     assert list(meta.keys()) == [

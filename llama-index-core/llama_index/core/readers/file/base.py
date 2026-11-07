@@ -138,7 +138,13 @@ def _format_file_timestamp(
     if isinstance(timestamp, datetime):
         timestamp_dt = timestamp.astimezone(timezone.utc)
     else:
-        timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        try:
+            timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        except (OSError, OverflowError, ValueError):
+            # Some values cannot be represented on a given platform, e.g.
+            # negative (pre-1970) timestamps raise OSError on Windows. Skip
+            # the metadata field instead of failing the whole file load.
+            return None
 
     if include_time:
         return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
