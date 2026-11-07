@@ -13,9 +13,28 @@ class SafeFormatter:
         self.format_dict = format_dict or {}
 
     def format(self, format_string: str) -> str:
+        # '{{' and '}}' are str.format-style escapes for literal braces. Only
+        # collapse '}}' while an earlier '{{' is still pending: a bare '}}' is
+        # also how ordinary nested JSON ends (e.g. '{"a": {}}'), and treating
+        # that as an escape would silently corrupt the example.
+        pending_escapes = 0
+
+        def replace_match(match: re.Match) -> str:
+            nonlocal pending_escapes
+            token = match.group(0)
+            if token == "{{":
+                pending_escapes += 1
+                return "{"
+            if token == "}}":
+                if pending_escapes:
+                    pending_escapes -= 1
+                    return "}"
+                return token
+            return self._replace_match(match)
+
         return re.sub(
             r"\{\{|\}\}|\{([^{}]+)\}",
-            self._replace_match,
+            replace_match,
             format_string,
         )
 
@@ -25,10 +44,6 @@ class SafeFormatter:
         )
 
     def _replace_match(self, match: re.Match) -> str:
-        if match.group(1) is None:
-            # '{{' and '}}' are str.format-style escapes for literal braces
-            return match.group(0)[0]
-
         key = match.group(1)
         value = self.format_dict.get(key, match.group(0))
         if isinstance(value, bytes):
