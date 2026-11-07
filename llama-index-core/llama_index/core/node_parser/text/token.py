@@ -1,7 +1,8 @@
 """Token splitter."""
 
+from collections import deque
 import logging
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -205,7 +206,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         """
         chunks: List[str] = []
 
-        cur_chunk: List[str] = []
+        cur_chunk: deque[Tuple[str, int]] = deque()
         cur_len = 0
         for split in splits:
             split_len = len(self._tokenizer(split))
@@ -219,11 +220,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             # we need to end the current chunk and start a new one
             if cur_len + split_len > chunk_size:
                 # end the previous chunk
-                chunk = (
-                    "".join(cur_chunk)
-                    if self.keep_whitespaces
-                    else "".join(cur_chunk).strip()
-                )
+                raw_chunk = "".join(s for s, _ in cur_chunk)
+                chunk = raw_chunk if self.keep_whitespaces else raw_chunk.strip()
                 if chunk:
                     chunks.append(chunk)
 
@@ -235,16 +233,15 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                     cur_len > self.chunk_overlap or cur_len + split_len > chunk_size
                 ):
                     # pop off the first element
-                    first_chunk = cur_chunk.pop(0)
-                    cur_len -= len(self._tokenizer(first_chunk))
+                    _, first_len = cur_chunk.popleft()
+                    cur_len -= first_len
 
-            cur_chunk.append(split)
+            cur_chunk.append((split, split_len))
             cur_len += split_len
 
         # handle the last chunk
-        chunk = (
-            "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
-        )
+        raw_chunk = "".join(s for s, _ in cur_chunk)
+        chunk = raw_chunk if self.keep_whitespaces else raw_chunk.strip()
         if chunk:
             chunks.append(chunk)
 
