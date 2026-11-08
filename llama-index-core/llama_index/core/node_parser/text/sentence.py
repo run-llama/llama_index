@@ -318,14 +318,17 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
         """
         Post-process chunks.
-        Remove whitespace only chunks and remove leading and trailing whitespace.
+        Remove whitespace-only chunks while preserving the exact text of the
+        remaining chunks. Stripping leading/trailing whitespace silently drops
+        separators at chunk boundaries, so `"".join(chunks)` no longer equals
+        the original text.
         """
         new_chunks = []
         for chunk in chunks:
             stripped_chunk = chunk.strip()
             if stripped_chunk == "":
                 continue
-            new_chunks.append(stripped_chunk)
+            new_chunks.append(chunk)
         return new_chunks
 
     def _token_size(self, text: str) -> int:

@@ -219,12 +219,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             # we need to end the current chunk and start a new one
             if cur_len + split_len > chunk_size:
                 # end the previous chunk
-                chunk = (
-                    "".join(cur_chunk)
-                    if self.keep_whitespaces
-                    else "".join(cur_chunk).strip()
-                )
-                if chunk:
+                chunk = "".join(cur_chunk)
+                if chunk.strip():
                     chunks.append(chunk)
 
                 # start a new chunk with overlap
@@ -242,10 +238,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             cur_len += split_len
 
         # handle the last chunk
-        chunk = (
-            "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
-        )
-        if chunk:
+        chunk = "".join(cur_chunk)
+        if chunk.strip():
             chunks.append(chunk)
 
         return chunks

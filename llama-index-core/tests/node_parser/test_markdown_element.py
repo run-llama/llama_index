@@ -2687,7 +2687,7 @@ def test_start_end_char_idx():
     assert len(nodes) == 3
     assert (
         test_document.text[nodes[0].start_char_idx : nodes[0].end_char_idx]
-        == "This is a test"
+        == " This is a test"
     )
     assert (
         test_document.text[nodes[1].start_char_idx : nodes[1].end_char_idx]
@@ -2744,7 +2744,7 @@ def test_extract_html_table():
     assert type(nodes[2]) is TextNode
     assert (
         test_document.text[nodes[2].start_char_idx : nodes[2].end_char_idx]
-        == """HTML table in one line"""
+        == " HTML table in one line"
     )
 
     table2 = (
