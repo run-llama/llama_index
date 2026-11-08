@@ -1038,3 +1038,65 @@ async def test_astream_chat_keeps_retries() -> None:
                 pass
 
     assert len(requests) == 4, f"expected 4 attempts, got {len(requests)}"
+
+
+# The OpenAI client retries 408 and 409 on its own (`_should_retry` in `_base_client`). The
+# non-streaming path now builds the client with `max_retries=0`, so those two codes have to be
+# retried by the decorator instead — otherwise they stop being retried at all.
+@pytest.mark.parametrize(
+    ("status", "error_type"),
+    [(408, openai.APIStatusError), (409, openai.ConflictError)],
+)
+def test_non_streaming_retries_408_and_409(status: int, error_type: type) -> None:
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            status,
+            json={"error": {"message": "retry me", "type": "server_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=2,
+            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(error_type):
+            llm.chat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 2, f"{status}: expected 2 attempts, got {len(requests)}"
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize(
+    ("status", "error_type"),
+    [(408, openai.APIStatusError), (409, openai.ConflictError)],
+)
+async def test_async_non_streaming_retries_408_and_409(
+    status: int, error_type: type
+) -> None:
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            status,
+            json={"error": {"message": "retry me", "type": "server_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=2,
+            async_http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(error_type):
+            await llm.achat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 2, f"{status}: expected 2 attempts, got {len(requests)}"
