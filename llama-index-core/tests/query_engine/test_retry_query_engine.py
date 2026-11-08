@@ -124,3 +124,40 @@ def test_retry_query_engine_preserves_callback_manager() -> None:
 
     retry_engine._query(QueryBundle("hello"))
     assert handler.trace_starts == 1
+
+
+def test_retry_source_query_engine_preserves_callback_manager(monkeypatch: Any) -> None:
+    """Verify RetrySourceQueryEngine forwards callback_manager to recursive retry instances."""
+    from llama_index.core import Settings
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.query_engine.retry_source_query_engine import (
+        RetrySourceQueryEngine,
+    )
+    from llama_index.core.schema import NodeWithScore, TextNode
+
+    monkeypatch.setattr(Settings, "_llm", MockLLM())
+
+    class _SourceEngine(_DummyQueryEngine):
+        def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+            return Response(
+                response="answer",
+                source_nodes=[NodeWithScore(node=TextNode(text="ctx"), score=1.0)],
+            )
+
+    handler = _RecordingCallbackHandler()
+    cb_manager = CallbackManager([handler])
+    evaluator = MagicMock()
+    evaluator.evaluate_response.return_value = EvaluationResult(
+        query="q", response="r", passing=False, feedback="retry"
+    )
+    evaluator.evaluate.return_value = EvaluationResult(passing=True)
+
+    retry_engine = RetrySourceQueryEngine(
+        query_engine=_SourceEngine(),
+        evaluator=evaluator,
+        llm=MockLLM(),
+        max_retries=1,
+        callback_manager=cb_manager,
+    )
+    retry_engine._query(QueryBundle("initial"))
+    assert handler.trace_starts == 1
