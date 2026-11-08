@@ -43,16 +43,13 @@ class RssReader(BasePydanticReader):
         """
         import feedparser
 
-        if self.user_agent:
-            feedparser.USER_AGENT = self.user_agent
-
         if not isinstance(urls, list):
             raise ValueError("urls must be a list of strings.")
 
         documents = []
 
         for url in urls:
-            parsed = feedparser.parse(url)
+            parsed = feedparser.parse(url, agent=self.user_agent)
             for entry in parsed.entries:
                 doc_id = getattr(entry, "id", None) or getattr(entry, "link", None)
                 data = entry.get("content", [{}])[0].get(
