@@ -64,7 +64,10 @@ class RetryQueryEngine(BaseQueryEngine):
         else:
             logger.debug("Evaluation returned False.")
             new_query_engine = RetryQueryEngine(
-                self._query_engine, self._evaluator, self.max_retries - 1
+                self._query_engine,
+                self._evaluator,
+                self.max_retries - 1,
+                callback_manager=self.callback_manager,
             )
             query_transformer = FeedbackQueryTransformation()
             new_query = query_transformer.run(query_bundle, {"evaluation": eval})
@@ -136,6 +139,7 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
                 self.resynthesize_query,
                 self.max_retries - 1,
                 self.callback_manager,
+                query_transformer=self.query_transformer,
             )
             new_query = self.query_transformer.run(query_bundle, {"evaluation": eval})
             logger.debug("New query: %s", new_query.query_str)
