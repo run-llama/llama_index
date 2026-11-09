@@ -1395,13 +1395,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             # Handle MetadataFilter with operators
             if not subfilter.operator or subfilter.operator == FilterOperator.EQ:
-                if isinstance(subfilter.value, float):
+                if isinstance(subfilter.value, (int, float)) and not isinstance(
+                    subfilter.value, bool
+                ):
+                    # Coerce int/float to a numeric range so EQ is type-agnostic:
+                    # int 42 matches stored float 42.0 (and vice versa).
+                    # https://github.com/run-llama/llama_index/issues/23440
                     conditions.append(
                         FieldCondition(
                             key=subfilter.key,
                             range=Range(
-                                gte=subfilter.value,
-                                lte=subfilter.value,
+                                gte=float(subfilter.value),
+                                lte=float(subfilter.value),
                             ),
                         )
                     )
@@ -1451,12 +1456,27 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     )
                 )
             elif subfilter.operator == FilterOperator.NE:
-                conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchExcept(**{"except": [subfilter.value]}),
+                if isinstance(subfilter.value, (int, float)) and not isinstance(
+                    subfilter.value, bool
+                ):
+                    # Exclude both the int and float forms so NE is type-agnostic:
+                    # NE int 42 excludes stored float 42.0 (and vice versa).
+                    # https://github.com/run-llama/llama_index/issues/23440
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchExcept(
+                                **{"except": [subfilter.value, float(subfilter.value)]}
+                            ),
+                        )
                     )
-                )
+                else:
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchExcept(**{"except": [subfilter.value]}),
+                        )
+                    )
             elif subfilter.operator == FilterOperator.IN:
                 # match any of the values
                 # https://qdrant.tech/documentation/concepts/filtering/#match-any

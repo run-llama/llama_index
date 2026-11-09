@@ -217,7 +217,10 @@ def test_filter_conditions():
     assert filter_and_not.must[1].must_not is not None
     assert len(filter_and_not.must[1].must_not) == 1
     assert filter_and_not.must[1].must_not[0].key == "price"
-    assert filter_and_not.must[1].must_not[0].match.value == 50
+    # EQ int is normalized to a numeric range so it is float-tolerant
+    # (matches stored float 42.0 / 50.0). See issue #23440.
+    assert filter_and_not.must[1].must_not[0].range.gte == 50.0
+    assert filter_and_not.must[1].must_not[0].range.lte == 50.0
 
 
 def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
