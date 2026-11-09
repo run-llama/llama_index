@@ -184,7 +184,11 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         return TextNode(id_=str(hash(str(obj))), text=str(obj))
 
     def _from_node(self, node: BaseNode) -> Any:
-        return self._objs[hash(node.get_content(metadata_mode=MetadataMode.NONE))]
+        try:
+            # Python string hashes can change between persistence and retrieval.
+            return self._objs[int(node.node_id)]
+        except (ValueError, KeyError):
+            return self._objs[hash(node.get_content(metadata_mode=MetadataMode.NONE))]
 
     def persist(
         self,
