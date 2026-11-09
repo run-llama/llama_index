@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [0.6.0] - 2026-11-09
+## [0.7.0] - 2026-11-09
 
 - Add `lazy_load_data` generator support and `extra_info` metadata propagation to `load_data`.
 - Add support for loading transcripts by `transcript_id` using `assemblyai.Transcript.get_by_id`.
