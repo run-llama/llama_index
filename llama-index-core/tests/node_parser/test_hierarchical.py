@@ -67,3 +67,20 @@ def test_get_deeper_nodes_with_no_root_nodes(nodes: list) -> None:
 def test_get_deeper_nodes_with_negative_depth(nodes: list) -> None:
     with pytest.raises(ValueError, match="Depth cannot be*"):
         get_deeper_nodes(nodes, -1)
+
+
+@pytest.mark.asyncio
+async def test_async_matches_sync(nodes: list) -> None:
+    node_parser = HierarchicalNodeParser.from_defaults(
+        chunk_sizes=[512, 128, 64],
+        chunk_overlap=10,
+    )
+    async_nodes = await node_parser.aget_nodes_from_documents([Document.example()])
+    acall_nodes = await node_parser.acall([Document.example()])
+
+    for result in (async_nodes, acall_nodes):
+        assert len(result) == len(nodes)
+        assert all(type(n).__name__ == "TextNode" for n in result)
+        assert len(get_root_nodes(result)) == ROOT_NODES_LEN
+        assert len(get_leaf_nodes(result)) == len(get_leaf_nodes(nodes))
+        assert [n.text for n in result] == [n.text for n in nodes]
