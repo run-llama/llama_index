@@ -2,7 +2,6 @@
 
 import pytest
 import base64
-import httpx
 from pathlib import Path
 from unittest.mock import mock_open, patch, MagicMock
 
@@ -23,6 +22,13 @@ EXP_IMAGE_URLS = [
 ]
 EXP_BASE64 = "SGVsbG8gV29ybGQ="  # "Hello World" in base64
 EXP_BINARY = b"Hello World"
+
+
+@pytest.fixture(autouse=True)
+def validate_image_urls_locally():
+    """Keep ImageDocument construction from validating test URLs over the network."""
+    with patch("llama_index.core.schema.is_image_url_pil", return_value=True):
+        yield
 
 
 @pytest.fixture()
@@ -57,10 +63,12 @@ def test_encode_image():
 
 def test_image_documents_to_base64_multiple_sources(tmp_path: Path):
     """Test converting multiple ImageDocuments with different source types."""
-    content = httpx.get(EXP_IMAGE_URLS[0]).content
-    expected_b64 = base64.b64encode(content).decode("utf-8")
+    from PIL import Image
+
     fl_path = tmp_path / "test_image.png"
-    fl_path.write_bytes(content)
+    Image.new("RGB", (1, 1)).save(fl_path)
+    content = fl_path.read_bytes()
+    expected_b64 = base64.b64encode(content).decode("utf-8")
     documents = [
         ImageDocument(image=expected_b64),
         ImageDocument(image_path=fl_path),
@@ -144,25 +152,38 @@ def test_infer_image_mimetype_from_file_path():
     assert infer_image_mimetype_from_file_path("") == "image/jpeg"
 
 
-def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
-    """Test setting base64 and mimetype fields for ImageDocument objects."""
-    content = httpx.get(EXP_IMAGE_URLS[0]).content
-    expected_b64 = base64.b64encode(content).decode("utf-8")
-    fl_path = tmp_path / "test_image.png"
-    fl_path.write_bytes(content)
-    image_docs = [
-        ImageDocument(image=expected_b64),
-        ImageDocument(image_path=fl_path.__str__()),
-    ]
+@pytest.mark.parametrize("image_format", ["PNG", "GIF", "WEBP", "JPEG"])
+@pytest.mark.parametrize("source", ["inline", "path", "metadata"])
+def test_set_base64_and_mimetype_for_image_docs(
+    tmp_path: Path, image_format: str, source: str
+) -> None:
+    """Preserve the format detected from real image content."""
+    from PIL import Image
 
-    with patch("requests.get") as mock_get:
-        mock_get.return_value.content = EXP_BINARY
-        # patch os.path.isfile
-        with patch("os.path.isfile", return_value=True):
-            with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-                results = set_base64_and_mimetype_for_image_docs(image_docs)
+    path = tmp_path / "image.bin"
+    Image.new("RGB", (1, 1)).save(path, format=image_format)
+    expected_b64 = base64.b64encode(path.read_bytes()).decode("utf-8")
+    if source == "inline":
+        document = ImageDocument(image=expected_b64)
+    elif source == "path":
+        document = ImageDocument(image_path=str(path))
+    else:
+        document = ImageDocument(metadata={"file_path": str(path)})
+    documents = [document]
 
-    assert len(results) == 2
-    assert results[0].image == expected_b64
-    assert results[0].image_mimetype == "image/jpeg"
-    assert results[1].image_mimetype == "image/jpeg"
+    results = set_base64_and_mimetype_for_image_docs(documents)
+
+    assert results is documents
+    assert results[0] is document
+    assert document.image == expected_b64
+    assert document.image_mimetype == f"image/{image_format.lower()}"
+
+
+def test_set_base64_and_mimetype_uses_default() -> None:
+    """Use the default when content detection fails and no path is available."""
+    document = ImageDocument(image=EXP_BASE64)
+
+    set_base64_and_mimetype_for_image_docs([document])
+
+    assert document.image == EXP_BASE64
+    assert document.image_mimetype == "image/jpeg"
