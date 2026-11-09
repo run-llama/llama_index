@@ -133,6 +133,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
         Args:
             - state (IssueState): State of the issues to retrieve. Default is IssueState.OPEN.
             - labelFilters: an optional list of filters to apply to the issue list based on labels.
+              All included labels must be present and all excluded labels must be absent.
 
         :return: list of documents
 
@@ -198,9 +199,11 @@ class GitHubRepositoryIssuesReader(BaseReader):
             filterType = labelFilter[1]
             # Only include issues with the label and value
             if filterType == self.FilterType.INCLUDE:
-                return label in labels
+                if label not in labels:
+                    return False
             elif filterType == self.FilterType.EXCLUDE:
-                return label not in labels
+                if label in labels:
+                    return False
 
         return True
 
