@@ -26,6 +26,7 @@ as the storage backend for `VectorStoreIndex`.
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
+- DXMT (`DXMTVectorStore`). [Installation/Quickstart](https://github.com/dxmt/dxmt#readme). [Python Client](https://github.com/dxmt/dxmt/tree/main/vectordb/clients/llama-index-vector-stores-dxmt)
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
@@ -1221,6 +1222,7 @@ documents = reader.load_data(
 - [Deeplake](/python/examples/vector_stores/deeplakeindexdemo)
 - [DocArray HNSW](/python/examples/vector_stores/docarrayhnswindexdemo)
 - [DocArray in-Memory](/python/examples/vector_stores/docarrayinmemoryindexdemo)
+- [DXMT](/python/examples/vector_stores/dxmtindexdemo)
 - [Espilla](/python/examples/vector_stores/epsillaindexdemo)
 - [Google AlloyDB for PostgreSQL](/python/examples/vector_stores/alloydbvectorstoredemo)
 - [Google Cloud SQL for PostgreSQL](/python/examples/vector_stores/cloudsqlpgvectorstoredemo)
