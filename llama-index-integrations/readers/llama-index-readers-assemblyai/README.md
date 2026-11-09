@@ -4,7 +4,7 @@
 pip install llama-index-readers-assemblyai
 ```
 
-The AssemblyAI Audio Transcript Loader allows to transcribe audio files with the [AssemblyAI API](https://www.assemblyai.com/) and loads the transcribed text into documents.
+The AssemblyAI Audio Transcript Loader transcribes audio files with the [AssemblyAI API](https://www.assemblyai.com/) (or loads existing transcripts by ID) and loads the transcribed text into LlamaIndex documents.
 
 To use it, you should have the `assemblyai` python package installed, and the environment variable `ASSEMBLYAI_API_KEY` set with your API key. Alternatively, the API key can also be passed as an argument.
 
@@ -16,7 +16,7 @@ More info about AssemblyAI:
 
 ## Usage
 
-The `AssemblyAIAudioTranscriptReader` needs at least the `file_path` argument. Audio files can be specified as an URL or a local file path.
+The `AssemblyAIAudioTranscriptReader` needs either a `file_path` or a `transcript_id`. Audio files can be specified as a URL or a local file path.
 
 ```python
 from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
@@ -31,7 +31,7 @@ docs = reader.load_data()
 
 Note: Calling `reader.load_data()` blocks until the transcription is finished.
 
-The transcribed text is available in the `text`:
+The transcribed text is available in `text`:
 
 ```python
 docs[0].text
@@ -50,6 +50,25 @@ docs[0].metadata
 # }
 ```
 
+### Loading an Existing Transcript by ID
+
+If you already transcribed audio (e.g., via background jobs or webhooks), you can load it directly by its ID without re-transcribing:
+
+```python
+reader = AssemblyAIAudioTranscriptReader(transcript_id="your-transcript-id")
+docs = reader.load_data()
+```
+
+### Lazy Loading and Extra Info
+
+The reader supports lazy loading and passing custom metadata via `extra_info`:
+
+```python
+# Lazy loading yields documents iteratively
+for doc in reader.lazy_load_data(extra_info={"source": "podcast_ep1"}):
+    print(doc.text, doc.metadata["source"])
+```
+
 ## Transcript Formats
 
 You can specify the `transcript_format` argument for different formats.
@@ -59,13 +78,18 @@ Depending on the format, one or more documents are returned. These are the diffe
 - `TEXT`: One document with the transcription text
 - `SENTENCES`: Multiple documents, splits the transcription by each sentence
 - `PARAGRAPHS`: Multiple documents, splits the transcription by each paragraph
+- `CHAPTERS`: Multiple documents, one per chapter with summary and chapter metadata (headline, gist, start, end)
+- `UTTERANCES`: Multiple documents, splits the transcription by each speaker utterance
 - `SUBTITLES_SRT`: One document with the transcript exported in SRT subtitles format
 - `SUBTITLES_VTT`: One document with the transcript exported in VTT subtitles format
 
 ```python
-from llama_index.readers.assemblyai import TranscriptFormat
+from llama_index.readers.assemblyai import (
+    AssemblyAIAudioTranscriptReader,
+    TranscriptFormat,
+)
 
-reader = AssemblyAIAudioTranscripReader(
+reader = AssemblyAIAudioTranscriptReader(
     file_path="./your_file.mp3",
     transcript_format=TranscriptFormat.SENTENCES,
 )
@@ -73,7 +97,7 @@ reader = AssemblyAIAudioTranscripReader(
 docs = reader.load_data()
 ```
 
-# Transcription Config
+## Transcription Config
 
 You can also specify the `config` argument to use different audio intelligence models.
 
@@ -81,19 +105,26 @@ Visit the [AssemblyAI API Documentation](https://www.assemblyai.com/docs) to get
 
 ```python
 import assemblyai as aai
+from llama_index.readers.assemblyai import (
+    AssemblyAIAudioTranscriptReader,
+    TranscriptFormat,
+)
 
 config = aai.TranscriptionConfig(
     speaker_labels=True, auto_chapters=True, entity_detection=True
 )
 
 reader = AssemblyAIAudioTranscriptReader(
-    file_path="./your_file.mp3", config=config
+    file_path="./your_file.mp3",
+    config=config,
+    transcript_format=TranscriptFormat.CHAPTERS,
 )
+docs = reader.load_data()
 ```
 
 ## Pass the API Key as argument
 
-Next to setting the API key as environment variable `ASSEMBLYAI_API_KEY`, it is also possible to pass it as argument.
+In addition to setting the API key as environment variable `ASSEMBLYAI_API_KEY`, it is also possible to pass it as argument.
 
 ```python
 reader = AssemblyAIAudioTranscriptReader(
