@@ -2,7 +2,7 @@ import json
 import logging
 import os
 
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Set, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -146,6 +146,16 @@ class BM25Retriever(BaseRetriever):
                     "Please adjust your filters or add more data."
                 )
 
+        # bm25s only zeroes out the scores of masked documents, so they are still
+        # returned once similarity_top_k exceeds the number of unmasked ones.
+        self._excluded_node_ids: Set[str] = {
+            corpus_item["node_id"]
+            for corpus_item, weight in zip(
+                self.corpus or [], self.corpus_weight_mask or []
+            )
+            if not weight and isinstance(corpus_item, dict) and "node_id" in corpus_item
+        }
+
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
@@ -250,11 +260,13 @@ class BM25Retriever(BaseRetriever):
         nodes: List[NodeWithScore] = []
         for idx, score in zip(indexes, scores):
             # idx can be an int or a dict of the node
-            if isinstance(idx, dict):
-                node = metadata_dict_to_node(idx)
-            else:
-                node_dict = self.corpus[int(idx)]
-                node = metadata_dict_to_node(node_dict)
-            nodes.append(NodeWithScore(node=node, score=float(score)))
+            node_dict = idx if isinstance(idx, dict) else self.corpus[int(idx)]
+            if self._excluded_node_ids and (
+                node_dict.get("node_id") in self._excluded_node_ids
+            ):
+                continue
+            nodes.append(
+                NodeWithScore(node=metadata_dict_to_node(node_dict), score=float(score))
+            )
 
         return nodes
