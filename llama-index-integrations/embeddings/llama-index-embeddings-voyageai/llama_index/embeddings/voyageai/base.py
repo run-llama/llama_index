@@ -82,6 +82,12 @@ class VoyageEmbedding(MultiModalEmbedding):
         voyage_api_key (Optional[str]): Voyage API key. Defaults to None.
             You can either specify the key here or store it as an environment variable.
 
+        max_retries (int): Retry setting forwarded to the VoyageAI SDK.
+            Defaults to 0 (no retries).
+
+        timeout (Optional[float]): Request timeout in seconds for both clients.
+            Defaults to None (the VoyageAI SDK default).
+
     """
 
     _client: voyageai.Client = PrivateAttr(None)
@@ -89,6 +95,8 @@ class VoyageEmbedding(MultiModalEmbedding):
     truncation: Optional[bool] = None
     output_dtype: Optional[str] = None
     output_dimension: Optional[int] = None
+    max_retries: int = 0
+    timeout: Optional[float] = None
 
     def __init__(
         self,
@@ -99,6 +107,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         output_dtype: Optional[str] = None,
         output_dimension: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        max_retries: int = 0,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ):
         if model_name in [
@@ -127,11 +137,17 @@ class VoyageEmbedding(MultiModalEmbedding):
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            max_retries=max_retries,
+            timeout=timeout,
             **kwargs,
         )
 
-        self._client = voyageai.Client(api_key=voyage_api_key)
-        self._aclient = voyageai.AsyncClient(api_key=voyage_api_key)
+        self._client = voyageai.Client(
+            api_key=voyage_api_key, max_retries=self.max_retries, timeout=self.timeout
+        )
+        self._aclient = voyageai.AsyncClient(
+            api_key=voyage_api_key, max_retries=self.max_retries, timeout=self.timeout
+        )
         self.truncation = truncation
         self.output_dtype = output_dtype
         self.output_dimension = output_dimension
