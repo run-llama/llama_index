@@ -76,3 +76,52 @@ async def test_async_oxylabs_reader(
 
     for doc in docs:
         assert doc.text == expected_output
+
+
+@pytest.mark.skipif(skip_if_py39_or_lower, reason="Pytest does not support Python 3.9")
+def test_sync_oxylabs_reader_warns_on_dropped_url():
+    """A url the API returns no result for should be reported, not dropped."""
+    reader = OxylabsWebReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+    )
+
+    ok = {
+        "results": [{"content": {"key1": "value1"}}],
+        "job": {"job_id": 42424242},
+    }
+    reader.api.get_response = MagicMock(side_effect=[ok, None])
+
+    with pytest.warns(UserWarning, match="https://bad.example"):
+        docs = reader.load_data(["https://good.example", "https://bad.example"])
+
+    assert len(docs) == 1
+
+
+@pytest.mark.skipif(skip_if_py39_or_lower, reason="Pytest does not support Python 3.9")
+@pytest.mark.asyncio
+async def test_async_oxylabs_reader_warns_on_dropped_url():
+    reader = OxylabsWebReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+    )
+
+    ok = {
+        "results": [{"content": {"key1": "value1"}}],
+        "job": {"job_id": 42424242},
+    }
+    reader.async_api.get_response = AsyncMock(side_effect=[ok, None])
+
+    with pytest.warns(UserWarning, match="https://bad.example"):
+        docs = await reader.aload_data(["https://good.example", "https://bad.example"])
+
+    assert len(docs) == 1
+
+
+@pytest.mark.skipif(skip_if_py39_or_lower, reason="Pytest does not support Python 3.9")
+def test_reader_is_marked_remote():
+    reader = OxylabsWebReader(
+        username="OXYLABS_USERNAME",
+        password="OXYLABS_PASSWORD",
+    )
+    assert reader.is_remote is True
