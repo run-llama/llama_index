@@ -136,6 +136,7 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
                 self.resynthesize_query,
                 self.max_retries - 1,
                 self.callback_manager,
+                query_transformer=self.query_transformer,
             )
             new_query = self.query_transformer.run(query_bundle, {"evaluation": eval})
             logger.debug("New query: %s", new_query.query_str)
