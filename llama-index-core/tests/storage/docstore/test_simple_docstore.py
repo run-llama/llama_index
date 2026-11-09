@@ -157,8 +157,9 @@ def test_docstore_delete_all_ref_doc_nodes() -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize("new_source", ["new", None])
+@pytest.mark.parametrize(("store_text", "allow_update"), [(True, True), (False, False)])
 async def test_docstore_reassign_node_source(
-    use_async: bool, new_source: str | None
+    use_async: bool, new_source: str | None, store_text: bool, allow_update: bool
 ) -> None:
     docstore = SimpleDocumentStore()
     node = TextNode(
@@ -167,9 +168,9 @@ async def test_docstore_reassign_node_source(
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="old")},
     )
     if use_async:
-        await docstore.async_add_documents([node])
+        await docstore.async_add_documents([node], store_text=store_text)
     else:
-        docstore.add_documents([node])
+        docstore.add_documents([node], store_text=store_text)
     updated = TextNode(
         id_="chunk",
         text="updated",
@@ -180,9 +181,9 @@ async def test_docstore_reassign_node_source(
         ),
     )
     if use_async:
-        await docstore.async_add_documents([updated])
+        await docstore.async_add_documents([updated], allow_update=allow_update)
     else:
-        docstore.add_documents([updated])
+        docstore.add_documents([updated], allow_update=allow_update)
 
     docstore.delete_ref_doc("old", raise_error=False)
 
@@ -275,9 +276,15 @@ async def test_docstore_update_with_same_source(use_async: bool) -> None:
     updated = original.model_copy(update={"text": "updated"})
     if use_async:
         await docstore.async_add_documents([original])
+        with pytest.raises(ValueError, match="Set allow_update to True"):
+            await docstore.async_add_documents([updated], allow_update=False)
+        assert docstore.get_node("chunk") == original
         await docstore.async_add_documents([updated])
     else:
         docstore.add_documents([original])
+        with pytest.raises(ValueError, match="Set allow_update to True"):
+            docstore.add_documents([updated], allow_update=False)
+        assert docstore.get_node("chunk") == original
         docstore.add_documents([updated])
 
     assert docstore.get_ref_doc_info("source").node_ids == ["chunk"]

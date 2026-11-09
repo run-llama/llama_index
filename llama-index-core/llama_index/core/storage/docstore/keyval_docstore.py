@@ -186,14 +186,13 @@ class KVDocumentStore(BaseDocumentStore):
                     f"node_id {node.node_id} already exists. "
                     "Set allow_update to True to overwrite."
                 )
-            if allow_update:
-                old_ref_doc_id = self._get_ref_doc_id(node.node_id)
-                if old_ref_doc_id and old_ref_doc_id != node.ref_doc_id:
-                    old_ref_doc_info = self.get_ref_doc_info(old_ref_doc_id)
-                    if old_ref_doc_info is not None:
-                        ref_doc_kv_pairs.setdefault(old_ref_doc_id, []).append(
-                            (old_ref_doc_id, old_ref_doc_info.to_dict())
-                        )
+            old_ref_doc_id = self._get_ref_doc_id(node.node_id)
+            if old_ref_doc_id and old_ref_doc_id != node.ref_doc_id:
+                old_ref_doc_info = self.get_ref_doc_info(old_ref_doc_id)
+                if old_ref_doc_info is not None:
+                    ref_doc_kv_pairs.setdefault(old_ref_doc_id, []).append(
+                        (old_ref_doc_id, old_ref_doc_info.to_dict())
+                    )
             ref_doc_info = None
             if node.source_node is not None:
                 ref_doc_info = (
@@ -299,14 +298,13 @@ class KVDocumentStore(BaseDocumentStore):
                     f"node_id {node.node_id} already exists. "
                     "Set allow_update to True to overwrite."
                 )
-            if allow_update:
-                old_ref_doc_id = await self._aget_ref_doc_id(node.node_id)
-                if old_ref_doc_id and old_ref_doc_id != node.ref_doc_id:
-                    old_ref_doc_info = await self.aget_ref_doc_info(old_ref_doc_id)
-                    if old_ref_doc_info is not None:
-                        ref_doc_kv_pairs.setdefault(old_ref_doc_id, []).append(
-                            (old_ref_doc_id, old_ref_doc_info.to_dict())
-                        )
+            old_ref_doc_id = await self._aget_ref_doc_id(node.node_id)
+            if old_ref_doc_id and old_ref_doc_id != node.ref_doc_id:
+                old_ref_doc_info = await self.aget_ref_doc_info(old_ref_doc_id)
+                if old_ref_doc_info is not None:
+                    ref_doc_kv_pairs.setdefault(old_ref_doc_id, []).append(
+                        (old_ref_doc_id, old_ref_doc_info.to_dict())
+                    )
             ref_doc_info = None
             if node.source_node is not None:
                 ref_doc_info = (
