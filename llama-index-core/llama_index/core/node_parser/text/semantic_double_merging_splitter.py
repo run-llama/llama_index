@@ -184,18 +184,36 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             id_func=id_func,
         )
 
-    def _similarity(self, text_a: str, text_b: str) -> float:
+    def _embed_missing(self, texts: List[str], cache: Dict[str, Any]) -> None:
+        """Embed, in as few batched calls as possible, the texts not yet cached."""
+        assert self.embed_model is not None
+        missing = [t for t in dict.fromkeys(texts) if t not in cache]
+        if missing:
+            cache.update(
+                zip(missing, self.embed_model.get_text_embedding_batch(missing))
+            )
+
+    def _similarity(
+        self,
+        text_a: str,
+        text_b: str,
+        cache: Optional[Dict[str, Any]] = None,
+    ) -> float:
+        # Chunking compares the same text against several neighbours, so the
+        # embedding (or spaCy doc) of each text is computed once and reused.
+        if cache is None:
+            cache = {}
         if self.embed_model is not None:
-            embeddings = self.embed_model.get_text_embedding_batch([text_a, text_b])
-            return self.embed_model.similarity(embeddings[0], embeddings[1])
+            self._embed_missing([text_a, text_b], cache)
+            return self.embed_model.similarity(cache[text_a], cache[text_b])
         if self.language_config.nlp is None:
             self.language_config.load_model()
-        assert self.language_config.nlp is not None
-        clean_a = self._clean_text_advanced(text_a)
-        clean_b = self._clean_text_advanced(text_b)
-        return self.language_config.nlp(clean_a).similarity(
-            self.language_config.nlp(clean_b)
-        )
+        nlp = self.language_config.nlp
+        assert nlp is not None
+        for text in (text_a, text_b):
+            if text not in cache:
+                cache[text] = nlp(self._clean_text_advanced(text))
+        return cache[text_a].similarity(cache[text_b])
 
     def _parse_nodes(
         self,
@@ -204,7 +222,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         **kwargs: Any,
     ) -> List[BaseNode]:
         """Parse document into nodes."""
-        if self.embed_model is None:
+        if self.embed_model is None and self.language_config.nlp is None:
             self.language_config.load_model()
         all_nodes: List[BaseNode] = []
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
@@ -231,8 +249,9 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             text = node.get_content()
             sentences = self.sentence_splitter(text)
             sentences = [s.strip() for s in sentences]
-            initial_chunks = self._create_initial_chunks(sentences)
-            chunks = self._merge_initial_chunks(initial_chunks)
+            similarity_cache: Dict[str, Any] = {}
+            initial_chunks = self._create_initial_chunks(sentences, similarity_cache)
+            chunks = self._merge_initial_chunks(initial_chunks, similarity_cache)
 
             split_nodes = build_nodes_from_splits(
                 chunks,
@@ -254,14 +273,22 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
         return all_nodes
 
-    def _create_initial_chunks(self, sentences: List[str]) -> List[str]:
+    def _create_initial_chunks(
+        self, sentences: List[str], cache: Optional[Dict[str, Any]] = None
+    ) -> List[str]:
+        if cache is None:
+            cache = {}
+        if self.embed_model is not None and len(sentences) > 1:
+            # every sentence is compared at least once below, so embed them all
+            # up front in batches instead of one API call per comparison
+            self._embed_missing(sentences, cache)
         initial_chunks: List[str] = []
         chunk = sentences[0]
         new = True
         for sentence in sentences[1:]:
             if new:
                 if (
-                    self._similarity(chunk, sentence) < self.initial_threshold
+                    self._similarity(chunk, sentence, cache) < self.initial_threshold
                     and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
                 ):
                     initial_chunks.append(chunk)
@@ -279,7 +306,8 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     continue
                 last_sentences = self.merging_separator.join(chunk_sentences[-2:])
             elif (
-                self._similarity(last_sentences, sentence) > self.appending_threshold
+                self._similarity(last_sentences, sentence, cache)
+                > self.appending_threshold
                 and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
             ):
                 chunk_sentences.append(sentence)
@@ -292,7 +320,11 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         initial_chunks.append(chunk)
         return initial_chunks
 
-    def _merge_initial_chunks(self, initial_chunks: List[str]) -> List[str]:
+    def _merge_initial_chunks(
+        self, initial_chunks: List[str], cache: Optional[Dict[str, Any]] = None
+    ) -> List[str]:
+        if cache is None:
+            cache = {}
         chunks: List[str] = []
         skip = 0
         current = initial_chunks[0]
@@ -304,13 +336,14 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 chunks.append(current)
                 current = initial_chunks[i]
             elif (
-                self._similarity(current, initial_chunks[i]) > self.merging_threshold
+                self._similarity(current, initial_chunks[i], cache)
+                > self.merging_threshold
                 and len(current) + len(initial_chunks[i]) + 1 <= self.max_chunk_size
             ):
                 current += self.merging_separator + initial_chunks[i]
             elif (
                 i <= len(initial_chunks) - 2
-                and self._similarity(current, initial_chunks[i + 1])
+                and self._similarity(current, initial_chunks[i + 1], cache)
                 > self.merging_threshold
                 and len(current)
                 + len(initial_chunks[i])
@@ -327,7 +360,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 skip = 1
             elif (
                 i < len(initial_chunks) - 2
-                and self._similarity(current, initial_chunks[i + 2])
+                and self._similarity(current, initial_chunks[i + 2], cache)
                 > self.merging_threshold
                 and self.merging_range == 2
                 and len(current)
