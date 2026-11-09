@@ -34,3 +34,13 @@ def test_default_parse_choice_select_answer_fn(answer):
     answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
     assert answer_nums == [2, 4]
     assert answer_relevances == [8, 6]
+
+
+def test_extract_numbers_given_response_returns_ints() -> None:
+    from llama_index.core.indices.utils import extract_numbers_given_response
+
+    result = extract_numbers_given_response("ANSWER: 2 and 15 (not 0)", n=3)
+    assert result == [2, 15, 0]
+    assert all(isinstance(x, int) for x in result)
+    assert extract_numbers_given_response("no digits here") is None
+

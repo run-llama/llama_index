@@ -147,7 +147,7 @@ class TreeIndexInserter:
             if numbers is None or len(numbers) == 0:
                 # NOTE: if we can't extract a number, then we just insert under parent
                 self._insert_under_parent_and_consolidate(node, parent_node)
-            elif int(numbers[0]) > len(cur_graph_node_list):
+            elif int(numbers[0]) < 1 or int(numbers[0]) > len(cur_graph_node_list):
                 # NOTE: if number is out of range, then we just insert under parent
                 self._insert_under_parent_and_consolidate(node, parent_node)
             else:
