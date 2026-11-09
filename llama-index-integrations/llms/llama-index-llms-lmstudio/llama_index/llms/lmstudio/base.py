@@ -104,7 +104,7 @@ class LMStudio(CustomLLM):
                 }
                 for message in messages
             ],
-            "options": self._model_kwargs,
+            **self._model_kwargs,
             "stream": False,
             **kwargs,
         }
@@ -237,7 +237,7 @@ class LMStudio(CustomLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
-            "num_ctx": self.context_window,
+            "max_tokens": self.num_output,
         }
         return {
             **base_kwargs,
