@@ -134,6 +134,11 @@ def _mock_decompose_query(prompt_args: Dict) -> str:
     return prompt_args["query_str"] + ":" + prompt_args["context_str"]
 
 
+def _mock_step_back_query(prompt_args: Dict) -> str:
+    """Mock step-back query transform."""
+    return f"step-back({prompt_args['query_str']})"
+
+
 def _mock_pandas(prompt_args: Dict) -> str:
     """Mock pandas prompt."""
     query_str = prompt_args["query_str"]
@@ -212,6 +217,8 @@ def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) ->
         response = _mock_sql_response_synthesis_v2(full_prompt_args)
     elif prompt_type == PromptType.DECOMPOSE:
         response = _mock_decompose_query(full_prompt_args)
+    elif prompt_type == PromptType.STEP_BACK:
+        response = _mock_step_back_query(full_prompt_args)
     elif prompt_type == PromptType.CHOICE_SELECT:
         response = _mock_choice_select(full_prompt_args)
     elif prompt_type == PromptType.CONVERSATION:
