@@ -13,6 +13,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+from llama_index.readers.google._token_file import write_token_file
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -130,8 +131,7 @@ class GoogleDocsReader(BasePydanticReader):
 
                 creds = flow.run_local_server(port=port)
             # Save the credentials for the next run
-            with open("token.json", "w") as token:
-                token.write(creds.to_json())
+            write_token_file("token.json", creds.to_json())
 
         return creds
 

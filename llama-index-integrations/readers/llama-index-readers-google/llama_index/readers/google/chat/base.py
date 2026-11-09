@@ -6,6 +6,7 @@ from typing import Any, List, Dict
 
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+from llama_index.readers.google._token_file import write_token_file
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +279,6 @@ class GoogleChatReader(BasePydanticReader):
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open("token.json", "w") as token:
-                token.write(creds.to_json())
+            write_token_file("token.json", creds.to_json())
 
         return creds
