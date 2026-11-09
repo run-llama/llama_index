@@ -49,7 +49,7 @@ class TokenCounter:
             if message.role:
                 tokens += self.get_string_tokens(message.role)
 
-            tokens += message.estimate_tokens()
+            tokens += message.estimate_tokens(tokenizer=self.tokenizer)
 
             additional_kwargs = {**message.additional_kwargs}
 
@@ -100,7 +100,7 @@ class TokenCounter:
             if message.role:
                 tokens += self.get_string_tokens(message.role)
 
-            tokens += await message.aestimate_tokens()
+            tokens += await message.aestimate_tokens(tokenizer=self.tokenizer)
 
             additional_kwargs = {**message.additional_kwargs}
 
