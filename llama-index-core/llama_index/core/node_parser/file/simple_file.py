@@ -76,6 +76,7 @@ class SimpleFileNodeParser(NodeParser):
             if ext is None and "file_path" in document.metadata:
                 # Extract extension from file_path
                 _, ext = os.path.splitext(document.metadata["file_path"])
+            if isinstance(ext, str):
                 ext = ext.lower()
 
             if ext and ext in FILE_NODE_PARSERS:
