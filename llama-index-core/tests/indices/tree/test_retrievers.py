@@ -79,8 +79,20 @@ def test_select_leaf_retriever_and_inserter_reject_zero_index(
     assert resp.source_nodes == []
 
     # Inserting when LLM returns "0" should fall back to inserting under parent rather than child[-1].
-    root_count_before = len(tree.index_struct.root_nodes)
+    graph = tree.index_struct
+    last_root_id = graph.root_nodes[max(graph.root_nodes)]
+
+    def descendants(node_id: str) -> set:
+        out = set()
+        for child_id in graph.node_id_to_children_ids.get(node_id, []):
+            out |= {child_id} | descendants(child_id)
+        return out
+
     tree.insert(Document(text="Inserted with zero response.", id_="zero_doc"))
-    assert len(tree.index_struct.root_nodes) >= root_count_before
-
-
+    new_ids = {
+        node_id
+        for node_id in graph.all_nodes.values()
+        if tree.docstore.get_node(node_id).ref_doc_id == "zero_doc"
+    }
+    assert new_ids
+    assert not new_ids & descendants(last_root_id)
