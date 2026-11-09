@@ -74,6 +74,8 @@ class RetrieverTool(AsyncBaseTool):
         return self._metadata
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        if not args and not kwargs:
+            raise ValueError("Cannot call query engine without inputs")
         query_str = ""
         if args is not None:
             query_str += ", ".join([str(arg) for arg in args]) + "\n"
@@ -81,9 +83,6 @@ class RetrieverTool(AsyncBaseTool):
             query_str += (
                 ", ".join([f"{k!s} is {v!s}" for k, v in kwargs.items()]) + "\n"
             )
-        if query_str == "":
-            raise ValueError("Cannot call query engine without inputs")
-
         docs = self._retriever.retrieve(query_str)
         docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         content = ""
@@ -99,6 +98,8 @@ class RetrieverTool(AsyncBaseTool):
         )
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        if not args and not kwargs:
+            raise ValueError("Cannot call query engine without inputs")
         query_str = ""
         if args is not None:
             query_str += ", ".join([str(arg) for arg in args]) + "\n"
@@ -106,8 +107,6 @@ class RetrieverTool(AsyncBaseTool):
             query_str += (
                 ", ".join([f"{k!s} is {v!s}" for k, v in kwargs.items()]) + "\n"
             )
-        if query_str == "":
-            raise ValueError("Cannot call query engine without inputs")
         docs = await self._retriever.aretrieve(query_str)
         content = ""
         docs = await self._async_apply_node_postprocessors(docs, QueryBundle(query_str))
