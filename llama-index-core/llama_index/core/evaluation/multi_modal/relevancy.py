@@ -157,6 +157,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         return EvaluationResult(
             query=query,
             response=response,
+            contexts=contexts,
             passing=passing,
             score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
@@ -194,7 +195,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
 
         blocks.append(TextBlock(text=fmt_prompt))
 
-        response_obj = self._multi_modal_llm.chat(
+        response_obj = await self._multi_modal_llm.achat(
             messages=[ChatMessage(role="user", blocks=blocks)],
         )
 
@@ -210,6 +211,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         return EvaluationResult(
             query=query,
             response=response,
+            contexts=contexts,
             passing=passing,
             score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
