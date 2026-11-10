@@ -227,6 +227,28 @@ class Vertex(FunctionCallingLLM):
             content = ""
         return content, tool_calls
 
+    def _extract_usage_metadata(self, response: Any) -> Dict[str, Any]:
+        """Extract token usage from a Vertex Gemini response usage_metadata.
+
+        Only Gemini models return usage_metadata; legacy text/chat-bison models
+        do not expose token counts, so an empty dict is returned for them.
+        """
+        if not self._is_gemini:
+            return {}
+        um = getattr(response, "usage_metadata", None)
+        if um is None:
+            return {}
+        usage: Dict[str, Any] = {}
+        if getattr(um, "prompt_token_count", None) is not None:
+            usage["prompt_tokens"] = um.prompt_token_count
+        if getattr(um, "candidates_token_count", None) is not None:
+            usage["completion_tokens"] = um.candidates_token_count
+        if getattr(um, "total_token_count", None) is not None:
+            usage["total_tokens"] = um.total_token_count
+        if getattr(um, "cached_content_token_count", None):
+            usage["cached_content_token_count"] = um.cached_content_token_count
+        return usage
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         merged_messages = (
@@ -266,12 +288,16 @@ class Vertex(FunctionCallingLLM):
         )
 
         content, tool_calls = self._get_content_and_tool_calls(generation)
+        additional_kwargs: Dict[str, Any] = {
+            "tool_calls": tool_calls,
+            **self._extract_usage_metadata(generation),
+        }
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=content,
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs=additional_kwargs,
             ),
             raw=generation.__dict__,
         )
@@ -411,11 +437,15 @@ class Vertex(FunctionCallingLLM):
             generation = await generation
 
         content, tool_calls = self._get_content_and_tool_calls(generation)
+        additional_kwargs: Dict[str, Any] = {
+            "tool_calls": tool_calls,
+            **self._extract_usage_metadata(generation),
+        }
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=content,
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs=additional_kwargs,
             ),
             raw=generation.__dict__,
         )
