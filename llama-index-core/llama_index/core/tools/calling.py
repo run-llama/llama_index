@@ -17,11 +17,28 @@ def _function_tool_accepts_kwargs(tool: FunctionTool, arguments: dict) -> bool:
     except (TypeError, ValueError):
         return True
 
+    injected_kwargs = {**tool._field_defaults, **tool.partial_params}
+    kwargs = {**injected_kwargs, **arguments}
     try:
-        signature.bind_partial(**arguments)
+        signature.bind(**kwargs)
     except TypeError:
         return False
-    return True
+
+    argument_missed_explicit_param = any(
+        (param := signature.parameters.get(name)) is None
+        or param.kind
+        in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.VAR_KEYWORD)
+        for name in arguments
+    )
+    if not argument_missed_explicit_param:
+        return True
+
+    single_arg = arguments[next(iter(arguments))]
+    try:
+        signature.bind(single_arg, **injected_kwargs)
+    except TypeError:
+        return True
+    return False
 
 
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
