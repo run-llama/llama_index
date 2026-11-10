@@ -6,4 +6,6 @@
 
 ## Import
 
-from llama_index.core.readers.minio import MinioReader, BotoMinioReader`
+```python
+from llama_index.readers.minio import MinioReader, BotoMinioReader
+```
