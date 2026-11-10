@@ -163,18 +163,9 @@ class PromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
-        # NOTE: this is a hack to get around deepcopy failing on output parser
-        output_parser = self.output_parser
-        self.output_parser = None
-
-        # get function and fixed kwargs, and add that to a copy
-        # of the current prompt object
-        prompt = deepcopy(self)
+        # Output parsers may contain state that cannot be deep-copied.
+        prompt = deepcopy(self, {id(self.output_parser): self.output_parser})
         prompt.kwargs.update(kwargs)
-
-        # NOTE: put the output parser back
-        prompt.output_parser = output_parser
-        self.output_parser = output_parser
         return prompt
 
     def format(
@@ -259,7 +250,8 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         return cls(message_templates=message_templates, **kwargs)  # type: ignore[arg-type]
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
-        prompt = deepcopy(self)
+        # Output parsers may contain state that cannot be deep-copied.
+        prompt = deepcopy(self, {id(self.output_parser): self.output_parser})
         prompt.kwargs.update(kwargs)
         return prompt
 
