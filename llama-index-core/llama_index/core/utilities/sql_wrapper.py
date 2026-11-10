@@ -211,6 +211,9 @@ class SQLDatabase:
         if len(content) <= length:
             return content
 
+        if length <= len(suffix):
+            return content[:length]
+
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
     def _add_schema_prefix(self, command: str) -> str:
