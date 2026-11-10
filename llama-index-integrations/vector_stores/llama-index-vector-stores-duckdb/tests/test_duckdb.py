@@ -554,3 +554,40 @@ class TestStore:
         exceptions = [result for result in results if isinstance(result, Exception)]
         assert len(exceptions) == 0
         assert len(results) == 6
+
+
+def test_numeric_metadata_filters_keep_stored_precision() -> None:
+    """Numeric filters must not round the stored metadata value.
+
+    Comparing the JSON metadata column with an int literal turned 9.4 into 9
+    (so ``price == 9`` matched it), and a float literal was cast to its own
+    scale, so ``price > 9.2`` dropped 9.24 and an unrelated 123.45 raised.
+    """
+    vector_store = DuckDBVectorStore(embed_dim=2)
+    vector_store.add(
+        [
+            TextNode(id_="b", text="b", embedding=[0.0, 1.0], metadata={"price": 9.24}),
+            TextNode(id_="c", text="c", embedding=[0.5, 0.5], metadata={"price": 9.4}),
+        ]
+    )
+
+    def ids(value, operator) -> List[str]:
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="price", value=value, operator=operator)]
+        )
+        return sorted(node.node_id for node in vector_store.get_nodes(filters=filters))
+
+    assert ids(9, FilterOperator.EQ) == []
+    assert ids(9, FilterOperator.GT) == ["b", "c"]
+    assert ids(9.2, FilterOperator.GT) == ["b", "c"]
+    assert ids(9.2, FilterOperator.EQ) == []
+    assert ids(9.4, FilterOperator.EQ) == ["c"]
+
+    vector_store.add(
+        [TextNode(id_="d", text="d", embedding=[1.0, 0.0], metadata={"price": 123.45})]
+    )
+
+    # A stored value that does not fit the literal's precision used to abort
+    # the whole query with ConversionException; nodes without the key stay out.
+    assert ids(5.0, FilterOperator.GT) == ["b", "c", "d"]
+    assert ids(9.24, FilterOperator.EQ) == ["b"]
