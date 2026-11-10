@@ -365,6 +365,61 @@ async def test_workflow_with_state():
 
 
 @pytest.mark.asyncio
+async def test_workflow_state_prompt_does_not_leak_into_memory():
+    """
+    The state is added to the LLM prompt only, never to the stored user message.
+
+    https://github.com/run-llama/llama_index/issues/23234
+    """
+    llm_inputs: List[List[ChatMessage]] = []
+
+    async def bump(ctx_val: Context) -> str:
+        state = await ctx_val.store.get("state")
+        state["counter"] += 1
+        await ctx_val.store.set("state", state)
+        return "bumped"
+
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        llm_inputs.append(messages)
+        if len(llm_inputs) == 1:
+            return ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="calling the tool",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(tool_id="1", tool_name="bump", tool_kwargs={})
+                    ]
+                },
+            )
+        return ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[bump],
+        llm=MockFunctionCallingLLM(response_generator=generator),
+    )
+    workflow = AgentWorkflow(agents=[agent], initial_state={"counter": 0})
+    memory = ChatMemoryBuffer.from_defaults()
+
+    await workflow.run(user_msg="hello", memory=memory)
+
+    # the message kept in memory is the one the user sent
+    stored_user_msgs = [m for m in memory.get() if m.role == MessageRole.USER]
+    assert [m.content for m in stored_user_msgs] == ["hello"]
+
+    # every LLM call sees the current state exactly once
+    assert len(llm_inputs) == 2
+    for call_index, messages in enumerate(llm_inputs):
+        user_msgs = [m for m in messages if m.role == MessageRole.USER]
+        assert len(user_msgs) == 1
+        content = user_msgs[0].content
+        assert content.count("Current state:") == 1
+        assert content.endswith("Current message:\nhello\n")
+        assert f"'counter': {call_index}" in content
+
+
+@pytest.mark.asyncio
 async def test_agent_with_hitl():
     """Test agent with hitl."""
 
