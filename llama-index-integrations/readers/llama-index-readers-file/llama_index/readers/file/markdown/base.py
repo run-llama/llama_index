@@ -69,15 +69,18 @@ class MarkdownReader(BaseReader):
                         header_match.group(1)
                     )  # number of '#' indicates level
                     current_header = header_match.group(2)  # the header text
-                    if headers.get(header_level):
-                        # Add previous section to the list before switching header
+                    if any(level >= header_level for level in headers):
+                        # A header at this level or above closes the current
+                        # section -- also when the closing level was never seen
+                        # before (e.g. "# A", "### C", "## B").
                         markdown_tups.append(
                             (
                                 self._separator.join(headers.values()),
                                 "\n".join(current_lines),
                             )
                         )
-                        # remove all headers with level greater than current header
+                        # drop this header and every deeper one: they are not
+                        # part of the next section
                         headers = {k: v for k, v in headers.items() if k < header_level}
                         current_lines.clear()
 
