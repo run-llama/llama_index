@@ -20,6 +20,8 @@ from llama_index.protocols.ag_ui.events import (
 from llama_index.protocols.ag_ui.utils import (
     AG_UI_PARTS_KEY,
     AG_UI_STATE_BLOCK_KEY,
+    AG_UI_SYSTEM_PROMPT_BLOCK_KEY,
+    AG_UI_SYSTEM_PROMPT_MESSAGE_KEY,
     llama_index_message_to_ag_ui_message,
     ag_ui_message_to_llama_index_message,
     timestamp,
@@ -198,7 +200,11 @@ class AGUIChatWorkflow(Workflow):
                         for tool_call in tool_calls
                     ]
 
-        ag_ui_messages = [llama_index_message_to_ag_ui_message(m) for m in chat_history]
+        ag_ui_messages = [
+            llama_index_message_to_ag_ui_message(m)
+            for m in chat_history
+            if not m.additional_kwargs.get(AG_UI_SYSTEM_PROMPT_MESSAGE_KEY)
+        ]
 
         ctx.write_event_to_stream(
             MessagesSnapshotWorkflowEvent(
@@ -238,9 +244,17 @@ class AGUIChatWorkflow(Workflow):
             if self.system_prompt:
                 if chat_history[0].role.value == "system":
                     chat_history[0].blocks.append(TextBlock(text=self.system_prompt))
+                    chat_history[0].additional_kwargs[AG_UI_SYSTEM_PROMPT_BLOCK_KEY] = (
+                        True
+                    )
                 else:
                     chat_history.insert(
-                        0, ChatMessage(role="system", content=self.system_prompt)
+                        0,
+                        ChatMessage(
+                            role="system",
+                            content=self.system_prompt,
+                            additional_kwargs={AG_UI_SYSTEM_PROMPT_MESSAGE_KEY: True},
+                        ),
                     )
 
             await ctx.store.set("chat_history", chat_history)
