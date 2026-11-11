@@ -36,7 +36,7 @@ license = "AGPL-3.0"
 dependencies = [
     "tokenizers>=0.19.1,<0.20",
     "llama-index-core>=0.14.3,<0.15",
-    "llama-index-llms-openai>=0.7.0,<0.8",
+    "llama-index-llms-openai>=0.7.0,<0.9",
     "llama-index-readers-upstage>=0.4.0,<0.5",
 ]
 

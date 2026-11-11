@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.14.3,<0.15",
-    "llama-index-llms-openai>=0.7.0,<0.8",
+    "llama-index-llms-openai>=0.7.0,<0.9",
 ]
 
 [tool.codespell]
