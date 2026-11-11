@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Union, Dict
 import json
+import re
 
 if TYPE_CHECKING:
     try:
@@ -181,6 +182,20 @@ def parse_partial_json(s: str) -> Dict:
 
     # Check if we have an incomplete key-value pair
     new_s = new_s.rstrip()
+    # A truncated literal (true / false / null) would leave the JSON unparseable;
+    # complete the fragment the same way strings and structures are repaired.
+    # The fragment may sit mid-object (e.g. '{"a": tru, "b": 1}'), so complete any
+    # whole-value occurrence that json.loads would otherwise reject.
+    literal_match = re.search(
+        r"(?<![\w])(true|false|null|nul|tru|fals|nu)(?![\w])", new_s
+    )
+    if literal_match:
+        prefixes = {"tru": "true", "fals": "false", "nu": "null", "nul": "null"}
+        fragment = literal_match.group(1)
+        completed = prefixes.get(fragment, fragment)
+        new_s = (
+            new_s[: literal_match.start()] + completed + new_s[literal_match.end() :]
+        )
     if new_s.endswith(":"):
         new_s += " null"  # Add a default value for incomplete value
     elif new_s.endswith(","):
