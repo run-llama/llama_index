@@ -252,9 +252,9 @@ def is_chatcomp_api_supported(model: str) -> bool:
 
 def is_json_schema_supported(model: str) -> bool:
     try:
-        from openai.resources.chat.completions import completions
+        from openai.lib import _parsing
 
-        if not hasattr(completions, "_type_to_response_format"):
+        if not hasattr(_parsing, "type_to_response_format_param"):
             return False
 
         return not model.startswith("o1-mini") and any(

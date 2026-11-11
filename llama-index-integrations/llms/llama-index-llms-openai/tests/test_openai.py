@@ -560,7 +560,7 @@ def test_prepare_schema_sanitizes_json_schema_name() -> None:
     }
 
     with patch(
-        "openai.resources.chat.completions.completions._type_to_response_format",
+        "openai.lib._parsing.type_to_response_format_param",
         return_value=response_format,
     ):
         llm_kwargs = llm._prepare_schema({}, DummyModel)
