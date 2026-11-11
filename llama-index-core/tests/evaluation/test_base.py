@@ -62,3 +62,40 @@ def test_evaluator_basic() -> None:
     )
 
     assert eval_result_0 == eval_result_1
+
+
+def test_guideline_evaluator_prompt_isolation_and_update() -> None:
+    from llama_index.core.evaluation.guideline import (
+        DEFAULT_EVAL_TEMPLATE,
+        EvaluationData,
+        GuidelineEvaluator,
+    )
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.prompts import PromptTemplate
+
+    assert DEFAULT_EVAL_TEMPLATE.output_parser is None
+
+    custom_template = PromptTemplate(
+        "Query: {query}\nResponse: {response}\nGuidelines: {guidelines}\n"
+    )
+    evaluator = GuidelineEvaluator(llm=MockLLM(), eval_template=custom_template)
+
+    # Initializing GuidelineEvaluator must not mutate DEFAULT_EVAL_TEMPLATE or caller template
+    assert DEFAULT_EVAL_TEMPLATE.output_parser is None
+    assert custom_template.output_parser is None
+    assert evaluator.get_prompts()["eval_template"].output_parser is not None
+
+    default_evaluator = GuidelineEvaluator(llm=MockLLM())
+    assert DEFAULT_EVAL_TEMPLATE.output_parser is None
+    assert default_evaluator.get_prompts()["eval_template"].output_parser is not None
+
+    # Updating eval_template without an output_parser should preserve the evaluator's output_parser
+    replacement_template = PromptTemplate(
+        "Updated Query: {query}\nResponse: {response}\nGuidelines: {guidelines}\n"
+    )
+    default_evaluator.update_prompts({"eval_template": replacement_template})
+    assert replacement_template.output_parser is None
+    updated_parser = default_evaluator.get_prompts()["eval_template"].output_parser
+    assert updated_parser is not None
+    assert updated_parser.output_cls is EvaluationData
+
