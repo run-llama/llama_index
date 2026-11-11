@@ -2177,7 +2177,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-nvidia"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-llms-openai-like" },
