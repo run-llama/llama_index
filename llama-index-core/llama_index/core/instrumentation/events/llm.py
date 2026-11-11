@@ -74,10 +74,12 @@ class LLMStructuredPredictEndEvent(BaseEvent):
 
     Args:
         output (BaseModel): Predicted output class.
+        additional_kwargs (Optional[dict]): Additional metadata like token usage.
 
     """
 
     output: SerializeAsAny[Any]
+    additional_kwargs: Optional[dict] = None
 
     @classmethod
     def class_name(cls) -> str:
@@ -91,10 +93,12 @@ class LLMStructuredPredictInProgressEvent(BaseEvent):
 
     Args:
         output (BaseModel): Predicted output class.
+        additional_kwargs (Optional[dict]): Additional metadata like token usage.
 
     """
 
     output: SerializeAsAny[Any]
+    additional_kwargs: Optional[dict] = None
 
     @classmethod
     def class_name(cls) -> str:
