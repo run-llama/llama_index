@@ -3,7 +3,11 @@ from typing import Any, AsyncGenerator, Generator
 from unittest.mock import patch
 
 from llama_index.core import PromptHelper
-from llama_index.core.base.response.schema import PydanticResponse
+from llama_index.core.base.response.schema import (
+    AsyncStreamingResponse,
+    PydanticResponse,
+    StreamingResponse,
+)
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.indices.prompt_helper import ChatPromptHelper
 from llama_index.core.llms.mock import MockLLM, MockLLMWithChatMemoryOfLastCall
@@ -49,6 +53,33 @@ class StructuredOutputFakeLLM(MockLLM):
     ) -> AsyncGenerator[Any, None]:
         async def gen() -> AsyncGenerator[Any, None]:
             yield Foo(name="bob", age=3)
+
+        return gen()
+
+
+class WithAnswer(BaseModel):
+    """Structured output class that exposes an `answer` field."""
+
+    answer: str
+
+
+class WithAnswerFakeLLM(StructuredOutputFakeLLM):
+    """Streams WithAnswer while the non-streaming methods still return Foo.
+
+    Falling back to non-streaming structured synthesis yields a PydanticResponse
+    wrapping Foo, whereas the expected streaming path yields "hi there".
+    """
+
+    def stream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> Generator[Any, None, None]:
+        yield WithAnswer(answer="hi there")
+
+    async def astream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
+        async def gen() -> AsyncGenerator[Any, None]:
+            yield WithAnswer(answer="hi there")
 
         return gen()
 
@@ -323,6 +354,29 @@ class TestCompactAndRefine:
         response = await synthesizer.asynthesize(query="test", nodes=nodes)
         assert isinstance(response, PydanticResponse)
         assert response.response == Foo(name="bob", age=3)
+
+    def test_synthesize__streaming_output_cls_with_answer_field_still_streams(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        """An output_cls exposing `answer` must keep its streaming contract."""
+        synthesizer = CompactAndRefine(
+            llm=WithAnswerFakeLLM(), output_cls=WithAnswer, streaming=True
+        )
+        response = synthesizer.synthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, StreamingResponse)
+        assert "".join(response.response_gen) == "hi there"
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_output_cls_with_answer_field_still_streams(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        synthesizer = CompactAndRefine(
+            llm=WithAnswerFakeLLM(), output_cls=WithAnswer, streaming=True
+        )
+        response = await synthesizer.asynthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, AsyncStreamingResponse)
+        chunks = [chunk async for chunk in response.async_response_gen()]
+        assert "".join(chunks) == "hi there"
 
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal(
