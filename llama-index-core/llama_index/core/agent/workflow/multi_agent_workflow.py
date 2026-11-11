@@ -305,8 +305,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
             await ctx.store.set("early_stopping_method", early_stopping_method)
 
-        # Reset the number of iterations
+        # Reset per-run bookkeeping, including tool results left by a failed run.
         await ctx.store.set("num_iterations", 0)
+        await ctx.store.set("current_tool_calls", [])
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)

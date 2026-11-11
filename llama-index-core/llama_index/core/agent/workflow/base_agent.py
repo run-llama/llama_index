@@ -292,7 +292,7 @@ class BaseWorkflowAgent(
         return self._ensure_tools_are_async(cast(List[BaseTool], tools))
 
     async def _init_context(self, ctx: Context, ev: AgentWorkflowStartEvent) -> None:
-        """Initialize the context once, if needed."""
+        """Initialize persistent context and reset per-run bookkeeping."""
         if not await ctx.store.get("memory", default=None):
             default_memory = ev.get("memory", default=None)
             default_memory = default_memory or ChatMemoryBuffer.from_defaults(
@@ -315,8 +315,9 @@ class BaseWorkflowAgent(
             )
             await ctx.store.set("early_stopping_method", early_stopping_method)
 
-        # Reset the number of iterations
+        # Reset per-run bookkeeping, including tool results left by a failed run.
         await ctx.store.set("num_iterations", 0)
+        await ctx.store.set("current_tool_calls", [])
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
