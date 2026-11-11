@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -11,9 +12,43 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
-from rank_llm.rerank.rankllm import PromptMode
-from rank_llm.rerank.reranker import Reranker
-from rank_llm.data import Request, Query, Candidate
+try:
+    from rank_llm.rerank.rankllm import PromptMode
+except ImportError:
+    # Importing rank_llm.rerank eagerly pulls in optional backend
+    # dependencies (for example vllm, which has no wheels on some
+    # platforms such as macOS) even for backends that do not use them.
+    # Fall back to a local enum with the same members so this module,
+    # and RankLLMRerank itself, can still be imported. The real
+    # PromptMode is imported lazily in _postprocess_nodes, where a
+    # missing rank_llm dependency is reported with a clear error.
+    class PromptMode(str, Enum):  # type: ignore[no-redef]
+        UNSPECIFIED = "unspecified"
+        RANK_GPT = "rank_GPT"
+        RANK_GPT_APEER = "rank_GPT_APEER"
+        LRL = "LRL"
+        MONOT5 = "monot5"
+        DUOT5 = "duot5"
+        LiT5 = "LiT5"
+
+        def __str__(self) -> str:
+            return self.value
+
+
+def _import_rank_llm() -> Any:
+    """Import rank_llm lazily, with a clear error if it cannot load."""
+    try:
+        from rank_llm.data import Candidate, Query, Request
+        from rank_llm.rerank.rankllm import PromptMode as RankLLMPromptMode
+        from rank_llm.rerank.reranker import Reranker
+    except ImportError as e:
+        raise ImportError(
+            "RankLLMRerank could not import rank_llm. rank_llm and the "
+            "dependencies of the selected reranking backend must be "
+            "installed to rerank nodes (for example, vllm is required "
+            "only for vLLM-backed models). Original error: " + str(e)
+        ) from e
+    return Candidate, Query, Request, RankLLMPromptMode, Reranker
 
 
 class RankLLMRerank(BaseNodePostprocessor):
@@ -93,11 +128,21 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
+        Candidate, Query, Request, RankLLMPromptMode, Reranker = _import_rank_llm()
+
+        prompt_mode = self.prompt_mode
+        if not isinstance(prompt_mode, RankLLMPromptMode):
+            # prompt_mode was validated against the fallback PromptMode
+            # defined above because rank_llm could not be imported when
+            # this module was loaded. Convert it to the real enum by
+            # member name, which is stable across both enums.
+            prompt_mode = RankLLMPromptMode[prompt_mode.name]
+
         kwargs = {
             "model_path": self.model,
             "default_model_coordinator": None,
             "context_size": self.context_size,
-            "prompt_mode": self.prompt_mode,
+            "prompt_mode": prompt_mode,
             "num_gpus": self.num_gpus,
             "use_logits": self.use_logits,
             "use_alpha": self.use_alpha,
