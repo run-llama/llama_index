@@ -59,33 +59,30 @@ class FeedbackQueryTransformation(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         orig_query_str = query_bundle.query_str
-        if metadata.get("evaluation") and isinstance(
-            metadata.get("evaluation"), Evaluation
-        ):
-            self.evaluation = metadata.get("evaluation")
-        if self.evaluation is None or not isinstance(self.evaluation, Evaluation):
+        evaluation = metadata.get("evaluation")
+        if not isinstance(evaluation, Evaluation):
             raise ValueError("Evaluation is not set.")
-        if self.evaluation.response is None or self.evaluation.feedback is None:
+        if evaluation.response is None or evaluation.feedback is None:
             raise ValueError("Evaluation result must contain response and feedback.")
 
-        if self.evaluation.feedback == "YES" or self.evaluation.feedback == "NO":
+        if evaluation.feedback == "YES" or evaluation.feedback == "NO":
             new_query = (
                 orig_query_str
                 + "\n----------------\n"
-                + self._construct_feedback(response=self.evaluation.response)
+                + self._construct_feedback(response=evaluation.response)
             )
         else:
             if self.should_resynthesize_query:
                 new_query_str = self._resynthesize_query(
-                    orig_query_str, self.evaluation.response, self.evaluation.feedback
+                    orig_query_str, evaluation.response, evaluation.feedback
                 )
             else:
                 new_query_str = orig_query_str
             new_query = (
-                self._construct_feedback(response=self.evaluation.response)
+                self._construct_feedback(response=evaluation.response)
                 + "\n"
                 + "Here is some feedback from the evaluator about the response given.\n"
-                + self.evaluation.feedback
+                + evaluation.feedback
                 + "\n"
                 + "Now answer the question.\n"
                 + new_query_str
