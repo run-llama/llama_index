@@ -101,6 +101,8 @@ class Playground:
         """Set Playground's indices."""
         self._validate_indices(indices)
         self._indices = indices
+        index_range = [str(i) for i in range(len(indices))]
+        self.index_colors = get_color_mapping(index_range)
 
     def _validate_modes(self, retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE) -> None:
         """Validate a list of retriever_modes."""
@@ -141,7 +143,7 @@ class Playground:
         print(f"\033[1mQuery:\033[0m\n{query_text}\n")
         result = []
         for i, index in enumerate(self._indices):
-            for retriever_mode in self._retriever_modes[type(index)]:
+            for retriever_mode in self._retriever_modes.get(type(index), []):
                 start_time = time.time()
 
                 index_name = type(index).__name__
@@ -150,16 +152,24 @@ class Playground:
                     end="\n",
                 )
 
-                # insert token counter into service context
+                # insert token counter into callback manager
                 token_counter = TokenCountingHandler()
-                callback_manager = CallbackManager([token_counter])
+                callback_manager = index._callback_manager or CallbackManager([])
+                callback_manager.add_handler(token_counter)
+                index._callback_manager = callback_manager
 
                 try:
-                    query_engine = index.as_query_engine(retriever_mode=retriever_mode)
-                except ValueError:
-                    continue
+                    try:
+                        query_engine = index.as_query_engine(
+                            retriever_mode=retriever_mode
+                        )
+                    except ValueError:
+                        continue
 
-                output = query_engine.query(query_text)
+                    output = query_engine.query(query_text)
+                finally:
+                    if token_counter in callback_manager.handlers:
+                        callback_manager.remove_handler(token_counter)
                 print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
 
                 duration = time.time() - start_time
