@@ -154,7 +154,7 @@ class TextToCypherRetriever(BasePGRetriever):
             summarized_response = self.llm.predict(
                 self.summarization_template,
                 context=str(cleaned_query_output),
-                question=parsed_cypher_query,
+                question=question,
             )
             node_text = summarized_response
         else:
@@ -199,7 +199,7 @@ class TextToCypherRetriever(BasePGRetriever):
             summarized_response = await self.llm.apredict(
                 self.summarization_template,
                 context=str(cleaned_query_output),
-                question=parsed_cypher_query,
+                question=question,
             )
             node_text = summarized_response
         else:
