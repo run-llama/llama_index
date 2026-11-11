@@ -267,7 +267,9 @@ class VertexAISearchRetriever(BaseRetriever):
             note_with_score.append(
                 NodeWithScore(
                     node=TextNode(
-                        text=json.dumps(document_dict.get("struct_data", {}))
+                        text=json.dumps(document_dict.get("struct_data", {})),
+                        id_=document_dict.get("id", ""),
+                        metadata={"document_name": document_dict.get("name", "")},
                     ),
                     score=score,
                 )
