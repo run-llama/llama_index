@@ -3,8 +3,10 @@ import sys
 from enum import Enum
 from types import ModuleType
 
-from llama_index.core.postprocessor.types import BaseNodePostprocessor
+import pytest
 
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.schema import QueryBundle
 
 RANKLLM_RERANK_MODULES = [
     "llama_index.postprocessor.rankllm_rerank",
@@ -89,3 +91,46 @@ def test_import_with_prompt_mode_from_rankllm_module(monkeypatch):
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
     reranker = rankllm_rerank.RankLLMRerank(top_n=1, batch_size=1)
     assert reranker.prompt_mode == prompt_mode.RANK_GPT
+
+
+class _BrokenModule(ModuleType):
+    """
+    A module whose attributes raise ImportError when accessed.
+
+    Simulates importing rank_llm.rerank when an optional backend
+    dependency such as vllm is missing: the import chain fails with
+    ModuleNotFoundError, a subclass of ImportError.
+    """
+
+    def __getattr__(self, name):
+        raise ImportError("No module named 'vllm'")
+
+
+def _mock_broken_rankllm_modules(monkeypatch):
+    _mock_rankllm_modules(monkeypatch)
+
+    broken_rankllm_module = _BrokenModule("rank_llm.rerank.rankllm")
+    broken_reranker_module = _BrokenModule("rank_llm.rerank.reranker")
+    monkeypatch.setitem(sys.modules, "rank_llm.rerank.rankllm", broken_rankllm_module)
+    monkeypatch.setitem(sys.modules, "rank_llm.rerank.reranker", broken_reranker_module)
+
+
+def test_import_when_rankllm_rerank_import_fails(monkeypatch):
+    # Regression test for #23339: RankLLMRerank must be importable even
+    # when importing rank_llm.rerank fails, for example because vllm is
+    # not installed for a backend that does not use vLLM.
+    _mock_broken_rankllm_modules(monkeypatch)
+    _clear_rankllm_rerank_modules(monkeypatch)
+
+    rankllm_rerank = importlib.import_module("llama_index.postprocessor.rankllm_rerank")
+
+    names_of_base_classes = [b.__name__ for b in rankllm_rerank.RankLLMRerank.__mro__]
+    assert BaseNodePostprocessor.__name__ in names_of_base_classes
+
+    reranker = rankllm_rerank.RankLLMRerank(top_n=1, batch_size=1)
+    assert reranker.prompt_mode.name == "RANK_GPT"
+
+    # The missing dependency is only reported when reranking is
+    # actually attempted, and with a clear error.
+    with pytest.raises(ImportError, match="could not import rank_llm"):
+        reranker._postprocess_nodes([], QueryBundle(query_str="test"))
