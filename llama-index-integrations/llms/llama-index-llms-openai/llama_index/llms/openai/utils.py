@@ -392,6 +392,11 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
             "Please choose another model."
         )
     if modelname not in ALL_AVAILABLE_MODELS:
+        # Responses-API-only models (e.g. gpt-5.4-pro) are deliberately kept out
+        # of ALL_AVAILABLE_MODELS so the Chat Completions path rejects them, but
+        # OpenAIResponses.metadata still needs their context size.
+        if modelname in RESPONSES_API_ONLY_MODELS:
+            return RESPONSES_API_ONLY_MODELS[modelname]
         raise ValueError(
             f"Unknown model {modelname!r}. Please provide a valid OpenAI model name in:"
             f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
