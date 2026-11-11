@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
-DEFAULT_API_BASE = "https://api.studio.nebius.ai/v1"
+DEFAULT_API_BASE = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_NEBIUS_API_VERSION = ""
 
 
@@ -12,13 +12,12 @@ def resolve_nebius_credentials(
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
     """
-    "Resolve Nebius AI Studio credentials.
+    Resolve Nebius Token Factory credentials.
 
     The order of precedence is:
     1. param
     2. env
-    3. openai module
-    4. default
+    3. default
     """
     # resolve from param or env
     api_key = get_from_param_or_env("api_key", api_key, "NEBIUS_API_KEY", "")
