@@ -487,6 +487,11 @@ class BedrockEmbedding(BaseEmbedding):
             }
 
         """
+        if isinstance(payload, list) and len(payload) == 0:
+            raise ValueError(
+                "Bedrock embedding payload must contain at least one text."
+            )
+
         if provider == PROVIDERS.AMAZON:
             if isinstance(payload, list):
                 raise ValueError("Amazon provider does not support list of texts")
