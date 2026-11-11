@@ -16,6 +16,9 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 
+[manifest]
+overrides = [{ name = "transformers", specifier = ">=5.10.0" }]
+
 [[package]]
 name = "accelerate"
 version = "1.15.0"
@@ -4250,7 +4253,7 @@ wheels = [
 
 [[package]]
 name = "span-marker"
-version = "1.5.0"
+version = "1.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "accelerate" },
@@ -4259,14 +4262,15 @@ dependencies = [
     { name = "huggingface-hub" },
     { name = "jinja2" },
     { name = "packaging" },
+    { name = "scikit-learn" },
     { name = "seqeval" },
     { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/44/98804b09c96efa906df313150976891b4bf470a8a2e4bde633f1ab2f4ed0/span_marker-1.5.0.tar.gz", hash = "sha256:093a9184d2e6b025be70c7b3f2f816b24b865f384e27c317d9f8ffe3024c2438", size = 56024, upload-time = "2023-10-31T11:43:56.185Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/f4/7869f91a5eb3ddeeeea8b2cc67041073453b0c1233b3ff76d3cf0d866dc0/span_marker-1.8.1.tar.gz", hash = "sha256:334308e6cb9dc79ddaffd508e59a171bc118371746487af80ee42f98a229e288", size = 57567, upload-time = "2026-04-10T11:13:23.922Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/17/a2ee79690627fcf6bcec726d1824a2ef51e93204f34836a48a6aeb6be1c7/span_marker-1.5.0-py3-none-any.whl", hash = "sha256:37f33919557cea61b6702e2aefceef8bff9aefaeebaa2e98dfc7976437ce4d80", size = 50887, upload-time = "2023-10-31T11:43:54.03Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/ac/bc5fd1a51a6910b0ad98d8e437a567b5d51611a17271b0c3a7e0bceeac62/span_marker-1.8.1-py3-none-any.whl", hash = "sha256:68ec2f8fa3fa4afff9c0a6e7db5e619ed204d0107aede41d4e964cc6ed106927", size = 51202, upload-time = "2026-04-10T11:13:22.707Z" },
 ]
 
 [[package]]

@@ -65,6 +65,17 @@ exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
 
+[tool.uv]
+# Lock-only override. span-marker 1.6+ (latest 1.8.1) requires transformers<5,
+# and every transformers 4.x release is inside HIGH advisories that are only
+# patched in 5.x. span-marker 1.5.0, the last release without that cap, doesn't
+# import under transformers 5. With this override, the lock pairs span-marker
+# 1.8.1 with patched transformers. That imports, which is all the unit test
+# checks, but SpanMarker inference does NOT run on transformers 5: its custom
+# attention masks don't fit transformers 5's masking code. Installs from PyPI
+# ignore this setting and follow span-marker's own transformers<5 cap.
+override-dependencies = ["transformers>=5.10.0"]
+
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
