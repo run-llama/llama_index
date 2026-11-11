@@ -7,9 +7,9 @@ from typing import Dict, List, Optional, Union
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
-QUERY_URL_TMPL = (
-    "https://www.googleapis.com/customsearch/v1?key={key}&cx={engine}&q={query}"
-)
+DEFAULT_BASE_URL = "https://www.googleapis.com/customsearch/v1"
+
+QUERY_URL_TMPL = DEFAULT_BASE_URL + "?key={key}&cx={engine}&q={query}"
 
 
 class GoogleSearchToolSpec(BaseToolSpec):
@@ -17,15 +17,23 @@ class GoogleSearchToolSpec(BaseToolSpec):
 
     spec_functions = [("google_search", "agoogle_search")]
 
-    def __init__(self, key: str, engine: str, num: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        key: str,
+        engine: str,
+        num: Optional[int] = None,
+        base_url: Optional[str] = None,
+    ) -> None:
         """Initialize with parameters."""
         self.key = key
         self.engine = engine
         self.num = num
+        self.base_url = (base_url or DEFAULT_BASE_URL).rstrip("/")
 
     def _get_url(self, query: str) -> str:
-        url = QUERY_URL_TMPL.format(
-            key=self.key, engine=self.engine, query=urllib.parse.quote_plus(query)
+        url = (
+            f"{self.base_url}?key={self.key}&cx={self.engine}"
+            f"&q={urllib.parse.quote_plus(query)}"
         )
 
         if self.num is not None:
