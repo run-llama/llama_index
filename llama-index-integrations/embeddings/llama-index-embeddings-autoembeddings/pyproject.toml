@@ -67,6 +67,7 @@ python_version = "3.8"
 
 [tool.uv]
 override-dependencies = ["filelock>=4.2.1"]
+
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"

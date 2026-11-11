@@ -55,6 +55,7 @@ pythonpath = ["src"]
 
 [tool.uv]
 override-dependencies = ["filelock>=4.2.1", "certifi>=2026.10.18"]
+
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
