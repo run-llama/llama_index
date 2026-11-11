@@ -8,7 +8,7 @@ dev = [
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit>=4.0.0,<5",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest",
     "pytest-asyncio",
     "pytest-cov>=5.0",
