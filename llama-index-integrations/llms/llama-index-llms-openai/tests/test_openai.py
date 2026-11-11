@@ -570,6 +570,20 @@ def test_prepare_schema_sanitizes_json_schema_name() -> None:
     )
 
 
+def test_prepare_schema_builds_json_schema_response_format() -> None:
+    from pydantic import BaseModel
+
+    class DummyModel(BaseModel):
+        answer: int
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    llm_kwargs = llm._prepare_schema({}, DummyModel)
+
+    response_format = llm_kwargs["response_format"]
+    assert response_format["type"] == "json_schema"
+    assert response_format["json_schema"]["name"] == "DummyModel"
+
+
 @pytest.mark.asyncio()
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
