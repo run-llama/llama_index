@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Union, Dict
 import json
+import re
 
 if TYPE_CHECKING:
     try:
@@ -124,6 +125,12 @@ def resolve_llm(
     return llm
 
 
+_PARTIAL_JSON_STRUCTURAL_CHARS = re.compile(r'["{}\[\]]')
+# Characters of a JSON string up to (not including) an unescaped quote, a raw
+# newline or a trailing backslash.
+_PARTIAL_JSON_STRING_BODY = re.compile(r'(?:[^"\\\n]+|\\[\s\S])*')
+
+
 def parse_partial_json(s: str) -> Dict:
     """
     Parse an incomplete JSON string into a valid python dictionary.
@@ -138,39 +145,50 @@ def parse_partial_json(s: str) -> Dict:
         pass
 
     # Initialize variables.
-    new_s = ""
+    pieces = []
     stack = []
     is_inside_string = False
-    escaped = False
+    copied_up_to = 0
+    pos = 0
+    length = len(s)
 
-    # Process each character in the string one at a time.
-    for char in s:
+    # Skip over string contents and non-structural characters in bulk instead
+    # of walking the input one character at a time.
+    while pos < length:
         if is_inside_string:
-            if char == '"' and not escaped:
+            pos = _PARTIAL_JSON_STRING_BODY.match(s, pos).end()
+            if pos >= length:
+                break
+            char = s[pos]
+            if char == '"':
                 is_inside_string = False
-            elif char == "\n" and not escaped:
-                char = "\\n"  # Replace the newline character with the escape sequence.
-            elif char == "\\":
-                escaped = not escaped
-            else:
-                escaped = False
+            elif char == "\n":
+                # Replace the newline character with the escape sequence.
+                pieces.append(s[copied_up_to:pos])
+                pieces.append("\\n")
+                copied_up_to = pos + 1
+            # Otherwise it is a trailing backslash at the end of the input.
+            pos += 1
         else:
+            match = _PARTIAL_JSON_STRUCTURAL_CHARS.search(s, pos)
+            if match is None:
+                break
+            char = match.group()
+            pos = match.end()
             if char == '"':
                 is_inside_string = True
-                escaped = False
             elif char == "{":
                 stack.append("}")
             elif char == "[":
                 stack.append("]")
-            elif char == "}" or char == "]":
-                if stack and stack[-1] == char:
-                    stack.pop()
-                else:
-                    # Mismatched closing character; the input is malformed.
-                    raise ValueError("Malformed partial JSON encountered.")
+            elif stack and stack[-1] == char:
+                stack.pop()
+            else:
+                # Mismatched closing character; the input is malformed.
+                raise ValueError("Malformed partial JSON encountered.")
 
-        # Append the processed character to the new string.
-        new_s += char
+    pieces.append(s[copied_up_to:])
+    new_s = "".join(pieces)
 
     # If we're still inside a string at the end of processing and no colon was found after the opening quote,
     # this is an incomplete key - remove it
