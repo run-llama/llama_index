@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.base.llms.types import ChatMessage, MessageRole, ChatResponse
 from llama_index.core.program.function_program import FunctionTool
@@ -31,6 +33,70 @@ def test_predict_and_call_via_react_agent() -> None:
         output_parser=ReActOutputParser(),
         user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
         chat_history=[],
+    )
+    assert response.response == "hello!!"
+    assert len(response.sources) == 1
+    assert response.sources[0].content == "hello!!"
+
+
+def test_predict_and_call_default_react_chat_formatter() -> None:
+    """Ensure calls without formatter/output_parser kwargs still work."""
+    llm = _ReActDrivingLLM()
+    response = llm.predict_and_call(
+        tools=[FunctionTool.from_defaults(fn=tool)],
+        user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
+        chat_history=[],
+    )
+    assert response.response == "hello!!"
+    assert len(response.sources) == 1
+    assert response.sources[0].content == "hello!!"
+
+
+@pytest.mark.asyncio
+async def test_apredict_and_call_default_react_chat_formatter() -> None:
+    """Ensure calls without formatter/output_parser kwargs still work."""
+    llm = _ReActDrivingLLM()
+    response = await llm.apredict_and_call(
+        tools=[FunctionTool.from_defaults(fn=tool)],
+        user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
+        chat_history=[],
+    )
+    assert response.response == "hello!!"
+    assert len(response.sources) == 1
+    assert response.sources[0].content == "hello!!"
+
+
+def test_predict_and_call_explicit_none_optional_kwargs() -> None:
+    """Optional kwargs present as None must not be forwarded to the agent.
+
+    This is mutation-sensitive: replacing the `is not None` guard with a
+    `key in kwargs` check would forward None into a non-optional field.
+    """
+    llm = _ReActDrivingLLM()
+    response = llm.predict_and_call(
+        tools=[FunctionTool.from_defaults(fn=tool)],
+        user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
+        chat_history=[],
+        react_chat_formatter=None,
+        output_parser=None,
+        tool_retriever=None,
+    )
+    assert response.response == "hello!!"
+    assert len(response.sources) == 1
+    assert response.sources[0].content == "hello!!"
+
+
+@pytest.mark.asyncio
+async def test_apredict_and_call_explicit_none_optional_kwargs() -> None:
+    """Async counterpart of the explicit-None regression above."""
+    llm = _ReActDrivingLLM()
+    response = await llm.apredict_and_call(
+        tools=[FunctionTool.from_defaults(fn=tool)],
+        user_msg=ChatMessage(role=MessageRole.USER, content="run tool"),
+        chat_history=[],
+        react_chat_formatter=None,
+        output_parser=None,
+        tool_retriever=None,
     )
     assert response.response == "hello!!"
     assert len(response.sources) == 1
