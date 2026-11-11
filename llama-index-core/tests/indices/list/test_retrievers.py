@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
+import pytest
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.indices.list.retrievers import SummaryIndexEmbeddingRetriever
 from llama_index.core.llms.mock import MockLLM
@@ -89,3 +90,77 @@ def test_llm_query(documents: List[Document], patch_token_text_splitter) -> None
 
     assert nodes[0].node.get_content() == "This is a test."
     assert nodes[1].node.get_content() == "This is a test v2."
+
+
+def _make_recording_llm(
+    answers: List[str], calls: List[str], allow_sync: bool = True
+) -> MockLLM:
+    """Build a MockLLM that replays `answers` in order and records each call."""
+    sync_answers = iter(answers)
+    async_answers = iter(answers)
+
+    class RecordingLLM(MockLLM):
+        def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+            if not allow_sync:
+                raise AssertionError(
+                    "sync predict() must not be called from _aretrieve"
+                )
+            calls.append("predict")
+            return next(sync_answers)
+
+        async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+            calls.append("apredict")
+            return next(async_answers)
+
+    return RecordingLLM()
+
+
+@pytest.mark.asyncio
+async def test_llm_aretrieve_uses_async_predict(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """Test that aretrieve awaits llm.apredict instead of blocking on predict."""
+    index = SummaryIndex.from_documents(documents)
+
+    calls: List[str] = []
+    llm = _make_recording_llm(["Doc: 2, Relevance: 5"], calls, allow_sync=False)
+    retriever = index.as_retriever(retriever_mode="llm", llm=llm)
+    nodes = await retriever.aretrieve("What is?")
+
+    assert calls == ["apredict"]
+    assert len(nodes) == 1
+    assert nodes[0].node.get_content() == "This is a test."
+
+
+@pytest.mark.asyncio
+async def test_llm_aretrieve_matches_retrieve(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """Test that aretrieve and retrieve agree across multiple batches."""
+    index = SummaryIndex.from_documents(documents)
+    # one answer per batch (batch size 2 over 4 nodes)
+    answers = ["Doc: 2, Relevance: 5", "Doc: 1, Relevance: 8"]
+
+    sync_calls: List[str] = []
+    sync_retriever = index.as_retriever(
+        retriever_mode="llm",
+        llm=_make_recording_llm(answers, sync_calls),
+        choice_batch_size=2,
+    )
+    sync_nodes = sync_retriever.retrieve("What is?")
+
+    async_calls: List[str] = []
+    async_retriever = index.as_retriever(
+        retriever_mode="llm",
+        llm=_make_recording_llm(answers, async_calls),
+        choice_batch_size=2,
+    )
+    async_nodes = await async_retriever.aretrieve("What is?")
+
+    assert sync_calls == ["predict", "predict"]
+    assert async_calls == ["apredict", "apredict"]
+    assert len(sync_nodes) == 2
+    assert len(async_nodes) == len(sync_nodes)
+    for sync_node, async_node in zip(sync_nodes, async_nodes):
+        assert async_node.node.node_id == sync_node.node.node_id
+        assert async_node.score == sync_node.score
