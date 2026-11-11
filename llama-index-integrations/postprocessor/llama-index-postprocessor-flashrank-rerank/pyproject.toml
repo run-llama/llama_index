@@ -35,6 +35,7 @@ license = "MIT"
 dependencies = [
     "flashrank>=0.2.10",
     "llama-index-core>=0.13.0,<0.15",
+    "onnxruntime>=1.17,<1.24; python_version < '3.11'",
 ]
 
 [tool.codespell]
