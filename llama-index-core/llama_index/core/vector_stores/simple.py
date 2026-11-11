@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, cast
 
 import fsspec
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
@@ -44,6 +44,23 @@ NAMESPACE_SEP = "__"
 DEFAULT_VECTOR_STORE = "default"
 
 
+def _encode_embedding_dict(
+    embedding_dict: Dict[str, List[float]],
+) -> Dict[str, List[float]]:
+    """Copy the embeddings without walking every float through dataclasses_json."""
+    return {node_id: list(embedding) for node_id, embedding in embedding_dict.items()}
+
+
+def _decode_embedding_dict(
+    embedding_dict: Dict[str, List[float]],
+) -> Dict[str, List[float]]:
+    """Copy the embeddings, casting each value to float like dataclasses_json does."""
+    return {
+        node_id: list(map(float, embedding))
+        for node_id, embedding in embedding_dict.items()
+    }
+
+
 @dataclass
 class SimpleVectorStoreData(DataClassJsonMixin):
     """
@@ -56,7 +73,12 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     """
 
-    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+    # dataclasses_json would otherwise inspect every float of every embedding,
+    # which makes persisting and loading large stores very slow.
+    embedding_dict: Dict[str, List[float]] = field(
+        default_factory=dict,
+        metadata=config(encoder=_encode_embedding_dict, decoder=_decode_embedding_dict),
+    )
     text_id_to_ref_doc_id: Dict[str, str] = field(default_factory=dict)
     metadata_dict: Dict[str, Any] = field(default_factory=dict)
 
@@ -326,7 +348,8 @@ class SimpleVectorStore(BasePydanticVectorStore):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w", encoding="utf-8") as f:
-            json.dump(self.data.to_dict(), f)
+            # json.dumps uses the C encoder; json.dump to a file does not.
+            f.write(json.dumps(self.data.to_dict()))
 
     @classmethod
     def from_persist_path(

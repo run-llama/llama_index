@@ -485,3 +485,30 @@ def test_from_namespaced_persist_dir(persist_dir: str) -> None:
         persist_dir=persist_dir
     )
     assert vector_store is not None
+
+
+def test_persist_and_load_round_trip(tmp_path: Path) -> None:
+    simple_vector_store = SimpleVectorStore()
+    simple_vector_store.add(_node_embeddings_for_test())
+    persist_path = str(tmp_path / "vector_store.json")
+
+    simple_vector_store.persist(persist_path)
+    loaded = SimpleVectorStore.from_persist_path(persist_path)
+
+    assert loaded.data == simple_vector_store.data
+    query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
+    assert loaded.query(query) == simple_vector_store.query(query)
+
+
+def test_to_dict_and_from_dict_copy_embeddings() -> None:
+    simple_vector_store = SimpleVectorStore()
+    simple_vector_store.add(_node_embeddings_for_test())
+
+    data = simple_vector_store.to_dict()
+    assert data["embedding_dict"] == simple_vector_store.data.embedding_dict
+    data["embedding_dict"][_NODE_ID_WEIGHT_1_RANK_A].append(0.0)
+    assert simple_vector_store.get(_NODE_ID_WEIGHT_1_RANK_A) == [1.0, 0.0]
+
+    loaded = SimpleVectorStore.from_dict({"embedding_dict": {"id": [1, 2]}})
+    assert loaded.get("id") == [1.0, 2.0]
+    assert all(isinstance(value, float) for value in loaded.get("id"))
