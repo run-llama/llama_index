@@ -10,7 +10,7 @@ from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import ChatMessage, LLMMetadata
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.mock import MockFunctionCallingLLM
-from llama_index.core.tools import ToolOutput
+from llama_index.core.tools import FunctionTool, ToolOutput
 from llama_index.core.memory import BaseMemory
 
 
@@ -215,3 +215,20 @@ async def test_code_act_agent_workflow_integration():
     # Verify we got an AgentOutput
     assert isinstance(result, AgentOutput)
     assert result.response.content == "The answer is 4."
+
+
+def test_code_act_agent_does_not_mutate_caller_tools(mock_llm, mock_code_execute_fn):
+    def add(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
+    tools = [FunctionTool.from_defaults(fn=add)]
+
+    agent = CodeActAgent(
+        code_execute_fn=mock_code_execute_fn,
+        tools=tools,
+        llm=mock_llm,
+    )
+
+    assert [tool.metadata.name for tool in tools] == ["add"]
+    assert [tool.metadata.name for tool in agent.tools] == ["add", "execute"]
