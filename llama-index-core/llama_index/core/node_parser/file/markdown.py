@@ -53,17 +53,22 @@ class MarkdownNodeParser(NodeParser):
         current_section = ""
         # Keep track of (markdown level, text) for headers
         header_stack: List[tuple[int, str]] = []
-        code_block = False
+        code_fence_length = 0
 
         for line in lines:
-            # Track if we're inside a code block to avoid parsing headers in code
-            if line.lstrip().startswith("```"):
-                code_block = not code_block
+            # A shorter fence inside a code block cannot close the opening fence.
+            fence_match = re.match(r"`{3,}", line.lstrip())
+            if fence_match:
+                fence_length = len(fence_match.group())
+                if not code_fence_length:
+                    code_fence_length = fence_length
+                elif fence_length >= code_fence_length:
+                    code_fence_length = 0
                 current_section += line + "\n"
                 continue
 
             # Only parse headers if we're not in a code block
-            if not code_block:
+            if not code_fence_length:
                 header_match = re.match(r"^(#+)\s(.*)", line)
                 if header_match:
                     # Save the previous section before starting a new one
