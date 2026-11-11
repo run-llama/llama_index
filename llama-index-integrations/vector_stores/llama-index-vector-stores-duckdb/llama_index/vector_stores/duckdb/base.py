@@ -536,6 +536,23 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             # precision, and a missing key stays NULL instead of failing.
             metadata_value = metadata_value.cast("DOUBLE")
 
+        if value_type in (INTEGER, FLOAT) and operator in (
+            FilterOperator.IN,
+            FilterOperator.NIN,
+        ):
+            # list_contains does not compare the JSON value numerically either, so
+            # a stored 9.4 is not found in [9.4, 9.24]. Compare stored numbers as
+            # DOUBLE; other JSON types become NULL so they never match.
+            is_number = FunctionExpression(
+                "list_contains",
+                ConstantExpression(["UBIGINT", "BIGINT", "DOUBLE"]),
+                metadata_type_expression,
+            )
+            metadata_column = CaseExpression(
+                condition=is_number, value=metadata_column.cast("DOUBLE")
+            ).otherwise(ConstantExpression(None))
+            metadata_value = metadata_value.cast("DOUBLE[]")
+
         return self._build_filter_expression(metadata_column, metadata_value, operator)
 
     def _build_filter_expression(
