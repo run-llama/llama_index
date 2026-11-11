@@ -98,7 +98,6 @@ class StorageContext:
             docstore = docstore or SimpleDocumentStore()
             index_store = index_store or SimpleIndexStore()
             graph_store = graph_store or SimpleGraphStore()
-            image_store = image_store or SimpleVectorStore()
 
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
@@ -109,6 +108,8 @@ class StorageContext:
             if image_store:
                 # append image store to vector stores
                 vector_stores[IMAGE_VECTOR_STORE_NAMESPACE] = image_store
+            elif IMAGE_VECTOR_STORE_NAMESPACE not in vector_stores:
+                vector_stores[IMAGE_VECTOR_STORE_NAMESPACE] = SimpleVectorStore()
         else:
             docstore = docstore or SimpleDocumentStore.from_persist_dir(
                 persist_dir, fs=fs
