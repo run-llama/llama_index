@@ -1,6 +1,6 @@
 import pytest
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.tools.types import ToolMetadata
 
@@ -38,3 +38,17 @@ def test_nested_tool_schema() -> None:
 
     assert schema["required"][0] == "inner"
     assert schema["properties"] == {"inner": {"$ref": "#/$defs/Inner"}}
+
+
+def test_get_parameters_dict_preserves_additional_properties() -> None:
+    """Regression for #24142: extra='forbid' keeps additionalProperties: false."""
+
+    class StrictArgs(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+
+        order_id: str
+
+    schema = ToolMetadata(description="d", fn_schema=StrictArgs).get_parameters_dict()
+
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["order_id"]["type"] == "string"
