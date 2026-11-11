@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from copy import deepcopy
 from typing import Dict, Optional
 
 import fsspec
@@ -30,7 +31,7 @@ class SimpleKVStore(MutableMappingKVStore[dict]):
         super().__init__(mapping_factory=dict)
 
         if data is not None:
-            self._collections_mappings = data.copy()
+            self._collections_mappings = deepcopy(data)
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
@@ -56,8 +57,8 @@ class SimpleKVStore(MutableMappingKVStore[dict]):
         return cls(data)
 
     def to_dict(self) -> dict:
-        """Save the store as dict."""
-        return self._collections_mappings.copy()
+        """Save the store as an independent dict."""
+        return deepcopy(self._collections_mappings)
 
     @classmethod
     def from_dict(cls, save_dict: dict) -> "SimpleKVStore":
