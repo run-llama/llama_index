@@ -37,6 +37,21 @@ class SimpleModel(BaseModel):
     optional_number: Optional[int] = None
 
 
+class Section(BaseModel):
+    """Section model for testing lists of nested models."""
+
+    heading: str
+    body: str
+    note: Optional[str] = None
+
+
+class Report(BaseModel):
+    """Report model for testing paths into a list of nested models."""
+
+    title: str
+    sections: List[Section] = []
+
+
 @pytest.fixture
 def editor():
     return ArtifactEditorToolSpec(Person)
@@ -45,6 +60,11 @@ def editor():
 @pytest.fixture
 def simple_editor():
     return ArtifactEditorToolSpec(SimpleModel)
+
+
+@pytest.fixture
+def report_editor():
+    return ArtifactEditorToolSpec(Report)
 
 
 def test_create_artifact(editor: ArtifactEditorToolSpec):
@@ -515,3 +535,60 @@ def test_copy_operation_validates_target_path(editor: ArtifactEditorToolSpec):
 
     with pytest.raises(ValueError, match="Invalid field 'invalid_field'"):
         editor.apply_patch(patch)
+
+
+def test_replace_field_of_list_item(report_editor: ArtifactEditorToolSpec):
+    """Replace a field of a model that is an item of a list field."""
+    report_editor.create_artifact(
+        title="Q3 report",
+        sections=[
+            {"heading": "Intro", "body": "hello"},
+            {"heading": "Body", "body": "world"},
+        ],
+    )
+
+    patch = JsonPatch(
+        operations=[
+            PatchOperation(op="replace", path="/sections/0/heading", value="Overview"),
+        ]
+    )
+
+    result = report_editor.apply_patch(patch)
+
+    assert result["sections"][0]["heading"] == "Overview"
+    assert result["sections"][0]["body"] == "hello"
+    assert result["sections"][1]["heading"] == "Body"
+
+
+def test_add_field_of_list_item(report_editor: ArtifactEditorToolSpec):
+    """Add a field to a model that is an item of a list field."""
+    report_editor.create_artifact(
+        title="Q3 report", sections=[{"heading": "Intro", "body": "hello"}]
+    )
+
+    patch = JsonPatch(
+        operations=[
+            PatchOperation(op="add", path="/sections/0/note", value="draft"),
+        ]
+    )
+
+    result = report_editor.apply_patch(patch)
+
+    assert result["sections"][0]["note"] == "draft"
+    assert result["sections"][0]["heading"] == "Intro"
+
+
+def test_invalid_field_of_list_item(report_editor: ArtifactEditorToolSpec):
+    """An unknown field of a list item is still rejected."""
+    report_editor.create_artifact(
+        title="Q3 report", sections=[{"heading": "Intro", "body": "hello"}]
+    )
+
+    patch = JsonPatch(
+        operations=[
+            PatchOperation(op="replace", path="/sections/0/missing", value="x"),
+        ]
+    )
+
+    with pytest.raises(ValueError, match="Invalid field 'missing'"):
+        report_editor.apply_patch(patch)
