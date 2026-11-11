@@ -72,5 +72,5 @@ await tool.index_docs(docs)
 
 The `examples/` directory contains:
 
-- [Moss Agent Notebook](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-moss/examples/moss_agent.ipynb): A Jupyter notebook walking through installation, indexing, and agent usage.
+- [Moss Agent Notebook](https://github.com/run-llama/llama_index/blob/main/docs/examples/tools/moss_with_llamaindex.ipynb): A Jupyter notebook walking through installation, indexing, and agent usage.
 - [Moss Agent Script](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-moss/examples/moss_agent.py): A concise Python script demonstrating the ReAct agent flow.
