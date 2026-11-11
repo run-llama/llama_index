@@ -1074,3 +1074,105 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+def _make_stream_events_client_tool_then_server_tool():
+    """
+    Stream events for a turn where a client tool call (no arguments) is
+    followed by a server-side tool block (e.g. web_search) whose input is
+    streamed as InputJSONDelta.
+    """
+    from anthropic.types import (
+        ContentBlockDeltaEvent,
+        ContentBlockStartEvent,
+        ContentBlockStopEvent,
+        InputJSONDelta,
+        ServerToolUseBlock,
+        ToolUseBlock,
+    )
+
+    client_tool = ToolUseBlock(
+        id="client-tool-1", name="get_current_time", input={}, type="tool_use"
+    )
+    server_tool = ServerToolUseBlock(
+        id="server-tool-1", name="web_search", input={}, type="server_tool_use"
+    )
+    return [
+        ContentBlockStartEvent(
+            index=0, content_block=client_tool, type="content_block_start"
+        ),
+        ContentBlockStopEvent(index=0, type="content_block_stop"),
+        ContentBlockStartEvent(
+            index=1, content_block=server_tool, type="content_block_start"
+        ),
+        ContentBlockDeltaEvent(
+            index=1,
+            delta=InputJSONDelta(
+                partial_json='{"query": "weather in London"}',
+                type="input_json_delta",
+            ),
+            type="content_block_delta",
+        ),
+        ContentBlockStopEvent(index=1, type="content_block_stop"),
+    ]
+
+
+def test_stream_chat_server_tool_delta_does_not_corrupt_client_tool_call():
+    """
+    Mock test that InputJSONDelta of a server-side tool block (e.g. web_search)
+    does not overwrite the input of a previously completed client tool call.
+    """
+    events = _make_stream_events_client_tool_then_server_tool()
+
+    llm = Anthropic(model="claude-sonnet-4-5")
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = iter(events)
+    llm._client = mock_client
+
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="What time is it in London?")
+    ]
+    chunks = list(llm.stream_chat(messages))
+
+    tool_calls = [
+        block for block in chunks[-1].message.blocks if isinstance(block, ToolCallBlock)
+    ]
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_call_id == "client-tool-1"
+    assert tool_calls[0].tool_name == "get_current_time"
+    assert tool_calls[0].tool_kwargs == {}
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_server_tool_delta_does_not_corrupt_client_tool_call():
+    """
+    Async version of test_stream_chat_server_tool_delta_does_not_corrupt_client_tool_call.
+    """
+    from unittest.mock import AsyncMock
+
+    events = _make_stream_events_client_tool_then_server_tool()
+
+    async def mock_async_stream_generator():
+        for event in events:
+            yield event
+
+    llm = Anthropic(model="claude-sonnet-4-5")
+    mock_async_client = AsyncMock()
+    mock_async_client.messages.create = AsyncMock(
+        return_value=mock_async_stream_generator()
+    )
+    llm._aclient = mock_async_client
+
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="What time is it in London?")
+    ]
+    stream_resp = await llm.astream_chat(messages)
+    chunks = [chunk async for chunk in stream_resp]
+
+    tool_calls = [
+        block for block in chunks[-1].message.blocks if isinstance(block, ToolCallBlock)
+    ]
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_call_id == "client-tool-1"
+    assert tool_calls[0].tool_name == "get_current_time"
+    assert tool_calls[0].tool_kwargs == {}
