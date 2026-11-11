@@ -89,6 +89,9 @@ def test_truncate_word_length_at_or_below_suffix_length(
 ) -> None:
     assert sql_database.truncate_word("Paul McCartney", length=2) == "Pa"
     assert sql_database.truncate_word("Paul McCartney", length=3) == "Pau"
+    assert (
+        sql_database.truncate_word("Paul McCartney", length=3, suffix="[...]") == "Pau"
+    )
     assert len(sql_database.truncate_word("abcdefghij", length=1)) == 1
     assert sql_database.truncate_word("Paul McCartney", length=0) == "Paul McCartney"
     assert sql_database.truncate_word(12345, length=2) == 12345

@@ -204,6 +204,9 @@ class SQLDatabase:
         """
         Truncate a string to a certain number of words, based on the max string
         length.
+
+        If `length` is not longer than `suffix`, the content is cut to `length`
+        without a suffix.
         """
         if not isinstance(content, str) or length <= 0:
             return content
