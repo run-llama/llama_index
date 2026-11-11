@@ -75,6 +75,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-5": 1000000,
     "anthropic.claude-opus-5-5": 1000000,
     "anthropic.claude-fable-5": 1000000,
+    "anthropic.claude-fable-5-1": 1000000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -98,6 +99,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-5": 1000000,
     "claude-opus-5-5": 1000000,
     "claude-fable-5": 1000000,
+    "claude-fable-5-1": 1000000,
 }
 
 # Anthropic API/SDK identifiers
@@ -132,6 +134,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-5": 1000000,
     "claude-opus-5-5": 1000000,
     "claude-fable-5": 1000000,
+    "claude-fable-5-1": 1000000,
 }
 
 # All provider Anthropic identifiers
@@ -153,6 +156,8 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
     "claude-opus-5-5",
     "anthropic.claude-fable-5",
     "claude-fable-5",
+    "anthropic.claude-fable-5-1",
+    "claude-fable-5-1",
     "anthropic.claude-sonnet-5",
     "claude-sonnet-5",
     "anthropic.claude-sonnet-5-5",
@@ -601,6 +606,10 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude Fable 5.1
+    "claude-fable-5-1",
+    # Claude Fable 5
+    "claude-fable-5",
     # Claude Opus 5.5
     "claude-opus-5-5",
     # Claude Opus 5
@@ -650,6 +659,8 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
 )
 
 STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
+    "claude-fable-5-1",
+    "claude-fable-5",
     "claude-opus-5-5",
     "claude-opus-5",
     "claude-opus-4-1-20250805",
