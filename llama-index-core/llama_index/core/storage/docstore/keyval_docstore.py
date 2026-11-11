@@ -124,7 +124,9 @@ class KVDocumentStore(BaseDocumentStore):
 
         return node_kv_pair, metadata_kv_pair, ref_doc_kv_pair
 
-    def _merge_ref_doc_kv_pairs(self, ref_doc_kv_pairs: dict) -> List[Tuple[str, dict]]:
+    def _merge_ref_doc_kv_pairs(
+        self, ref_doc_kv_pairs: dict, node_metadata: Dict[str, dict]
+    ) -> List[Tuple[str, dict]]:
         merged_ref_doc_kv_pairs: List[Tuple[str, dict]] = []
         for key, kv_pairs in ref_doc_kv_pairs.items():
             merged_node_ids: List[str] = []
@@ -134,6 +136,13 @@ class KVDocumentStore(BaseDocumentStore):
                 new_nodes = set(nodes).difference(set(merged_node_ids))
                 merged_node_ids.extend([node for node in nodes if node in new_nodes])
                 metadata.update(kv_pair[1].get("metadata", {}))
+            # A node can move between sources, including more than once in a batch.
+            merged_node_ids = [
+                node_id
+                for node_id in merged_node_ids
+                if node_id not in node_metadata
+                or node_metadata[node_id].get("ref_doc_id") == key
+            ]
             merged_ref_doc_kv_pairs.append(
                 (key, {"node_ids": merged_node_ids, "metadata": metadata})
             )
@@ -177,6 +186,13 @@ class KVDocumentStore(BaseDocumentStore):
                     f"node_id {node.node_id} already exists. "
                     "Set allow_update to True to overwrite."
                 )
+            old_ref_doc_id = self._get_ref_doc_id(node.node_id)
+            if old_ref_doc_id and old_ref_doc_id != node.ref_doc_id:
+                old_ref_doc_info = self.get_ref_doc_info(old_ref_doc_id)
+                if old_ref_doc_info is not None:
+                    ref_doc_kv_pairs.setdefault(old_ref_doc_id, []).append(
+                        (old_ref_doc_id, old_ref_doc_info.to_dict())
+                    )
             ref_doc_info = None
             if node.source_node is not None:
                 ref_doc_info = (
@@ -200,7 +216,9 @@ class KVDocumentStore(BaseDocumentStore):
                 ref_doc_kv_pairs[key].append(ref_doc_kv_pair)
 
         # multiple nodes can point to the same ref_doc_id
-        merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(ref_doc_kv_pairs)
+        merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(
+            ref_doc_kv_pairs, dict(metadata_kv_pairs)
+        )
 
         return node_kv_pairs, metadata_kv_pairs, merged_ref_doc_kv_pairs
 
@@ -280,6 +298,13 @@ class KVDocumentStore(BaseDocumentStore):
                     f"node_id {node.node_id} already exists. "
                     "Set allow_update to True to overwrite."
                 )
+            old_ref_doc_id = await self._aget_ref_doc_id(node.node_id)
+            if old_ref_doc_id and old_ref_doc_id != node.ref_doc_id:
+                old_ref_doc_info = await self.aget_ref_doc_info(old_ref_doc_id)
+                if old_ref_doc_info is not None:
+                    ref_doc_kv_pairs.setdefault(old_ref_doc_id, []).append(
+                        (old_ref_doc_id, old_ref_doc_info.to_dict())
+                    )
             ref_doc_info = None
             if node.source_node is not None:
                 ref_doc_info = (
@@ -304,7 +329,9 @@ class KVDocumentStore(BaseDocumentStore):
                 ref_doc_kv_pairs[key].append(ref_doc_kv_pair)
 
         # multiple nodes can point to the same ref_doc_id
-        merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(ref_doc_kv_pairs)
+        merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(
+            ref_doc_kv_pairs, dict(metadata_kv_pairs)
+        )
 
         return node_kv_pairs, metadata_kv_pairs, merged_ref_doc_kv_pairs
 
