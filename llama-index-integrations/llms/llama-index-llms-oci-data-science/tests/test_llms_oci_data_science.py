@@ -312,6 +312,28 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(ll
     assert result["tools"][0]["function"]["name"] == "search_tool"
 
 
+def test_prepare_chat_with_tools_per_call_strict_false_overrides_instance_default(llm):
+    """Test that strict=False on a call disables strict mode even if the instance default is True."""
+    llm.strict = True
+
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], user_msg="Search for Python", strict=False
+    )
+
+    assert "strict" not in result["tools"][0]["function"]
+
+
+def test_prepare_chat_with_tools_strict_none_uses_instance_default(llm):
+    """Test that omitting strict on a call falls back to the instance default."""
+    llm.strict = True
+
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], user_msg="Search for Python"
+    )
+
+    assert result["tools"][0]["function"]["strict"] is True
+
+
 @pytest.mark.asyncio
 async def test_acomplete_success(llm):
     prompt = "What is the capital of France?"
