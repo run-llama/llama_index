@@ -55,6 +55,7 @@ class EvalQueryEngineTool(QueryEngineTool):
         if evaluation_result.passing:
             return tool_output
 
+        tool_output.is_error = True
         tool_output.content = self._failed_tool_output_template.format(
             tool_name=self.metadata.name,
             reason=evaluation_result.feedback,
