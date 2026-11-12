@@ -13,6 +13,8 @@ from openai.types.responses import (
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseInProgressEvent,
+    ResponseFailedEvent,
+    ResponseIncompleteEvent,
     ResponseOutputItemAddedEvent,
     ResponseOutputTextAnnotationAddedEvent,
     ResponseTextDeltaEvent,
@@ -671,6 +673,15 @@ class OpenAIResponses(FunctionCallingLLM):
                         ),
                     )
                 )
+        elif isinstance(event, ResponseFailedEvent):
+            error = getattr(event.response, "error", None)
+            code = getattr(error, "code", None) or "unknown"
+            message = getattr(error, "message", None) or "the response failed"
+            raise ValueError(f"OpenAI Responses stream failed ({code}): {message}")
+        elif isinstance(event, ResponseIncompleteEvent):
+            details = getattr(event.response, "incomplete_details", None)
+            reason = getattr(details, "reason", None) or "unknown"
+            raise ValueError(f"OpenAI Responses stream incomplete (reason: {reason})")
         elif isinstance(event, ResponseCompletedEvent):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):

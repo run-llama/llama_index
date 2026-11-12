@@ -1,6 +1,7 @@
 import os
 import httpx
 import pytest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from pathlib import Path
@@ -21,6 +22,9 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
 from openai.types.responses.response_reasoning_item import Content, Summary
 from openai.types.responses import (
+    Response,
+    ResponseFailedEvent,
+    ResponseIncompleteEvent,
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
@@ -1024,3 +1028,21 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_process_response_event_raises_on_failed_response():
+    response = Response.construct(id="resp_1", status="failed", error=None, output=[])
+    event = ResponseFailedEvent.construct(type="response.failed", sequence_number=2, response=response)
+    event.response.error = SimpleNamespace(code="server_error", message="boom")
+
+    with pytest.raises(ValueError, match="server_error"):
+        OpenAIResponses.process_response_event(event, [], {}, None, False)
+
+
+def test_process_response_event_raises_on_incomplete_response():
+    response = Response.construct(id="resp_1", status="incomplete", error=None, output=[])
+    event = ResponseIncompleteEvent.construct(type="response.incomplete", sequence_number=2, response=response)
+    event.response.incomplete_details = SimpleNamespace(reason="max_output_tokens")
+
+    with pytest.raises(ValueError, match="max_output_tokens"):
+        OpenAIResponses.process_response_event(event, [], {}, None, False)
