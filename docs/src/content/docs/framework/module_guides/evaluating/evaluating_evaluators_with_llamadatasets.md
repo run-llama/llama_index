@@ -2,6 +2,8 @@
 title: Evaluating Evaluators with `LabelledEvaluatorDataset`'s
 ---
 
+**NOTE:** LlamaDatasets are deprecated and no longer maintained. This page is kept for reference and new submissions are not being accepted.
+
 The purpose of the llama-datasets is to provide builders the means to quickly benchmark
 LLM systems or tasks. In that spirit, the `LabelledEvaluatorDataset` exists to
 facilitate the evaluation of evaluators in a seamless and effortless manner.
@@ -36,7 +38,7 @@ EvaluatorBenchmarkerPack = download_llama_pack(
     "EvaluatorBenchmarkerPack", "./pack"
 )
 evaluator_benchmarker = EvaluatorBenchmarkerPack(
-    evaluator=evaluators["gpt-3.5"],
+    evaluator=evaluator,
     eval_dataset=evaluator_dataset,
     show_progress=True,
 )
