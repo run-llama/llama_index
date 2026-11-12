@@ -5,14 +5,30 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_UPSTAGE_API_BASE = "https://api.upstage.ai/v1/solar"
 DEFAULT_CONTEXT_WINDOW = 32768
-CHAT_MODELS = {"solar-mini": 32768, "solar-pro2": 65536}
+# Context lengths from https://console.upstage.ai/docs/models
+# (Upstage writes "128K" for solar-pro3 as 128,000, so "512K" is 512,000).
+CHAT_MODELS = {
+    "solar-mini": 32768,
+    "solar-pro2": 65536,
+    "solar-pro3": 128000,
+    "solar-pro4": 512000,
+    "solar-mini4": 512000,
+}
 
-FUNCTION_CALLING_MODELS = ["solar-mini", "solar-pro2", "solar-pro3"]
-DOC_PARSING_MODELS = ["solar-pro2", "solar-pro3"]
+FUNCTION_CALLING_MODELS = [
+    "solar-mini",
+    "solar-pro2",
+    "solar-pro3",
+    "solar-pro4",
+    "solar-mini4",
+]
+DOC_PARSING_MODELS = ["solar-pro2", "solar-pro3", "solar-pro4"]
 
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
 
+# solar-mini4 has no public Hugging Face tokenizer yet, so it is not listed.
 SOLAR_TOKENIZERS = {
+    "solar-pro4": "upstage/solar-pro4-tokenizer",
     "solar-pro3": "upstage/solar-pro3-tokenizer",
     "solar-pro2": "upstage/solar-pro2-tokenizer",
     "solar-mini": "upstage/solar-1-mini-tokenizer",
