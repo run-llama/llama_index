@@ -855,8 +855,8 @@ class OCIDataScience(FunctionCallingLLM):
             f"Chat history: {chat_history}"
         )
 
-        # Determine strict mode
-        strict = strict or self.strict
+        # Determine strict mode; an explicit False overrides the instance default
+        strict = strict if strict is not None else self.strict
 
         if self.metadata.is_function_calling_model:
             for tool_spec in tool_specs:

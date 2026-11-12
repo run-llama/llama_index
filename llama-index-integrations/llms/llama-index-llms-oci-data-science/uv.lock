@@ -2154,7 +2154,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-oci-data-science"
-version = "1.2.0"
+version = "1.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
