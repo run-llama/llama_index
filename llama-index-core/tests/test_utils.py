@@ -12,6 +12,7 @@ from llama_index.core.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
+    add_sync_version,
     aretry_on_exceptions_with_backoff,
     _get_colored_text,
     get_cache_dir,
@@ -353,3 +354,35 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_add_sync_version() -> None:
+    import asyncio
+    import threading
+
+    @add_sync_version
+    async def multiply(x: int, y: int = 2) -> int:
+        await asyncio.sleep(0)
+        return x * y
+
+    # Works after a closed event loop in the main thread
+    asyncio.run(asyncio.sleep(0))
+    assert multiply.sync(3, y=4) == 12
+
+    # Works inside a worker thread with no current event loop
+    thread_result: list[int] = []
+
+    def _worker() -> None:
+        thread_result.append(multiply.sync(5, y=3))
+
+    worker = threading.Thread(target=_worker)
+    worker.start()
+    worker.join()
+    assert thread_result == [15]
+
+    # Works when called from within a running event loop
+    async def _inside_running_loop() -> int:
+        return multiply.sync(7, y=2)
+
+    assert asyncio.run(_inside_running_loop()) == 14
+

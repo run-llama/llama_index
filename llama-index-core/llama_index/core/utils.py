@@ -463,7 +463,9 @@ def add_sync_version(func: Any) -> Any:
 
     @wraps(func)
     def _wrapper(*args: Any, **kwds: Any) -> Any:
-        return asyncio.get_event_loop().run_until_complete(func(*args, **kwds))
+        from llama_index.core.async_utils import asyncio_run
+
+        return asyncio_run(func(*args, **kwds))
 
     func.sync = _wrapper
     return func
