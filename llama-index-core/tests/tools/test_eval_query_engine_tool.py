@@ -74,6 +74,19 @@ class TestEvalQueryEngineTool(IsolatedAsyncioTestCase):
             "Could not use tool nice_tool because it failed evaluation.\n"
             f"Reason: {evaluation_feedback}"
         )
+        self.expected_tool_output.is_error = True
 
         tool_output = self.eval_query_engine_tool(self.tool_input)
         self.assertEqual(self.expected_tool_output, tool_output)
+        self.assertTrue(tool_output.is_error)
+
+    def test_eval_query_engine_tool_marks_rejection_as_error(self) -> None:
+        """A rejected evaluation must be an error result, not a successful one."""
+        self.mock_evaluator.aevaluate.return_value = EvaluationResult(
+            passing=False, feedback="not relevant"
+        )
+
+        tool_output = self.eval_query_engine_tool(self.tool_input)
+
+        self.assertTrue(tool_output.is_error)
+        self.assertIn("failed evaluation", tool_output.content)

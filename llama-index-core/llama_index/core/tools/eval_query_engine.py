@@ -59,6 +59,10 @@ class EvalQueryEngineTool(QueryEngineTool):
             tool_name=self.metadata.name,
             reason=evaluation_result.feedback,
         )
+        # The rejection is an error result: agent control flow stops on a
+        # return_direct tool only when is_error is False, so leaving this set
+        # made an agent treat the rejection message as the final answer.
+        tool_output.is_error = True
         return tool_output
 
     @classmethod
