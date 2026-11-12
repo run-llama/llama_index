@@ -76,7 +76,7 @@ class ObsidianReader(BaseReader):
         backlinks_map = {}
         input_dir_abs = self.input_dir.resolve()
 
-        for dirpath, dirnames, filenames in os.walk(self.input_dir, followlinks=False):
+        for dirpath, dirnames, filenames in os.walk(input_dir_abs, followlinks=False):
             # Skip hidden directories.
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
