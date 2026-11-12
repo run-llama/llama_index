@@ -560,3 +560,71 @@ async def test_run_id_default(function_agent: FunctionAgent) -> None:
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_function_agent_preserves_empty_state_across_turns() -> None:
+    """Emptying state on turn 1 must not restore initial_state on turn 2 (#24146)."""
+    from llama_index.core.workflow import Context
+
+    observed_states = []
+
+    async def remove_item(ctx: Context, item: str) -> dict:
+        async with ctx.store.edit_state() as store:
+            store["state"].pop(item, None)
+            return dict(store["state"])
+
+    async def show_cart(ctx: Context) -> dict:
+        cart = dict(await ctx.store.get("state"))
+        observed_states.append(cart)
+        return cart
+
+    llm = MockFunctionCallingLLM(
+        response_generator=_response_generator_from_list(
+            [
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="removing item",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="c1",
+                                tool_name="remove_item",
+                                tool_kwargs={"item": "paper"},
+                            )
+                        ]
+                    },
+                ),
+                ChatMessage(role=MessageRole.ASSISTANT, content="removed"),
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="checking cart",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="c2",
+                                tool_name="show_cart",
+                                tool_kwargs={},
+                            )
+                        ]
+                    },
+                ),
+                ChatMessage(role=MessageRole.ASSISTANT, content="cart checked"),
+            ]
+        )
+    )
+    agent = FunctionAgent(
+        name="cart_agent",
+        description="Manages a shopping cart",
+        tools=[remove_item, show_cart],
+        llm=llm,
+        initial_state={"paper": 2},
+    )
+    ctx = Context(agent)
+
+    await agent.run(user_msg="Remove paper from my cart.", ctx=ctx)
+    assert await ctx.store.get("state") == {}
+
+    await agent.run(user_msg="What is in my cart now?", ctx=ctx)
+    assert await ctx.store.get("state") == {}
+    assert observed_states == [{}]

@@ -284,7 +284,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     for agent, agent_cfg in self.agents.items()
                 },
             )
-        if not await ctx.store.get("state", default=None):
+        if await ctx.store.get("state", default=None) is None:
             await ctx.store.set("state", copy.deepcopy(self.initial_state))
         if not await ctx.store.get("current_agent_name", default=None):
             await ctx.store.set("current_agent_name", self.root_agent)
