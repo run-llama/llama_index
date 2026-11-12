@@ -560,7 +560,7 @@ def test_prepare_schema_sanitizes_json_schema_name() -> None:
     }
 
     with patch(
-        "openai.resources.chat.completions.completions._type_to_response_format",
+        "openai.lib._parsing.type_to_response_format_param",
         return_value=response_format,
     ):
         llm_kwargs = llm._prepare_schema({}, DummyModel)
@@ -568,6 +568,20 @@ def test_prepare_schema_sanitizes_json_schema_name() -> None:
     assert (
         llm_kwargs["response_format"]["json_schema"]["name"] == "GenericDataModel_int_"
     )
+
+
+def test_prepare_schema_builds_json_schema_response_format() -> None:
+    from pydantic import BaseModel
+
+    class DummyModel(BaseModel):
+        answer: int
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    llm_kwargs = llm._prepare_schema({}, DummyModel)
+
+    response_format = llm_kwargs["response_format"]
+    assert response_format["type"] == "json_schema"
+    assert response_format["json_schema"]["name"] == "DummyModel"
 
 
 @pytest.mark.asyncio()
