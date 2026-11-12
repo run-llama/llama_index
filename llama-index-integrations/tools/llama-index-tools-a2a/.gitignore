@@ -1,0 +1,13 @@
+llama_index/_static
+.DS_Store
+__pycache__/
+*.py[cod]
+*.so
+.build/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache
+notebooks/
+.ipynb_checkpoints
