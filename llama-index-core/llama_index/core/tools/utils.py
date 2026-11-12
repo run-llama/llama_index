@@ -44,6 +44,7 @@ def create_schema_from_function(
     ignore_fields = ignore_fields or []
     param_descriptions = param_descriptions or {}
     params = signature(func).parameters
+    original_field_info: Optional[FieldInfo] = None
 
     for param_name in params:
         if param_name in ignore_fields:
@@ -68,10 +69,7 @@ def create_schema_from_function(
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
                 description = args[1].description
-                if args[1].json_schema_extra and isinstance(
-                    args[1].json_schema_extra, dict
-                ):
-                    json_schema_extra.update(args[1].json_schema_extra)
+                original_field_info = args[1]
 
         if description is None:
             description = param_descriptions.get(param_name)
@@ -89,10 +87,19 @@ def create_schema_from_function(
 
         if param_default is params[param_name].empty:
             # Required field
-            fields[param_name] = (
-                param_type,
-                FieldInfo(description=description, json_schema_extra=json_schema_extra),
-            )
+            if original_field_info is not None:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo.merge_field_infos(
+                        original_field_info,
+                        FieldInfo(description=description, json_schema_extra=json_schema_extra),
+                    ),
+                )
+            else:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo(description=description, json_schema_extra=json_schema_extra),
+                )
         elif isinstance(param_default, FieldInfo):
             # Field with pydantic.Field as default value
             if param_default.description is None and description is not None:
@@ -105,14 +112,27 @@ def create_schema_from_function(
                 )
             fields[param_name] = (param_type, param_default)
         else:
-            fields[param_name] = (
-                param_type,
-                FieldInfo(
-                    default=param_default,
-                    description=description,
-                    json_schema_extra=json_schema_extra,
-                ),
-            )
+            if original_field_info is not None:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo.merge_field_infos(
+                        original_field_info,
+                        FieldInfo(
+                            default=param_default,
+                            description=description,
+                            json_schema_extra=json_schema_extra,
+                        ),
+                    ),
+                )
+            else:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo(
+                        default=param_default,
+                        description=description,
+                        json_schema_extra=json_schema_extra,
+                    ),
+                )
 
     additional_fields = additional_fields or []
     for field_info in additional_fields:
