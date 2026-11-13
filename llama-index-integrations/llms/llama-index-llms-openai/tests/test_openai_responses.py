@@ -21,6 +21,9 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
 from openai.types.responses.response_reasoning_item import Content, Summary
 from openai.types.responses import (
+    Response,
+    ResponseFailedEvent,
+    ResponseIncompleteEvent,
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
@@ -335,6 +338,64 @@ def test_process_response_event_with_text_annotation():
     stored = stored if isinstance(stored, dict) else stored.model_dump()
     assert stored["type"] == "url_citation"
     assert stored["url"] == "https://example.com"
+
+
+def test_process_response_event_failed_raises():
+    """A response.failed event must raise instead of looking like an empty success."""
+    event = ResponseFailedEvent(
+        type="response.failed",
+        sequence_number=1,
+        response=Response(
+            id="resp_123",
+            created_at=0,
+            model="gpt-4o-mini",
+            object="response",
+            output=[],
+            parallel_tool_calls=True,
+            tool_choice="auto",
+            tools=[],
+            status="failed",
+            error={"code": "server_error", "message": "Something went wrong"},
+        ),
+    )
+
+    with pytest.raises(ValueError, match="server_error"):
+        OpenAIResponses.process_response_event(
+            event=event,
+            built_in_tool_calls=[],
+            additional_kwargs={},
+            current_tool_call=None,
+            track_previous_responses=False,
+        )
+
+
+def test_process_response_event_incomplete_raises():
+    """A response.incomplete event must raise with the incomplete reason."""
+    event = ResponseIncompleteEvent(
+        type="response.incomplete",
+        sequence_number=1,
+        response=Response(
+            id="resp_123",
+            created_at=0,
+            model="gpt-4o-mini",
+            object="response",
+            output=[],
+            parallel_tool_calls=True,
+            tool_choice="auto",
+            tools=[],
+            status="incomplete",
+            incomplete_details={"reason": "max_output_tokens"},
+        ),
+    )
+
+    with pytest.raises(ValueError, match="max_output_tokens"):
+        OpenAIResponses.process_response_event(
+            event=event,
+            built_in_tool_calls=[],
+            additional_kwargs={},
+            current_tool_call=None,
+            track_previous_responses=False,
+        )
 
 
 def test_get_tool_calls_from_response():

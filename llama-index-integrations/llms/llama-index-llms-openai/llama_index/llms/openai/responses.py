@@ -9,10 +9,12 @@ from openai.types.responses import (
     ResponseStreamEvent,
     ResponseCompletedEvent,
     ResponseCreatedEvent,
+    ResponseFailedEvent,
     ResponseFileSearchCallCompletedEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseInProgressEvent,
+    ResponseIncompleteEvent,
     ResponseOutputItemAddedEvent,
     ResponseOutputTextAnnotationAddedEvent,
     ResponseTextDeltaEvent,
@@ -677,6 +679,20 @@ class OpenAIResponses(FunctionCallingLLM):
                 additional_kwargs["usage"] = event.response.usage
             resp = OpenAIResponses._parse_response_output(event.response.output)
             blocks = resp.message.blocks
+        elif isinstance(event, ResponseFailedEvent):
+            # The response failed, don't report it as an empty success
+            error = event.response.error
+            if error is not None:
+                raise ValueError(
+                    f"Response failed with error {error.code}: {error.message}"
+                )
+            raise ValueError("Response failed.")
+        elif isinstance(event, ResponseIncompleteEvent):
+            # The response ended before completing
+            details = event.response.incomplete_details
+            if details is not None and details.reason:
+                raise ValueError(f"Response incomplete: {details.reason}")
+            raise ValueError("Response incomplete.")
 
         return (
             blocks,
