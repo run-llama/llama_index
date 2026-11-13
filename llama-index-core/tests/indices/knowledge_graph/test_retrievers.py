@@ -181,3 +181,46 @@ def test_retrieve_similarity(
         " object_next_hop ...`"
         "\n['foo', 'is', 'bar']"
     )
+
+
+@patch.object(
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+def test_retrieve_hybrid_substring_dedup_and_truncation(
+    _patch_extract_triplets: Any, documents: List[Document]
+) -> None:
+    """Test hybrid mode deduplicates substrings deterministically and respects max_knowledge_sequence."""
+    graph_store = SimpleGraphStore()
+    storage_context = StorageContext.from_defaults(graph_store=graph_store)
+
+    index = KnowledgeGraphIndex.from_documents(
+        documents,
+        include_embeddings=True,
+        storage_context=storage_context,
+        embed_model=MockEmbedding(),
+    )
+    # Add overlapping / substring embedding entries and equal-length entries
+    index.index_struct.embedding_dict = {
+        "['foo', 'is', 'bar', 'and', 'baz']": [0, 0, 0, 1],
+        "['foo', 'is', 'bar']": [0, 0, 0, 1],
+        "['alpha', 'rel', 'beta']": [0, 0, 0, 1],
+        "['gamma', 'rel', 'delta']": [0, 0, 0, 1],
+    }
+    retriever = KGTableRetriever(
+        index,
+        embed_model=MockEmbedding(),
+        retriever_mode="hybrid",
+        similarity_top_k=4,
+        max_knowledge_sequence=2,
+        include_text=False,
+        graph_store=graph_store,
+    )
+    nodes = retriever.retrieve(QueryBundle("foo"))
+    rel_texts = nodes[0].node.metadata["kg_rel_texts"]
+    # Shorter substring "['foo', 'is', 'bar']" is removed in favor of
+    # "['foo', 'is', 'bar', 'and', 'baz']", and result is truncated to max_knowledge_sequence=2
+    assert rel_texts == [
+        "['foo', 'is', 'bar', 'and', 'baz']",
+        "['gamma', 'rel', 'delta']",
+    ]
+
