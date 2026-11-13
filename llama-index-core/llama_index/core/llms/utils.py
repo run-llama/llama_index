@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Union, Dict
 import json
+import re
 
 if TYPE_CHECKING:
     try:
@@ -124,6 +125,20 @@ def resolve_llm(
     return llm
 
 
+_TRUNCATED_LITERALS = {
+    "t": "true",
+    "tr": "true",
+    "tru": "true",
+    "f": "false",
+    "fa": "false",
+    "fal": "false",
+    "fals": "false",
+    "n": "null",
+    "nu": "null",
+    "nul": "null",
+}
+
+
 def parse_partial_json(s: str) -> Dict:
     """
     Parse an incomplete JSON string into a valid python dictionary.
@@ -185,6 +200,15 @@ def parse_partial_json(s: str) -> Dict:
         new_s += " null"  # Add a default value for incomplete value
     elif new_s.endswith(","):
         new_s = new_s[:-1]  # Remove the trailing comma
+
+    # Complete a literal that was cut mid-word (`tru` -> `true`), otherwise the
+    # unfinished value discards the whole object when parsing fails.
+    trailing_word = re.search(r"([A-Za-z]+)$", new_s)
+    if trailing_word and trailing_word.group(1) in _TRUNCATED_LITERALS:
+        new_s = (
+            new_s[: trailing_word.start(1)]
+            + _TRUNCATED_LITERALS[trailing_word.group(1)]
+        )
 
     # Close any remaining open structures in the reverse order that they were opened.
     for closing_char in reversed(stack):
