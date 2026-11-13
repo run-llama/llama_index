@@ -1036,6 +1036,19 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
+        # --- tier-1 guard (patch candidate) ---------------------------------
+        # The provider said the reply was cut short. Do not turn repaired
+        # arguments into an executable call; fail visibly instead.
+        try:
+            _choices = getattr(getattr(response, "raw", None), "choices", None) or []
+            _fr = getattr(_choices[0], "finish_reason", None) if _choices else None
+        except Exception:
+            _fr = None
+        if _fr == "length":
+            _blocks = getattr(response.message, "blocks", None) or []
+            if any(type(b).__name__ == "ToolCallBlock" for b in _blocks):
+                raise ValueError("LLM output truncated (finish_reason='length').")
+        # --------------------------------------------------------------------
         tool_calls = [
             block
             for block in response.message.blocks
