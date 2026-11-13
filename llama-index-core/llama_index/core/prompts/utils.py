@@ -13,7 +13,30 @@ class SafeFormatter:
         self.format_dict = format_dict or {}
 
     def format(self, format_string: str) -> str:
-        return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
+        # '{{' and '}}' are str.format-style escapes for literal braces. Only
+        # collapse '}}' while an earlier '{{' is still pending: a bare '}}' is
+        # also how ordinary nested JSON ends (e.g. '{"a": {}}'), and treating
+        # that as an escape would silently corrupt the example.
+        pending_escapes = 0
+
+        def replace_match(match: re.Match) -> str:
+            nonlocal pending_escapes
+            token = match.group(0)
+            if token == "{{":
+                pending_escapes += 1
+                return "{"
+            if token == "}}":
+                if pending_escapes:
+                    pending_escapes -= 1
+                    return "}"
+                return token
+            return self._replace_match(match)
+
+        return re.sub(
+            r"\{\{|\}\}|\{([^{}]+)\}",
+            replace_match,
+            format_string,
+        )
 
     def parse(self, format_string: str) -> List[str]:
         return re.findall(
