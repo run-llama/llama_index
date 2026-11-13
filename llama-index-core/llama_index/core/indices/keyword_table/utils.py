@@ -4,17 +4,20 @@ import re
 from collections import Counter
 from typing import Optional, Set
 
-from llama_index.core.indices.utils import expand_tokens_with_subtokens
-from llama_index.core.utils import globals_helper
+from llama_index.core.indices.utils import (
+    expand_tokens_with_subtokens,
+    get_stopwords_set,
+)
 
 
 def simple_extract_keywords(
     text_chunk: str, max_keywords: Optional[int] = None, filter_stopwords: bool = True
 ) -> Set[str]:
     """Extract keywords with simple algorithm."""
-    tokens = [t.strip().lower() for t in re.findall(r"\w+", text_chunk)]
+    tokens = [t.lower() for t in re.findall(r"\w+", text_chunk)]
     if filter_stopwords:
-        tokens = [t for t in tokens if t not in globals_helper.stopwords]
+        stopwords = get_stopwords_set()
+        tokens = [t for t in tokens if t not in stopwords]
 
     token_counts = Counter(tokens)
     keywords = [keyword for keyword, count in token_counts.most_common(max_keywords)]
