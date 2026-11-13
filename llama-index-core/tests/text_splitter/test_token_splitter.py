@@ -89,3 +89,22 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_merge_does_not_retokenize_popped_splits() -> None:
+    calls: List[str] = []
+
+    def counting_tokenizer(text: str) -> List[str]:
+        calls.append(text)
+        return text.split()
+
+    splitter = TokenTextSplitter(
+        chunk_size=3,
+        chunk_overlap=1,
+        tokenizer=counting_tokenizer,
+    )
+    splits = ["alpha", " beta", " gamma", " delta", " epsilon"]
+    chunks = splitter._merge(splits, chunk_size=3)
+    assert chunks == ["alpha beta gamma", "gamma delta epsilon"]
+    assert calls == splits
+
