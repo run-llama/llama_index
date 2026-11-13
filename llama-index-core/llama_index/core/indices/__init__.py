@@ -1,5 +1,8 @@
 """LlamaIndex data structures."""
 
+import importlib
+from typing import Any
+
 # indices
 from llama_index.core.indices.composability.graph import ComposableGraph
 from llama_index.core.indices.document_summary import (
@@ -36,10 +39,6 @@ from llama_index.core.indices.multi_modal import MultiModalVectorStoreIndex
 from llama_index.core.indices.struct_store.pandas import (
     GPTPandasIndex,
     PandasIndex,
-)
-from llama_index.core.indices.struct_store.sql import (
-    GPTSQLStructStoreIndex,
-    SQLStructStoreIndex,
 )
 from llama_index.core.indices.tree.base import GPTTreeIndex, TreeIndex
 from llama_index.core.indices.vector_store import (
@@ -82,3 +81,19 @@ __all__ = [
     "GPTSQLStructStoreIndex",
     "GPTEmptyIndex",
 ]
+
+
+# SQL support imports SQLAlchemy, which is slow to load, so these names are
+# resolved on first access (PEP 562) instead of at package import time.
+_LAZY_IMPORTS = {
+    "GPTSQLStructStoreIndex": "llama_index.core.indices.struct_store.sql",
+    "SQLStructStoreIndex": "llama_index.core.indices.struct_store.sql",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_IMPORTS:
+        value = getattr(importlib.import_module(_LAZY_IMPORTS[name]), name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
