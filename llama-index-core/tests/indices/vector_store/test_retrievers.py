@@ -176,3 +176,56 @@ def test_insert_fetched_nodes_with_nodes_present():
     # Should have replaced old node with the new one
     assert len(new_nodes) == 1
     assert new_nodes[0].text == "Updated text"
+
+
+def test_as_retriever_dynamic_node_ids_and_explicit_override(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+) -> None:
+    """Test that as_retriever reflects subsequent node insertions and accepts explicit node_ids."""
+    node1 = TextNode(text="Hello world.", id_="node1")
+    node2 = TextNode(text="This is another test.", id_="node2")
+    index = VectorStoreIndex([node1], embed_model=mock_embed_model)
+
+    retriever = index.as_retriever(similarity_top_k=5)
+    index.insert_nodes([node2])
+
+    results = retriever.retrieve(QueryBundle("What is?"))
+    retrieved_ids = {r.node.node_id for r in results}
+    assert "node2" in retrieved_ids
+
+    filtered_retriever = index.as_retriever(node_ids=["node1"], similarity_top_k=5)
+    filtered_results = filtered_retriever.retrieve(QueryBundle("What is?"))
+    assert [r.node.node_id for r in filtered_results] == ["node1"]
+
+
+def test_retriever_does_not_restrict_node_ids_when_stores_text_true(
+    mock_embed_model,
+) -> None:
+    """When vector_store.stores_text is True and store_nodes_override is False,
+    index_struct.nodes_dict only tracks non-TextNodes (e.g. ImageNode/IndexNode),
+    so _build_vector_store_query must not set query.node_ids from nodes_dict.
+    """
+    image_node = ImageNode(
+        id_="img1",
+        image="potato",
+        embedding=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+    )
+    text_node = TextNode(
+        id_="txt1",
+        text="potato",
+        embedding=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+    )
+    index = VectorStoreIndex([], embed_model=mock_embed_model, store_nodes_override=False)
+    index._vector_store.stores_text = True
+    index.insert_nodes([image_node, text_node])
+
+    assert list(index.index_struct.nodes_dict.values()) == ["img1"]
+
+    retriever = index.as_retriever()
+    vs_query = retriever._build_vector_store_query(
+        QueryBundle(query_str="potato", embedding=[0.1] * 9)
+    )
+    assert vs_query.node_ids is None
+
