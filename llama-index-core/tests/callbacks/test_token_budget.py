@@ -72,3 +72,45 @@ def test_token_budget_via_callback_manager():
             CBEventType.LLM,
             payload={EventPayload.PROMPT: "p", EventPayload.COMPLETION: resp},
         )
+
+
+def test_incremental_token_counts_and_reset_consistency():
+    mock_tokenizer = Mock()
+    mock_tokenizer.return_value = [1, 2, 3, 4]  # 4 tokens per call
+
+    handler = TokenCountingHandler(tokenizer=mock_tokenizer, token_budget=25)
+    resp = SimpleNamespace(raw=None, additional_kwargs={})
+
+    for i in range(3):
+        handler.on_event_start(CBEventType.LLM, event_id=f"llm-{i}")
+        handler.on_event_end(
+            CBEventType.LLM,
+            payload={EventPayload.PROMPT: "p", EventPayload.COMPLETION: resp},
+            event_id=f"llm-{i}",
+        )
+        handler.on_event_end(
+            CBEventType.EMBEDDING,
+            payload={EventPayload.CHUNKS: ["c1", "c2"]},
+            event_id=f"emb-{i}",
+        )
+
+    assert handler.prompt_llm_token_count == 12
+    assert handler.completion_llm_token_count == 12
+    assert handler.total_llm_token_count == 24
+    assert handler.total_embedding_token_count == 24
+
+    handler.reset_counts()
+    assert handler.prompt_llm_token_count == 0
+    assert handler.completion_llm_token_count == 0
+    assert handler.total_llm_token_count == 0
+    assert handler.total_embedding_token_count == 0
+
+    # After reset, budget check allows new events up to token_budget again
+    handler.on_event_start(CBEventType.LLM, event_id="after-reset")
+    handler.on_event_end(
+        CBEventType.LLM,
+        payload={EventPayload.PROMPT: "p", EventPayload.COMPLETION: resp},
+        event_id="after-reset",
+    )
+    assert handler.total_llm_token_count == 8
+
