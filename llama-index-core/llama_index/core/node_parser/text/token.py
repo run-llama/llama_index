@@ -95,12 +95,14 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         id_func: Optional[Callable[[int, Document], str]] = None,
+        tokenizer: Optional[Callable] = None,
     ) -> "TokenTextSplitter":
         """Initialize with default parameters."""
         callback_manager = callback_manager or CallbackManager([])
         return cls(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
+            tokenizer=tokenizer,
             separator=separator,
             backup_separators=backup_separators,
             keep_whitespaces=keep_whitespaces,
