@@ -1,6 +1,7 @@
 import pickle
 
 import pytest
+from llama_index.core.base.llms.types import ToolCallBlock
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.utils import get_tokenizer
@@ -224,3 +225,31 @@ def test_pickle() -> None:
     memory = ChatMemoryBuffer.from_defaults()
     bytes_ = pickle.dumps(memory)
     assert isinstance(pickle.loads(bytes_), ChatMemoryBuffer)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("token_limit", [2, 20])
+async def test_get_does_not_return_a_lone_tool_result(token_limit: int) -> None:
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="please look up my invoice"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="invoice", tool_name="lookup", tool_kwargs={}
+                )
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="paid",
+            additional_kwargs={"tool_call_id": "invoice"},
+        ),
+    ]
+    memory = ChatMemoryBuffer.from_defaults(
+        chat_history=messages, token_limit=token_limit, tokenizer_fn=str.split
+    )
+
+    expected = [] if token_limit == 2 else messages
+    assert memory.get() == expected
+    assert await memory.aget() == expected
