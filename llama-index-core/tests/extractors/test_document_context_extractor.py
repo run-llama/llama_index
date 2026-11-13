@@ -169,3 +169,51 @@ async def test_multiple_documents_context(
     assert len(metadata_list) == 2
     for metadata in metadata_list:
         assert "context" in metadata
+
+
+def test_default_llm_from_settings(docstore, mock_llm, monkeypatch):
+    from llama_index.core.settings import Settings
+
+    monkeypatch.setattr(Settings, "_llm", mock_llm)
+    extractor = DocumentContextExtractor(docstore=docstore)
+    assert extractor.llm is mock_llm
+
+
+@pytest.mark.asyncio
+async def test_get_document_reraises_unexpected_value_error(docstore, mock_llm, monkeypatch):
+    extractor = DocumentContextExtractor(docstore=docstore, llm=mock_llm)
+
+    async def _raise_corrupt(_doc_id: str):
+        raise ValueError("corrupted document payload")
+
+    monkeypatch.setattr(docstore, "aget_document", _raise_corrupt)
+    with pytest.raises(ValueError, match="corrupted document payload"):
+        await extractor._get_document("doc-1")
+
+
+@pytest.mark.asyncio
+async def test_aextract_caches_parent_document_and_handles_duplicate_node_ids(
+    docstore, mock_llm, sample_documents, create_text_nodes, monkeypatch
+):
+    extractor = DocumentContextExtractor(docstore=docstore, llm=mock_llm)
+    doc = sample_documents[0]
+    nodes = create_text_nodes(doc, ["Chunk A", "Chunk B", "Chunk C"])
+    # Give two nodes the same node_id to verify positional metadata mapping
+    nodes[1].node_id = nodes[0].node_id
+
+    fetch_count = 0
+    orig_aget_document = docstore.aget_document
+
+    async def _counted_aget_document(doc_id: str, *args, **kwargs):
+        nonlocal fetch_count
+        fetch_count += 1
+        return await orig_aget_document(doc_id, *args, **kwargs)
+
+    monkeypatch.setattr(docstore, "aget_document", _counted_aget_document)
+
+    metadata_list = await extractor.aextract(nodes)
+    assert fetch_count == 1
+    assert len(metadata_list) == 3
+    for metadata in metadata_list:
+        assert metadata == {"context": "Context for the provided chunk"}
+
