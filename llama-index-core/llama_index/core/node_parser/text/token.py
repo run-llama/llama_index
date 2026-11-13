@@ -72,7 +72,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             separator=separator,
-            backup_separators=backup_separators,
+            backup_separators=(
+    backup_separators if backup_separators is not None else []
+),
             keep_whitespaces=keep_whitespaces,
             callback_manager=callback_manager,
             include_metadata=include_metadata,
