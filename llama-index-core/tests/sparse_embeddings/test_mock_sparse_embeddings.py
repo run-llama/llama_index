@@ -77,3 +77,42 @@ async def test_aggregate_embeddings_async(mock_sparse_embedding: MockSparseEmbed
     queries = ["hello", "world"]
     embedding = await mock_sparse_embedding.aget_agg_embedding_from_queries(queries)
     assert embedding == {0: 0.125, 1: 0.25}
+
+
+def test_sparse_similarity_overlapping_and_swapped(
+    mock_sparse_embedding: MockSparseEmbedding,
+):
+    emb_small = {0: 3.0, 1: 4.0}
+    emb_large = {1: 4.0, 2: 0.0, 3: 0.0}
+    assert mock_sparse_embedding.similarity(emb_small, emb_large) == pytest.approx(0.8)
+    assert mock_sparse_embedding.similarity(emb_large, emb_small) == pytest.approx(0.8)
+    assert mock_sparse_embedding.similarity({0: 0.0}, emb_large) == 0.0
+    assert mock_sparse_embedding.similarity(emb_small, {1: 0.0, 2: 0.0}) == 0.0
+
+
+@pytest.mark.asyncio
+async def test_aggregate_embeddings_async_concurrent(
+    mock_sparse_embedding: MockSparseEmbedding,
+):
+    import asyncio
+
+    active = 0
+    max_active = 0
+    orig_aget = mock_sparse_embedding._aget_query_embedding
+
+    async def tracked_aget(query: str):
+        nonlocal active, max_active
+        active += 1
+        max_active = max(max_active, active)
+        await asyncio.sleep(0.01)
+        try:
+            return await orig_aget(query)
+        finally:
+            active -= 1
+
+    mock_sparse_embedding._aget_query_embedding = tracked_aget  # type: ignore[method-assign]
+    embedding = await mock_sparse_embedding.aget_agg_embedding_from_queries(
+        ["hello", "world", "foo"]
+    )
+    assert max_active == 3
+    assert embedding == {0: 0.25 / 3, 1: 0.5 / 3, 2: 0.75 / 3}
