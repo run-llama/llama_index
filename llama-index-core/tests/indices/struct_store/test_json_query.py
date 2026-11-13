@@ -10,6 +10,7 @@ from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.json_query import (
     JSONQueryEngine,
     JSONType,
+    default_output_processor,
 )
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.prompts.base import BasePromptTemplate
@@ -86,3 +87,20 @@ def test_json_query_engine(
 
     metadata = cast(Dict[str, Any], response.metadata)
     assert metadata["json_path_response_str"] == TEST_LLM_OUTPUT
+
+
+def test_default_output_processor_preserves_colliding_leaf_keys() -> None:
+    """Ensure multiple JSONPath expressions with the same leaf field do not overwrite each other."""
+    pytest.importorskip("jsonpath_ng")
+    data: JSONType = {
+        "books": [{"title": "Dune"}, {"title": "Emma"}],
+        "movies": [{"title": "Alien"}],
+    }
+    output = default_output_processor(
+        "JSONPath: $.books[*].title, $.movies[*].title", data
+    )
+    assert output == {
+        "title": "Dune, Emma",
+        "$.movies[*].title": "Alien",
+    }
+
