@@ -66,10 +66,10 @@ class Dispatcher(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str = Field(default_factory=str, description="Name of dispatcher")
     event_handlers: List[BaseEventHandler] = Field(
-        default=[], description="List of attached handlers"
+        default_factory=list, description="List of attached handlers"
     )
     span_handlers: List[BaseSpanHandler] = Field(
-        default=[NullSpanHandler()], description="Span handler."
+        default_factory=lambda: [NullSpanHandler()], description="Span handler."
     )
     parent_name: str = Field(
         default_factory=str, description="Name of parent Dispatcher."
@@ -90,8 +90,8 @@ class Dispatcher(BaseModel):
     def __init__(
         self,
         name: str = "",
-        event_handlers: List[BaseEventHandler] = [],
-        span_handlers: List[BaseSpanHandler] = [],
+        event_handlers: Optional[List[BaseEventHandler]] = None,
+        span_handlers: Optional[List[BaseSpanHandler]] = None,
         parent_name: str = "",
         manager: Optional["Manager"] = None,
         root_name: str = "root",
@@ -99,8 +99,8 @@ class Dispatcher(BaseModel):
     ):
         super().__init__(
             name=name,
-            event_handlers=event_handlers,
-            span_handlers=span_handlers,
+            event_handlers=event_handlers if event_handlers is not None else [],
+            span_handlers=span_handlers if span_handlers is not None else [NullSpanHandler()],
             parent_name=parent_name,
             manager=manager,
             root_name=root_name,
