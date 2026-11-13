@@ -43,6 +43,36 @@ documents = reader.load_data(
 )
 ```
 
+Any Actor that returns text works the same way. For example, `johnvc/YoutubeTranscripts`
+returns one item per video with the full transcript and the video metadata,
+ready to be indexed for question answering over a set of videos:
+
+```python
+from llama_index.core import Document, VectorStoreIndex
+from llama_index.readers.apify import ApifyActor
+
+reader = ApifyActor("<My Apify API token>")
+
+documents = reader.load_data(
+    actor_id="johnvc/YoutubeTranscripts",
+    run_input={
+        "youtube_url": ["https://www.youtube.com/watch?v=jNQXAC9IVRw"],
+        "languages": ["en"],
+    },
+    dataset_mapping_function=lambda item: Document(
+        text=item.get("non_timestamped") or "",
+        metadata={
+            "url": item.get("url"),
+            "title": item.get("title"),
+            "channel": item.get("channel_name"),
+            "language": item.get("language_code"),
+        },
+    ),
+)
+
+index = VectorStoreIndex.from_documents(documents)
+```
+
 This loader is designed to be used as a way to load data into
 [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently
 used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
