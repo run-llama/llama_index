@@ -201,6 +201,7 @@ class VectorMemory(BaseMemory):
     def reset(self) -> None:
         """Reset chat history."""
         self.vector_index.vector_store.clear()
+        self.cur_batch_textnode = _get_starter_node_for_new_batch()
 
 
 VectorMemory.model_rebuild()
