@@ -238,7 +238,7 @@ class CodeActAgent(BaseWorkflowAgent):
             # Create a raw object for the event stream
             raw = (
                 last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
+                if issubclass(type(last_chat_response.raw), BaseModel)
                 else last_chat_response.raw
             )
 
@@ -338,7 +338,7 @@ class CodeActAgent(BaseWorkflowAgent):
         # Create the raw object for the output
         raw = (
             chat_response.raw.model_dump()
-            if isinstance(chat_response.raw, BaseModel)
+            if issubclass(type(chat_response.raw), BaseModel)
             else chat_response.raw
         )
 

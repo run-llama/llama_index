@@ -80,7 +80,7 @@ class FunctionAgent(BaseWorkflowAgent):
             )
             raw = (
                 last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
+                if issubclass(type(last_chat_response.raw), BaseModel)
                 else last_chat_response.raw
             )
             ctx.write_event_to_stream(
@@ -135,7 +135,7 @@ class FunctionAgent(BaseWorkflowAgent):
 
         raw = (
             last_chat_response.raw.model_dump()
-            if isinstance(last_chat_response.raw, BaseModel)
+            if issubclass(type(last_chat_response.raw), BaseModel)
             else last_chat_response.raw
         )
         return AgentOutput(
