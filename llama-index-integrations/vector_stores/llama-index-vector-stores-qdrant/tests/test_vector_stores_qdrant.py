@@ -123,6 +123,22 @@ def test_parse_query_result(vector_store: QdrantVectorStore) -> None:
     assert results.nodes[0].embedding == [1, 2, 3]
 
 
+def test_parse_query_result_custom_text_key(vector_store: QdrantVectorStore) -> None:
+    """The text_key field of a collection not written by llama-index is not metadata."""
+    payload = {
+        "page_content": "Paris is the capital of France.",
+        "source": "a.txt",
+    }
+    points = PointsList(points=[PointStruct(id=1, vector=[1, 2, 3], payload=payload)])
+
+    vector_store.text_key = "page_content"
+    results = vector_store.parse_to_query_result(list(points.points))
+
+    assert len(results.nodes) == 1
+    assert results.nodes[0].get_content() == "Paris is the capital of France."
+    assert results.nodes[0].metadata == {"source": "a.txt"}
+
+
 @pytest.mark.asyncio
 async def test_get_with_embedding(vector_store: QdrantVectorStore) -> None:
     existing_nodes = await vector_store.aget_nodes(
