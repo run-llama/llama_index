@@ -137,6 +137,12 @@ class AzStorageBlobReader(
 
         for obj in blobs_list:
             sanitized_file_name = obj.name.replace("/", "-") if not self.blob else obj
+            # Different blob names can flatten to the same file name; don't overwrite.
+            stem, ext = os.path.splitext(sanitized_file_name)
+            suffix = 1
+            while sanitized_file_name in blob_meta:
+                sanitized_file_name = f"{stem}_{suffix}{ext}"
+                suffix += 1
             download_file_path = os.path.join(temp_dir, sanitized_file_name)
             logger.info(f"Start download of {sanitized_file_name}")
             start_time = time.time()
