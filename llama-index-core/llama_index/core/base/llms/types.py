@@ -203,19 +203,21 @@ class BaseContentBlock(ABC, BaseModel):
         from llama_index.core.prompts.utils import format_string
 
         formatted_attrs: Dict[str, Any] = {}
+        formatted_kwargs: Optional[Dict[str, Any]] = None
         for attribute_name in self.templatable_attributes:
             attribute = getattr(self, attribute_name, None)
             att_type = type(attribute)
             template_str = self._get_template_str_from_attribute(attribute)
-            # If the attribute is a binary string, we need to coerce to string for formatting,
-            # but then we need to re-encode to bytes after formatting, which is what the code below does.
-            formatted_kwargs = {
-                k: resolve_binary(v, as_base64=True).read().decode()
-                if isinstance(v, bytes)
-                else v
-                for k, v in kwargs.items()
-            }
             if template_str:
+                # If the attribute is a binary string, we need to coerce to string for formatting,
+                # but then we need to re-encode to bytes after formatting, which is what the code below does.
+                if formatted_kwargs is None:
+                    formatted_kwargs = {
+                        k: resolve_binary(v, as_base64=True).read().decode()
+                        if isinstance(v, bytes)
+                        else v
+                        for k, v in kwargs.items()
+                    }
                 formatted_str = format_string(template_str, **formatted_kwargs)
                 if att_type is str:
                     formatted_attrs[attribute_name] = formatted_str
@@ -967,10 +969,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         ):
             block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
             if current_tokens + block_tokens <= max_tokens:
-                if not reverse:
-                    truncated_blocks.append(block)
-                else:
-                    truncated_blocks.insert(0, block)
+                truncated_blocks.append(block)
                 current_tokens += block_tokens
             else:
                 remaining_tokens = max_tokens - current_tokens
@@ -982,15 +981,15 @@ class BaseRecursiveContentBlock(BaseContentBlock):
                     # However, we still want to include it if no other truncated blocks were added
                     # We leave it the user to handle cases where even the truncated block exceeds max_tokens
                     if (
-                        await truncated_block.aestimate_tokens(tokenizer=tknizer)
+                        not truncated_blocks
+                        or await truncated_block.aestimate_tokens(tokenizer=tknizer)
                         <= remaining_tokens
-                        or not truncated_blocks
                     ):
-                        if not reverse:
-                            truncated_blocks.append(truncated_block)
-                        else:
-                            truncated_blocks.insert(0, truncated_block)
+                        truncated_blocks.append(truncated_block)
                 break  # Stop after reaching max_tokens
+
+        if reverse:
+            truncated_blocks.reverse()
 
         attributes = self.model_dump() | {
             # Overwrite nested blocks
@@ -1011,9 +1010,8 @@ class BaseRecursiveContentBlock(BaseContentBlock):
     def format_vars(self, **kwargs: Any) -> Self:
         formatted_blocks = []
         for block in self.nested_blocks:
-            relevant_kwargs = {
-                k: v for k, v in kwargs.items() if k in block.get_template_vars()
-            }
+            template_vars = set(block.get_template_vars())
+            relevant_kwargs = {k: v for k, v in kwargs.items() if k in template_vars}
             formatted_blocks.append(block.format_vars(**relevant_kwargs))
         attributes = self.model_dump() | {
             # Overwrite nested blocks
