@@ -1,6 +1,7 @@
 """Guideline evaluation."""
 
 import asyncio
+import copy
 import logging
 from typing import Any, Optional, Sequence, Union, cast
 
@@ -68,10 +69,14 @@ class GuidelineEvaluator(BaseEvaluator):
         if isinstance(eval_template, str):
             self._eval_template = PromptTemplate(eval_template)
         else:
-            self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+            self._eval_template = copy.deepcopy(
+                eval_template or DEFAULT_EVAL_TEMPLATE
+            )
 
-        self._output_parser = output_parser or PydanticOutputParser(
-            output_cls=EvaluationData
+        self._output_parser = (
+            output_parser
+            or self._eval_template.output_parser
+            or PydanticOutputParser(output_cls=EvaluationData)
         )
         self._eval_template.output_parser = self._output_parser
 
@@ -84,7 +89,10 @@ class GuidelineEvaluator(BaseEvaluator):
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "eval_template" in prompts:
-            self._eval_template = prompts["eval_template"]
+            eval_template = copy.deepcopy(prompts["eval_template"])
+            if eval_template.output_parser is None:
+                eval_template.output_parser = self._output_parser
+            self._eval_template = eval_template
 
     async def aevaluate(
         self,
