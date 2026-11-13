@@ -18,7 +18,7 @@ from llama_index.core.llms import ChatMessage, AudioBlock, TextBlock
 from llama_index.core.voice_agents import BaseVoiceAgent
 from llama_index.core.tools import BaseTool
 
-DEFAULT_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"
+DEFAULT_MODEL = "gemini-3.8-live"
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"

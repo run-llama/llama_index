@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-voice-agents-gemini-live"
-version = "0.5.0"
+version = "0.5.1"
 description = "LlamaIndex x Gemini Live integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.11,<4.0"
