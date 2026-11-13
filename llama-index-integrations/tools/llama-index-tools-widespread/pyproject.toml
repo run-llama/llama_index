@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-tools-widespread"
+version = "0.1.0"
+description = "llama-index tools widespread — verified-work bounty discovery"
+authors = [{name = "TerexitariusStomp"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+dependencies = ["llama-index-core>=0.13.0,<0.15"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.widespread"
+
+[tool.llamahub.class_authors]
+WidespreadToolSpec = "TerexitariusStomp"
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
