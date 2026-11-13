@@ -1,10 +1,11 @@
 """Apify Actor reader."""
 
+from datetime import timedelta
 from typing import Callable, Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from llama_index.readers.apify.dataset.base import ApifyDataset
+from llama_index.readers.apify.dataset.base import USER_AGENT_SUFFIX, ApifyDataset
 
 
 class ApifyActor(BaseReader):
@@ -22,13 +23,9 @@ class ApifyActor(BaseReader):
         from apify_client import ApifyClient
 
         self.apify_api_token = apify_api_token
-
-        client = ApifyClient(apify_api_token)
-        if hasattr(client.http_client, "httpx_client"):
-            client.http_client.httpx_client.headers["user-agent"] += (
-                "; Origin/llama_index"
-            )
-        self.apify_client = client
+        self.apify_client = ApifyClient(
+            apify_api_token, user_agent_suffix=USER_AGENT_SUFFIX
+        )
 
     def load_data(
         self,
@@ -60,11 +57,15 @@ class ApifyActor(BaseReader):
             run_input=run_input,
             build=build,
             memory_mbytes=memory_mbytes,
-            timeout_secs=timeout_secs,
+            run_timeout=(
+                timedelta(seconds=timeout_secs) if timeout_secs is not None else None
+            ),
         )
+        if actor_call is None:
+            raise RuntimeError(f"Failed to call Actor {actor_id}.")
 
         reader = ApifyDataset(self.apify_api_token)
         return reader.load_data(
-            dataset_id=actor_call.get("defaultDatasetId"),
+            dataset_id=actor_call.default_dataset_id,
             dataset_mapping_function=dataset_mapping_function,
         )

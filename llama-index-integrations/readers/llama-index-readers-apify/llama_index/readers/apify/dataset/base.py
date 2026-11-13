@@ -5,6 +5,8 @@ from typing import Callable, Dict, List
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
+USER_AGENT_SUFFIX = "Origin/llama_index"
+
 
 class ApifyDataset(BaseReader):
     """
@@ -20,13 +22,9 @@ class ApifyDataset(BaseReader):
         """Initialize Apify dataset reader."""
         from apify_client import ApifyClient
 
-        client = ApifyClient(apify_api_token)
-        if hasattr(client.http_client, "httpx_client"):
-            client.http_client.httpx_client.headers["user-agent"] += (
-                "; Origin/llama_index"
-            )
-
-        self.apify_client = client
+        self.apify_client = ApifyClient(
+            apify_api_token, user_agent_suffix=USER_AGENT_SUFFIX
+        )
 
     def load_data(
         self, dataset_id: str, dataset_mapping_function: Callable[[Dict], Document]
