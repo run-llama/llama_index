@@ -48,7 +48,8 @@ class MarkdownNodeParser(NodeParser):
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
         """Get nodes from document by splitting on headers."""
         text = node.get_content(metadata_mode=MetadataMode.NONE)
-        markdown_nodes = []
+        # (section text, header path) pairs, turned into nodes in one batch below
+        sections: List[tuple[str, str]] = []
         lines = text.split("\n")
         current_section = ""
         # Keep track of (markdown level, text) for headers
@@ -68,10 +69,9 @@ class MarkdownNodeParser(NodeParser):
                 if header_match:
                     # Save the previous section before starting a new one
                     if current_section.strip():
-                        markdown_nodes.append(
-                            self._build_node_from_split(
+                        sections.append(
+                            (
                                 current_section.strip(),
-                                node,
                                 self.header_path_separator.join(
                                     h[1] for h in header_stack[:-1]
                                 ),
@@ -96,15 +96,14 @@ class MarkdownNodeParser(NodeParser):
 
         # Add the final section
         if current_section.strip():
-            markdown_nodes.append(
-                self._build_node_from_split(
+            sections.append(
+                (
                     current_section.strip(),
-                    node,
                     self.header_path_separator.join(h[1] for h in header_stack[:-1]),
                 )
             )
 
-        return markdown_nodes
+        return self._build_nodes_from_sections(sections, node)
 
     def _build_node_from_split(
         self,
@@ -113,16 +112,41 @@ class MarkdownNodeParser(NodeParser):
         header_path: str,
     ) -> TextNode:
         """Build node from single text split."""
-        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+        return self._build_nodes_from_sections([(text_split, header_path)], node)[0]
+
+    def _build_nodes_from_sections(
+        self,
+        sections: List[tuple[str, str]],
+        node: BaseNode,
+    ) -> List[TextNode]:
+        """
+        Build nodes from (text, header_path) sections.
+
+        All nodes are built in a single call so that the source node's hash is
+        computed once instead of once per section.
+        """
+        if (
+            type(self)._build_node_from_split
+            is not MarkdownNodeParser._build_node_from_split
+        ):
+            return [
+                self._build_node_from_split(text, node, header_path)
+                for text, header_path in sections
+            ]
+
+        nodes = build_nodes_from_splits(
+            [text for text, _ in sections], node, id_func=self.id_func
+        )
 
         if self.include_metadata:
             separator = self.header_path_separator
-            node.metadata["header_path"] = (
-                # ex: "/header1/header2/" || "/"
-                separator + header_path + separator if header_path else separator
-            )
+            for built_node, (_, header_path) in zip(nodes, sections):
+                built_node.metadata["header_path"] = (
+                    # ex: "/header1/header2/" || "/"
+                    separator + header_path + separator if header_path else separator
+                )
 
-        return node
+        return nodes
 
     def _parse_nodes(
         self,
