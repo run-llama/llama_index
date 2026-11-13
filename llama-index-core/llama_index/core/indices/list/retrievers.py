@@ -130,16 +130,20 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
                 query_bundle.embedding_strs
             )
 
-        node_embeddings: List[List[float]] = []
-        nodes_embedded = 0
-        for node in nodes:
-            if node.embedding is None:
-                nodes_embedded += 1
-                node.embedding = self._embed_model.get_text_embedding(
+        missing_nodes = [node for node in nodes if node.embedding is None]
+        if missing_nodes:
+            missing_embeddings = self._embed_model.get_text_embedding_batch(
+                [
                     node.get_content(metadata_mode=MetadataMode.EMBED)
-                )
+                    for node in missing_nodes
+                ]
+            )
+            for node, embedding in zip(missing_nodes, missing_embeddings):
+                node.embedding = embedding
 
-            node_embeddings.append(node.embedding)
+        node_embeddings: List[List[float]] = [
+            node.embedding for node in nodes if node.embedding is not None
+        ]
         return query_bundle.embedding, node_embeddings
 
 
