@@ -1989,7 +1989,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-openai-like"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-embeddings-openai" },

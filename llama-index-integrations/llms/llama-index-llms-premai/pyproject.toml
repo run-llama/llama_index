@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-premai"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index llms Prem AI integration"
 authors = [{name = "PremAI"}]
 requires-python = ">=3.11,<4.0"

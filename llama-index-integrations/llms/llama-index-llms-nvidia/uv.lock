@@ -1959,7 +1959,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-nvidia"
-version = "0.6.1"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-llms-openai-like" },
@@ -1996,7 +1996,7 @@ test-integration = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "llama-index-llms-openai-like", specifier = ">=0.8.0,<0.9" }]
+requires-dist = [{ name = "llama-index-llms-openai-like", specifier = ">=0.8.0,<0.10" }]
 
 [package.metadata.requires-dev]
 dev = [

@@ -2075,7 +2075,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-alibabacloud-aisearch"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "alibabacloud-searchplat20240529" },

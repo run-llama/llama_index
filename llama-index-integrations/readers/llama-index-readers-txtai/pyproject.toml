@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-txtai"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index readers txtai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.11,<4.0"

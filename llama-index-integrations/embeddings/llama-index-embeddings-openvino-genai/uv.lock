@@ -1851,7 +1851,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-openvino-genai"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

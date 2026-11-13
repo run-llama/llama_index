@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-vllm"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index embeddings vllm integration"
 authors = [{name = "Yuri", email = "yuri@yurinet.blog"}]
 requires-python = ">=3.11,<4.0"

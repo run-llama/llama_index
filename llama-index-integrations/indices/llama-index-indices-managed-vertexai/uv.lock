@@ -2161,7 +2161,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-indices-managed-vertexai"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },

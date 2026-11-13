@@ -2161,7 +2161,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-vertex-endpoint"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },

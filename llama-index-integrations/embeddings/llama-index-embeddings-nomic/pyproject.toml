@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-nomic"
-version = "0.9.0"
+version = "0.10.0"
 description = "llama-index embeddings nomic integration"
 authors = [
     {name = "Jared Van Bortel", email = "jared@nomic.ai"},

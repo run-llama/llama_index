@@ -2173,7 +2173,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-firebase-realtimedb"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "firebase-admin" },

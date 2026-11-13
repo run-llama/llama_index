@@ -1947,7 +1947,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-zyte-serp"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

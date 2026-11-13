@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-nvidia-triton"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index llms nvidia triton integration"
 authors = [{name = "Rohith Ramakrishnan", email = "rrohith2001@gmail.com"}]
 requires-python = ">=3.11,<4.0"
