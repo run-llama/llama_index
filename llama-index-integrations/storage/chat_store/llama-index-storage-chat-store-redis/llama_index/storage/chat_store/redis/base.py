@@ -4,6 +4,7 @@ import sys
 from typing import Any, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
+import redis
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
