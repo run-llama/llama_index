@@ -8,8 +8,9 @@ from llama_index.core.prompts.chat_prompts import (
     CHAT_CONTENT_QA_PROMPT,
     CHAT_CONTENT_REFINE_PROMPT,
 )
-from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core import Settings
+from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
 
 
 def test_query_engine_falls_back_to_inheriting_retrievers_service_context(
@@ -71,3 +72,17 @@ def test_from_args_multimodal__overrides_chat_templates() -> None:
 def test_from_args_default__not_multimodal() -> None:
     engine = RetrieverQueryEngine.from_args(retriever=MagicMock(), llm=MockLLM())
     assert engine._response_synthesizer._multimodal is False
+
+
+def test_from_args_passes_callback_manager_to_response_synthesizer() -> None:
+    # Regression test for #24031: from_args used to build the response
+    # synthesizer before resolving callback_manager, so the synthesizer
+    # (and its LLM) fell back to Settings.callback_manager and a supplied
+    # handler never saw synthesize/llm events.
+    callback_manager = CallbackManager([])
+    assert callback_manager is not Settings.callback_manager
+    engine = RetrieverQueryEngine.from_args(
+        retriever=MagicMock(), llm=MockLLM(), callback_manager=callback_manager
+    )
+    assert engine.callback_manager is callback_manager
+    assert engine._response_synthesizer.callback_manager is callback_manager
