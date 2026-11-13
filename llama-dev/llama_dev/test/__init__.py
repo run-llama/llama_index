@@ -1,5 +1,6 @@
 import concurrent.futures
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -89,6 +90,12 @@ def _generate_status_table(
 )
 @click.option("--base-ref", required=False)
 @click.option("--workers", default=8)
+@click.option(
+    "--clean",
+    is_flag=True,
+    default=False,
+    help="Delete each package's .venv after its tests finish, to bound disk usage",
+)
 @click.argument("package_names", required=False, nargs=-1)
 @click.pass_obj
 def test(
@@ -98,6 +105,7 @@ def test(
     cov_fail_under: int,
     base_ref: str,
     workers: int,
+    clean: bool,
     package_names: tuple,
 ):
     # Fail on incompatible configurations
@@ -173,6 +181,10 @@ def test(
             for future in concurrent.futures.as_completed(future_to_package):
                 result = future.result()
                 results.append(result)
+                if clean:
+                    shutil.rmtree(
+                        future_to_package[future] / ".venv", ignore_errors=True
+                    )
 
                 # Update counts
                 if result["status"] == ResultStatus.TESTS_PASSED:
@@ -196,7 +208,7 @@ def test(
                     running_packages = [
                         str(future_to_package[f].relative_to(repo_root))
                         for f in future_to_package
-                        if not f.done()
+                        if f.running()
                     ]
 
                     console.print(
@@ -234,6 +246,10 @@ def test(
                 for future in concurrent.futures.as_completed(future_to_package):
                     result = future.result()
                     results.append(result)
+                    if clean:
+                        shutil.rmtree(
+                            future_to_package[future] / ".venv", ignore_errors=True
+                        )
 
                     # Update counts
                     if result["status"] == ResultStatus.TESTS_PASSED:
@@ -251,7 +267,7 @@ def test(
                     running_packages = [
                         str(future_to_package[f].relative_to(repo_root))
                         for f in future_to_package
-                        if not f.done()
+                        if f.running()
                     ]
 
                     live.update(
@@ -436,13 +452,20 @@ def _diff_cover(
     if base_ref:
         diff_cover_cmd.append(f"--compare-branch={base_ref}")
 
-    return subprocess.run(
-        diff_cover_cmd,
-        cwd=package_path,
-        text=True,
-        capture_output=True,
-        env=env,
-    )
+    # diff-cover shells out to `git diff`, which refreshes the shared
+    # .git/index; concurrent workers can collide on index.lock, so retry.
+    for attempt in range(3):
+        result = subprocess.run(
+            diff_cover_cmd,
+            cwd=package_path,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        if result.returncode == 0 or "CommandError" not in (result.stderr or ""):
+            break
+        time.sleep(1 + attempt)
+    return result
 
 
 def _run_tests(

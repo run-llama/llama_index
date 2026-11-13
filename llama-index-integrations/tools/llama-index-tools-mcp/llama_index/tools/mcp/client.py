@@ -251,7 +251,7 @@ class BasicMCPClient(ClientSession):
                 async with streamable_http_client(
                     url=self.command_or_url,
                     http_client=self.http_client,
-                ) as (read, write, _):
+                ) as (read, write):
                     async with ClientSession(
                         read,
                         write,

@@ -1,12 +1,20 @@
 ---
-title: Loading from LlamaCloud
+title: Loading from LlamaParse
 ---
 
-Our enterprise service, [LlamaCloud](https://cloud.llamaindex.ai/), allows you to store and query your data in a fully-managed, scalable, and secure environment. For a full explanation of how to use LlamaCloud, see the [LlamaCloud documentation](https://docs.cloud.llamaindex.ai/), in particular the [framework integration guide](https://docs.cloud.llamaindex.ai/llamacloud/guides/framework_integration).
+[LlamaParse](/llamaparse/), the hosted document platform from the LlamaIndex team (previously called LlamaCloud), can parse, index and query your data in a fully managed environment. Its Index product connects to your data sources, keeps the index in sync and serves retrieval, and the framework talks to the first version of it through `LlamaCloudIndex`.
 
-## Using LlamaCloud from LlamaIndex
+:::caution[This integration targets the earlier version of Index]
+`LlamaCloudIndex` ships in `llama-cloud-services`, a package that is deprecated and no longer updated, and it talks to the first version of Index. Installing it pins an old release of `llama-cloud`, so it cannot share an environment with the current `llama-cloud` SDK. For new projects, use [Index v2](/llamaparse/cloud-index-v2/getting_started/) through the `llama-cloud` SDK.
+:::
 
-You can use LlamaCloud to connect to your data stores and automatically index them. Once an index is created, you can use it in just a few lines of code:
+## Using LlamaParse from LlamaIndex
+
+You can use Index to connect to your data stores and automatically index them. Once an index is created, you can use it in just a few lines of code:
+
+```bash
+pip install llama-index llama-cloud-services
+```
 
 ```python
 import os
@@ -19,4 +27,4 @@ query_engine = index.as_query_engine()
 answer = query_engine.query("Example query")
 ```
 
-It's also possible to programmatically load documents into a LlamaCloud index; check the [documentation](https://docs.cloud.llamaindex.ai/llamacloud/guides/framework_integration) for more details.
+It's also possible to load documents into an index programmatically; see the [documentation for that version of Index](/llamaparse/deprecated/cloud-index/getting_started/) and the [`LlamaCloudIndex` guide](/python/framework/module_guides/indexing/llama_cloud_index/) for details.
