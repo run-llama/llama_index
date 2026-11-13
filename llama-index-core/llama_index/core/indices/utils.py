@@ -30,7 +30,7 @@ def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[i
     if len(numbers) == 0:
         return None
     else:
-        return numbers[:n]
+        return [int(x) for x in numbers[:n]]
 
 
 def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
