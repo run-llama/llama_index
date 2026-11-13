@@ -129,12 +129,29 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 )
         else:
             lines = text.split("\n")
+            current_lines: List[str] = []
+
+            def flush() -> None:
+                if currentElement is not None:
+                    currentElement.element = "\n".join(current_lines)
+                    elements.append(currentElement)
+
+            def start(element_type: str, first: str, **extra: Any) -> Element:
+                nonlocal current_lines
+                current_lines = [first]
+                return Element(
+                    id=f"id_{len(elements)}",
+                    type=element_type,
+                    element=first,
+                    **extra,
+                )
+
             # Then parse the lines from raw text of json
             for line in lines:
                 if line.startswith("```"):
                     # check if this is the end of a code block
                     if currentElement is not None and currentElement.type == "code":
-                        elements.append(currentElement)
+                        flush()
                         currentElement = None
                         # if there is some text after the ``` create a text element with it
                         if len(line) > 3:
@@ -148,59 +165,42 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
 
                     elif line.count("```") == 2 and line[-3] != "`":
                         # check if inline code block (aka have a second ``` in line but not at the end)
-                        if currentElement is not None:
-                            elements.append(currentElement)
-                        currentElement = Element(
-                            id=f"id_{len(elements)}",
-                            type="code",
-                            element=line.lstrip("```"),
-                        )
+                        flush()
+                        currentElement = start("code", line.lstrip("```"))
                     elif currentElement is not None and currentElement.type == "text":
-                        currentElement.element += "\n" + line
+                        current_lines.append(line)
                     else:
-                        if currentElement is not None:
-                            elements.append(currentElement)
-                        currentElement = Element(
-                            id=f"id_{len(elements)}", type="text", element=line
-                        )
+                        flush()
+                        currentElement = start("text", line)
 
                 elif currentElement is not None and currentElement.type == "code":
-                    currentElement.element += "\n" + line
+                    current_lines.append(line)
 
                 elif line.startswith("|"):
                     if currentElement is not None and currentElement.type != "table":
-                        if currentElement is not None:
-                            elements.append(currentElement)
-                        currentElement = Element(
-                            id=f"id_{len(elements)}", type="table", element=line
-                        )
+                        flush()
+                        currentElement = start("table", line)
                     elif currentElement is not None:
-                        currentElement.element += "\n" + line
+                        current_lines.append(line)
                     else:
-                        currentElement = Element(
-                            id=f"id_{len(elements)}", type="table", element=line
-                        )
+                        currentElement = start("table", line)
                 elif line.startswith("#"):
-                    if currentElement is not None:
-                        elements.append(currentElement)
-                    currentElement = Element(
-                        id=f"id_{len(elements)}",
-                        type="title",
-                        element=line.lstrip("#"),
+                    flush()
+                    currentElement = start(
+                        "title",
+                        line.lstrip("#"),
                         title_level=len(line) - len(line.lstrip("#")),
                     )
                 else:
                     if currentElement is not None and currentElement.type != "text":
-                        elements.append(currentElement)
-                        currentElement = Element(
-                            id=f"id_{len(elements)}", type="text", element=line
-                        )
+                        flush()
+                        currentElement = start("text", line)
                     elif currentElement is not None:
-                        currentElement.element += "\n" + line
+                        current_lines.append(line)
                     else:
-                        currentElement = Element(
-                            id=f"id_{len(elements)}", type="text", element=line
-                        )
+                        currentElement = start("text", line)
+            flush()
+            currentElement = None
         if currentElement is not None:
             elements.append(currentElement)
 
@@ -280,6 +280,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
 
         # merge consecutive text elements together for now
         merged_elements: List[Element] = []
+        merged_parts: List[str] = []
         for element in elements:
             if (
                 len(merged_elements) > 0
@@ -287,13 +288,16 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 and merged_elements[-1].type == "text"
             ):
                 if isinstance(element.element, list):
-                    merged_elements[-1].element += "\n" + " ".join(
-                        str(e) for e in element.element
-                    )
+                    merged_parts.append(" ".join(str(e) for e in element.element))
                 else:
-                    merged_elements[-1].element += "\n" + element.element
+                    merged_parts.append(element.element)
             else:
+                if len(merged_parts) > 1:
+                    merged_elements[-1].element = "\n".join(merged_parts)
                 merged_elements.append(element)
+                merged_parts = [element.element]
+        if len(merged_parts) > 1:
+            merged_elements[-1].element = "\n".join(merged_parts)
         elements = merged_elements
         return merged_elements
 
