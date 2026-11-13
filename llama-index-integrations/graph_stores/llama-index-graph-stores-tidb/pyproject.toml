@@ -8,7 +8,7 @@ dev = [
     "mypy>=1.10.0,<2",
     "pre-commit==3.2.0",
     "pytest",
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
@@ -20,7 +20,7 @@ name = "llama-index-graph-stores-tidb"
 version = "0.6.0"
 description = "llama-index graph stores tidb integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

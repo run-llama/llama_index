@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest",
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
     "ruff==0.11.11",
@@ -16,7 +16,7 @@ name = "llama-index-tools-jira"
 version = "0.4.0"
 description = ""
 authors = [{name = "Malik Naik", email = "maliknaik16@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 dependencies = [
     "jira>=3.8.0",

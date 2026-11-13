@@ -1105,12 +1105,10 @@ class OpenAI(FunctionCallingLLM):
     def _prepare_schema(
         self, llm_kwargs: Optional[Dict[str, Any]], output_cls: Type[Model]
     ) -> Dict[str, Any]:
-        from openai.resources.chat.completions.completions import (
-            _type_to_response_format,
-        )
+        from openai.lib._parsing import type_to_response_format_param
 
         llm_kwargs = llm_kwargs or {}
-        response_format = _type_to_response_format(output_cls)
+        response_format = type_to_response_format_param(output_cls)
         if isinstance(response_format, dict):
             json_schema = response_format.get("json_schema")
             if isinstance(json_schema, dict) and "name" in json_schema:
