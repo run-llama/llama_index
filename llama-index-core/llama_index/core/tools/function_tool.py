@@ -93,7 +93,15 @@ class FunctionTool(AsyncBaseTool):
         self._real_fn = fn or async_fn
         if async_fn is not None:
             self._async_fn = async_fn
-            self._fn = fn or async_to_sync(async_fn)
+            if fn is None:
+                self._fn = async_to_sync(async_fn)
+            elif inspect.iscoroutinefunction(fn):
+                # A coroutine function in the sync slot has to be driven to
+                # completion; calling it directly only builds a coroutine
+                # object, which call() would hand back as a successful result.
+                self._fn = async_to_sync(fn)
+            else:
+                self._fn = fn
         else:
             assert fn is not None
             if inspect.iscoroutinefunction(fn):
