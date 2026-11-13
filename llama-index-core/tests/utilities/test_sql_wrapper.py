@@ -84,6 +84,19 @@ def test_run_sql_truncation(sql_database: SQLDatabase) -> None:
     assert result_str == "[(1, 'Paul...')]"
 
 
+def test_truncate_word_length_at_or_below_suffix_length(
+    sql_database: SQLDatabase,
+) -> None:
+    assert sql_database.truncate_word("Paul McCartney", length=2) == "Pa"
+    assert sql_database.truncate_word("Paul McCartney", length=3) == "Pau"
+    assert (
+        sql_database.truncate_word("Paul McCartney", length=3, suffix="[...]") == "Pau"
+    )
+    assert len(sql_database.truncate_word("abcdefghij", length=1)) == 1
+    assert sql_database.truncate_word("Paul McCartney", length=0) == "Paul McCartney"
+    assert sql_database.truncate_word(12345, length=2) == 12345
+
+
 # Test if long strings are not being truncated with large max_string_length
 @pytest.mark.parametrize("sql_database", [10000], indirect=True)
 def test_long_string_no_truncation(sql_database: SQLDatabase) -> None:
