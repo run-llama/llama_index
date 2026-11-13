@@ -468,7 +468,7 @@ six==1.17.0
     #   rfc3339-validator
 sniffio==1.3.1
     # via anyio
-soupsieve==2.7
+soupsieve==2.10
     # via beautifulsoup4
 sqlalchemy==2.0.41
     # via llama-index-core
