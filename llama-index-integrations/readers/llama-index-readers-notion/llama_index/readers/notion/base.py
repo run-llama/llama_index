@@ -134,10 +134,16 @@ class NotionPageReader(BasePydanticReader):
         return self._read_block(page_id)
 
     def query_database(
-        self, database_id: str, query_dict: Dict[str, Any] = {"page_size": 100}
+        self, database_id: str, query_dict: Optional[Dict[str, Any]] = None
     ) -> List[str]:
         """Get all the pages from a Notion database."""
         pages = []
+
+        # The pagination loop below writes "start_cursor" into this dict. Copying it
+        # keeps that write out of the caller's dict, and using None as the default
+        # keeps it out of a shared default argument that would otherwise persist
+        # across calls.
+        query_dict = dict(query_dict) if query_dict is not None else {"page_size": 100}
 
         res = self._request_with_retry(
             "POST",
