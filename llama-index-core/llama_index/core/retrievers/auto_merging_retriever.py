@@ -2,7 +2,7 @@
 
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -14,9 +14,8 @@ from llama_index.core.indices.vector_store.retrievers.retriever import (
 from llama_index.core.schema import (
     BaseNode,
     IndexNode,
-    NodeWithScore,
     MetadataMode,
-    QueryBundle,
+    NodeWithScore,
 )
 from llama_index.core.storage.storage_context import StorageContext
 
@@ -60,6 +59,7 @@ class AutoMergingRetriever(BaseRetriever):
         # retrieve all parent nodes
         parent_nodes: Dict[str, BaseNode] = {}
         parent_cur_children_dict: Dict[str, List[NodeWithScore]] = defaultdict(list)
+        seen_child_ids_per_parent: Dict[str, Set[str]] = defaultdict(set)
         for node in nodes:
             if node.node.parent_node is None:
                 continue
@@ -73,8 +73,11 @@ class AutoMergingRetriever(BaseRetriever):
                 )
                 parent_nodes[parent_node_id] = cast(BaseNode, parent_node)
 
-            # add reference to child from parent
-            parent_cur_children_dict[parent_node_id].append(node)
+            # add reference to child from parent (deduplicated by child node_id)
+            child_node_id = node.node.node_id
+            if child_node_id not in seen_child_ids_per_parent[parent_node_id]:
+                seen_child_ids_per_parent[parent_node_id].add(child_node_id)
+                parent_cur_children_dict[parent_node_id].append(node)
 
         # compute ratios and "merge" nodes
         # merging: delete some children nodes, add some parent nodes
@@ -91,6 +94,7 @@ class AutoMergingRetriever(BaseRetriever):
                 node_ids_to_delete.update(
                     set({n.node.node_id for n in parent_cur_children})
                 )
+                node_ids_to_delete.add(parent_node_id)
 
                 parent_node_text = truncate_text(
                     parent_node.get_content(metadata_mode=MetadataMode.NONE), 100
@@ -120,16 +124,23 @@ class AutoMergingRetriever(BaseRetriever):
         # add parent nodes
         new_nodes.extend(list(nodes_to_add.values()))
 
-        is_changed = len(node_ids_to_delete) > 0
+        is_changed = len(nodes_to_add) > 0
 
         return new_nodes, is_changed
 
     def _fill_in_nodes(
-        self, nodes: List[NodeWithScore]
+        self,
+        nodes: List[NodeWithScore],
+        seen_node_ids: Optional[Set[str]] = None,
     ) -> Tuple[List[NodeWithScore], bool]:
         """Fill in nodes."""
         new_nodes = []
         is_changed = False
+        existing_node_ids: Set[str] = {n.node.node_id for n in nodes}
+        if seen_node_ids is not None:
+            existing_node_ids.update(seen_node_ids)
+            seen_node_ids.update(existing_node_ids)
+
         for idx, node in enumerate(nodes):
             new_nodes.append(node)
             if idx >= len(nodes) - 1:
@@ -141,17 +152,22 @@ class AutoMergingRetriever(BaseRetriever):
                 cur_node.next_node is not None
                 and cur_node.next_node == nodes[idx + 1].node.prev_node
             ):
+                next_node_id = cur_node.next_node.node_id
+                if next_node_id in existing_node_ids:
+                    continue
+                existing_node_ids.add(next_node_id)
+                if seen_node_ids is not None:
+                    seen_node_ids.add(next_node_id)
+
                 is_changed = True
-                next_node = self._storage_context.docstore.get_document(
-                    cur_node.next_node.node_id
-                )
+                next_node = self._storage_context.docstore.get_document(next_node_id)
                 next_node = cast(BaseNode, next_node)
 
                 next_node_text = truncate_text(
                     next_node.get_content(metadata_mode=MetadataMode.NONE), 100
                 )
                 info_str = (
-                    f"> Filling in node. Node id: {cur_node.next_node.node_id}"
+                    f"> Filling in node. Node id: {next_node_id}"
                     f"> Node text: {next_node_text}\n"
                 )
                 logger.info(info_str)
@@ -159,18 +175,24 @@ class AutoMergingRetriever(BaseRetriever):
                     print(info_str)
 
                 # set score to be average of current node and next node
-                avg_score = (node.get_score() + nodes[idx + 1].get_score()) / 2
+                cur_score = node.get_score() or 0.0
+                next_score = nodes[idx + 1].get_score() or 0.0
+                avg_score = (cur_score + next_score) / 2
                 new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
         return new_nodes, is_changed
 
     def _try_merging(
-        self, nodes: List[NodeWithScore]
+        self,
+        nodes: List[NodeWithScore],
+        seen_node_ids: Optional[Set[str]] = None,
     ) -> Tuple[List[NodeWithScore], bool]:
         """Try different ways to merge nodes."""
         # first try filling in nodes
-        nodes, is_changed_0 = self._fill_in_nodes(nodes)
+        nodes, is_changed_0 = self._fill_in_nodes(nodes, seen_node_ids=seen_node_ids)
         # then try merging nodes
         nodes, is_changed_1 = self._get_parents_and_merge(nodes)
+        if seen_node_ids is not None:
+            seen_node_ids.update(n.node.node_id for n in nodes)
         return nodes, is_changed_0 or is_changed_1
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -181,14 +203,19 @@ class AutoMergingRetriever(BaseRetriever):
 
         """
         initial_nodes = self._vector_retriever.retrieve(query_bundle)
+        seen_node_ids: Set[str] = {n.node.node_id for n in initial_nodes}
 
-        cur_nodes, is_changed = self._try_merging(initial_nodes)
+        cur_nodes, is_changed = self._try_merging(
+            initial_nodes, seen_node_ids=seen_node_ids
+        )
         # cur_nodes, is_changed = self._get_parents_and_merge(initial_nodes)
         while is_changed:
-            cur_nodes, is_changed = self._try_merging(cur_nodes)
+            cur_nodes, is_changed = self._try_merging(
+                cur_nodes, seen_node_ids=seen_node_ids
+            )
             # cur_nodes, is_changed = self._get_parents_and_merge(cur_nodes)
 
         # sort by similarity
-        cur_nodes.sort(key=lambda x: x.get_score(), reverse=True)
+        cur_nodes.sort(key=lambda x: x.get_score() or 0.0, reverse=True)
 
         return cur_nodes
