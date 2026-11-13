@@ -1356,6 +1356,9 @@ class ImageDocument(Document):
 
         super().__init__(**kwargs)
 
+        if text_embedding is not None:
+            self.text_embedding = text_embedding
+
     @property
     def image(self) -> str | None:
         if self.image_resource and self.image_resource.data:
@@ -1405,10 +1408,11 @@ class ImageDocument(Document):
 
     @text_embedding.setter
     def text_embedding(self, embeddings: list[float]) -> None:
-        if self.text_resource:
-            if self.text_resource.embeddings is None:
-                self.text_resource.embeddings = {}
-            self.text_resource.embeddings["dense"] = embeddings
+        if self.text_resource is None:
+            self.text_resource = MediaResource()
+        if self.text_resource.embeddings is None:
+            self.text_resource.embeddings = {}
+        self.text_resource.embeddings["dense"] = embeddings
 
     @classmethod
     def class_name(cls) -> str:
