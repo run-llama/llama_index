@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [ETFIQ](https://github.com/etfiq/etfiq-connectors/tree/main/llama-index-tools-etfiq): free, keyless, dated US ETF data (`pip install llama-index-tools-etfiq`)
 
 ## LlamaPacks -- Code Templates
 
