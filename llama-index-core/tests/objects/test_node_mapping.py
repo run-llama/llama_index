@@ -118,6 +118,19 @@ def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
     for node in nodes:
         assert None not in node.metadata.values()
 
+    # Ensure add_object does not raise NotImplementedError (used by ObjectIndex.insert_object)
+    mapping.add_object(table1)
+
+    # Ensure distinct (table_name, context_str) pairs do not collide on node id_
+    assert (
+        mapping.to_node(SQLTableSchema(table_name="users", context_str=None)).id_
+        != mapping.to_node(SQLTableSchema(table_name="users", context_str="None")).id_
+    )
+    assert (
+        mapping.to_node(SQLTableSchema(table_name="ab", context_str="c")).id_
+        != mapping.to_node(SQLTableSchema(table_name="a", context_str="bc")).id_
+    )
+
 
 def test_simple_object_node_mapping_persist_rejects_unsafe_pickle(
     tmp_path,
