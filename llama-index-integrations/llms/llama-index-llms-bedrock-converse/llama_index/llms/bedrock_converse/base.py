@@ -549,17 +549,24 @@ class BedrockConverse(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            content = {}
-            tool_calls = []  # Track tool calls separately
-            current_tool_call = None  # Track the current tool call being built
+            # Content blocks (text, reasoning, tool use) keyed by `contentBlockIndex`,
+            # so that each block keeps its own content, signature and position.
+            content_blocks: dict[int, dict[str, Any]] = {}
             role = MessageRole.ASSISTANT
-            thinking = ""
-            thinking_signature = ""
 
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
-                    content = join_two_dicts(content, content_delta)
+                    # Bedrock does not send `contentBlockStart` for text or reasoning
+                    # blocks, so the first delta at an index creates its entry.
+                    content_block = content_blocks.setdefault(
+                        content_block_delta["contentBlockIndex"], {}
+                    )
+
+                    if "text" in content_delta:
+                        content_block["text"] = (
+                            content_block.get("text", "") + content_delta["text"]
+                        )
 
                     thinking_delta_value = None
                     if "reasoningContent" in content_delta:
@@ -567,13 +574,18 @@ class BedrockConverse(FunctionCallingLLM):
                         # redacted content are stored within `reasoningContent`.
                         reasoning_content = content_delta.get("reasoningContent", {})
                         reasoning_text = reasoning_content.get("text", "")
-                        thinking += reasoning_text
+                        content_block["thinking"] = (
+                            content_block.get("thinking", "") + reasoning_text
+                        )
                         thinking_delta_value = reasoning_text
-                        thinking_signature += reasoning_content.get("signature", "")
+                        content_block["thinking_signature"] = content_block.get(
+                            "thinking_signature", ""
+                        ) + reasoning_content.get("signature", "")
 
-                    # If this delta contains tool call info, update current tool call
+                    # If this delta contains tool call info, update the tool call at this index
                     if "toolUse" in content_delta:
                         tool_use_delta = content_delta["toolUse"]
+                        current_tool_call = content_block.get("toolUse")
 
                         if current_tool_call:
                             # Handle the input field specially - concatenate partial JSON strings
@@ -592,30 +604,35 @@ class BedrockConverse(FunctionCallingLLM):
                                     if k != "input"
                                 }
                                 if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(
+                                    content_block["toolUse"] = join_two_dicts(
                                         current_tool_call, tool_use_without_input
                                     )
                             else:
                                 # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(
+                                content_block["toolUse"] = join_two_dicts(
                                     current_tool_call, tool_use_delta
                                 )
 
-                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
-                    ]
-                    if thinking != "":
-                        blocks.insert(
-                            0,
-                            ThinkingBlock(
-                                content=thinking,
-                                additional_information={
-                                    "signature": thinking_signature
-                                },
-                            ),
-                        )
-                    if tool_calls:
-                        for tool_call in tool_calls:
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = []
+                    tool_calls = []
+                    for _, block_content in sorted(content_blocks.items()):
+                        if block_content.get("thinking") or block_content.get(
+                            "thinking_signature"
+                        ):
+                            blocks.append(
+                                ThinkingBlock(
+                                    content=block_content.get("thinking", ""),
+                                    additional_information={
+                                        "signature": block_content.get(
+                                            "thinking_signature", ""
+                                        )
+                                    },
+                                )
+                            )
+                        if block_content.get("text"):
+                            blocks.append(TextBlock(text=block_content["text"]))
+                        if tool_call := block_content.get("toolUse"):
+                            tool_calls.append(tool_call)
                             blocks.append(
                                 ToolCallBlock(
                                     tool_kwargs=_parse_tool_input(
@@ -652,28 +669,31 @@ class BedrockConverse(FunctionCallingLLM):
                 elif content_block_start := chunk.get("contentBlockStart"):
                     # New tool call starting
                     if "toolUse" in content_block_start["start"]:
-                        tool_use = content_block_start["start"]["toolUse"]
-                        # Start tracking a new tool call
-                        current_tool_call = tool_use
-                        # Add to our list of tool calls
-                        tool_calls.append(current_tool_call)
+                        # Start tracking a new tool call at this index
+                        content_blocks.setdefault(
+                            content_block_start["contentBlockIndex"], {}
+                        )["toolUse"] = dict(content_block_start["start"]["toolUse"])
 
-                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
-                    ]
-                    if thinking != "":
-                        blocks.insert(
-                            0,
-                            ThinkingBlock(
-                                content=thinking,
-                                additional_information={
-                                    "signature": thinking_signature
-                                },
-                            ),
-                        )
-
-                    if tool_calls:
-                        for tool_call in tool_calls:
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = []
+                    tool_calls = []
+                    for _, block_content in sorted(content_blocks.items()):
+                        if block_content.get("thinking") or block_content.get(
+                            "thinking_signature"
+                        ):
+                            blocks.append(
+                                ThinkingBlock(
+                                    content=block_content.get("thinking", ""),
+                                    additional_information={
+                                        "signature": block_content.get(
+                                            "thinking_signature", ""
+                                        )
+                                    },
+                                )
+                            )
+                        if block_content.get("text"):
+                            blocks.append(TextBlock(text=block_content["text"]))
+                        if tool_call := block_content.get("toolUse"):
+                            tool_calls.append(tool_call)
                             blocks.append(
                                 ToolCallBlock(
                                     tool_kwargs=_parse_tool_input(
@@ -705,21 +725,28 @@ class BedrockConverse(FunctionCallingLLM):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
-                        blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(text=content.get("text", ""))
-                        ]
-                        if thinking != "":
-                            blocks.insert(
-                                0,
-                                ThinkingBlock(
-                                    content=thinking,
-                                    additional_information={
-                                        "signature": thinking_signature
-                                    },
-                                ),
-                            )
-                        if tool_calls:
-                            for tool_call in tool_calls:
+                        blocks: List[
+                            Union[TextBlock, ThinkingBlock, ToolCallBlock]
+                        ] = []
+                        tool_calls = []
+                        for _, block_content in sorted(content_blocks.items()):
+                            if block_content.get("thinking") or block_content.get(
+                                "thinking_signature"
+                            ):
+                                blocks.append(
+                                    ThinkingBlock(
+                                        content=block_content.get("thinking", ""),
+                                        additional_information={
+                                            "signature": block_content.get(
+                                                "thinking_signature", ""
+                                            )
+                                        },
+                                    )
+                                )
+                            if block_content.get("text"):
+                                blocks.append(TextBlock(text=block_content["text"]))
+                            if tool_call := block_content.get("toolUse"):
+                                tool_calls.append(tool_call)
                                 blocks.append(
                                     ToolCallBlock(
                                         tool_kwargs=_parse_tool_input(
@@ -841,17 +868,24 @@ class BedrockConverse(FunctionCallingLLM):
         )
 
         async def gen() -> ChatResponseAsyncGen:
-            content = {}
-            tool_calls = []  # Track tool calls separately
-            current_tool_call = None  # Track the current tool call being built
+            # Content blocks (text, reasoning, tool use) keyed by `contentBlockIndex`,
+            # so that each block keeps its own content, signature and position.
+            content_blocks: dict[int, dict[str, Any]] = {}
             role = MessageRole.ASSISTANT
-            thinking = ""
-            thinking_signature = ""
 
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
-                    content = join_two_dicts(content, content_delta)
+                    # Bedrock does not send `contentBlockStart` for text or reasoning
+                    # blocks, so the first delta at an index creates its entry.
+                    content_block = content_blocks.setdefault(
+                        content_block_delta["contentBlockIndex"], {}
+                    )
+
+                    if "text" in content_delta:
+                        content_block["text"] = (
+                            content_block.get("text", "") + content_delta["text"]
+                        )
 
                     thinking_delta_value = None
                     if "reasoningContent" in content_delta:
@@ -859,13 +893,18 @@ class BedrockConverse(FunctionCallingLLM):
                         # redacted content are stored within `reasoningContent`.
                         reasoning_content = content_delta.get("reasoningContent", {})
                         reasoning_text = reasoning_content.get("text", "")
-                        thinking += reasoning_text
+                        content_block["thinking"] = (
+                            content_block.get("thinking", "") + reasoning_text
+                        )
                         thinking_delta_value = reasoning_text
-                        thinking_signature += reasoning_content.get("signature", "")
+                        content_block["thinking_signature"] = content_block.get(
+                            "thinking_signature", ""
+                        ) + reasoning_content.get("signature", "")
 
-                    # If this delta contains tool call info, update current tool call
+                    # If this delta contains tool call info, update the tool call at this index
                     if "toolUse" in content_delta:
                         tool_use_delta = content_delta["toolUse"]
+                        current_tool_call = content_block.get("toolUse")
 
                         if current_tool_call:
                             # Handle the input field specially - concatenate partial JSON strings
@@ -884,30 +923,35 @@ class BedrockConverse(FunctionCallingLLM):
                                     if k != "input"
                                 }
                                 if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(
+                                    content_block["toolUse"] = join_two_dicts(
                                         current_tool_call, tool_use_without_input
                                     )
                             else:
                                 # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(
+                                content_block["toolUse"] = join_two_dicts(
                                     current_tool_call, tool_use_delta
                                 )
-                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
-                    ]
-                    if thinking != "":
-                        blocks.insert(
-                            0,
-                            ThinkingBlock(
-                                content=thinking,
-                                additional_information={
-                                    "signature": thinking_signature
-                                },
-                            ),
-                        )
 
-                    if tool_calls:
-                        for tool_call in tool_calls:
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = []
+                    tool_calls = []
+                    for _, block_content in sorted(content_blocks.items()):
+                        if block_content.get("thinking") or block_content.get(
+                            "thinking_signature"
+                        ):
+                            blocks.append(
+                                ThinkingBlock(
+                                    content=block_content.get("thinking", ""),
+                                    additional_information={
+                                        "signature": block_content.get(
+                                            "thinking_signature", ""
+                                        )
+                                    },
+                                )
+                            )
+                        if block_content.get("text"):
+                            blocks.append(TextBlock(text=block_content["text"]))
+                        if tool_call := block_content.get("toolUse"):
+                            tool_calls.append(tool_call)
                             blocks.append(
                                 ToolCallBlock(
                                     tool_kwargs=_parse_tool_input(
@@ -944,28 +988,31 @@ class BedrockConverse(FunctionCallingLLM):
                 elif content_block_start := chunk.get("contentBlockStart"):
                     # New tool call starting
                     if "toolUse" in content_block_start["start"]:
-                        tool_use = content_block_start["start"]["toolUse"]
-                        # Start tracking a new tool call
-                        current_tool_call = tool_use
-                        # Add to our list of tool calls
-                        tool_calls.append(current_tool_call)
+                        # Start tracking a new tool call at this index
+                        content_blocks.setdefault(
+                            content_block_start["contentBlockIndex"], {}
+                        )["toolUse"] = dict(content_block_start["start"]["toolUse"])
 
-                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
-                    ]
-                    if thinking != "":
-                        blocks.insert(
-                            0,
-                            ThinkingBlock(
-                                content=thinking,
-                                additional_information={
-                                    "signature": thinking_signature
-                                },
-                            ),
-                        )
-
-                    if tool_calls:
-                        for tool_call in tool_calls:
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = []
+                    tool_calls = []
+                    for _, block_content in sorted(content_blocks.items()):
+                        if block_content.get("thinking") or block_content.get(
+                            "thinking_signature"
+                        ):
+                            blocks.append(
+                                ThinkingBlock(
+                                    content=block_content.get("thinking", ""),
+                                    additional_information={
+                                        "signature": block_content.get(
+                                            "thinking_signature", ""
+                                        )
+                                    },
+                                )
+                            )
+                        if block_content.get("text"):
+                            blocks.append(TextBlock(text=block_content["text"]))
+                        if tool_call := block_content.get("toolUse"):
+                            tool_calls.append(tool_call)
                             blocks.append(
                                 ToolCallBlock(
                                     tool_kwargs=_parse_tool_input(
@@ -997,22 +1044,28 @@ class BedrockConverse(FunctionCallingLLM):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
-                        blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(text=content.get("text", ""))
-                        ]
-                        if thinking != "":
-                            blocks.insert(
-                                0,
-                                ThinkingBlock(
-                                    content=thinking,
-                                    additional_information={
-                                        "signature": thinking_signature
-                                    },
-                                ),
-                            )
-
-                        if tool_calls:
-                            for tool_call in tool_calls:
+                        blocks: List[
+                            Union[TextBlock, ThinkingBlock, ToolCallBlock]
+                        ] = []
+                        tool_calls = []
+                        for _, block_content in sorted(content_blocks.items()):
+                            if block_content.get("thinking") or block_content.get(
+                                "thinking_signature"
+                            ):
+                                blocks.append(
+                                    ThinkingBlock(
+                                        content=block_content.get("thinking", ""),
+                                        additional_information={
+                                            "signature": block_content.get(
+                                                "thinking_signature", ""
+                                            )
+                                        },
+                                    )
+                                )
+                            if block_content.get("text"):
+                                blocks.append(TextBlock(text=block_content["text"]))
+                            if tool_call := block_content.get("toolUse"):
+                                tool_calls.append(tool_call)
                                 blocks.append(
                                     ToolCallBlock(
                                         tool_kwargs=_parse_tool_input(
