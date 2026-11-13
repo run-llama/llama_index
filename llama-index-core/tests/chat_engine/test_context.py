@@ -213,6 +213,7 @@ async def test_astream_chat_history_write_completes_on_early_exit(
 class _TrackingPostprocessor(BaseNodePostprocessor):
     called_sync: bool = False
     called_async: bool = False
+    last_query_bundle: Optional[QueryBundle] = None
 
     def _postprocess_nodes(
         self,
@@ -220,6 +221,7 @@ class _TrackingPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         self.called_sync = True
+        self.last_query_bundle = query_bundle
         return nodes
 
     async def _apostprocess_nodes(
@@ -228,6 +230,7 @@ class _TrackingPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         self.called_async = True
+        self.last_query_bundle = query_bundle
         return nodes
 
 
@@ -248,7 +251,52 @@ async def test_aget_nodes_calls_async_postprocessor() -> None:
         node_postprocessors=[postprocessor],
     )
 
-    await engine._aget_nodes(QueryBundle("test"))
+    qb = QueryBundle("test", custom_embedding_strs=["custom"])
+    await engine._aget_nodes(qb)
 
     assert postprocessor.called_async is True
     assert postprocessor.called_sync is False
+    assert postprocessor.last_query_bundle is qb
+    assert isinstance(postprocessor.last_query_bundle.query_str, str)
+
+
+def test_get_nodes_preserves_query_bundle_and_non_empty_chat_memory() -> None:
+    postprocessor = _TrackingPostprocessor()
+    memory = ChatMemoryBuffer.from_defaults()
+    engine = ContextChatEngine.from_defaults(
+        retriever=_DummyRetriever(),
+        llm=MockLLM(),
+        memory=memory,
+        node_postprocessors=[postprocessor],
+    )
+
+    engine.chat("First turn")
+    qb = QueryBundle("Second turn via QueryBundle", custom_embedding_strs=["emb"])
+    response = engine.chat(qb)
+    assert "Second turn via QueryBundle" in str(response)
+    assert postprocessor.called_sync is True
+    assert postprocessor.last_query_bundle is qb
+    assert postprocessor.last_query_bundle.query_str == "Second turn via QueryBundle"
+
+
+def test_response_synthesizer_extracts_custom_llm_system_role() -> None:
+    from llama_index.core.base.llms.types import LLMMetadata
+
+    class _DeveloperRoleLLM(MockLLM):
+        @property
+        def metadata(self) -> LLMMetadata:
+            return LLMMetadata(system_role=MessageRole.DEVELOPER)
+
+    llm = _DeveloperRoleLLM()
+    engine = ContextChatEngine.from_defaults(
+        retriever=_DummyRetriever(),
+        llm=llm,
+        system_prompt="Custom developer system instruction.",
+    )
+    synthesizer = engine._get_response_synthesizer(chat_history=[])
+    qa_messages = synthesizer._text_qa_template.message_templates
+    system_role_messages = [m for m in qa_messages if m.role == MessageRole.DEVELOPER]
+    assert len(system_role_messages) == 1
+    assert "Custom developer system instruction." in str(
+        system_role_messages[0].content
+    )
