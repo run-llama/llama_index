@@ -443,15 +443,14 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
 
         """
         if kwargs.get("model_name") is None:
-            task = kwargs.get("task", "")
-            # NOTE: task being None or empty string leads to ValueError,
-            # which ensures model is present
-            kwargs["model_name"] = InferenceClient.get_recommended_model(task=task)
-            logger.debug(
-                f"Using Hugging Face's recommended model {kwargs['model_name']}"
-                f" given task {task}."
+            # InferenceClient.get_recommended_model was removed from
+            # huggingface_hub, so there is no recommended model to fall
+            # back to. Fail with a clear error instead of AttributeError.
+            raise ValueError(
+                "model_name is required: InferenceClient.get_recommended_model "
+                "was removed from huggingface_hub, so a model must be "
+                "passed explicitly."
             )
-            print(kwargs["model_name"], flush=True)
         super().__init__(**kwargs)  # Populate pydantic Fields
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
