@@ -299,7 +299,7 @@ class BaseWorkflowAgent(
                 llm=self.llm or Settings.llm
             )
             await ctx.store.set("memory", default_memory)
-        if not await ctx.store.get("state", default=None):
+        if await ctx.store.get("state", default=None) is None:
             await ctx.store.set("state", copy.deepcopy(self.initial_state))
 
         if not await ctx.store.get("max_iterations", default=None):
