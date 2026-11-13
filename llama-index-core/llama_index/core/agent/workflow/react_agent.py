@@ -97,7 +97,7 @@ class ReActAgent(BaseWorkflowAgent):
         async for last_chat_response in response:
             raw = (
                 last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
+                if issubclass(type(last_chat_response.raw), BaseModel)
                 else last_chat_response.raw
             )
             # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
@@ -175,7 +175,7 @@ class ReActAgent(BaseWorkflowAgent):
             )
             raw = (
                 last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
+                if issubclass(type(last_chat_response.raw), BaseModel)
                 else last_chat_response.raw
             )
 
@@ -210,7 +210,7 @@ class ReActAgent(BaseWorkflowAgent):
 
             raw = (
                 last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
+                if issubclass(type(last_chat_response.raw), BaseModel)
                 else last_chat_response.raw
             )
             # Return with retry messages to let the LLM fix the error
@@ -231,7 +231,7 @@ class ReActAgent(BaseWorkflowAgent):
         # If response step, we're done
         raw = (
             last_chat_response.raw.model_dump()
-            if isinstance(last_chat_response.raw, BaseModel)
+            if issubclass(type(last_chat_response.raw), BaseModel)
             else last_chat_response.raw
         )
         if reasoning_step.is_done:
