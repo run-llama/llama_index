@@ -137,22 +137,28 @@ class ContextChatEngine(BaseChatEngine):
             context_refine_template=context_refine_template,
         )
 
-    def _get_nodes(self, message: str) -> List[NodeWithScore]:
+    def _get_nodes(self, message: Union[str, QueryBundle]) -> List[NodeWithScore]:
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
+        query_bundle = (
+            message if isinstance(message, QueryBundle) else QueryBundle(message)
+        )
         for postprocessor in self._node_postprocessors:
-            nodes = postprocessor.postprocess_nodes(
-                nodes, query_bundle=QueryBundle(message)
-            )
+            nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
 
         return nodes
 
-    async def _aget_nodes(self, message: str) -> List[NodeWithScore]:
+    async def _aget_nodes(
+        self, message: Union[str, QueryBundle]
+    ) -> List[NodeWithScore]:
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
+        query_bundle = (
+            message if isinstance(message, QueryBundle) else QueryBundle(message)
+        )
         for postprocessor in self._node_postprocessors:
             nodes = await postprocessor.apostprocess_nodes(
-                nodes, query_bundle=QueryBundle(message)
+                nodes, query_bundle=query_bundle
             )
 
         return nodes
@@ -163,11 +169,11 @@ class ContextChatEngine(BaseChatEngine):
         # Pull the system prompt from the prefix messages
         system_prompt = ""
         prefix_messages = self._prefix_messages
-        if (
-            len(self._prefix_messages) != 0
-            and self._prefix_messages[0].role == MessageRole.SYSTEM
+        if len(self._prefix_messages) != 0 and self._prefix_messages[0].role in (
+            MessageRole.SYSTEM,
+            self._llm.metadata.system_role,
         ):
-            system_prompt = str(self._prefix_messages[0].content)
+            system_prompt = str(self._prefix_messages[0].content or "")
             prefix_messages = self._prefix_messages[1:]
 
         # Get the messages for the QA and refine prompts
@@ -214,7 +220,7 @@ class ContextChatEngine(BaseChatEngine):
 
         # Get the response synthesizer with dynamic prompts
         chat_history = self._memory.get(
-            input=message,
+            input=str(message),
         )
         synthesizer = self._get_response_synthesizer(chat_history)
 
@@ -255,7 +261,7 @@ class ContextChatEngine(BaseChatEngine):
 
         # Get the response synthesizer with dynamic prompts
         chat_history = self._memory.get(
-            input=message,
+            input=str(message),
         )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
@@ -311,7 +317,7 @@ class ContextChatEngine(BaseChatEngine):
 
         # Get the response synthesizer with dynamic prompts
         chat_history = await self._memory.aget(
-            input=message,
+            input=str(message),
         )
         synthesizer = self._get_response_synthesizer(chat_history)
 
@@ -351,7 +357,7 @@ class ContextChatEngine(BaseChatEngine):
 
         # Get the response synthesizer with dynamic prompts
         chat_history = await self._memory.aget(
-            input=message,
+            input=str(message),
         )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
