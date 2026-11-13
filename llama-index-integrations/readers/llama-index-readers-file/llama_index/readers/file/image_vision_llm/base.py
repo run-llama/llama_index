@@ -38,11 +38,7 @@ class ImageVisionLLMReader(BaseReader):
             self._torch_imported = True
 
             device = infer_torch_device()
-            dtype = (
-                self._torch.float16
-                if self._torch.cuda.is_available()
-                else self._torch.float32
-            )
+            dtype = self._torch.float16 if device != "cpu" else self._torch.float32
             processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
             model = Blip2ForConditionalGeneration.from_pretrained(
                 "Salesforce/blip2-opt-2.7b", torch_dtype=dtype
