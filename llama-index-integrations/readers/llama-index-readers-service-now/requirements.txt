@@ -3,148 +3,143 @@
 -e .
 ../../../llama-index-core
     # via llama-index-readers-service-now
-aiohappyeyeballs==2.6.1
+aiohappyeyeballs==2.7.1
     # via aiohttp
-aiohttp==3.13.4
+aiohttp==3.14.5
     # via llama-index-core
 aiosignal==1.4.0
     # via aiohttp
-aiosqlite==0.21.0
+aiosqlite==0.22.1
     # via llama-index-core
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
-anyio==4.9.0
+anyio==4.14.2
     # via
     #   httpx
     #   jupyter-server
-appnope==0.1.4 ; sys_platform == 'darwin'
+appnope==1.0.0 ; sys_platform == 'darwin'
     # via
     #   ipykernel
     #   ipython
 argon2-cffi==25.1.0
     # via jupyter-server
-argon2-cffi-bindings==21.2.0
+argon2-cffi-bindings==26.1.0
     # via argon2-cffi
-arrow==1.3.0
+arrow==1.4.0
     # via isoduration
 astroid==2.13.5
     # via pylint
-asttokens==3.0.0
+asttokens==3.0.2
     # via stack-data
-async-lru==2.0.5
+async-lru==2.3.0
     # via jupyterlab
-async-timeout==5.0.1 ; python_full_version < '3.11'
-    # via aiohttp
-attrs==25.3.0
+attrs==26.1.0
     # via
     #   aiohttp
     #   jsonschema
-    #   pytest
     #   referencing
-babel==2.17.0
+babel==2.18.0
     # via jupyterlab-server
 backcall==0.2.0
     # via ipython
-banks==2.1.3
+banks==2.5.1
     # via llama-index-core
-beautifulsoup4==4.13.4
+beautifulsoup4==4.15.0
     # via nbconvert
 black==26.5.1
-bleach==6.2.0
+bleach==6.4.0
     # via nbconvert
-certifi==2026.4.22
+certifi==2026.10.23
     # via
     #   httpcore
     #   httpx
     #   pysnc
     #   requests
-cffi==1.17.1
+cffi==2.1.1
     # via
     #   argon2-cffi-bindings
     #   cryptography
     #   pyzmq
-cfgv==3.4.0
+cfgv==3.5.0
     # via pre-commit
-chardet==5.2.0
+chardet==7.6.0
     # via diff-cover
-charset-normalizer==3.4.2
+charset-normalizer==3.5.1
     # via requests
-click==8.1.8 ; python_full_version < '3.10'
+click==8.5.0
     # via
     #   black
     #   nltk
-click==8.2.1 ; python_full_version >= '3.10'
-    # via
-    #   black
-    #   nltk
-codespell==2.4.1
+codespell==2.4.3
 colorama==0.4.6
     # via
-    #   click
-    #   griffe
+    #   griffecli
     #   ipython
     #   pylint
     #   pytest
     #   tqdm
-comm==0.2.2
+comm==0.2.3
     # via
     #   ipykernel
     #   ipywidgets
-coverage==7.9.2
+coverage==7.15.4
     # via pytest-cov
-cryptography==50.0.0
+cryptography==50.0.1
     # via
     #   types-pyopenssl
     #   types-redis
 dataclasses-json==0.6.7
     # via llama-index-core
-debugpy==1.8.14
+debugpy==1.8.21
     # via ipykernel
-decorator==5.2.1
+decorator==5.3.1
     # via ipython
 defusedxml==0.7.1
-    # via nbconvert
-deprecated==1.2.18
+    # via
+    #   nbconvert
+    #   nltk
+deprecated==1.3.1
     # via
     #   banks
     #   llama-index-core
     #   llama-index-instrumentation
-diff-cover==9.5.0
-dill==0.4.0
+diff-cover==10.5.1
+dill==0.4.1
     # via pylint
 dirtyjson==1.0.8
     # via llama-index-core
-distlib==0.3.9
+distlib==0.4.3
     # via virtualenv
-eval-type-backport==0.2.2 ; python_full_version < '3.10'
+executing==2.2.1
+    # via stack-data
+fastjsonschema==2.22.2
+    # via nbformat
+filelock==3.32.4
+    # via
+    #   python-discovery
+    #   virtualenv
+filetype==1.2.0
     # via
     #   banks
     #   llama-index-core
-    #   llama-index-workflows
-exceptiongroup==1.3.0 ; python_full_version < '3.11'
-    # via
-    #   anyio
-    #   pytest
-executing==2.2.0
-    # via stack-data
-fastjsonschema==2.21.1
-    # via nbformat
-filelock==3.18.0
-    # via virtualenv
-filetype==1.2.0
-    # via llama-index-core
 fqdn==1.5.1
     # via jsonschema
-frozenlist==1.7.0
+frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.5.1
+fsspec==2026.7.0
     # via llama-index-core
-greenlet==3.2.3
+greenlet==3.5.5
     # via sqlalchemy
-griffe==1.7.3
+griffe==2.2.0
     # via banks
+griffecli==2.2.0
+    # via griffe
+griffelib==2.2.0
+    # via
+    #   griffe
+    #   griffecli
 h11==0.16.0
     # via httpcore
 httpcore==1.0.9
@@ -153,25 +148,18 @@ httpx==0.28.1
     # via
     #   jupyterlab
     #   llama-index-core
-identify==2.6.12
+identify==2.6.19
     # via pre-commit
-idna==3.15
+idna==3.19
     # via
     #   anyio
     #   httpx
     #   jsonschema
     #   requests
     #   yarl
-importlib-metadata==8.7.0 ; python_full_version < '3.10'
-    # via
-    #   jupyter-client
-    #   jupyter-lsp
-    #   jupyterlab
-    #   jupyterlab-server
-    #   nbconvert
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
-ipykernel==6.29.5
+ipykernel==7.3.0
     # via
     #   jupyter
     #   jupyter-console
@@ -182,13 +170,13 @@ ipython==8.10.0
     #   ipykernel
     #   ipywidgets
     #   jupyter-console
-ipywidgets==8.1.7
+ipywidgets==8.1.9
     # via jupyter
 isoduration==20.11.0
     # via jsonschema
 isort==5.13.2
     # via pylint
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 jinja2==3.1.6
     # via
@@ -198,21 +186,25 @@ jinja2==3.1.6
     #   jupyterlab
     #   jupyterlab-server
     #   nbconvert
-joblib==1.5.1
+joblib==1.5.3
     # via nltk
-json5==0.12.0
+json5==0.15.0
     # via jupyterlab-server
-jsonpointer==3.0.0
+jsonpointer==3.1.1
     # via jsonschema
-jsonschema==4.24.0
+jsonschema==4.26.0
     # via
     #   jupyter-events
     #   jupyterlab-server
     #   nbformat
-jsonschema-specifications==2025.4.1
+jsonschema-specifications==2025.9.1
     # via jsonschema
 jupyter==1.1.1
-jupyter-client==8.6.3
+jupyter-builder==1.2.2
+    # via
+    #   jupyterlab
+    #   notebook
+jupyter-client==8.9.1
     # via
     #   ipykernel
     #   jupyter-console
@@ -220,9 +212,10 @@ jupyter-client==8.6.3
     #   nbclient
 jupyter-console==6.6.3
     # via jupyter
-jupyter-core==5.8.1
+jupyter-core==5.9.1
     # via
     #   ipykernel
+    #   jupyter-builder
     #   jupyter-client
     #   jupyter-console
     #   jupyter-server
@@ -230,52 +223,54 @@ jupyter-core==5.8.1
     #   nbclient
     #   nbconvert
     #   nbformat
-jupyter-events==0.12.0
+jupyter-events==0.12.1
     # via jupyter-server
-jupyter-lsp==2.2.5
+jupyter-lsp==2.3.1
     # via jupyterlab
-jupyter-server==2.16.0
+jupyter-server==2.21.0
     # via
     #   jupyter-lsp
     #   jupyterlab
     #   jupyterlab-server
     #   notebook
     #   notebook-shim
-jupyter-server-terminals==0.5.3
+jupyter-server-terminals==0.5.4
     # via jupyter-server
-jupyterlab==4.6.3
+jupyterlab==4.6.6
     # via
     #   jupyter
     #   notebook
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-server==2.27.3
+jupyterlab-server==2.28.0
     # via
     #   jupyterlab
     #   notebook
-jupyterlab-widgets==3.0.15
+jupyterlab-widgets==3.0.17
     # via ipywidgets
-lazy-object-proxy==1.11.0
+lark==1.3.1
+    # via rfc3987-syntax
+lazy-object-proxy==1.12.0
     # via astroid
-llama-index-instrumentation==0.2.0
+llama-index-instrumentation==0.5.0
     # via llama-index-workflows
-llama-index-workflows==1.1.0
+llama-index-workflows==2.23.3
     # via llama-index-core
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via
     #   jinja2
     #   nbconvert
 marshmallow==3.26.2
     # via dataclasses-json
-matplotlib-inline==0.1.7
+matplotlib-inline==0.2.2
     # via
     #   ipykernel
     #   ipython
 mccabe==0.7.0
     # via pylint
-mistune==3.2.1
+mistune==3.3.4
     # via nbconvert
-multidict==6.6.3
+multidict==7.2.1
     # via
     #   aiohttp
     #   yarl
@@ -285,46 +280,40 @@ mypy-extensions==1.1.0
     #   black
     #   mypy
     #   typing-inspect
-nbclient==0.10.2
+nbclient==0.11.0
     # via nbconvert
-nbconvert==7.17.0
+nbconvert==7.17.2
     # via
     #   jupyter
     #   jupyter-server
-nbformat==5.10.4
+nbformat==5.11.1
     # via
     #   jupyter-server
     #   nbclient
     #   nbconvert
 nest-asyncio==1.6.0
-    # via
-    #   ipykernel
-    #   llama-index-core
-networkx==3.2.1 ; python_full_version < '3.10'
     # via llama-index-core
-networkx==3.4.2 ; python_full_version == '3.10.*'
+nest-asyncio2==1.7.2
+    # via ipykernel
+networkx==3.6.1
     # via llama-index-core
-networkx==3.5 ; python_full_version >= '3.11'
+nltk==3.10.4
     # via llama-index-core
-nltk==3.10.3
-    # via llama-index-core
-nodeenv==1.9.1
+nodeenv==1.10.0
     # via pre-commit
-notebook==7.6.2
+notebook==7.6.5
     # via jupyter
 notebook-shim==0.2.4
     # via
     #   jupyterlab
     #   notebook
-numpy==2.0.2 ; python_full_version < '3.10'
+numpy==2.4.6 ; python_full_version < '3.12'
     # via llama-index-core
-numpy==2.2.6 ; python_full_version == '3.10.*'
+numpy==2.5.2 ; python_full_version >= '3.12'
     # via llama-index-core
-numpy==2.3.1 ; python_full_version >= '3.11'
-    # via llama-index-core
-overrides==7.7.0
+overrides==7.7.0 ; python_full_version < '3.12'
     # via jupyter-server
-packaging==25.0
+packaging==26.3
     # via
     #   black
     #   ipykernel
@@ -335,23 +324,25 @@ packaging==25.0
     #   marshmallow
     #   nbconvert
     #   pytest
+    #   virtualenv
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.4
+parso==0.8.7
     # via jedi
-pathspec==0.12.1
+pathspec==1.1.1
     # via black
 pexpect==4.9.0 ; sys_platform != 'win32'
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==12.3.0
+pillow==13.0.0
     # via llama-index-core
-platformdirs==4.3.8
+platformdirs==4.11.4
     # via
     #   banks
     #   black
     #   jupyter-core
+    #   llama-index-core
     #   pylint
     #   virtualenv
 pluggy==1.6.0
@@ -360,17 +351,17 @@ pluggy==1.6.0
     #   pytest
     #   pytest-cov
 pre-commit==3.2.0
-prometheus-client==0.22.1
+prometheus-client==0.26.0
     # via jupyter-server
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.53
     # via
     #   ipython
     #   jupyter-console
-propcache==0.3.2
+propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
-psutil==7.0.0
+psutil==7.2.2
     # via ipykernel
 ptyprocess==0.7.0 ; os_name != 'nt' or sys_platform != 'win32'
     # via
@@ -378,61 +369,64 @@ ptyprocess==0.7.0 ; os_name != 'nt' or sys_platform != 'win32'
     #   terminado
 pure-eval==0.2.3
     # via stack-data
-pycparser==2.22
+pycparser==3.0 ; implementation_name != 'PyPy'
     # via cffi
-pydantic==2.11.7
+pydantic==2.13.4
     # via
     #   banks
     #   llama-index-core
     #   llama-index-instrumentation
     #   llama-index-workflows
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via pydantic
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   diff-cover
     #   ipython
     #   jupyter-console
     #   nbconvert
+    #   pytest
 pylint==2.15.10
-pysnc==1.1.10
+pysnc==1.2.1
     # via llama-index-readers-service-now
-pytest==9.0.3
+pytest==9.1.1
     # via
     #   pytest-cov
     #   pytest-mock
-pytest-cov==6.2.1
+pytest-cov==7.1.0
 pytest-mock==3.11.1
 python-dateutil==2.9.0.post0
     # via
     #   arrow
     #   jupyter-client
-python-json-logger==3.3.0
+python-discovery==1.9.5
+    # via virtualenv
+python-json-logger==4.2.0
     # via jupyter-events
-pywin32==311 ; platform_python_implementation != 'PyPy' and sys_platform == 'win32'
-    # via jupyter-core
-pywinpty==2.0.15 ; os_name == 'nt'
+pytokens==0.4.1
+    # via black
+pywinpty==3.0.5 ; os_name == 'nt'
     # via
     #   jupyter-server
     #   jupyter-server-terminals
     #   terminado
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   jupyter-events
     #   llama-index-core
     #   pre-commit
-pyzmq==27.0.0
+pyzmq==27.2.0
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-console
     #   jupyter-server
-referencing==0.36.2
+referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2024.11.6
+regex==2026.7.19
     # via
     #   nltk
     #   tiktoken
@@ -451,53 +445,46 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.26.0
+rfc3987-syntax==1.1.0
+    # via jsonschema
+rpds-py==2026.6.3
     # via
     #   jsonschema
     #   referencing
 ruff==0.11.11
-send2trash==1.8.3
+send2trash==2.1.0
     # via jupyter-server
-setuptools==83.0.0
-    # via
-    #   jupyterlab
-    #   llama-index-core
+setuptools==84.2.1
+    # via llama-index-core
 six==1.17.0
     # via
     #   python-dateutil
     #   rfc3339-validator
-sniffio==1.3.1
-    # via anyio
-soupsieve==2.7
+soupsieve==2.9.2
     # via beautifulsoup4
-sqlalchemy==2.0.41
+sqlalchemy==2.0.52
     # via llama-index-core
 stack-data==0.6.3
     # via ipython
-tenacity==9.1.2
+tenacity==9.1.4
     # via llama-index-core
 terminado==0.18.1
     # via
     #   jupyter-server
     #   jupyter-server-terminals
-tiktoken==0.9.0
+tiktoken==0.14.0
     # via llama-index-core
-tinycss2==1.4.0
+tinycss2==1.5.1
     # via bleach
+tinytag==2.3.0
+    # via llama-index-core
 tokenize-rt==6.2.0
     # via black
-tomli==2.2.1 ; python_full_version <= '3.11'
-    # via
-    #   black
-    #   codespell
-    #   coverage
-    #   jupyterlab
-    #   mypy
-    #   pylint
-    #   pytest
-tomlkit==0.13.3
+tomli==2.4.1 ; python_full_version <= '3.11'
+    # via coverage
+tomlkit==0.15.1
     # via pylint
-tornado==6.5.8
+tornado==6.6
     # via
     #   ipykernel
     #   jupyter-client
@@ -505,16 +492,16 @@ tornado==6.5.8
     #   jupyterlab
     #   notebook
     #   terminado
-tqdm==4.67.1
+tqdm==4.70.0
     # via
     #   llama-index-core
     #   nltk
-traitlets==5.14.3
+traitlets==5.16.1
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   ipywidgets
+    #   jupyter-builder
     #   jupyter-client
     #   jupyter-console
     #   jupyter-core
@@ -525,41 +512,34 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
-types-cffi==1.17.0.20250523
+types-cffi==2.1.0.20260827
     # via types-pyopenssl
-types-deprecated==1.2.15.20250304
-types-docutils==0.21.0.20250715
+types-deprecated==1.3.1.20260728
+types-docutils==0.23.0.20260827
     # via types-setuptools
 types-protobuf==4.25.0.20240417
 types-pyopenssl==24.1.0.20240722
     # via types-redis
-types-python-dateutil==2.9.0.20250708
-    # via arrow
-types-pyyaml==6.0.12.20250516
+types-pyyaml==6.0.12.20260815
 types-redis==4.5.5.0
 types-requests==2.28.11.8
 types-setuptools==67.1.0.0
     # via types-cffi
 types-urllib3==1.26.25.14
     # via types-requests
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
+    #   aiohttp
     #   aiosignal
-    #   aiosqlite
     #   anyio
-    #   astroid
-    #   async-lru
     #   beautifulsoup4
-    #   black
-    #   exceptiongroup
+    #   jupyter-client
+    #   jupyterlab
     #   llama-index-core
-    #   mistune
-    #   multidict
+    #   llama-index-workflows
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pylint
-    #   python-json-logger
     #   referencing
     #   sqlalchemy
     #   typing-inspect
@@ -568,34 +548,34 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   llama-index-core
-typing-inspection==0.4.1
+typing-inspection==0.4.4
     # via pydantic
+tzdata==2026.3
+    # via arrow
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   pysnc
     #   requests
-virtualenv==20.36.1
+virtualenv==21.15.6
     # via pre-commit
-wcwidth==0.2.13
+wcwidth==0.8.2
     # via prompt-toolkit
-webcolors==24.11.1
+webcolors==25.10.0
     # via jsonschema
-webencodings==0.5.1
+webencodings==0.6.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.8.0
+websocket-client==1.9.0
     # via jupyter-server
-widgetsnbextension==4.0.14
+widgetsnbextension==4.0.16
     # via ipywidgets
-wrapt==1.17.2
+wrapt==1.17.3
     # via
     #   astroid
     #   deprecated
     #   llama-index-core
-yarl==1.20.1
+yarl==1.25.1
     # via aiohttp
-zipp==3.23.0 ; python_full_version < '3.10'
-    # via importlib-metadata

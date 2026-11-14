@@ -811,6 +811,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             UNWIND range(0, size(id_list) - 1) AS idx
             MATCH (e:{escape_identifier(BASE_ENTITY_LABEL)})
             WHERE e.id = id_list[idx]
+            WITH e, idx
             MATCH p=(e)-[r*1..{int(depth)}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel

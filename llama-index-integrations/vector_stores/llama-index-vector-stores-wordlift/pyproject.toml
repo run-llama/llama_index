@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest",
     "pytest-asyncio",
     "pytest-cov>=6.1.1",
@@ -29,10 +29,10 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-wordlift"
-version = "0.8.0"
+version = "0.9.0"
 description = "llama-index vector_stores wordlift integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
@@ -69,3 +69,6 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.uv]
+override-dependencies = ["urllib3>=2.8.0"]
