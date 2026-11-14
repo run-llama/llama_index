@@ -2,7 +2,7 @@
 
 import uuid
 
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence,Iterable,Set,List,Tuple,Union
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.objects.base_node_mapping import (
     DEFAULT_PERSIST_DIR,
@@ -10,8 +10,12 @@ from llama_index.core.objects.base_node_mapping import (
     BaseObjectNodeMapping,
 )
 from llama_index.core.schema import BaseNode, TextNode
-from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from llama_index.core.utilities.sql_wrapper import SQLDatabase,TrinoSQLDatabase
 
+from sqlalchemy import MetaData, Table, inspect, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.sql.sqltypes import String
+from sqlalchemy.exc import SQLAlchemyError
 
 class SQLTableSchema(BaseModel):
     """Lightweight representation of a SQL table."""
@@ -20,10 +24,11 @@ class SQLTableSchema(BaseModel):
     context_str: Optional[str] = None
 
 
+
 class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     """SQL Table node mapping."""
 
-    def __init__(self, sql_database: SQLDatabase) -> None:
+    def __init__(self, sql_database: Union[SQLDatabase, TrinoSQLDatabase]) -> None:
         self._sql_database = sql_database
 
     @classmethod
