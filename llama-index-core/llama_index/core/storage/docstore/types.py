@@ -104,6 +104,19 @@ class BaseDocumentStore(ABC):
     @abstractmethod
     async def aget_all_document_hashes(self) -> Dict[str, str]: ...
 
+    def get_all_document_ids(self) -> List[str]:
+        """
+        Get the ids of all stored documents.
+
+        Unlike `get_all_document_hashes`, which is keyed by hash and therefore
+        collapses documents that share content, this lists every document.
+        """
+        return list(self.docs.keys())
+
+    async def aget_all_document_ids(self) -> List[str]:
+        """Get the ids of all stored documents."""
+        return self.get_all_document_ids()
+
     # ==== Ref Docs =====
     @abstractmethod
     def get_all_ref_doc_info(self) -> Optional[Dict[str, RefDocInfo]]:
