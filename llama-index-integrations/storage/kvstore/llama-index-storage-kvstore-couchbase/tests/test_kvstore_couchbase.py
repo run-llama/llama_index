@@ -180,7 +180,8 @@ class TestCouchbaseKVStore:
 
 
 def test_bucket_check_propagates_other_cluster_errors():
-    """A failed bucket check must not be reported as a missing bucket.
+    """
+    A failed bucket check must not be reported as a missing bucket.
 
     _check_bucket_exists reaches the cluster to answer "does this bucket exist". When that call
     fails for any other reason - a timeout, an authentication failure, an unreachable node - the
