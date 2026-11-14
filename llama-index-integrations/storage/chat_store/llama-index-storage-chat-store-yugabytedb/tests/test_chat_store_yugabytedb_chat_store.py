@@ -95,6 +95,25 @@ def test_yugabytedb_add_message(yugabytedb_chat_store: YugabyteDBChatStore):
     assert result[0].content == "add_message_test" and result[0].role == "user"
 
 
+def test_add_message_appends_to_existing_messages(
+    yugabytedb_chat_store: YugabyteDBChatStore,
+):
+    key = "test_add_append_key"
+
+    for content in ["First message", "Second message", "Third message"]:
+        yugabytedb_chat_store.add_message(
+            key, message=ChatMessage(content=content, role="user")
+        )
+
+    result = yugabytedb_chat_store.get_messages(key)
+
+    assert [message.content for message in result] == [
+        "First message",
+        "Second message",
+        "Third message",
+    ]
+
+
 def test_set_and_retrieve_messages(yugabytedb_chat_store: YugabyteDBChatStore):
     messages = [
         ChatMessage(content="First message", role="user"),
