@@ -338,6 +338,8 @@ class CitationQueryEngine(BaseQueryEngine):
             source_data.pop("id_", None)
             source_data["start_char_idx"] = None
             source_data["end_char_idx"] = None
+            # The metadata mode has already been applied to the split text.
+            source_data["excluded_llm_metadata_keys"] = list(node.node.metadata)
 
             for text_chunk in text_chunks:
                 text = f"Source {len(new_nodes) + 1}:\n{text_chunk}\n"
@@ -380,9 +382,8 @@ class CitationQueryEngine(BaseQueryEngine):
                         "excluded_embed_metadata_keys": list(
                             node.node.excluded_embed_metadata_keys
                         ),
-                        "excluded_llm_metadata_keys": list(
-                            node.node.excluded_llm_metadata_keys
-                        ),
+                        # The metadata mode has already been applied to the split blocks.
+                        "excluded_llm_metadata_keys": list(node.node.metadata),
                         "relationships": dict(node.node.relationships),
                     }
                 )
