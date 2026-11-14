@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Layrcake](https://github.com/Layrcake-dev/llama-index-tools-layrcake) (`llama-index-tools-layrcake`): find leads, find and verify work emails, check and research companies, and draft email campaigns that a person approves before sending.
 
 ## LlamaPacks -- Code Templates
 
