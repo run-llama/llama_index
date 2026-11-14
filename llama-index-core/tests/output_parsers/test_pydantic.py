@@ -91,3 +91,15 @@ def test_pydantic_format_preserves_non_ascii_schema_descriptions() -> None:
     assert "H\\u2082O" not in formatted_query
     assert "€" in formatted_query
     assert "\\u20ac" not in formatted_query
+
+
+def test_missing_optional_schema_exclusion_does_not_prevent_formatting() -> None:
+    parser = PydanticOutputParser(
+        output_cls=TestModel,
+        excluded_schema_keys_from_format=["title", "description", "title"],
+    )
+
+    formatted = parser.get_format_string(escape_json=False)
+
+    assert '"title": "TestModel"' not in formatted
+    assert '"properties"' in formatted
