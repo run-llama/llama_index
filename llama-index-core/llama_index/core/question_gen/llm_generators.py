@@ -56,12 +56,14 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "question_gen_prompt" in prompts:
-            output_parser = prompts["question_gen_prompt"].output_parser
-            if output_parser is None:
-                output_parser = SubQuestionOutputParser()
-            self._prompt = PromptTemplate(
-                prompts["question_gen_prompt"].get_template(llm=self._llm),
-                output_parser=output_parser,
+            new_prompt = prompts["question_gen_prompt"]
+            output_parser = (
+                new_prompt.output_parser
+                or self._prompt.output_parser
+                or SubQuestionOutputParser()
+            )
+            self._prompt = new_prompt.model_copy(
+                update={"output_parser": output_parser}
             )
 
     def generate(

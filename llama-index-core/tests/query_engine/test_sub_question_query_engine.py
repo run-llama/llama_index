@@ -104,3 +104,56 @@ async def test_partial_failure_aquery():
     tools[0].query_engine.aquery.assert_awaited_once()
     tools[1].query_engine.aquery.assert_awaited_once()
     assert len(synth.asynthesize.call_args.kwargs["nodes"]) == 1
+
+
+def test_llm_question_generator_update_prompts_preserves_metadata_and_parser():
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.prompts.base import ChatPromptTemplate, PromptTemplate
+    from llama_index.core.prompts.prompt_type import PromptType
+    from llama_index.core.question_gen.llm_generators import LLMQuestionGenerator
+    from llama_index.core.question_gen.output_parser import SubQuestionOutputParser
+
+    class CustomParser(SubQuestionOutputParser):
+        pass
+
+    custom_parser = CustomParser()
+    gen = LLMQuestionGenerator.from_defaults(
+        llm=MockLLM(),
+        output_parser=custom_parser,
+    )
+
+    new_prompt = PromptTemplate(
+        "Tools: {tools_str}\nQuery: {query_str}\nPrefix: {prefix}",
+        prompt_type=PromptType.SUB_QUESTION,
+        function_mappings={"prefix": lambda **kwargs: "computed_prefix"},
+    ).partial_format(extra="val")
+
+    gen.update_prompts({"question_gen_prompt": new_prompt})
+    updated = gen.get_prompts()["question_gen_prompt"]
+
+    assert gen._prompt.output_parser is custom_parser
+    assert isinstance(updated.output_parser, CustomParser)
+    assert updated.metadata["prompt_type"] == PromptType.SUB_QUESTION
+    assert updated.kwargs == {"extra": "val"}
+    assert "prefix" in updated.function_mappings
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [("user", "Tools: {tools_str}\nQuery: {query_str}")]
+    )
+    gen.update_prompts({"question_gen_prompt": chat_prompt})
+    updated_chat = gen.get_prompts()["question_gen_prompt"]
+    assert isinstance(updated_chat, ChatPromptTemplate)
+    assert gen._prompt.output_parser is custom_parser
+    assert isinstance(updated_chat.output_parser, CustomParser)
+
+
+def test_sub_question_output_parser_single_object():
+    from llama_index.core.question_gen.output_parser import SubQuestionOutputParser
+
+    parser = SubQuestionOutputParser()
+    raw = '```json\n{"sub_question": "What is revenue?", "tool_name": "uber_10k"}\n```'
+    parsed = parser.parse(raw)
+    assert parsed.parsed_output == [
+        SubQuestion(sub_question="What is revenue?", tool_name="uber_10k")
+    ]
+
