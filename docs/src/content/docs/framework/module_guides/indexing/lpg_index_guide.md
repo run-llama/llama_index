@@ -609,7 +609,7 @@ class MyCustomRetriever(CustomPGRetriever):
         # optionally do something with self.graph_store
 
     def custom_retrieve(self, query_str: str) -> CUSTOM_RETRIEVE_TYPE:
-        # some some operation with self.graph_store
+        # some operation with self.graph_store
         return "result"
 
     # optional async method
