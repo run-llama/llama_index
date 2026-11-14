@@ -2,7 +2,13 @@
 
 import pytest
 
-from llama_index.core.tools.calling import acall_tool, call_tool
+from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.tools.calling import (
+    acall_tool,
+    acall_tool_with_selection,
+    call_tool,
+    call_tool_with_selection,
+)
 from llama_index.core.tools.function_tool import FunctionTool
 
 
@@ -57,3 +63,26 @@ def test_call_tool_supports_positional_only_function_tool() -> None:
     output = call_tool(tool, {"query": "LlamaIndex"})
 
     assert output.raw_output == "LlamaIndex"
+
+
+def test_call_tool_with_selection_unknown_tool() -> None:
+    tool = FunctionTool.from_defaults(lambda query: query, name="lookup")
+    tool_call = ToolSelection(tool_id="1", tool_name="search", tool_kwargs={"q": "x"})
+
+    output = call_tool_with_selection(tool_call, [tool])
+
+    assert output.is_error
+    assert output.tool_name == "search"
+    assert output.raw_input == {"q": "x"}
+
+
+@pytest.mark.asyncio
+async def test_acall_tool_with_selection_unknown_tool() -> None:
+    tool = FunctionTool.from_defaults(lambda query: query, name="lookup")
+    tool_call = ToolSelection(tool_id="1", tool_name="search", tool_kwargs={"q": "x"})
+
+    output = await acall_tool_with_selection(tool_call, [tool])
+
+    assert output.is_error
+    assert output.tool_name == "search"
+    assert output.raw_input == {"q": "x"}
