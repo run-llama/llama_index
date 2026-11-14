@@ -14,6 +14,7 @@ import pytest_asyncio
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
+    FilterCondition,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -378,6 +379,38 @@ async def test_add_to_es_query_with_filters(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_es_query_with_or_filters(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """An OR condition must return the union, not the intersection."""
+    filters = MetadataFilters(
+        condition=FilterCondition.OR,
+        filters=[
+            ExactMatchFilter(key="author", value="Stephen King"),
+            ExactMatchFilter(key="author", value="Marie Curie"),
+        ],
+    )
+    q = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        await es_store.async_add(node_embeddings)
+        res = await es_store.aquery(q)
+    else:
+        es_store.add(node_embeddings)
+        res = es_store.query(q)
+
+    # Treating OR as AND would look for one node by both authors, matching none.
+    assert {node.metadata["author"] for node in res.nodes} == {
+        "Stephen King",
+        "Marie Curie",
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_es_filters(
     es_store: ElasticsearchStore,
     node_embeddings: List[TextNode],
@@ -589,6 +622,81 @@ def test_metadata_filter_to_es_filter() -> None:
                 {"term": {"metadata.k2": {"value": "v2"}}},
             ]
         }
+    }
+
+
+@pytest.mark.parametrize(
+    ("condition", "expected_clause"),
+    [
+        (FilterCondition.AND, "must"),
+        (FilterCondition.OR, "should"),
+        (FilterCondition.NOT, "must_not"),
+    ],
+)
+def test_metadata_filter_condition_maps_to_bool_clause(
+    condition: FilterCondition, expected_clause: str
+) -> None:
+    """The filter condition must pick the matching Elasticsearch bool clause."""
+    metadata_filters = MetadataFilters(
+        condition=condition,
+        filters=[
+            ExactMatchFilter(key="k1", value="v1"),
+            ExactMatchFilter(key="k2", value="v2"),
+        ],
+    )
+
+    assert _to_elasticsearch_filter(standard_filters=metadata_filters) == {
+        "bool": {
+            expected_clause: [
+                {"term": {"metadata.k1.keyword": {"value": "v1"}}},
+                {"term": {"metadata.k2.keyword": {"value": "v2"}}},
+            ]
+        }
+    }
+
+
+@pytest.mark.parametrize("condition", [FilterCondition.AND, FilterCondition.OR])
+def test_metadata_filter_single_filter_needs_no_bool_wrapper(
+    condition: FilterCondition,
+) -> None:
+    """A lone AND/OR operand is returned unwrapped, as it was before."""
+    metadata_filters = MetadataFilters(
+        condition=condition, filters=[ExactMatchFilter(key="k1", value="v1")]
+    )
+
+    assert _to_elasticsearch_filter(standard_filters=metadata_filters) == {
+        "term": {"metadata.k1.keyword": {"value": "v1"}}
+    }
+
+
+def test_metadata_filter_without_condition_defaults_to_must() -> None:
+    """`condition` is optional; AND is what the previous behavior implied."""
+    metadata_filters = MetadataFilters(
+        condition=None,
+        filters=[
+            ExactMatchFilter(key="k1", value="v1"),
+            ExactMatchFilter(key="k2", value="v2"),
+        ],
+    )
+
+    assert _to_elasticsearch_filter(standard_filters=metadata_filters) == {
+        "bool": {
+            "must": [
+                {"term": {"metadata.k1.keyword": {"value": "v1"}}},
+                {"term": {"metadata.k2.keyword": {"value": "v2"}}},
+            ]
+        }
+    }
+
+
+def test_metadata_filter_single_not_filter_is_wrapped() -> None:
+    """A lone NOT operand still needs the wrapper, so it can be negated."""
+    metadata_filters = MetadataFilters(
+        condition=FilterCondition.NOT, filters=[ExactMatchFilter(key="k1", value="v1")]
+    )
+
+    assert _to_elasticsearch_filter(standard_filters=metadata_filters) == {
+        "bool": {"must_not": [{"term": {"metadata.k1.keyword": {"value": "v1"}}}]}
     }
 
 
