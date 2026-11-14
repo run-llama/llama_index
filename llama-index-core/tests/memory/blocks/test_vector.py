@@ -285,3 +285,71 @@ async def test_format_template(
     # Check that the result contains our custom prefix
     assert result.startswith("Relevant context:")
     assert "capital of France is Paris" in result
+
+
+class RecordingVectorStore(MockVectorStore):
+    """Mock vector store that records the filters of every query it receives."""
+
+    def __init__(self):
+        super().__init__()
+        # bypass pydantic: plain (non-field) attribute for recording queries
+        object.__setattr__(self, "seen_filters", [])
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        self.seen_filters.append(query.filters)
+        return super().query(query, **kwargs)
+
+
+def _session_filter_values(filters) -> list:
+    if filters is None:
+        return []
+    return [f.value for f in filters.filters if f.key == "session_id"]
+
+
+@pytest.mark.asyncio
+async def test_vector_memory_block_session_filter_not_stale(
+    mock_embedding: MockEmbedding,
+):
+    """Each _aget call must filter by the session_id it was given.
+
+    Regression test: _aget used to mutate self.query_kwargs in place and only
+    checked for the *existence* of a session_id filter, so a second call with a
+    different session_id kept querying with the first call's stale filter.
+    """
+    store = RecordingVectorStore()
+    block = VectorMemoryBlock(vector_store=store, embed_model=mock_embedding)
+    messages = [ChatMessage(role="user", content="hello")]
+
+    await block._aget(messages, session_id="session-1")
+    assert _session_filter_values(store.seen_filters[-1]) == ["session-1"]
+
+    await block._aget(messages, session_id="session-2")
+    assert _session_filter_values(store.seen_filters[-1]) == ["session-2"]
+
+    # the block's own config must not be mutated by retrieval
+    assert "filters" not in block.query_kwargs
+
+
+@pytest.mark.asyncio
+async def test_vector_memory_block_session_filter_replaces_existing(
+    mock_embedding: MockEmbedding,
+):
+    """A user-supplied session_id filter is replaced (not duplicated) per call,
+    and the user's MetadataFilters object is left untouched."""
+    from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
+
+    store = RecordingVectorStore()
+    user_filters = MetadataFilters(filters=[MetadataFilter(key="session_id", value="old")])
+    block = VectorMemoryBlock(
+        vector_store=store,
+        embed_model=mock_embedding,
+        query_kwargs={"filters": user_filters},
+    )
+    messages = [ChatMessage(role="user", content="hello")]
+
+    await block._aget(messages, session_id="new-session")
+
+    seen = _session_filter_values(store.seen_filters[-1])
+    assert seen == ["new-session"], f"expected exactly the fresh filter, got {seen}"
+    # user's filters object must not be mutated
+    assert _session_filter_values(user_filters) == ["old"]
