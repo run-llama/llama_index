@@ -3,6 +3,8 @@
 import asyncio
 import contextvars
 import concurrent.futures
+import inspect
+from contextlib import ExitStack
 from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
 
@@ -163,13 +165,41 @@ async def run_jobs(
         async with semaphore:
             return await job
 
-    pool_jobs = [worker(job) for job in jobs]
+    with ExitStack() as stack:
+        progress: Any = None
+        if show_progress:
+            from tqdm.asyncio import tqdm_asyncio
 
-    if show_progress:
-        from tqdm.asyncio import tqdm_asyncio
+            progress = stack.enter_context(tqdm_asyncio(total=len(jobs), desc=desc))
 
-        results = await tqdm_asyncio.gather(*pool_jobs, desc=desc)
-    else:
-        results = await asyncio.gather(*pool_jobs)
+        pool_jobs = [asyncio.create_task(worker(job)) for job in jobs]
+        if progress is not None:
+            for task in pool_jobs:
+                task.add_done_callback(lambda _: progress.update())
 
-    return results
+        gathered_jobs = asyncio.gather(*pool_jobs)
+        try:
+            return await asyncio.shield(gathered_jobs)
+        except BaseException:
+            for task in pool_jobs:
+                task.cancel()
+            cleanup = asyncio.gather(gathered_jobs, *pool_jobs, return_exceptions=True)
+            cancellation = None
+            try:
+                # Further caller cancellations must not interrupt job finalizers.
+                while not cleanup.done():
+                    try:
+                        await asyncio.shield(cleanup)
+                    except asyncio.CancelledError as exc:
+                        cancellation = exc
+            finally:
+                # Workers waiting for a permit may never have awaited their job.
+                for job in jobs:
+                    if (
+                        inspect.iscoroutine(job)
+                        and inspect.getcoroutinestate(job) == inspect.CORO_CREATED
+                    ):
+                        job.close()
+            if cancellation is not None:
+                raise cancellation
+            raise
