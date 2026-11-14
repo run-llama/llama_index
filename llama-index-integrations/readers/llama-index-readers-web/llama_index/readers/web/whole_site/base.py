@@ -1,6 +1,7 @@
 import time
 import warnings
 from typing import List, Optional
+from urllib.parse import urlparse
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -65,6 +66,24 @@ class WholeSiteReader(BaseReader):
     def clean_url(self, url):
         return url.split("#")[0]
 
+    def is_in_scope(self, href: str) -> bool:
+        """
+        Whether href is on the same origin as prefix and under its path.
+
+        A plain `href.startswith(self.prefix)` also matches a link like
+        "https://example.com.evil.com/..." against a prefix of
+        "https://example.com", since that's just string containment.
+        Comparing scheme and host separately closes that without changing
+        behavior for the documented usage (a prefix ending in "/").
+        """
+        prefix_parts = urlparse(self.prefix)
+        href_parts = urlparse(href)
+        return (
+            href_parts.scheme == prefix_parts.scheme
+            and href_parts.netloc == prefix_parts.netloc
+            and href.startswith(self.prefix)
+        )
+
     def restart_driver(self):
         self.driver.quit()
         self.driver = self.setup_driver()
@@ -127,7 +146,7 @@ class WholeSiteReader(BaseReader):
 
                     for href in links:
                         try:
-                            if href.startswith(self.prefix) and href not in added_urls:
+                            if self.is_in_scope(href) and href not in added_urls:
                                 urls_to_visit.append((href, next_depth))
                                 added_urls.add(href)
                         except Exception:
