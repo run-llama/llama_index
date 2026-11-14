@@ -14,7 +14,9 @@ except ImportError:
     SHOULD_SKIP = True
 
 
+from unittest.mock import MagicMock
 from llama_index.core.schema import Document, MetadataMode, TextNode
+from llama_index.core.text_splitter import CodeSplitter
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -448,3 +450,33 @@ def test_oversized_leaf_not_dropped_token_mode() -> None:
     assert sum(chunk.count("A") for chunk in chunks) == 800
     assert all(len(tokenizer(chunk)) <= 20 for chunk in chunks)
     assert any("y = 1" in chunk for chunk in chunks)
+
+
+def test_oversized_leaf_token_mode_sublinear_tokenizer_calls() -> None:
+    """Splitting an oversized leaf in token mode should use binary search rather than per-char calls."""
+    call_count = 0
+
+    def counting_tokenizer(s: str) -> List[str]:
+        nonlocal call_count
+        call_count += 1
+        return list(s)
+
+    code_splitter = CodeSplitter(
+        language="custom",
+        count_mode="token",
+        max_tokens=50,
+        tokenizer=counting_tokenizer,
+        parser=MagicMock(),
+    )
+    leaf_text = "abcdefghij" * 100  # 1000 chars -> 20 chunks of 50 chars
+    chunks = code_splitter._split_oversized_leaf(leaf_text, 50)
+
+    assert chunks == [leaf_text[i : i + 50] for i in range(0, 1000, 50)]
+    assert "".join(chunks) == leaf_text
+    # Exponential + binary search should use << 1000 calls (around ~230 calls vs 999)
+    assert call_count < 300
+
+    # Single-character piece exceeding max_size is preserved as-is
+    single_over = code_splitter._split_oversized_leaf("abc", 0)
+    assert single_over == ["a", "b", "c"]
+
