@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "mypy==0.991",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
@@ -25,10 +25,10 @@ dev = [
 
 [project]
 name = "llama-index-llms-friendli"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index llms friendli integration"
 authors = [{name = "Yunmo Koo", email = "yunmorning@friendli.ai"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
