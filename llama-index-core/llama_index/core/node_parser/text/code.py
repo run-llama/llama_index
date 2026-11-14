@@ -55,7 +55,7 @@ class CodeSplitter(TextSplitter):
         gt=0,
     )
     _parser: Any = PrivateAttr()
-    _tokenizer: Callable = PrivateAttr()
+    _tokenizer: Optional[Callable] = PrivateAttr()
 
     def __init__(
         self,
@@ -107,7 +107,9 @@ class CodeSplitter(TextSplitter):
         )
 
         # Initialize tokenizer if using token mode
-        self._tokenizer = tokenizer or get_tokenizer()
+        self._tokenizer = tokenizer
+        if count_mode == "token" and self._tokenizer is None:
+            self._tokenizer = get_tokenizer()
 
         if parser is None:
             try:
@@ -166,6 +168,11 @@ class CodeSplitter(TextSplitter):
     def class_name(cls) -> str:
         return "CodeSplitter"
 
+    def _count_tokens(self, text: str) -> int:
+        if self._tokenizer is None:
+            self._tokenizer = get_tokenizer()
+        return len(self._tokenizer(text))
+
     def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
         """
         Recursively chunk a node into smaller pieces based on character or token limits.
@@ -188,7 +195,7 @@ class CodeSplitter(TextSplitter):
             child_size = (
                 len(child_text)
                 if self.count_mode == "char"
-                else len(self._tokenizer(child_text))
+                else self._count_tokens(child_text)
             )
 
             if child_size > max_size:
@@ -213,7 +220,7 @@ class CodeSplitter(TextSplitter):
                 new_chunk_size = (
                     len(new_chunk_text)
                     if self.count_mode == "char"
-                    else len(self._tokenizer(new_chunk_text))
+                    else self._count_tokens(new_chunk_text)
                 )
 
                 if new_chunk_size > max_size:
@@ -265,7 +272,7 @@ class CodeSplitter(TextSplitter):
         chunks: List[str] = []
         current = ""
         for char in text:
-            if current and len(self._tokenizer(current + char)) > max_size:
+            if current and self._count_tokens(current + char) > max_size:
                 chunks.append(current)
                 current = char
             else:
