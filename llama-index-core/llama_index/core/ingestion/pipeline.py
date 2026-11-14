@@ -403,7 +403,9 @@ class IngestionPipeline(BaseModel):
         """Load the pipeline from disk."""
         if fs is not None:
             self.cache = IngestionCache.from_persist_path(
-                concat_dirs(persist_dir, cache_name), fs=fs
+                concat_dirs(persist_dir, cache_name),
+                collection=self.cache.collection,
+                fs=fs,
             )
             persist_docstore_path = concat_dirs(persist_dir, docstore_name)
             if fs.exists(persist_docstore_path):
@@ -412,7 +414,7 @@ class IngestionPipeline(BaseModel):
                 )
         else:
             self.cache = IngestionCache.from_persist_path(
-                str(Path(persist_dir) / cache_name)
+                str(Path(persist_dir) / cache_name), collection=self.cache.collection
             )
             persist_docstore_path = str(Path(persist_dir) / docstore_name)
             if os.path.exists(persist_docstore_path):
