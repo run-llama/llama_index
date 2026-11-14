@@ -70,6 +70,20 @@ class StructuredRefineResponse(BaseModel):
     )
 
 
+def _output_cls_has_answer_field(output_cls: Type[BaseModel]) -> bool:
+    """Whether DefaultRefineProgram can stream a user-provided output_cls.
+
+    stream_call only yields when ``getattr(structured_answer, "answer", None)`` is
+    set, so a model without an ``answer`` field produces no streamed output at all.
+    Only those models need the non-streaming structured synthesis path; a model that
+    does expose ``answer`` must keep its original streaming behaviour.
+    """
+    fields = getattr(output_cls, "model_fields", None)
+    if fields is None:  # Pydantic v1 compatibility
+        fields = getattr(output_cls, "__fields__", {})
+    return "answer" in fields
+
+
 if TYPE_CHECKING:
     from llama_index.core.program.utils import create_flexible_model, FlexibleModel
 
@@ -322,7 +336,15 @@ class Refine(BaseSynthesizer):
             list[FlexibleModel],
             None,
         ]
-        if not self._streaming:
+        if not self._streaming or (
+            # A user-provided output_cls without an `answer` field cannot be streamed
+            # by DefaultRefineProgram, so use the non-streaming structured synthesis
+            # path for that case only. Models exposing `answer` keep the streaming
+            # behaviour they already had.
+            isinstance(program, DefaultRefineProgram)
+            and self._output_cls is not None
+            and not _output_cls_has_answer_field(self._output_cls)
+        ):
             try:
                 structured_response = cast(
                     StructuredRefineResponse,
@@ -384,7 +406,15 @@ class Refine(BaseSynthesizer):
             list[FlexibleModel],
             None,
         ]
-        if not self._streaming:
+        if not self._streaming or (
+            # A user-provided output_cls without an `answer` field cannot be streamed
+            # by DefaultRefineProgram, so use the non-streaming structured synthesis
+            # path for that case only. Models exposing `answer` keep the streaming
+            # behaviour they already had.
+            isinstance(program, DefaultRefineProgram)
+            and self._output_cls is not None
+            and not _output_cls_has_answer_field(self._output_cls)
+        ):
             try:
                 structured_response = cast(
                     StructuredRefineResponse,

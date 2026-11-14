@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.base.response.schema import (
     AsyncStreamingResponse,
+    PydanticResponse,
     Response,
     StreamingResponse,
 )
@@ -61,6 +62,66 @@ class FailingStub(BasePydanticProgram):
 
     def __call__(self, *args: Any, **kwargs: Any) -> StructuredRefineResponse:
         raise self._exc
+
+
+class Foo(BaseModel):
+    """Structured output class without an `answer` field."""
+
+    name: str
+    age: int
+
+
+class StructuredOutputFakeLLM(MockLLM):
+    """Returns Foo(name="bob", age=3) for every structured call, streaming or not."""
+
+    def structured_predict(self, output_cls: Any, prompt: Any, **kwargs: Any) -> Any:
+        return Foo(name="bob", age=3)
+
+    async def astructured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> Any:
+        return Foo(name="bob", age=3)
+
+    def stream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> Generator[Any, None, None]:
+        yield Foo(name="bob", age=3)
+
+    async def astream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
+        async def gen() -> AsyncGenerator[Any, None]:
+            yield Foo(name="bob", age=3)
+
+        return gen()
+
+
+class WithAnswer(BaseModel):
+    """Structured output class that exposes an `answer` field."""
+
+    answer: str
+
+
+class WithAnswerFakeLLM(StructuredOutputFakeLLM):
+    """Streams WithAnswer while the non-streaming methods still return Foo.
+
+    This distinguishes the two paths: falling back to non-streaming structured
+    synthesis yields a PydanticResponse wrapping Foo, whereas the expected
+    streaming path yields "hi there".
+    """
+
+    def stream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> Generator[Any, None, None]:
+        yield WithAnswer(answer="hi there")
+
+    async def astream_structured_predict(
+        self, output_cls: Any, prompt: Any, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
+        async def gen() -> AsyncGenerator[Any, None]:
+            yield WithAnswer(answer="hi there")
+
+        return gen()
 
 
 class QuerySatisfiedCase(BaseModel):
@@ -584,6 +645,51 @@ class TestRefine:
         expected = " ".join(["text"] * 10)
         assert len(chunks) > 1
         assert "".join(chunks) == expected
+
+    def test_synthesize__streaming_with_output_cls_returns_pydantic_response(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        """A user output_cls has no `answer` field, so its structured output must not be dropped."""
+        synthesizer = Refine(
+            llm=StructuredOutputFakeLLM(), output_cls=Foo, streaming=True
+        )
+        response = synthesizer.synthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, PydanticResponse)
+        assert response.response == Foo(name="bob", age=3)
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_with_output_cls_returns_pydantic_response(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        synthesizer = Refine(
+            llm=StructuredOutputFakeLLM(), output_cls=Foo, streaming=True
+        )
+        response = await synthesizer.asynthesize(query="test", nodes=nodes)
+        assert isinstance(response, PydanticResponse)
+        assert response.response == Foo(name="bob", age=3)
+
+    def test_synthesize__streaming_output_cls_with_answer_field_still_streams(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        """An output_cls exposing `answer` must keep its streaming contract."""
+        synthesizer = Refine(
+            llm=WithAnswerFakeLLM(), output_cls=WithAnswer, streaming=True
+        )
+        response = synthesizer.synthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, StreamingResponse)
+        assert "".join(response.response_gen) == "hi there"
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_output_cls_with_answer_field_still_streams(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        synthesizer = Refine(
+            llm=WithAnswerFakeLLM(), output_cls=WithAnswer, streaming=True
+        )
+        response = await synthesizer.asynthesize(query="test", nodes=nodes[:1])
+        assert isinstance(response, AsyncStreamingResponse)
+        chunks = [chunk async for chunk in response.async_response_gen()]
+        assert "".join(chunks) == "hi there"
 
     def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
         self,
