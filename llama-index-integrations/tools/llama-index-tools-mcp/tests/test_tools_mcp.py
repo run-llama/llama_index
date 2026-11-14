@@ -777,3 +777,30 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+def test_remove_model_fields_preserves_descriptions_and_defaults(client: BasicMCPClient):
+    """
+    Regression: remove_model_fields rebuilt surviving fields from only
+    (annotation, default), erasing their descriptions — so using
+    global_partial_params / partial_params_by_tool silently stripped the
+    parameter docs the LLM relies on from the remaining fields.
+    """
+    from pydantic import Field, create_model
+
+    tool_spec = McpToolSpec(client)
+    model = create_model(
+        "Tool_Schema",
+        a=(float, Field(..., description="First addend, in units")),
+        b=(float, Field(..., description="Second addend, in units")),
+        mode=(str, Field("fast", description="Rounding mode")),
+    )
+
+    trimmed = tool_spec.remove_model_fields(model, {"a"}, "Tool_Schema")
+    props = trimmed.model_json_schema()["properties"]
+
+    assert set(props) == {"b", "mode"}
+    assert props["b"]["description"] == "Second addend, in units"
+    assert props["mode"]["description"] == "Rounding mode"
+    assert props["mode"]["default"] == "fast"
+    assert trimmed.model_json_schema()["required"] == ["b"]

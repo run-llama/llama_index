@@ -248,11 +248,12 @@ class McpToolSpec(
         fields_to_remove: Set[str],
         model_name: str,
     ) -> type[BaseModel]:
+        # Pass the FieldInfo through unchanged: rebuilding from (annotation, default)
+        # erased the description (and any other field metadata) on every field that
+        # survived the removal, so the LLM-facing fn_schema lost its parameter docs
+        # whenever partial params were used.
         fields = {
-            name: (
-                field.annotation,
-                field.default if field.is_required() else field.default,
-            )
+            name: (field.annotation, field)
             for name, field in model.model_fields.items()
             if name not in fields_to_remove
         }
