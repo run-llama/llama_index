@@ -14,12 +14,18 @@ logger = logging.getLogger(__name__)
 
 def _substack_reader(soup: Any, **kwargs) -> Tuple[str, Dict[str, Any]]:
     """Extract text from Substack blog post."""
-    extra_info = {
-        "Title of this Substack post": soup.select_one("h1.post-title").getText(),
-        "Subtitle": soup.select_one("h3.subtitle").getText(),
-        "Author": soup.select_one("span.byline-names").getText(),
-    }
-    text = soup.select_one("div.available-content").getText()
+    extra_info = {}
+    title = soup.select_one("h1.post-title")
+    if title is not None:
+        extra_info["Title of this Substack post"] = title.getText()
+    subtitle = soup.select_one("h3.subtitle")
+    if subtitle is not None:
+        extra_info["Subtitle"] = subtitle.getText()
+    author = soup.select_one("span.byline-names")
+    if author is not None:
+        extra_info["Author"] = author.getText()
+    content = soup.select_one("div.available-content")
+    text = content.getText() if content is not None else soup.getText()
     return text, extra_info
 
 
@@ -32,7 +38,9 @@ def _readthedocs_reader(soup: Any, url: str, **kwargs) -> Tuple[str, Dict[str, A
     rtd_links = []
 
     for link in links:
-        rtd_links.append(link["href"])
+        href = link.get("href")
+        if href is not None:
+            rtd_links.append(href)
     for i in range(len(rtd_links)):
         if not rtd_links[i].startswith("http"):
             rtd_links[i] = urljoin(url, rtd_links[i])
@@ -41,11 +49,8 @@ def _readthedocs_reader(soup: Any, url: str, **kwargs) -> Tuple[str, Dict[str, A
     for doc_link in rtd_links:
         page_link = requests.get(doc_link)
         soup = BeautifulSoup(page_link.text, "html.parser")
-        try:
-            text = soup.find(attrs={"role": "main"}).get_text()
-
-        except IndexError:
-            text = None
+        main = soup.find(attrs={"role": "main"})
+        text = main.get_text() if main is not None else None
         if text:
             texts.append("\n".join([t for t in text.split("\n") if t]))
     return "\n".join(texts), {}
@@ -59,7 +64,9 @@ def _readmedocs_reader(
     from bs4 import BeautifulSoup
 
     links = soup.find_all("a")
-    docs_links = [link["href"] for link in links if "/docs/" in link["href"]]
+    docs_links = [
+        link["href"] for link in links if link.get("href") and "/docs/" in link["href"]
+    ]
     docs_links = list(set(docs_links))
     for i in range(len(docs_links)):
         if not docs_links[i].startswith("http"):
@@ -101,7 +108,9 @@ def _gitbook_reader(
     from bs4 import BeautifulSoup
 
     links = soup.find_all("a")
-    docs_links = [link["href"] for link in links if "/docs/" in link["href"]]
+    docs_links = [
+        link["href"] for link in links if link.get("href") and "/docs/" in link["href"]
+    ]
     docs_links = list(set(docs_links))
     for i in range(len(docs_links)):
         if not docs_links[i].startswith("http"):
@@ -111,14 +120,11 @@ def _gitbook_reader(
     for doc_link in docs_links:
         page_link = requests.get(doc_link)
         soup = BeautifulSoup(page_link.text, "html.parser")
-        try:
-            text = ""
-            text = soup.find("main")
-            clean_text = clean_text = ", ".join([tag.get_text() for tag in text])
-        except IndexError:
-            text = None
+        main = soup.find("main")
+        if main is None:
             logger.error(f"Could not extract text from {doc_link}")
             continue
+        clean_text = ", ".join([tag.get_text() for tag in main])
         texts.append(clean_text)
     return "\n".join(texts), {}
 
