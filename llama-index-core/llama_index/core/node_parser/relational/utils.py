@@ -60,7 +60,7 @@ def html_to_df(html_str: str) -> Any:
     data = []
     for row in rows:
         cols = row.xpath(".//td")
-        cols = [c.text.strip() if c.text is not None else "" for c in cols]
+        cols = [c.text_content().strip() for c in cols]
         data.append(cols)
 
     # Check if the table is empty
