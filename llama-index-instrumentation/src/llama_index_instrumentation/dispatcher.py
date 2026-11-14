@@ -108,9 +108,17 @@ class Dispatcher(BaseModel):
         )
 
     @property
-    def parent(self) -> "Dispatcher":
-        assert self.manager is not None
-        return self.manager.dispatchers[self.parent_name]
+    def parent(self) -> Optional["Dispatcher"]:
+        """
+        The parent dispatcher, or None when there is no resolvable parent.
+
+        Every propagation walk (`event`, `span_enter`, `span_exit`, `span_drop`,
+        `shutdown`, ...) follows `parent` until it is falsy, so an unresolvable
+        parent has to end the walk rather than raise.
+        """
+        if self.manager is None:
+            return None
+        return self.manager.dispatchers.get(self.parent_name)
 
     @property
     def root(self) -> "Dispatcher":
