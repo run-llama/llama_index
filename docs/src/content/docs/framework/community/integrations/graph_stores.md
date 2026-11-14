@@ -51,4 +51,7 @@ See the associated guides below:
 
 Extracted entities are stored under their own labels, together with their embeddings, so `VectorContextRetriever` works without a separate vector store. `get_schema_str()` returns the schema RushDB derives from the stored data (labels, typed properties, relationship patterns) for text-to-Cypher retrieval. It runs on RushDB Cloud or a self-hosted RushDB engine.
 
-See the [package README](https://github.com/rush-db/llama-index-rushdb) for setup and examples.
+See the associated guides below:
+
+- [RushDB property graph store guide](https://docs.rushdb.com/connect/llamaindex)
+- [Package README](https://github.com/rush-db/llama-index-rushdb)
