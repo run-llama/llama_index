@@ -1959,7 +1959,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-deepinfra"
-version = "0.7.1"
+version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1994,7 +1994,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.1,<4" },
     { name = "llama-index-core", specifier = ">=0.14.3,<0.15" },
-    { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.9" },
+    { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.10" },
     { name = "tenacity", specifier = ">=8.1.0,<8.4.0" },
 ]
 

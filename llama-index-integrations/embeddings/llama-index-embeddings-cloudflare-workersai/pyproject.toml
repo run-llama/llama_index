@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-cloudflare-workersai"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index embeddings Cloudflare Workers AI integration"
 authors = [{name = "cxumol", email = "cxumol@gmail.com"}]
 requires-python = ">=3.11,<4.0"

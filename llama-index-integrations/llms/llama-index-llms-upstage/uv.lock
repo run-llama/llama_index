@@ -2015,7 +2015,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-upstage"
-version = "0.9.1"
+version = "0.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2050,7 +2050,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.14.3,<0.15" },
-    { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.9" },
+    { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.10" },
     { name = "llama-index-readers-upstage", specifier = ">=0.4.0,<0.5" },
     { name = "tokenizers", specifier = ">=0.19.1,<0.20" },
 ]

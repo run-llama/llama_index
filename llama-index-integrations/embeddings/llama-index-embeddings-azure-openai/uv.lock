@@ -1975,7 +1975,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-azure-openai"
-version = "0.6.1"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2010,7 +2010,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.6.0,<0.7" },
-    { name = "llama-index-llms-azure-openai", specifier = ">=0.4.0,<0.7" },
+    { name = "llama-index-llms-azure-openai", specifier = ">=0.4.0,<0.8" },
 ]
 
 [package.metadata.requires-dev]

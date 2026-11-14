@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-vectara-query"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index tools vectara query integration"
 authors = [{name = "David Oplatka", email = "david.oplatka@vectara.com"}]
 requires-python = ">=3.11,<4.0"

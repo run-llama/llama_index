@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-callbacks-arize-phoenix"
-version = "0.8.0"
+version = "0.9.0"
 description = "llama-index callbacks arize-phoenix integration"
 authors = [
     {name = "Arize AI", email = "phoenix-devs@arize.com"},

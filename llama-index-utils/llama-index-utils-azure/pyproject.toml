@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-utils-azure"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index utils azure"
 authors = [{name = "Fran Aguilera", email = "falven2000@hotmail.com"}]
 requires-python = ">=3.11,<4.0"

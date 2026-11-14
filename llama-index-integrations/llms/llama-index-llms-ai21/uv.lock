@@ -1939,7 +1939,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-ai21"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "ai21" },

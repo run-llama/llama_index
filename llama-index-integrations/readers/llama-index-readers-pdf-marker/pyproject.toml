@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-pdf-marker"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index readers marker integration"
 authors = [{name = "Nathan LENAS", email = "nathan.lenas@lmddc.lu"}]
 requires-python = ">=3.11,<4.0"

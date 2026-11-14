@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-friendli"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index llms friendli integration"
 authors = [{name = "Yunmo Koo", email = "yunmorning@friendli.ai"}]
 requires-python = ">=3.11,<4.0"

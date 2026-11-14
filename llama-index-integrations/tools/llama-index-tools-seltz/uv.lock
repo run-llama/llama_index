@@ -1915,7 +1915,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-seltz"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

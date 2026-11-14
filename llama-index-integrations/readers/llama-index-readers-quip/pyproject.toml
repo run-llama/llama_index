@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-quip"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index readers quip integration"
 authors = [{name = "Chirag Agrawal", email = "you@example.com"}]
 requires-python = ">=3.11,<4.0"

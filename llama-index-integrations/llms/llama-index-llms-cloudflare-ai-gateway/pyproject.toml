@@ -31,7 +31,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-cloudflare-ai-gateway"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index llms cloudflare ai gateway integration"
 authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}]
 maintainers = [{name = "psiace"}]

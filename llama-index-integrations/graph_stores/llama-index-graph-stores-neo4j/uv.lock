@@ -1851,7 +1851,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-graph-stores-neo4j"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
