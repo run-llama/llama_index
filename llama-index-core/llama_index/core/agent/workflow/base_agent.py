@@ -76,6 +76,11 @@ WORKFLOW_KWARGS = (
 )
 
 
+def _validate_max_iterations(max_iterations: int) -> None:
+    if max_iterations <= 0:
+        raise ValueError("max_iterations must be greater than 0")
+
+
 def get_default_llm() -> LLM:
     return Settings.llm
 
@@ -302,11 +307,16 @@ class BaseWorkflowAgent(
         if not await ctx.store.get("state", default=None):
             await ctx.store.set("state", copy.deepcopy(self.initial_state))
 
-        if not await ctx.store.get("max_iterations", default=None):
+        max_iterations = await ctx.store.get("max_iterations", default=None)
+        if max_iterations is None:
+            max_iterations = ev.get("max_iterations", default=None)
             max_iterations = (
-                ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
+                max_iterations if max_iterations is not None else DEFAULT_MAX_ITERATIONS
             )
+            _validate_max_iterations(max_iterations)
             await ctx.store.set("max_iterations", max_iterations)
+        else:
+            _validate_max_iterations(max_iterations)
 
         if not await ctx.store.get("early_stopping_method", default=None):
             early_stopping_method = (
