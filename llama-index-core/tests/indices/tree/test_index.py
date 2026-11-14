@@ -200,3 +200,31 @@ def test_twice_insert_empty(patch_llm_predictor, patch_token_text_splitter) -> N
 def _mock_tokenizer(text: str) -> int:
     """Mock tokenizer that splits by spaces."""
     return len(text.split(" "))
+
+
+def _reachable_node_ids(index_graph: IndexGraph) -> set:
+    """Node ids reachable from the roots of the graph."""
+    reachable = set()
+    stack = list(index_graph.root_nodes.values())
+    while stack:
+        node_id = stack.pop()
+        if node_id in reachable:
+            continue
+        reachable.add(node_id)
+        stack.extend(index_graph.node_id_to_children_ids.get(node_id, []))
+    return reachable
+
+
+def test_insert_keeps_the_children_of_new_roots(
+    patch_llm_predictor, patch_token_text_splitter
+) -> None:
+    """Every inserted node stays reachable after the root level is consolidated."""
+    tree = TreeIndex.from_documents([], num_children=2)
+    for i in range(6):
+        tree.insert(Document(text=f"Record number {i}.", id_=f"doc_{i}"))
+
+    index_graph = tree.index_struct
+    assert len(index_graph.root_nodes) > 1, "root level did not overflow"
+    # Consolidating the root level promotes two new summaries. They must keep
+    # the children they summarise, otherwise the inserted text is unreachable.
+    assert _reachable_node_ids(index_graph) == set(index_graph.all_nodes.values())

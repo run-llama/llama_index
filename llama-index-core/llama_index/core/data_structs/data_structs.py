@@ -98,7 +98,11 @@ class IndexGraph(IndexStruct):
         new_index = new_index or self.size
         if parent_node is None:
             self.root_nodes[new_index] = node.node_id
-            self.node_id_to_children_ids[node.node_id] = []
+            # Keep the children of a node that already has them. The tree
+            # inserter links a new summary node to the nodes it summarises
+            # before promoting it to a root, and resetting the list here left
+            # those roots childless, so everything below them was unreachable.
+            self.node_id_to_children_ids.setdefault(node.node_id, [])
         else:
             if parent_node.node_id not in self.node_id_to_children_ids:
                 self.node_id_to_children_ids[parent_node.node_id] = []
