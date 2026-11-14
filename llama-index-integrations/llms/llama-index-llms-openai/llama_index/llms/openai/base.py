@@ -1126,6 +1126,20 @@ class OpenAI(FunctionCallingLLM):
             and is_json_schema_supported(self.model)
         )
 
+    def _sends_tools_for_structured_output(self) -> bool:
+        """
+        Whether the program picked for this LLM sends ``tools``.
+
+        Mirrors ``get_program_for_llm`` in core: only the function-calling
+        programs send tools, so only they may carry a ``tool_choice``. A
+        request with ``tool_choice`` and no ``tools`` is rejected by
+        OpenAI-compatible servers, so the text-completion program must not
+        receive one.
+        """
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            return self.metadata.is_function_calling_model
+        return self.pydantic_program_mode == PydanticProgramMode.FUNCTION
+
     @dispatcher.span
     def structured_predict(
         self,
@@ -1143,11 +1157,10 @@ class OpenAI(FunctionCallingLLM):
             response = self.chat(messages, **llm_kwargs)
             return output_cls.model_validate_json(str(response.message.content))
 
-        # when uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
+        # only the function-calling programs send tools, and a tool_choice
+        # without tools is rejected by OpenAI-compatible servers
+        if self._sends_tools_for_structured_output():
+            llm_kwargs.setdefault("tool_choice", "required")
         return super().structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
@@ -1169,11 +1182,10 @@ class OpenAI(FunctionCallingLLM):
             response = await self.achat(messages, **llm_kwargs)
             return output_cls.model_validate_json(str(response.message.content))
 
-        # when uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
+        # only the function-calling programs send tools, and a tool_choice
+        # without tools is rejected by OpenAI-compatible servers
+        if self._sends_tools_for_structured_output():
+            llm_kwargs.setdefault("tool_choice", "required")
         return await super().astructured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
@@ -1199,11 +1211,8 @@ class OpenAI(FunctionCallingLLM):
                 curr = process_streaming_content_incremental(response, output_cls, curr)
                 yield curr
         else:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            if self._sends_tools_for_structured_output():
+                llm_kwargs.setdefault("tool_choice", "required")
             yield from super()._structured_stream_call(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
@@ -1239,11 +1248,8 @@ class OpenAI(FunctionCallingLLM):
 
             return gen()
         else:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            if self._sends_tools_for_structured_output():
+                llm_kwargs.setdefault("tool_choice", "required")
             return await super()._structured_astream_call(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )

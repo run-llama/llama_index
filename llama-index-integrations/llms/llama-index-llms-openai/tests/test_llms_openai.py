@@ -1,5 +1,12 @@
+import json
 import os
+
+import httpx
+from pydantic import BaseModel
+
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.types import PydanticProgramMode
 from llama_index.core.tools import FunctionTool
 import pytest
 from llama_index.llms.openai import OpenAI
@@ -210,3 +217,52 @@ def test_streaming_with_usage_tokens():
     assert intermediate_response.additional_kwargs["prompt_tokens"] > 0
     assert intermediate_response.additional_kwargs["completion_tokens"] > 0
     assert intermediate_response.additional_kwargs["total_tokens"] > 0
+
+
+class _CapturedRequest(Exception):
+    """Raised from the transport to stop the request before it is sent."""
+
+
+def _capture_structured_predict_request(program_mode: PydanticProgramMode) -> dict:
+    """Run structured_predict and return the JSON payload sent to the API."""
+
+    class Total(BaseModel):
+        total_units: int
+
+    sent: list = []
+
+    def capture(request):
+        sent.append(json.loads(request.content))
+        raise _CapturedRequest
+
+    llm = OpenAI(
+        model="gpt-4",
+        api_base="http://server.invalid/v1",
+        api_key="unused",
+        pydantic_program_mode=program_mode,
+        http_client=httpx.Client(transport=httpx.MockTransport(capture)),
+        max_retries=0,
+    )
+    with pytest.raises(Exception):
+        llm.structured_predict(
+            Total, PromptTemplate("Sum the inventories: {text}"), text="A: 11; B: 19"
+        )
+
+    assert len(sent) == 1, "no request reached the transport"
+    return sent[0]
+
+
+def test_structured_predict_llm_mode_sends_no_tool_choice():
+    """The text-completion program sends no tools, so it must send no tool_choice."""
+    payload = _capture_structured_predict_request(PydanticProgramMode.LLM)
+
+    assert payload.get("tools") is None
+    assert payload.get("tool_choice") is None
+
+
+def test_structured_predict_function_mode_still_forces_tool_choice():
+    """The function-calling program sends tools, so it keeps tool_choice=required."""
+    payload = _capture_structured_predict_request(PydanticProgramMode.FUNCTION)
+
+    assert payload.get("tools")
+    assert payload.get("tool_choice") == "required"
