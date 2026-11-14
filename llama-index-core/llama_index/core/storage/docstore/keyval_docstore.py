@@ -1,7 +1,7 @@
 """Document store."""
 
 import asyncio
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
@@ -667,3 +667,23 @@ class KVDocumentStore(BaseDocumentStore):
             ).items()
             if (doc_hash := doc.get("doc_hash"))
         }
+
+    def get_all_document_ids(self) -> Set[str]:
+        """Get the ids of all documents stored (not node ids)."""
+        doc_ids: Set[str] = set((self.get_all_ref_doc_info() or {}).keys())
+        for doc_id, metadata in self._kvstore.get_all(
+            collection=self._metadata_collection
+        ).items():
+            if metadata.get("doc_hash") and "ref_doc_id" not in metadata:
+                doc_ids.add(doc_id)
+        return doc_ids
+
+    async def aget_all_document_ids(self) -> Set[str]:
+        """Get the ids of all documents stored (not node ids)."""
+        doc_ids: Set[str] = set((await self.aget_all_ref_doc_info() or {}).keys())
+        for doc_id, metadata in (
+            await self._kvstore.aget_all(collection=self._metadata_collection)
+        ).items():
+            if metadata.get("doc_hash") and "ref_doc_id" not in metadata:
+                doc_ids.add(doc_id)
+        return doc_ids
