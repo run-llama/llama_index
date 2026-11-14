@@ -71,7 +71,7 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
 
         # sort nodes by date
         node_dates = pd.to_datetime(
-            [node.node.metadata[self.date_key] for node in nodes]
+            [node.node.metadata[self.date_key] for node in nodes], utc=True
         )
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes = [nodes[idx] for idx in sorted_node_idxs]
@@ -123,7 +123,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
 
         # sort nodes by date
         node_dates = pd.to_datetime(
-            [node.node.metadata[self.date_key] for node in nodes]
+            [node.node.metadata[self.date_key] for node in nodes], utc=True
         )
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
