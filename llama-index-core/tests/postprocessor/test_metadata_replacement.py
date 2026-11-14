@@ -42,3 +42,18 @@ def test_metadata_replacement_falls_back_when_target_key_is_absent() -> None:
 
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "This is a test 1."
+
+
+def test_metadata_replacement_does_not_rewrite_cached_retrieval_result() -> None:
+    original = NodeWithScore(
+        node=TextNode(text="matched sentence", metadata={"window": "window text"}),
+        score=0.75,
+    )
+    postprocessor = MetadataReplacementPostProcessor(target_metadata_key="window")
+
+    [expanded] = postprocessor.postprocess_nodes([original])
+
+    assert expanded.get_content() == "window text"
+    assert expanded.score == original.score
+    assert expanded.node_id == original.node_id
+    assert original.get_content() == "matched sentence"

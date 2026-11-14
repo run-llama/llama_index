@@ -51,7 +51,7 @@ postprocessor = MetadataReplacementPostProcessor(
     target_metadata_key="window",
 )
 
-postprocessor.postprocess_nodes(nodes)
+nodes = postprocessor.postprocess_nodes(nodes)
 ```
 
 ## LongContextReorder
