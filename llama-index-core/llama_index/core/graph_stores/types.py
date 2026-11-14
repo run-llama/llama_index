@@ -191,14 +191,16 @@ class LabelledPropertyGraph(BaseModel):
             return
 
         self.triplets.remove((subj.id, rel.id, obj.id))
-        if subj.id in self.nodes:
-            del self.nodes[subj.id]
-        if obj.id in self.nodes:
-            del self.nodes[obj.id]
 
         rel_key = self._get_relation_key(relation=rel)
         if rel_key in self.relations:
             del self.relations[rel_key]
+
+        # Drop an endpoint only when no remaining triplet still uses it.
+        referenced_ids = {node_id for s, _, o in self.triplets for node_id in (s, o)}
+        for node_id in (subj.id, obj.id):
+            if node_id in self.nodes and node_id not in referenced_ids:
+                del self.nodes[node_id]
 
     def delete_node(self, node: LabelledNode) -> None:
         """Delete a node."""
