@@ -521,6 +521,12 @@ class BedrockEmbedding(BaseEmbedding):
             request_body = json.dumps(titan_body_request)
 
         elif provider == PROVIDERS.COHERE:
+            if isinstance(payload, list) and all(
+                not text or not text.strip() for text in payload
+            ):
+                raise ValueError(
+                    "Cohere embedding payload must contain at least one non-empty text."
+                )
             input_types = {
                 "text": "search_document",
                 "query": "search_query",
