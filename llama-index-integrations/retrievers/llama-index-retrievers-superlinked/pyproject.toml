@@ -12,7 +12,7 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-superlinked"
-version = "0.3.0"
+version = "0.3.1"
 description = "LlamaIndex retriever integration for Superlinked"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
