@@ -338,6 +338,18 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             results.append(result)
         return results
 
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **insert_kwargs: Any
+    ) -> IndexDict:
+        # Preserve the initial modality hints for a build, not for each insert.
+        index_struct = super()._build_index_from_nodes(nodes, **insert_kwargs)
+        if nodes:
+            if not any(isinstance(node, TextNode) and node.text for node in nodes):
+                self._is_text_vector_store_empty = True
+            if not any(isinstance(node, ImageNode) for node in nodes):
+                self._is_image_vector_store_empty = True
+        return index_struct
+
     async def _async_add_nodes_to_index(
         self,
         index_struct: IndexDict,
@@ -368,8 +380,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             new_text_ids = await self.storage_context.vector_stores[
                 DEFAULT_VECTOR_STORE
             ].async_add(text_nodes, **insert_kwargs)
-        else:
-            self._is_text_vector_store_empty = True
+            if new_text_ids:
+                self._is_text_vector_store_empty = False
 
         if len(image_nodes) > 0:
             # embed image nodes as images directly
@@ -381,8 +393,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             new_img_ids = await self.storage_context.vector_stores[
                 self.image_namespace
             ].async_add(image_nodes, **insert_kwargs)
-        else:
-            self._is_image_vector_store_empty = True
+            if new_img_ids:
+                self._is_image_vector_store_empty = False
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
@@ -429,8 +441,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
                 text_nodes, **insert_kwargs
             )
-        else:
-            self._is_text_vector_store_empty = True
+            if new_text_ids:
+                self._is_text_vector_store_empty = False
 
         if len(image_nodes) > 0:
             # embed image nodes as images directly
@@ -443,8 +455,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
                 image_nodes, **insert_kwargs
             )
-        else:
-            self._is_image_vector_store_empty = True
+            if new_img_ids:
+                self._is_image_vector_store_empty = False
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
