@@ -777,3 +777,113 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+class _FakeResourceSession:
+    """Duck-typed session: static resources and/or resource templates,
+    recording every read_resource call."""
+
+    def __init__(self, with_static: bool = True, with_template: bool = True):
+        import mcp.types as mt
+
+        self._mt = mt
+        self.with_static = with_static
+        self.with_template = with_template
+        self.read_calls: list = []
+
+    async def list_tools(self):
+        return self._mt.ListToolsResult(tools=[])
+
+    async def list_resources(self):
+        resources = []
+        if self.with_static:
+            resources.append(
+                self._mt.Resource(
+                    name="static_notes",
+                    uri="file:///static/notes.txt",
+                    description="a static resource",
+                )
+            )
+        return self._mt.ListResourcesResult(resources=resources)
+
+    async def list_resource_templates(self):
+        templates = []
+        if self.with_template:
+            templates.append(
+                self._mt.ResourceTemplate(
+                    name="user_profile",
+                    uriTemplate="users://{user_id}/profile",
+                    description="per-user profile resource",
+                )
+            )
+        return self._mt.ListResourceTemplatesResult(resourceTemplates=templates)
+
+    async def read_resource(self, uri):
+        self.read_calls.append(str(uri))
+        return self._mt.ReadResourceResult(
+            contents=[
+                self._mt.TextResourceContents(uri="file:///x", text="content")
+            ]
+        )
+
+
+@pytest.mark.asyncio
+async def test_resource_template_tool_reads_its_own_uri_not_a_stale_one():
+    """A template tool must never read the URI of the previous static
+    resource in the loop (regression: `uri` variable leaked across
+    iterations because ResourceTemplate has no `uri`/`template` attribute)."""
+    session = _FakeResourceSession(with_static=True, with_template=True)
+    spec = McpToolSpec(client=session, include_resources=True)
+    tools = await spec.to_tool_list_async()
+
+    template_tool = next(t for t in tools if t.metadata.name == "user_profile")
+    await template_tool.acall(user_id="42")
+
+    assert session.read_calls[-1] == "users://42/profile"
+    assert "file:///static/notes.txt" not in session.read_calls
+
+
+@pytest.mark.asyncio
+async def test_templates_only_server_does_not_crash():
+    """Regression: a server exposing only resource templates raised
+    UnboundLocalError from to_tool_list_async."""
+    session = _FakeResourceSession(with_static=False, with_template=True)
+    spec = McpToolSpec(client=session, include_resources=True)
+    tools = await spec.to_tool_list_async()
+    assert [t.metadata.name for t in tools] == ["user_profile"]
+
+
+@pytest.mark.asyncio
+async def test_template_tool_exposes_template_variables_as_params():
+    """The template tool's schema must surface the template variables so an
+    LLM can supply them."""
+    session = _FakeResourceSession(with_static=False, with_template=True)
+    spec = McpToolSpec(client=session, include_resources=True)
+    tools = await spec.to_tool_list_async()
+
+    schema = tools[0].metadata.fn_schema.model_json_schema()
+    assert "user_id" in schema.get("properties", {})
+    assert "user_id" in schema.get("required", [])
+
+
+@pytest.mark.asyncio
+async def test_template_substitution_percent_encodes_values():
+    """RFC 6570 simple expansion percent-encodes reserved characters."""
+    session = _FakeResourceSession(with_static=False, with_template=True)
+    spec = McpToolSpec(client=session, include_resources=True)
+    tools = await spec.to_tool_list_async()
+
+    await tools[0].acall(user_id="a/b c")
+    assert session.read_calls[-1] == "users://a%2Fb%20c/profile"
+
+
+@pytest.mark.asyncio
+async def test_static_resource_tool_unchanged():
+    """Static resources keep their existing no-argument read behavior."""
+    session = _FakeResourceSession(with_static=True, with_template=False)
+    spec = McpToolSpec(client=session, include_resources=True)
+    tools = await spec.to_tool_list_async()
+
+    static_tool = next(t for t in tools if t.metadata.name == "static_notes")
+    await static_tool.acall()
+    assert session.read_calls[-1] == "file:///static/notes.txt"
