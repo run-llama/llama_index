@@ -112,11 +112,13 @@ class HTMLNodeParser(NodeParser):
     def _extract_text_from_tag(
         self, tag: Union["Tag", "NavigableString", "PageElement"]
     ) -> str:
-        from bs4 import NavigableString, Tag, PageElement
+        from bs4 import Comment, NavigableString, Tag, PageElement
 
         texts = []
         if isinstance(tag, Tag):
             for elem in tag.children:
+                if isinstance(elem, Comment):
+                    continue
                 if isinstance(elem, NavigableString):
                     if elem.strip():
                         texts.append(elem.strip())
