@@ -327,8 +327,8 @@ class DuckDBKVStore(BaseKVStore):
         )
 
         command = f"DELETE FROM {self.table.alias} WHERE {filter_expression}"
-        _ = self.client.execute(command)
-        return True
+        deleted_rows = self.client.execute(command).fetchone()
+        return deleted_rows is not None and int(deleted_rows[0]) > 0
 
     @override
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
