@@ -1,5 +1,5 @@
 import pytest
-from llama_index.core.output_parsers.base import StructuredOutput
+from llama_index.core.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.core.output_parsers.selection import SelectionOutputParser
 
 
@@ -80,3 +80,22 @@ def test_failed_parse(output_parser: SelectionOutputParser) -> None:
     )
     with pytest.raises(ValueError, match="Failed to convert*") as exc_info:
         output_parser.parse(output=no_json_in_response)
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        '{"a": 1}',
+        '[{"choice": 1}]',
+        '[{"choice": "first", "reason": "r"}]',
+        '[{"choice": 1e999, "reason": "r"}]',
+        "[1, 2]",
+        '[{"choice": null, "reason": "r"}]',
+        '[{"choice": 1, "reason": null}]',
+    ],
+)
+def test_wrong_shaped_json_raises_output_parser_exception(
+    output_parser: SelectionOutputParser, output: str
+) -> None:
+    with pytest.raises(OutputParserException):
+        output_parser.parse(output=output)
