@@ -375,7 +375,7 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            query_engine_tools = self._retriever.retrieve(query_bundle)
+            query_engine_tools = await self._retriever.aretrieve(query_bundle)
             tasks = []
             for query_engine_tool in query_engine_tools:
                 query_engine = query_engine_tool.query_engine
