@@ -9,6 +9,7 @@ Once you have [learned about the basics of loading data](/python/framework/under
 ### Loading
 
 - [SimpleDirectoryReader](/python/framework/module_guides/loading/simpledirectoryreader), our built-in loader for loading all sorts of file types from a local directory
+- [Vietnamese PDF ingestion](/python/framework/module_guides/loading/vietnamese), word segmentation before chunking and pypdf extraction for tone marks
 - [LlamaParse](/python/framework/module_guides/loading/connector/llama_parse), LlamaIndex's official tool for PDF parsing, available as a managed API.
 - [Data connectors](/python/framework/module_guides/loading/connector), hundreds of data loading integrations to ingest data from any source
 
