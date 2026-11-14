@@ -86,3 +86,18 @@ def test_condense_empty_response_preserves_existing_facts() -> None:
 
     # The empty condense output is ignored; the pre-condense facts are kept.
     assert block.facts == ["a", "b", "c", "d"]
+
+
+def test_condensed_facts_are_deduplicated_and_bounded() -> None:
+    llm = _ScriptedLLM()
+    llm.scripted_responses = [
+        "<facts><fact>new</fact></facts>",
+        "<facts><fact>first</fact><fact>first</fact><fact>second</fact><fact>third</fact></facts>",
+    ]
+    block = FactExtractionMemoryBlock(
+        llm=llm, facts=["old one", "old two"], max_facts=2
+    )
+
+    asyncio_run(block.aput([ChatMessage(role=MessageRole.USER, content="hello")]))
+
+    assert block.facts == ["first", "second"]

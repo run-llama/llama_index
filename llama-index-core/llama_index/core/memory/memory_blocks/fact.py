@@ -163,7 +163,7 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
             # apply it when it actually contains facts - otherwise an empty or
             # unparsable response would silently wipe the stored facts.
             if condensed_facts:
-                self.facts = condensed_facts
+                self.facts = list(dict.fromkeys(condensed_facts))[: self.max_facts]
 
     def _parse_facts_xml(self, xml_text: str) -> List[str]:
         """Parse facts from XML format."""
