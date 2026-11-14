@@ -133,6 +133,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
+        id_func: Optional[Callable] = None,
     ) -> "SentenceSplitter":
         """Initialize with parameters."""
         callback_manager = callback_manager or CallbackManager([])
@@ -147,6 +148,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
         )
 
     @classmethod
