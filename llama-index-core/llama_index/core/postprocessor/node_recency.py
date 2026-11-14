@@ -185,7 +185,7 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        now = self.now or datetime.now().timestamp()
+        now = self.now if self.now is not None else datetime.now().timestamp()
         # TODO: refactor with get_top_k_embeddings
 
         similarities = []
