@@ -317,6 +317,80 @@ def test_pipeline_upserts_keep_all_nodes_per_doc() -> None:
     )
 
 
+class _RaisingTransform(TransformComponent):
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
+        raise RuntimeError("transform failed")
+
+    async def acall(
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> Sequence[BaseNode]:
+        raise RuntimeError("transform failed")
+
+
+def _upsert_pipeline(
+    docstore: SimpleDocumentStore,
+    vector_store: SimpleVectorStore,
+    transformations: Sequence[TransformComponent],
+) -> IngestionPipeline:
+    return IngestionPipeline(
+        transformations=list(transformations),
+        docstore=docstore,
+        vector_store=vector_store,
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+
+
+def test_pipeline_upserts_keep_existing_vectors_when_transform_fails() -> None:
+    """
+    Regression test: the old vectors were deleted before the transformations
+    ran, so a failure left the document with no vectors at all.
+    """
+    docstore = SimpleDocumentStore()
+    vector_store = SimpleVectorStore()
+
+    _upsert_pipeline(
+        docstore, vector_store, [SentenceSplitter(), MockEmbedding(embed_dim=8)]
+    ).run(documents=[Document(text="original text", doc_id="1")])
+
+    embeddings_before = dict(vector_store.data.embedding_dict)
+    assert embeddings_before, "the first run should have stored vectors"
+
+    # same doc id, new content, so the hash changes and the old data is superseded
+    with pytest.raises(RuntimeError):
+        _upsert_pipeline(
+            docstore, vector_store, [SentenceSplitter(), _RaisingTransform()]
+        ).run(documents=[Document(text="updated text", doc_id="1")])
+
+    assert vector_store.data.embedding_dict == embeddings_before, (
+        "a failed run must not delete the previous version's vectors"
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_keep_existing_vectors_when_transform_fails() -> (
+    None
+):
+    """Async counterpart of the test above."""
+    docstore = SimpleDocumentStore()
+    vector_store = SimpleVectorStore()
+
+    await _upsert_pipeline(
+        docstore, vector_store, [SentenceSplitter(), MockEmbedding(embed_dim=8)]
+    ).arun(documents=[Document(text="original text", doc_id="1")])
+
+    embeddings_before = dict(vector_store.data.embedding_dict)
+    assert embeddings_before, "the first run should have stored vectors"
+
+    with pytest.raises(RuntimeError):
+        await _upsert_pipeline(
+            docstore, vector_store, [SentenceSplitter(), _RaisingTransform()]
+        ).arun(documents=[Document(text="updated text", doc_id="1")])
+
+    assert vector_store.data.embedding_dict == embeddings_before, (
+        "a failed run must not delete the previous version's vectors"
+    )
+
+
 @pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
 def test_pipeline_parallel_cache_populated() -> None:
     num_workers = 2
