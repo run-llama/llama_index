@@ -243,19 +243,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         pass
 
-    def delete_nodes(
-        self,
-        node_ids: List[str],
-        delete_from_docstore: bool = False,
-        **delete_kwargs: Any,
-    ) -> None:
-        """
-        Delete a list of nodes from the index.
-
-        Args:
-            node_ids (List[str]): A list of node_ids from the nodes to delete
-
-        """
+    def _delete_nodes_from_index_struct(self, node_ids: List[str]) -> List[str]:
+        """Delete valid node IDs and return docs whose summaries are now empty."""
         index_nodes = set(self._index_struct.node_id_to_summary_id.keys())
         valid_node_ids = []
         for node in node_ids:
@@ -272,14 +261,56 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             if len(self._index_struct.summary_id_to_node_ids[summary_id]) == 0
         ]
 
-        remove_docs = [
+        return [
             doc_id
             for doc_id in self._index_struct.doc_id_to_summary_id
             if self._index_struct.doc_id_to_summary_id[doc_id] in remove_summary_ids
         ]
 
+    def delete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete a list of nodes from the index.
+
+        Args:
+            node_ids (List[str]): A list of node_ids from the nodes to delete
+
+        """
+        remove_docs = self._delete_nodes_from_index_struct(node_ids)
         for doc_id in remove_docs:
             self.delete_ref_doc(doc_id)
+
+    async def adelete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronously delete a list of nodes from the index."""
+        valid_node_ids = [
+            node_id
+            for node_id in node_ids
+            if node_id in self._index_struct.node_id_to_summary_id
+        ]
+        remove_docs = self._delete_nodes_from_index_struct(node_ids)
+
+        if delete_from_docstore:
+            for node_id in valid_node_ids:
+                await self.docstore.adelete_document(node_id, raise_error=False)
+
+        for doc_id in remove_docs:
+            self._index_struct.delete(doc_id)
+            await self._vector_store.adelete(doc_id, **delete_kwargs)
+            if delete_from_docstore:
+                await self.docstore.adelete_ref_doc(doc_id, raise_error=False)
+
+        await self._storage_context.index_store.async_add_index_struct(
+            self._index_struct
+        )
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
