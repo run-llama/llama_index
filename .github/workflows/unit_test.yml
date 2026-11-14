@@ -15,7 +15,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.1.0
         with:
           fetch-depth: 0
 
@@ -25,7 +25,7 @@ jobs:
           sudo apt-get install -y portaudio19-dev
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -44,7 +44,7 @@ jobs:
   test-core-py314:
     runs-on: ubuntu-latest-unit-tester
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.1.0
         with:
           fetch-depth: 0
 
@@ -54,7 +54,7 @@ jobs:
           sudo apt-get install -y portaudio19-dev
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: "3.14"
           enable-cache: true

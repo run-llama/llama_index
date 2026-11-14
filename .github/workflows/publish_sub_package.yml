@@ -21,7 +21,7 @@ jobs:
     if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.1.0
         with:
           fetch-depth: 0
 
@@ -59,7 +59,7 @@ jobs:
 
       - name: Install uv and set the python version
         if: ${{ steps.changed-files.outputs.changed_files != '' }}
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
