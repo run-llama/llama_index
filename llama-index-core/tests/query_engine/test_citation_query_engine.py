@@ -1,5 +1,7 @@
 import base64
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 from llama_index.core.base.llms.types import TextBlock, ChatMessage, ImageBlock
@@ -244,3 +246,64 @@ def test_query__synthesizer_called_multimodal_citation_nodes():
         ChatMessage(blocks=[TextBlock(text="Source 1:\n" + "abc " * 50 + "\n")]),
         ChatMessage(blocks=[TextBlock(text="Source 2:\n"), ImageBlock(image=_PNG_1x1)]),
     ]
+
+
+@pytest.mark.parametrize(
+    ("mode", "occurrences"), [(MetadataMode.NONE, 0), (MetadataMode.LLM, 1)]
+)
+def test_citation_prompt_renders_metadata_once_when_requested(mode, occurrences):
+    engine = CitationQueryEngine(
+        retriever=MagicMock(),
+        llm=MockLLM(),
+        metadata_mode=mode,
+        citation_chunk_size=100,
+        citation_chunk_overlap=0,
+    )
+    source = TextNode(text="citation body", metadata={"marker": "source-tag"})
+    engine.retriever.retrieve.return_value = [NodeWithScore(node=source)]
+
+    with patch.object(
+        CompactAndRefine, "get_response", return_value="answer"
+    ) as synthesize:
+        response = engine.query("question")
+
+    [chunk] = synthesize.call_args.kwargs["text_chunks"]
+    assert chunk.count("source-tag") == occurrences
+    assert "citation body" in chunk
+    assert response.source_nodes[0].node.metadata == {"marker": "source-tag"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", [MetadataMode.NONE, MetadataMode.LLM])
+async def test_async_multimodal_citations_apply_metadata_mode_once(mode):
+    engine = CitationQueryEngine(
+        retriever=MagicMock(),
+        llm=MockLLM(is_chat_model=True),
+        multimodal=True,
+        metadata_mode=mode,
+        citation_chunk_size=100,
+        citation_chunk_overlap=0,
+    )
+    source = Node(
+        text_resource=MediaResource(text="citation body"),
+        metadata={"marker": "source-tag", "hidden": "excluded-for-llm"},
+        excluded_llm_metadata_keys=["hidden"],
+    )
+    engine.retriever.aretrieve = AsyncMock(return_value=[NodeWithScore(node=source)])
+
+    with patch.object(
+        CompactAndRefine, "aget_response_from_messages", return_value="answer"
+    ) as synthesize:
+        response = await engine.aquery("question")
+
+    chunks = synthesize.call_args.kwargs["message_chunks"]
+    text = "\n".join(
+        block.text
+        for chunk in chunks
+        for block in chunk.blocks
+        if isinstance(block, TextBlock)
+    )
+    assert text.count("source-tag") == int(mode == MetadataMode.LLM)
+    assert "citation body" in text
+    assert "excluded-for-llm" not in text
+    assert response.source_nodes[0].node.metadata == source.metadata
