@@ -69,9 +69,12 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         self._question_gen = question_gen
         self._response_synthesizer = response_synthesizer
         self._metadatas = [x.metadata for x in query_engine_tools]
-        self._query_engines = {
-            tool.metadata.name: tool.query_engine for tool in query_engine_tools
-        }
+        self._query_engines: dict[Optional[str], BaseQueryEngine] = {}
+        for tool in query_engine_tools:
+            name = tool.metadata.name
+            if name in self._query_engines:
+                raise ValueError(f"Duplicate query engine tool name: {name!r}")
+            self._query_engines[name] = tool.query_engine
         self._verbose = verbose
         self._use_async = use_async
         super().__init__(callback_manager)
