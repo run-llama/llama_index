@@ -10,7 +10,7 @@ from functools import partial
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
 
@@ -282,6 +282,11 @@ class IngestionPipeline(BaseModel):
             Document store to use for de-duping with a vector store. Defaults to None.
         docstore_strategy (DocstoreStrategy, optional):
             Document de-dup strategy. Defaults to DocstoreStrategy.UPSERTS.
+        protected_metadata_key (Optional[str], optional):
+            Only used with DocstoreStrategy.UPSERTS_AND_DELETE. Documents that are
+            missing from a run are normally deleted. If this is set, a missing
+            document is kept when its stored metadata has this key set to a truthy
+            value. Defaults to None (no document is protected).
         disable_cache (bool, optional):
             Disable the cache. Defaults to False.
         base_url (str, optional):
@@ -340,6 +345,13 @@ class IngestionPipeline(BaseModel):
     docstore_strategy: DocstoreStrategy = Field(
         default=DocstoreStrategy.UPSERTS, description="Document de-dup strategy."
     )
+    protected_metadata_key: Optional[str] = Field(
+        default=None,
+        description=(
+            "With DocstoreStrategy.UPSERTS_AND_DELETE, documents missing from a run "
+            "are kept if their stored metadata has this key set to a truthy value."
+        ),
+    )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
     def __init__(
@@ -354,6 +366,7 @@ class IngestionPipeline(BaseModel):
         docstore: Optional[BaseDocumentStore] = None,
         docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
         disable_cache: bool = False,
+        protected_metadata_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -369,6 +382,7 @@ class IngestionPipeline(BaseModel):
             docstore=docstore,
             docstore_strategy=docstore_strategy,
             disable_cache=disable_cache,
+            protected_metadata_key=protected_metadata_key,
         )
 
     def persist(
@@ -466,6 +480,40 @@ class IngestionPipeline(BaseModel):
 
         return nodes_to_run
 
+    def _is_protected_metadata(self, metadata: Optional[Dict[str, Any]]) -> bool:
+        """Return True if the metadata marks a document as protected from deletion."""
+        if self.protected_metadata_key is None or not metadata:
+            return False
+        return bool(metadata.get(self.protected_metadata_key))
+
+    def _is_protected(self, doc_id: str) -> bool:
+        """Check the stored node, then its ref doc info, for the protection flag."""
+        assert self.docstore is not None
+        if self.protected_metadata_key is None:
+            return False
+
+        stored = self.docstore.get_document(doc_id, raise_error=False)
+        if stored is not None and self._is_protected_metadata(stored.metadata):
+            return True
+        ref_doc_info = self.docstore.get_ref_doc_info(doc_id)
+        return ref_doc_info is not None and self._is_protected_metadata(
+            ref_doc_info.metadata
+        )
+
+    async def _ais_protected(self, doc_id: str) -> bool:
+        """Async version of `_is_protected`."""
+        assert self.docstore is not None
+        if self.protected_metadata_key is None:
+            return False
+
+        stored = await self.docstore.aget_document(doc_id, raise_error=False)
+        if stored is not None and self._is_protected_metadata(stored.metadata):
+            return True
+        ref_doc_info = await self.docstore.aget_ref_doc_info(doc_id)
+        return ref_doc_info is not None and self._is_protected_metadata(
+            ref_doc_info.metadata
+        )
+
     def _handle_upserts(
         self,
         nodes: Sequence[BaseNode],
@@ -499,6 +547,8 @@ class IngestionPipeline(BaseModel):
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
+                if self._is_protected(ref_doc_id):
+                    continue  # protected documents are never deleted
                 self.docstore.delete_document(ref_doc_id)
 
                 if self.vector_store is not None:
@@ -735,6 +785,8 @@ class IngestionPipeline(BaseModel):
             )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
+                if await self._ais_protected(ref_doc_id):
+                    continue  # protected documents are never deleted
                 await self.docstore.adelete_document(ref_doc_id)
 
                 if self.vector_store is not None:
