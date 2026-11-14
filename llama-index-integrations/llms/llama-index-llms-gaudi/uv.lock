@@ -1979,7 +1979,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-gaudi"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-awsdocdb"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index vector_stores awsdocdb integration"
 authors = [
     {name = "Prajwal Saokar", email = "prajwal.saokar@gmail.com"},

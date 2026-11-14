@@ -2052,7 +2052,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-mongodb"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

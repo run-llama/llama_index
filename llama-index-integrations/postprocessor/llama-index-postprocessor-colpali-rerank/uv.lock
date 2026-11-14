@@ -1975,7 +1975,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-postprocessor-colpali-rerank"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "colpali-engine" },

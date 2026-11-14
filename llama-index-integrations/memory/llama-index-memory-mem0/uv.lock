@@ -2107,7 +2107,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-memory-mem0"
-version = "2.1.0"
+version = "2.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

@@ -1935,7 +1935,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-node-parser-docling"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "docling-core" },

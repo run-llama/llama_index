@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-vespa"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index vector_stores vespa integration"
 authors = [{name = "Thomas Thoresen", email = "thomas@vespa.ai"}]
 requires-python = ">=3.11,<4.0"

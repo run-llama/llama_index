@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-whisper"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index readers openai whisper integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
 requires-python = ">=3.11,<4.0"

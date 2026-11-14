@@ -1908,7 +1908,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-utils-huggingface"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },

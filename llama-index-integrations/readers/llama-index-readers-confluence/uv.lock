@@ -1910,7 +1910,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-confluence"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "atlassian-python-api" },

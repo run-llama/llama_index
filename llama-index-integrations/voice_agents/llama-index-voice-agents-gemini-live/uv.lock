@@ -1859,7 +1859,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.25"
+version = "0.14.26"
 source = { directory = "../../../llama-index-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -1971,7 +1971,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-voice-agents-gemini-live"
-version = "0.5.1"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-genai" },

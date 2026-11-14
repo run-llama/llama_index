@@ -1888,7 +1888,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-oceanbase"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

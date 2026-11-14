@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-service-now"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index readers service-now integration"
 authors = [{name = "Ameetpal Singh", email = "ameetpal.singh@maersk.com"}]
 requires-python = ">=3.11,<4.0"

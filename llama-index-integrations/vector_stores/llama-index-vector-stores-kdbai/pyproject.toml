@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-kdbai"
-version = "0.8.0"
+version = "0.9.0"
 description = "llama-index vector_stores kdbai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.11,<4.0"

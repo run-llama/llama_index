@@ -11,7 +11,7 @@ dev = [
 
 [project]
 name = "llama-index-agent-agentmesh"
-version = "0.3.0"
+version = "0.4.0"
 description = "AgentMesh trust layer integration for LlamaIndex agents"
 authors = [{name = "AgentMesh Contributors"}]
 requires-python = ">=3.11,<4.0"

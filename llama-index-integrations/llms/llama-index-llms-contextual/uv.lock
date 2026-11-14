@@ -1249,7 +1249,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-contextual"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "contextual-client" },
@@ -1269,7 +1269,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "contextual-client", specifier = ">=0.4.0,<0.5" },
-    { name = "llama-index-llms-openai-like", specifier = ">=0.8.0,<0.9" },
+    { name = "llama-index-llms-openai-like", specifier = ">=0.8.0,<0.10" },
 ]
 
 [package.metadata.requires-dev]

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-graph-stores-ApertureDB"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index graph stores ApertureDB integration"
 authors = [{name = "ApertureData", email = "team@aperturedata.io"}]
 requires-python = ">=3.11,<4.0"
