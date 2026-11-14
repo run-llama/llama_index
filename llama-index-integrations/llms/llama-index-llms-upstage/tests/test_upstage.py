@@ -184,6 +184,7 @@ def test_basic_functionality(mock_sync_upstage: MagicMock) -> None:
     """Test basic functionality including chat, complete, and streaming."""
     with FakeApiKeyManager():
         mock_instance = mock_sync_upstage.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
         llm = Upstage(model="solar-pro2")
@@ -283,6 +284,7 @@ async def test_async_basic_functionality(mock_async_upstage: MagicMock) -> None:
     """Test async basic functionality including achat and astream_chat."""
     with FakeApiKeyManager():
         mock_instance = mock_async_upstage.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.chat.completions.create = AsyncMock(
             return_value=mock_chat_completion()
         )
