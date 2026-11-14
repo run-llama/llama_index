@@ -285,3 +285,23 @@ async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
     messages = await loaded_store.get_messages("dump_user2")
     assert len(messages) == 1
     assert messages[0].content == "message2"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "operation", ["delete_oldest_messages", "archive_oldest_messages"]
+)
+async def test_negative_oldest_message_count_cannot_change_history(
+    chat_store: SQLAlchemyChatStore, operation: str
+) -> None:
+    messages = [
+        ChatMessage(role="user", content="first"),
+        ChatMessage(role="assistant", content="second"),
+    ]
+    await chat_store.add_messages("session", messages)
+
+    with pytest.raises(ValueError, match="non-negative"):
+        await getattr(chat_store, operation)("session", -1)
+
+    assert await getattr(chat_store, operation)("session", 0) == []
+    assert await chat_store.get_messages("session") == messages
