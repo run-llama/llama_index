@@ -45,7 +45,7 @@ class RankGPTRerank(BaseNodePostprocessor):
         rankgpt_rerank_prompt = rankgpt_rerank_prompt or RANKGPT_RERANK_PROMPT
         super().__init__(
             verbose=verbose,
-            llm=llm,
+            llm=llm if llm is not None else get_default_llm(),
             top_n=top_n,
             rankgpt_rerank_prompt=rankgpt_rerank_prompt,
         )
