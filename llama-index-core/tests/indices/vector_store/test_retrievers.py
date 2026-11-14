@@ -176,3 +176,24 @@ def test_insert_fetched_nodes_with_nodes_present():
     # Should have replaced old node with the new one
     assert len(new_nodes) == 1
     assert new_nodes[0].text == "Updated text"
+
+
+def test_vector_as_retriever_custom_kwargs(
+    documents: List[Document],
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+) -> None:
+    """Test that VectorStoreIndex.as_retriever accepts custom object_map and callback_manager without TypeError."""
+    from llama_index.core.callbacks import CallbackManager
+
+    index = VectorStoreIndex.from_documents(documents, embed_model=mock_embed_model)
+    custom_cb = CallbackManager()
+    custom_map = {"test_id": "test_obj"}
+
+    retriever = index.as_retriever(
+        callback_manager=custom_cb,
+        object_map=custom_map,
+    )
+    assert retriever.callback_manager is custom_cb
+    assert retriever.object_map is custom_map

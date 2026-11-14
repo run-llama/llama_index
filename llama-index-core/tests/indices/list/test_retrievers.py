@@ -89,3 +89,23 @@ def test_llm_query(documents: List[Document], patch_token_text_splitter) -> None
 
     assert nodes[0].node.get_content() == "This is a test."
     assert nodes[1].node.get_content() == "This is a test v2."
+
+
+def test_as_retriever_custom_object_map() -> None:
+    """Test that as_retriever accepts custom object_map without TypeError."""
+    from llama_index.core.schema import IndexNode, NodeWithScore, TextNode
+
+    index = SummaryIndex(
+        [IndexNode(id_="pointer", text="inventory", index_id="inventory")]
+    )
+    mapping = {
+        "inventory": NodeWithScore(
+            node=TextNode(id_="target", text="The lab has 29 microscopes."),
+            score=1.0,
+        )
+    }
+
+    retriever = index.as_retriever(object_map=mapping)
+    nodes = retriever.retrieve("microscopes")
+    assert len(nodes) == 1
+    assert nodes[0].node.get_content() == "The lab has 29 microscopes."
