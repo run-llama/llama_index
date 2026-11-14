@@ -41,6 +41,32 @@ def test_interfaces() -> None:
     assert llm.model == STUB_MODEL_NAME
 
 
+def test_extra_body_is_forwarded_through_additional_kwargs() -> None:
+    extra_body = {"thinking": {"type": "disabled"}}
+
+    llm = OpenAILike(
+        model=STUB_MODEL_NAME,
+        api_key=STUB_API_KEY,
+        extra_body=extra_body,
+    )
+
+    assert llm.additional_kwargs["extra_body"] == extra_body
+
+
+def test_extra_body_merges_with_existing_extra_body() -> None:
+    llm = OpenAILike(
+        model=STUB_MODEL_NAME,
+        api_key=STUB_API_KEY,
+        additional_kwargs={"extra_body": {"provider": {"order": ["deepseek"]}}},
+        extra_body={"thinking": {"type": "disabled"}},
+    )
+
+    assert llm.additional_kwargs["extra_body"] == {
+        "provider": {"order": ["deepseek"]},
+        "thinking": {"type": "disabled"},
+    }
+
+
 def mock_chat_completion(text: str) -> ChatCompletion:
     return ChatCompletion(
         id="chatcmpl-abc123",
