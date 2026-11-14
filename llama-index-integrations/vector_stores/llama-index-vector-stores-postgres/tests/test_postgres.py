@@ -1307,6 +1307,38 @@ async def test_delete_nodes(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+@pytest.mark.parametrize(
+    "filters",
+    [
+        None,
+        MetadataFilters(filters=[]),
+        MetadataFilters(filters=[MetadataFilter(key="test_num", value=1)]),
+    ],
+)
+async def test_delete_nodes_empty_ids_with_metadata(
+    pg_fixture: PGVectorStore,
+    node_embeddings: List[BaseNode],
+    use_async: bool,
+    filters: Optional[MetadataFilters],
+) -> None:
+    try:
+        pg_fixture.add(node_embeddings)
+
+        if use_async:
+            await pg_fixture.adelete_nodes(node_ids=[], filters=filters)
+        else:
+            pg_fixture.delete_nodes(node_ids=[], filters=filters)
+
+        remaining = pg_fixture.get_nodes(node_ids=["aaa", "bbb", "ccc", "ddd"])
+        assert {node.node_id for node in remaining} == {"aaa", "bbb", "ccc", "ddd"}
+    finally:
+        await pg_fixture.close()
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes_metadata(
     pg_fixture: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
@@ -1477,9 +1509,17 @@ async def test_clear(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
 @pytest.mark.parametrize(
     ("node_ids", "filters", "expected_node_ids"),
     [
+        ([], None, []),
+        (
+            [],
+            MetadataFilters(filters=[MetadataFilter(key="test_num", value=1)]),
+            [],
+        ),
         (["aaa", "bbb"], None, ["aaa", "bbb"]),
         (
             None,
@@ -1535,19 +1575,26 @@ async def test_clear(
         ),
     ],
 )
-def test_get_nodes_parametrized(
+async def test_get_nodes_parametrized(
     pg: PGVectorStore,
     node_embeddings: List[TextNode],
     node_ids: Optional[List[str]],
     filters: Optional[MetadataFilters],
     expected_node_ids: List[str],
+    use_async: bool,
 ) -> None:
     """Test get_nodes method with various combinations of node_ids and filters."""
-    pg.add(node_embeddings)
-    nodes = pg.get_nodes(node_ids=node_ids, filters=filters)
-    retrieved_ids = [node.node_id for node in nodes]
-    assert set(retrieved_ids) == set(expected_node_ids)
-    assert len(retrieved_ids) == len(expected_node_ids)
+    try:
+        pg.add(node_embeddings)
+        if use_async:
+            nodes = await pg.aget_nodes(node_ids=node_ids, filters=filters)
+        else:
+            nodes = pg.get_nodes(node_ids=node_ids, filters=filters)
+        retrieved_ids = [node.node_id for node in nodes]
+        assert set(retrieved_ids) == set(expected_node_ids)
+        assert len(retrieved_ids) == len(expected_node_ids)
+    finally:
+        await pg.close()
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")

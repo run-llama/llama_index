@@ -1499,7 +1499,8 @@ class PGVectorStore(BasePydanticVectorStore):
         Deletes nodes.
 
         Args:
-            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. An empty
+                list deletes nothing; None selects by filters only. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
@@ -1512,7 +1513,7 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             stmt = delete(self._table_class)
 
-            if node_ids:
+            if node_ids is not None:
                 stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
             if filters:
@@ -1531,7 +1532,8 @@ class PGVectorStore(BasePydanticVectorStore):
         Deletes nodes asynchronously.
 
         Args:
-            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. An empty
+                list deletes nothing; None selects by filters only. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
@@ -1544,7 +1546,7 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session, async_session.begin():
             stmt = delete(self._table_class)
 
-            if node_ids:
+            if node_ids is not None:
                 stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
             if filters:
@@ -1580,7 +1582,11 @@ class PGVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes from vector store."""
+        """
+        Get nodes from vector store.
+
+        An empty node_ids list matches no nodes; None selects by filters only.
+        """
         assert node_ids is not None or filters is not None, (
             "Either node_ids or filters must be provided"
         )
@@ -1594,7 +1600,7 @@ class PGVectorStore(BasePydanticVectorStore):
             self._table_class.embedding,
         )
 
-        if node_ids:
+        if node_ids is not None:
             stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
         if filters:
@@ -1635,7 +1641,11 @@ class PGVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes asynchronously from vector store."""
+        """
+        Get nodes asynchronously from vector store.
+
+        An empty node_ids list matches no nodes; None selects by filters only.
+        """
         assert node_ids is not None or filters is not None, (
             "Either node_ids or filters must be provided"
         )
@@ -1649,7 +1659,7 @@ class PGVectorStore(BasePydanticVectorStore):
             self._table_class.embedding,
         )
 
-        if node_ids:
+        if node_ids is not None:
             stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
         if filters:
