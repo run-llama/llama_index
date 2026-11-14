@@ -55,7 +55,7 @@ class CodeSplitter(TextSplitter):
         gt=0,
     )
     _parser: Any = PrivateAttr()
-    _tokenizer: Optional[Callable] = PrivateAttr()
+    _tokenizer: Optional[Callable[[str], List]] = PrivateAttr()
 
     def __init__(
         self,
