@@ -58,7 +58,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Initialize the manager with a list of handlers."""
         from llama_index.core import global_handler
 
-        handlers = handlers or []
+        handlers = list(handlers) if handlers else []
 
         # add eval handlers based on global defaults
         if global_handler is not None:
@@ -80,7 +80,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
             # hidden var access to prevent recursion in getter
             cb_manager = Settings._callback_manager
             if cb_manager is not None:
-                handlers = cb_manager.handlers
+                handlers = list(cb_manager.handlers)
 
         self.handlers: List[BaseCallbackHandler] = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
@@ -151,7 +151,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
         """Set handlers as the only handlers on the callback manager."""
-        self.handlers = handlers
+        self.handlers = list(handlers)
 
     @contextmanager
     def event(
