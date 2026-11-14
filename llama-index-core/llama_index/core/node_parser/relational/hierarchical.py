@@ -228,6 +228,19 @@ class HierarchicalNodeParser(NodeParser):
 
         return all_nodes
 
+    async def aget_nodes_from_documents(
+        self,
+        documents: Sequence[Document],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        """Parse document into nodes."""
+        # The base async path calls _parse_nodes, which is unused here and would
+        # return the documents unsplit; the hierarchy is built by the sync method.
+        return self.get_nodes_from_documents(
+            documents, show_progress=show_progress, **kwargs
+        )
+
     # Unused abstract method
     def _parse_nodes(
         self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
