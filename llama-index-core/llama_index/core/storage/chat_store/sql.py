@@ -1,3 +1,4 @@
+import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -27,9 +28,28 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_serialize
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore, MessageStatus
 
-
 DEFAULT_ASYNC_DATABASE_URI = "sqlite+aiosqlite:///:memory:"
 Base = declarative_base()
+
+_last_timestamp = 0
+_timestamp_lock = threading.Lock()
+
+
+def _reserve_timestamps(count: int = 1) -> int:
+    """
+    Reserve `count` consecutive nanosecond timestamps and return the first one.
+
+    Messages are ordered by their timestamp, so a message stored later must never get a
+    timestamp that is lower than an earlier one. `time.time_ns()` alone does not
+    guarantee that: on Windows it only advances every ~15 ms, and the wall clock can
+    also be stepped backwards, while a batch is stored with `time_ns() + i`. Reserving
+    the range from a process-wide counter keeps the order strict.
+    """
+    global _last_timestamp
+    with _timestamp_lock:
+        start = max(time.time_ns(), _last_timestamp + 1)
+        _last_timestamp = start + count - 1
+        return start
 
 
 class SQLAlchemyChatStore(AsyncDBChatStore):
@@ -234,7 +254,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             await session.execute(
                 insert(table).values(
                     key=key,
-                    timestamp=time.time_ns(),
+                    timestamp=_reserve_timestamps(),
                     role=message.role,
                     status=status.value,
                     data=message.model_dump(mode="json"),
@@ -251,13 +271,15 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         """Add a list of messages in batch for the specified key and status (async)."""
         session_factory, table = await self._initialize()
 
+        start_time = _reserve_timestamps(len(messages))
+
         async with session_factory() as session:
             await session.execute(
                 insert(table).values(
                     [
                         {
                             "key": key,
-                            "timestamp": time.time_ns() + i,
+                            "timestamp": start_time + i,
                             "role": message.role,
                             "status": status.value,
                             "data": message.model_dump(mode="json"),
@@ -281,7 +303,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         await self.delete_messages(key)
 
         # Then add new messages
-        current_time = time.time_ns()
+        current_time = _reserve_timestamps(len(messages))
 
         async with session_factory() as session:
             for i, message in enumerate(messages):
