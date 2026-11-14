@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, Node, NodeWithScore, QueryBundle
 
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
@@ -59,6 +59,8 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
     """
     presidio PII Node processor.
     Uses a presidio to analyse PIIs.
+
+    Raw metadata is preserved but not added to the masked LLM content.
     """
 
     pii_node_info_key: str = "__pii_node_info__"
@@ -103,12 +105,19 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
         # swap out text from nodes, with the original node mappings
         new_nodes = []
         for node_with_score in nodes:
-            node = node_with_score.node
-            new_text = self.mask_pii(node.get_content(metadata_mode=MetadataMode.LLM))
-            new_node = deepcopy(node)
+            new_node = deepcopy(node_with_score.node)
+            # Include metadata even when there is no text resource.
+            if isinstance(new_node, Node) and new_node.text_resource is None:
+                new_node.set_content("")
+            new_text = self.mask_pii(
+                new_node.get_content(metadata_mode=MetadataMode.LLM)
+            )
             new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
-            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
             new_node.metadata[self.pii_node_info_key] = self.mapping
+            # Do not add raw metadata to the masked LLM content.
+            for key in new_node.metadata:
+                if key not in new_node.excluded_llm_metadata_keys:
+                    new_node.excluded_llm_metadata_keys.append(key)
             new_node.set_content(new_text)
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
