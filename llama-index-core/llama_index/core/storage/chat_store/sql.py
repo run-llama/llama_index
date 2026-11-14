@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_serializer
@@ -117,9 +118,20 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         if self._async_session_factory is not None and self._async_engine is not None:
             return self._async_engine, self._async_session_factory
         elif self.async_database_uri or self._async_engine:
-            self._async_engine = self._async_engine or create_async_engine(
-                self.async_database_uri
-            )
+            if self._async_engine:
+                self._async_engine = self._async_engine
+            elif self._is_in_memory_uri(self.async_database_uri):
+                # An in-memory SQLite database lives on a single connection. Use a
+                # StaticPool that keeps that connection alive across sessions and
+                # does not roll it back on return, otherwise concurrent sessions on
+                # the shared connection would discard each other's uncommitted writes.
+                self._async_engine = create_async_engine(
+                    self.async_database_uri,
+                    poolclass=StaticPool,
+                    pool_reset_on_return=None,
+                )
+            else:
+                self._async_engine = create_async_engine(self.async_database_uri)
             if self.async_database_uri is None:
                 self.async_database_uri = self._async_engine.url
 
