@@ -353,17 +353,20 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         if self.exclude is not None:
             for excluded_pattern in self.exclude:
+                # Always match directly under input_dir. When recursive, also match
+                # in subdirectories: fsspec < 2023.9 does not let `**` match zero
+                # directories, so `input_dir/**/pattern` alone misses top-level files.
+                excluded_globs = [_Path(input_dir) / excluded_pattern]
                 if self.recursive:
-                    # Recursive glob
-                    excluded_glob = _Path(input_dir) / _Path("**") / excluded_pattern
-                else:
-                    # Non-recursive glob
-                    excluded_glob = _Path(input_dir) / excluded_pattern
-                for file in self.fs.glob(str(excluded_glob)):
-                    if self.fs.isdir(file):
-                        rejected_dirs.add(_Path(str(file)))
-                    else:
-                        rejected_files.add(_Path(str(file)))
+                    excluded_globs.append(
+                        _Path(input_dir) / _Path("**") / excluded_pattern
+                    )
+                for excluded_glob in excluded_globs:
+                    for file in self.fs.glob(str(excluded_glob)):
+                        if self.fs.isdir(file):
+                            rejected_dirs.add(_Path(str(file)))
+                        else:
+                            rejected_files.add(_Path(str(file)))
 
         file_refs: list[Union[Path, PurePosixPath]] = []
         limit = (
