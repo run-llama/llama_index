@@ -8,6 +8,7 @@ from tenacity import (
     RetryCallState,
     before_sleep_log,
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     stop_after_delay,
@@ -326,6 +327,18 @@ def _parse_retry_after(exc: openai.RateLimitError) -> Optional[float]:
     return value
 
 
+def _is_retryable_status_error(exc: BaseException) -> bool:
+    """
+    Whether an ``APIStatusError`` is one the OpenAI client would have retried itself.
+
+    408 (request timeout) and 409 (conflict) have no dedicated exception class, so they arrive as
+    ``APIStatusError`` and ``ConflictError``. The client's own ``_should_retry`` retries both; with
+    the non-streaming path built as ``max_retries=0`` the decorator has to keep doing it.
+    429 and 5xx are already covered by ``RateLimitError`` and ``InternalServerError``.
+    """
+    return isinstance(exc, openai.APIStatusError) and exc.status_code in (408, 409)
+
+
 def create_retry_decorator(
     max_retries: int,
     random_exponential: bool = False,
@@ -357,6 +370,7 @@ def create_retry_decorator(
                     openai.InternalServerError,
                 )
             )
+            | retry_if_exception(_is_retryable_status_error)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )

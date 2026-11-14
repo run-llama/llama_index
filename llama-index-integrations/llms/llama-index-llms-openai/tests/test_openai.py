@@ -334,6 +334,7 @@ def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
 def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.completions.create.return_value = mock_completion_stream_v1()
 
         llm = OpenAI(model="text-davinci-003")
@@ -354,6 +355,7 @@ def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
 def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.chat.completions.create.return_value = (
             mock_chat_completion_stream_v1()
         )
@@ -398,6 +400,7 @@ async def test_completion_model_async(MockAsyncOpenAI: MagicMock) -> None:
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_completion_model_async_streaming(MockAsyncOpenAI: MagicMock) -> None:
     mock_instance = MockAsyncOpenAI.return_value
+    mock_instance.with_options.return_value = mock_instance
     create_fn = AsyncMock()
     create_fn.side_effect = mock_async_completion_stream_v1
     mock_instance.completions.create = create_fn
@@ -711,6 +714,7 @@ def test_stream_chat_reasoning_content(MockSyncOpenAI: MagicMock) -> None:
     """Test that reasoning_content from streaming is captured as ThinkingBlock and thinking_delta."""
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.chat.completions.create.return_value = iter(
             _make_reasoning_stream_chunks()
         )
@@ -743,6 +747,7 @@ def test_stream_chat_vllm_reasoning_field(MockSyncOpenAI: MagicMock) -> None:
     """Test that vLLM's reasoning field is captured while streaming."""
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.chat.completions.create.return_value = iter(
             _make_vllm_reasoning_stream_chunks()
         )
@@ -771,6 +776,7 @@ def test_stream_chat_vllm_reasoning_field(MockSyncOpenAI: MagicMock) -> None:
 async def test_astream_chat_reasoning_content(MockAsyncOpenAI: MagicMock) -> None:
     """Test that reasoning_content from async streaming is captured as ThinkingBlock."""
     mock_instance = MockAsyncOpenAI.return_value
+    mock_instance.with_options.return_value = mock_instance
 
     async def mock_async_stream(*args: Any, **kwargs: Any) -> AsyncGenerator:
         for chunk in _make_reasoning_stream_chunks():
@@ -846,6 +852,7 @@ def test_stream_chat_no_reasoning_content(MockSyncOpenAI: MagicMock) -> None:
     """Test that streaming without reasoning_content produces no ThinkingBlock."""
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
+        mock_instance.with_options.return_value = mock_instance
         mock_instance.chat.completions.create.return_value = (
             mock_chat_completion_stream_v1()
         )
@@ -935,3 +942,175 @@ def test_from_openai_message_without_reasoning_content() -> None:
     assert len(thinking_blocks) == 0
     assert len(result.blocks) == 1
     assert result.blocks[0].text == "Hello!"
+
+
+def test_retry_layers_do_not_multiply() -> None:
+    """One failing call must not be retried by both the decorator and the SDK."""
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=3,
+            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(openai.RateLimitError):
+            llm.chat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 3, f"expected 3 attempts, got {len(requests)}"
+
+
+@pytest.mark.asyncio()
+async def test_async_retry_layers_do_not_multiply() -> None:
+    """The async client must not retry on top of the decorator either."""
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=3,
+            async_http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(openai.RateLimitError):
+            await llm.achat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 3, f"expected 3 attempts, got {len(requests)}"
+
+
+def test_stream_chat_keeps_retries() -> None:
+    """Streaming is outside the retry decorator, so the client must keep retrying."""
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=3,
+            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(openai.RateLimitError):
+            for _ in llm.stream_chat([ChatMessage(role="user", content="hi")]):
+                pass
+
+    assert len(requests) == 4, f"expected 4 attempts, got {len(requests)}"
+
+
+@pytest.mark.asyncio()
+async def test_astream_chat_keeps_retries() -> None:
+    """Async streaming is also outside the decorator; the client keeps retrying."""
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=3,
+            async_http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(openai.RateLimitError):
+            async for _ in await llm.astream_chat(
+                [ChatMessage(role="user", content="hi")]
+            ):
+                pass
+
+    assert len(requests) == 4, f"expected 4 attempts, got {len(requests)}"
+
+
+# The OpenAI client retries 408 and 409 on its own (`_should_retry` in `_base_client`). The
+# non-streaming path now builds the client with `max_retries=0`, so those two codes have to be
+# retried by the decorator instead — otherwise they stop being retried at all.
+@pytest.mark.parametrize(
+    ("status", "error_type"),
+    [(408, openai.APIStatusError), (409, openai.ConflictError)],
+)
+def test_non_streaming_retries_408_and_409(status: int, error_type: type) -> None:
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            status,
+            json={"error": {"message": "retry me", "type": "server_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=2,
+            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(error_type):
+            llm.chat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 2, f"{status}: expected 2 attempts, got {len(requests)}"
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize(
+    ("status", "error_type"),
+    [(408, openai.APIStatusError), (409, openai.ConflictError)],
+)
+async def test_async_non_streaming_retries_408_and_409(
+    status: int, error_type: type
+) -> None:
+    import httpx
+
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            status,
+            json={"error": {"message": "retry me", "type": "server_error"}},
+        )
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        llm = OpenAI(
+            model="gpt-4o-mini",
+            max_retries=2,
+            async_http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(error_type):
+            await llm.achat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 2, f"{status}: expected 2 attempts, got {len(requests)}"

@@ -580,6 +580,7 @@ def test_structured_predict_uses_responses_parse(default_responses_llm):
     mock_response = MagicMock()
     mock_response.output_parsed = Person(name="Alice", age=25)
     llm._client.responses.parse = MagicMock(return_value=mock_response)
+    llm._client.with_options.return_value = llm._client
 
     result = llm.structured_predict(
         output_cls=Person,
@@ -611,6 +612,7 @@ def test_structured_predict_raises_on_none_output(default_responses_llm):
     mock_response = MagicMock()
     mock_response.output_parsed = None
     llm._client.responses.parse = MagicMock(return_value=mock_response)
+    llm._client.with_options.return_value = llm._client
 
     with pytest.raises(ValueError, match="Failed to produce a structured response"):
         llm.structured_predict(
@@ -632,6 +634,7 @@ async def test_astructured_predict_uses_responses_parse(default_responses_llm):
     mock_response = MagicMock()
     mock_response.output_parsed = Person(name="Bob", age=30)
     llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+    llm._aclient.with_options.return_value = llm._aclient
 
     result = await llm.astructured_predict(
         output_cls=Person,
@@ -665,6 +668,7 @@ async def test_astructured_predict_raises_on_none_output(default_responses_llm):
     mock_response = MagicMock()
     mock_response.output_parsed = None
     llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+    llm._aclient.with_options.return_value = llm._aclient
 
     with pytest.raises(ValueError, match="Failed to produce a structured response"):
         await llm.astructured_predict(
@@ -684,6 +688,7 @@ def test_structured_predict_passes_llm_kwargs(default_responses_llm):
     mock_response = MagicMock()
     mock_response.output_parsed = Person(name="Alice", age=25)
     llm._client.responses.parse = MagicMock(return_value=mock_response)
+    llm._client.with_options.return_value = llm._client
 
     llm.structured_predict(
         output_cls=Person,
@@ -1034,3 +1039,133 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_responses_retry_layers_do_not_multiply() -> None:
+    """Same as the chat client: the decorator and the SDK must not both retry."""
+    import httpx
+    import openai
+
+    from llama_index.core.base.llms.types import ChatMessage
+    from llama_index.llms.openai import OpenAIResponses
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    llm = OpenAIResponses(
+        model="gpt-4o-mini",
+        api_key="sk-" + "a" * 48,
+        max_retries=3,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(openai.RateLimitError):
+        llm.chat([ChatMessage(role="user", content="hi")])
+
+    assert len(requests) == 3, f"expected 3 attempts, got {len(requests)}"
+
+
+def test_responses_stream_keeps_retries() -> None:
+    """Streaming Responses calls keep the client's retries."""
+    import httpx
+    import openai
+
+    from llama_index.core.base.llms.types import ChatMessage
+    from llama_index.llms.openai import OpenAIResponses
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    llm = OpenAIResponses(
+        model="gpt-4o-mini",
+        api_key="sk-" + "a" * 48,
+        max_retries=3,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(openai.RateLimitError):
+        for _ in llm.stream_chat([ChatMessage(role="user", content="hi")]):
+            pass
+
+    assert len(requests) == 4, f"expected 4 attempts, got {len(requests)}"
+
+
+def test_responses_structured_predict_keeps_retries() -> None:
+    """structured_predict has no retry decorator, so the client must keep retrying."""
+    import httpx
+    import openai
+    from pydantic import BaseModel
+
+    from llama_index.core.prompts import PromptTemplate
+    from llama_index.llms.openai import OpenAIResponses
+
+    class Output(BaseModel):
+        value: str
+
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    llm = OpenAIResponses(
+        model="gpt-4o-mini",
+        api_key="sk-" + "a" * 48,
+        max_retries=3,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(openai.RateLimitError):
+        llm.structured_predict(Output, PromptTemplate("say hi"))
+
+    assert len(requests) == 4, f"expected 4 attempts, got {len(requests)}"
+
+
+@pytest.mark.asyncio()
+async def test_responses_astructured_predict_keeps_retries() -> None:
+    """Same for the async structured predict path."""
+    import httpx
+    import openai
+    from pydantic import BaseModel
+
+    from llama_index.core.prompts import PromptTemplate
+    from llama_index.llms.openai import OpenAIResponses
+
+    class Output(BaseModel):
+        value: str
+
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            429,
+            headers={"Retry-After": "0"},
+            json={"error": {"message": "rate limited", "type": "rate_limit_error"}},
+        )
+
+    llm = OpenAIResponses(
+        model="gpt-4o-mini",
+        api_key="sk-" + "a" * 48,
+        max_retries=3,
+        async_http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(openai.RateLimitError):
+        await llm.astructured_predict(Output, PromptTemplate("say hi"))
+
+    assert len(requests) == 4, f"expected 4 attempts, got {len(requests)}"
