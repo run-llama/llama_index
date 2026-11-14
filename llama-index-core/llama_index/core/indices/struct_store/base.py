@@ -26,9 +26,9 @@ def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
     fields = {}
     for tup in tups:
         if ":" in tup:
-            tokens = tup.split(":")
+            tokens = tup.split(":", 1)
             field = re.sub(r"\W+", "", tokens[0])
-            value = re.sub(r"\W+", "", tokens[1])
+            value = tokens[1].strip()
             fields[field] = value
     return fields
 
