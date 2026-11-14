@@ -20,7 +20,7 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
 
     """
     chunks = text_splitter.split_text(text)
-    return chunks[0]
+    return chunks[0] if chunks else ""
 
 
 def split_text_keep_separator(text: str, separator: str) -> List[str]:
