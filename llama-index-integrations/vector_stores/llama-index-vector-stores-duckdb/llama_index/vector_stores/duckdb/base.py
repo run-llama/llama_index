@@ -508,6 +508,35 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             ConstantExpression(f"$.{key}"),
         )
 
+        if operator == FilterOperator.IS_EMPTY:
+            # An empty value is a missing/JSON null value, an empty string or an
+            # empty array, matching `build_metadata_filter_fn` in the core
+            # package. `metadata_.{key}` cannot express that: `typeof()` always
+            # reports `JSON` for a JSON path (which is why the previous
+            # array-length branch could never fire) and the extracted string is
+            # needed to spot empty strings.
+            json_path = ConstantExpression(f"$.{key}")
+            extracted_string = FunctionExpression(
+                "json_extract_string",
+                ColumnExpression("metadata_"),
+                json_path,
+            )
+            return (
+                extracted_string.isnull()
+                .__or__(extracted_string.__eq__(ConstantExpression("")))
+                .__or__(
+                    metadata_type_expression.__eq__(
+                        ConstantExpression("ARRAY")
+                    ).__and__(
+                        FunctionExpression(
+                            "json_array_length",
+                            ColumnExpression("metadata_"),
+                            json_path,
+                        ).__eq__(ConstantExpression(0))
+                    )
+                )
+            )
+
         if value_type is None:
             # If the value is a JSON Null, we want to swap the 'Null' for an actual null
             metadata_column = CaseExpression(
@@ -608,19 +637,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                     "lower",
                     value,
                 ),
-            )
-
-        if operator == FilterOperator.IS_EMPTY:
-            # column is null or the array is empty
-            return column.isnull().__or__(
-                CaseExpression(
-                    condition=FunctionExpression("typeof", column).__eq__(
-                        ConstantExpression("ARRAY")
-                    ),
-                    value=FunctionExpression("length", column).__eq__(
-                        ConstantExpression(0)
-                    ),
-                )
             )
 
         raise NotImplementedError(f"Unsupported operator: {operator}")
