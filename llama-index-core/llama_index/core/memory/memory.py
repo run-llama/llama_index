@@ -159,8 +159,17 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
             return
 
         if session_id is not None:
-            for message in messages:
-                message.additional_kwargs["session_id"] = session_id
+            messages = [
+                message.model_copy(
+                    update={
+                        "additional_kwargs": {
+                            **message.additional_kwargs,
+                            "session_id": session_id,
+                        }
+                    }
+                )
+                for message in messages
+            ]
 
         await self._aput(messages)
 
