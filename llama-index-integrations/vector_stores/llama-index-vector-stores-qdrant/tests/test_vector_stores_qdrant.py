@@ -217,7 +217,10 @@ def test_filter_conditions():
     assert filter_and_not.must[1].must_not is not None
     assert len(filter_and_not.must[1].must_not) == 1
     assert filter_and_not.must[1].must_not[0].key == "price"
-    assert filter_and_not.must[1].must_not[0].match.value == 50
+    # numeric equality is a degenerate range so that it also matches a payload
+    # stored as a float
+    assert filter_and_not.must[1].must_not[0].range.gte == 50
+    assert filter_and_not.must[1].must_not[0].range.lte == 50
 
 
 def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
@@ -1079,3 +1082,38 @@ async def test_aquery_falsy_shard_identifier_not_dropped() -> None:
         query = VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=1)
         await store.aquery(query, shard_identifier=0)
         mock_gen.assert_called_once_with(0)
+
+
+def test_numeric_equality_filters_match_float_payloads() -> None:
+    """An int filter value must match a payload stored as a float (#23440)."""
+    client = QdrantClient(":memory:")
+    vector_store = QdrantVectorStore(collection_name="numeric_filters", client=client)
+    vector_store.add(
+        [
+            TextNode(
+                text="a",
+                id_="11111111-1111-1111-1111-111111111111",
+                embedding=[1.0, 0.0],
+                metadata={"rate": 10.0},
+            ),
+            TextNode(
+                text="b",
+                id_="22222222-2222-2222-2222-222222222222",
+                embedding=[0.0, 1.0],
+                metadata={"rate": 20.0},
+            ),
+        ]
+    )
+
+    def rates(operator: FilterOperator, value: float) -> list:
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="rate", operator=operator, value=value)]
+        )
+        return sorted(
+            node.metadata["rate"] for node in vector_store.get_nodes(filters=filters)
+        )
+
+    assert rates(FilterOperator.EQ, 10) == [10.0]
+    assert rates(FilterOperator.EQ, 10.0) == [10.0]
+    assert rates(FilterOperator.NE, 10) == [20.0]
+    assert rates(FilterOperator.NE, 10.0) == [20.0]

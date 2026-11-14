@@ -68,6 +68,11 @@ LEGACY_UNNAMED_VECTOR = (
 DOCUMENT_ID_KEY = "doc_id"
 
 
+def _is_number(value: Any) -> bool:
+    """Whether a filter value compares numerically (bools are matched as bools)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def _requires_idf(model_name: Optional[str]) -> bool:
     if model_name is None:
         return False
@@ -1395,7 +1400,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             # Handle MetadataFilter with operators
             if not subfilter.operator or subfilter.operator == FilterOperator.EQ:
-                if isinstance(subfilter.value, float):
+                if _is_number(subfilter.value):
+                    # An exact match compares types, so MatchValue(10) misses a
+                    # payload stored as 10.0. A degenerate range compares
+                    # numerically and matches both.
                     conditions.append(
                         FieldCondition(
                             key=subfilter.key,
@@ -1451,12 +1459,30 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     )
                 )
             elif subfilter.operator == FilterOperator.NE:
-                conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchExcept(**{"except": [subfilter.value]}),
+                if _is_number(subfilter.value):
+                    # MatchExcept only accepts strings and integers, and it
+                    # compares types, so it neither excludes a float payload
+                    # nor accepts a float filter value. Negate a range instead.
+                    conditions.append(
+                        Filter(
+                            must_not=[
+                                FieldCondition(
+                                    key=subfilter.key,
+                                    range=Range(
+                                        gte=subfilter.value,
+                                        lte=subfilter.value,
+                                    ),
+                                )
+                            ]
+                        )
                     )
-                )
+                else:
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchExcept(**{"except": [subfilter.value]}),
+                        )
+                    )
             elif subfilter.operator == FilterOperator.IN:
                 # match any of the values
                 # https://qdrant.tech/documentation/concepts/filtering/#match-any
