@@ -497,6 +497,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     def _build_metadata_filter_expression(
         self, key: str, value: Any, operator: FilterOperator
     ) -> Expression:
+        if value == [] and operator in (FilterOperator.IN, FilterOperator.NIN):
+            return Expression(operator == FilterOperator.NIN)
+
         metadata_column = ColumnExpression(f"metadata_.{key}")
 
         sample_value = value[0] if isinstance(value, list) else value
