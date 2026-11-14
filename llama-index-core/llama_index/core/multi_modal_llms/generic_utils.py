@@ -7,7 +7,7 @@ from typing import List, Optional, Sequence
 
 import requests
 
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageDocument, is_image_pil
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +45,34 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
+def _encode_image_file(file_path: str) -> Optional[str]:
+    """
+    Base64-encode a local image file, or return ``None`` if it is not an image.
+
+    Applies the same ``is_image_pil`` check that ``ImageDocument(image_path=...)``
+    applies at construction time, so the two local-path branches of
+    ``image_documents_to_base64`` cannot encode files the constructor would reject.
+    """
+    try:
+        valid = is_image_pil(file_path)
+    except Exception:  # e.g. PIL.Image.DecompressionBombError
+        valid = False
+    if not valid:
+        logger.warning(f"Skipping {file_path}: not a readable image")
+        return None
+    return encode_image(file_path)
+
+
 def image_documents_to_base64(
     image_documents: Sequence[ImageDocument],
 ) -> List[str]:
     """
     Convert ImageDocument objects to base64-encoded strings.
+
+    Local paths (``image_path`` or ``metadata["file_path"]``) are read from
+    disk and remote ``image_url`` values are fetched by this process, so
+    callers must only pass paths and URLs they trust. Paths that do not
+    contain a readable image are skipped with a warning.
 
     Args:
         image_documents (Sequence[ImageDocument]: Sequence of
@@ -68,13 +91,17 @@ def image_documents_to_base64(
         elif image_document.image_path and os.path.isfile(
             image_document.image_path
         ):  # This field is a path to the image, which is then encoded.
-            image_encodings.append(encode_image(image_document.image_path))
+            if (encoded := _encode_image_file(image_document.image_path)) is not None:
+                image_encodings.append(encoded)
         elif (
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
             and os.path.isfile(image_document.metadata["file_path"])
         ):  # Alternative path to the image, which is then encoded.
-            image_encodings.append(encode_image(image_document.metadata["file_path"]))
+            if (
+                encoded := _encode_image_file(image_document.metadata["file_path"])
+            ) is not None:
+                image_encodings.append(encoded)
         elif image_document.image_url:  # Image can also be pulled from the URL.
             response = requests.get(image_document.image_url, timeout=(60, 60))
             try:
@@ -156,8 +183,11 @@ def set_base64_and_mimetype_for_image_docs(
         Sequence[ImageDocument]: ImageDocuments with base64 and detected mimetypes set.
 
     """
-    base64_strings = image_documents_to_base64(image_documents)
-    for image_doc, base64_str in zip(image_documents, base64_strings):
+    for image_doc in image_documents:
+        base64_strings = image_documents_to_base64([image_doc])
+        if not base64_strings:
+            continue
+        base64_str = base64_strings[0]
         image_doc.image = base64_str
         image_doc.image_mimetype = infer_image_mimetype_from_base64(image_doc.image)
         if not image_doc.image_mimetype and image_doc.image_path:
