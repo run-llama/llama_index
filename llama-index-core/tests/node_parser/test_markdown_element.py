@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
@@ -43,6 +45,37 @@ def test_md_table_extraction() -> None:
     assert isinstance(nodes[3], TextNode)
     assert isinstance(nodes[4], IndexNode)
     assert isinstance(nodes[5], TextNode)
+
+
+@pytest.mark.asyncio
+async def test_md_table_extraction_async() -> None:
+    """
+    Async table extraction must fall back to text completion like the sync path.
+
+    Regression test: ``aextract_table_summaries`` used to cast the query
+    response to ``PydanticResponse`` instead of checking it, so a plain
+    ``Response`` (the text-completion fallback) left a bare string in
+    ``element.table_output`` and node building raised
+    ``AttributeError: 'str' object has no attribute 'columns'``.
+    """
+    text = """
+# This is a test
+
+| Year | Benefits |
+| ---- | -------- |
+| 2020 | 12,000   |
+"""
+
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+    sync_nodes = node_parser.get_nodes_from_documents([Document(text=text)])
+    async_nodes = await node_parser.aget_nodes_from_documents([Document(text=text)])
+
+    assert len(async_nodes) == len(sync_nodes) == 3
+    assert [type(node) for node in async_nodes] == [type(node) for node in sync_nodes]
+    assert [node.start_char_idx for node in async_nodes] == [
+        node.start_char_idx for node in sync_nodes
+    ]
+    assert isinstance(async_nodes[1], IndexNode)
 
 
 def test_md_table_extraction_broken_table() -> None:
