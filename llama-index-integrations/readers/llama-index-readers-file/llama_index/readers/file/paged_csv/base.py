@@ -36,17 +36,30 @@ class PagedCSVReader(BaseReader):
         delimiter: str = ",",
         quotechar: str = '"',
     ) -> List[Document]:
-        """Parse file."""
+        """
+        Parse file.
+
+        Rows with fewer cells than the header get empty strings for the
+        missing fields. Cells beyond the header have no field name and are
+        ignored.
+        """
         import csv
 
         docs = []
         with open(file, encoding=self._encoding) as fp:
-            csv_reader = csv.DictReader(f=fp, delimiter=delimiter, quotechar=quotechar)  # type: ignore
+            csv_reader = csv.DictReader(
+                f=fp,
+                delimiter=delimiter,
+                quotechar=quotechar,  # type: ignore
+                restval="",
+            )
             for row in csv_reader:
                 docs.append(
                     Document(
                         text="\n".join(
-                            f"{k.strip()}: {v.strip()}" for k, v in row.items()
+                            f"{k.strip()}: {v.strip()}"
+                            for k, v in row.items()
+                            if k is not None
                         ),
                         extra_info=extra_info or {},
                     )
