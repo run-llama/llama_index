@@ -113,17 +113,17 @@ class TreeIndex(BaseIndex[IndexGraph]):
 
         self._validate_build_tree_required(TreeRetrieverMode(retriever_mode))
 
+        kwargs.setdefault("object_map", self._object_map)
+
         if retriever_mode == TreeRetrieverMode.SELECT_LEAF:
-            return TreeSelectLeafRetriever(self, object_map=self._object_map, **kwargs)
+            return TreeSelectLeafRetriever(self, **kwargs)
         elif retriever_mode == TreeRetrieverMode.SELECT_LEAF_EMBEDDING:
-            embed_model = embed_model or Settings.embed_model
-            return TreeSelectLeafEmbeddingRetriever(
-                self, embed_model=embed_model, object_map=self._object_map, **kwargs
-            )
+            kwargs.setdefault("embed_model", embed_model or Settings.embed_model)
+            return TreeSelectLeafEmbeddingRetriever(self, **kwargs)
         elif retriever_mode == TreeRetrieverMode.ROOT:
-            return TreeRootRetriever(self, object_map=self._object_map, **kwargs)
+            return TreeRootRetriever(self, **kwargs)
         elif retriever_mode == TreeRetrieverMode.ALL_LEAF:
-            return TreeAllLeafRetriever(self, object_map=self._object_map, **kwargs)
+            return TreeAllLeafRetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

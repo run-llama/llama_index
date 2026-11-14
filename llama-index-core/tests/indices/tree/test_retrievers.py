@@ -57,3 +57,19 @@ def test_summarize_query(
     retriever = tree.as_retriever(retriever_mode="all_leaf")
     nodes = retriever.retrieve(query_str)
     assert len(nodes) == 4
+
+
+def test_as_retriever_custom_kwargs(
+    documents: List[Document],
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Dict,
+) -> None:
+    """Test that as_retriever accepts custom kwargs without TypeError."""
+    index_kwargs, _ = struct_kwargs
+    index_kwargs = index_kwargs.copy()
+    index_kwargs.update({"build_tree": False})
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
+    custom_map = {"custom": "value"}
+    retriever = tree.as_retriever(retriever_mode="all_leaf", object_map=custom_map)
+    assert retriever.object_map == custom_map
