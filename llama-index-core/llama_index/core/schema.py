@@ -168,6 +168,7 @@ class BaseComponent(BaseModel):
         return data
 
     def to_json(self, **kwargs: Any) -> str:
+        kwargs.setdefault("mode", "json")
         data = self.to_dict(**kwargs)
         return json.dumps(data)
 
