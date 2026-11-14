@@ -30,7 +30,13 @@ from llama_index.core.graph_stores.types import (
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
-from llama_index.core.schema import BaseNode, MetadataMode, TextNode, TransformComponent
+from llama_index.core.schema import (
+    BaseNode,
+    IndexNode,
+    MetadataMode,
+    TextNode,
+    TransformComponent,
+)
 from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
@@ -328,6 +334,123 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             node.embedding = None
 
         self.vector_store.add(llama_nodes)
+
+    async def _ainsert_nodes_to_vector_index(self, nodes: List[LabelledNode]) -> None:
+        """Async version of _insert_nodes_to_vector_index."""
+        assert self.vector_store is not None
+
+        llama_nodes: List[TextNode] = []
+        for node in nodes:
+            if node.embedding is not None:
+                llama_nodes.append(
+                    TextNode(
+                        text=str(node),
+                        metadata={VECTOR_SOURCE_KEY: node.id, **node.properties},
+                        embedding=[*node.embedding],
+                    )
+                )
+                if not self.vector_store.stores_text:
+                    llama_nodes[-1].id_ = node.id
+
+            node.embedding = None
+
+        await self.vector_store.async_add(llama_nodes)
+
+    async def _ainsert_nodes(self, nodes: Sequence[BaseNode]) -> Sequence[BaseNode]:
+        """Async version of _insert_nodes; uses await instead of asyncio.run()."""
+        if len(nodes) == 0:
+            return nodes
+
+        nodes = await arun_transformations(
+            nodes, self._kg_extractors, show_progress=self._show_progress
+        )
+
+        assert all(
+            node.metadata.get(KG_NODES_KEY) is not None
+            or node.metadata.get(KG_RELATIONS_KEY) is not None
+            for node in nodes
+        )
+
+        kg_nodes_to_insert: List[LabelledNode] = []
+        kg_rels_to_insert: List[Relation] = []
+        for node in nodes:
+            kg_nodes = node.metadata.pop(KG_NODES_KEY, [])
+            kg_rels = node.metadata.pop(KG_RELATIONS_KEY, [])
+
+            for kg_node in kg_nodes:
+                kg_node.properties[TRIPLET_SOURCE_KEY] = node.id_
+            for kg_rel in kg_rels:
+                kg_rel.properties[TRIPLET_SOURCE_KEY] = node.id_
+
+            kg_nodes_to_insert.extend(kg_nodes)
+            kg_rels_to_insert.extend(kg_rels)
+
+        kg_node_ids = {node.id for node in kg_nodes_to_insert}
+        existing_kg_nodes = await self.property_graph_store.aget(ids=list(kg_node_ids))
+        existing_kg_node_ids = {node.id for node in existing_kg_nodes}
+        kg_nodes_to_insert = [
+            node for node in kg_nodes_to_insert if node.id not in existing_kg_node_ids
+        ]
+
+        existing_nodes = await self.property_graph_store.aget_llama_nodes(
+            [node.id_ for node in nodes]
+        )
+        existing_node_hashes = {node.hash for node in existing_nodes}
+        nodes = [node for node in nodes if node.hash not in existing_node_hashes]
+
+        if self._embed_kg_nodes:
+            node_texts = [
+                node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
+            ]
+            embeddings = await self._embed_model.aget_text_embedding_batch(
+                node_texts, show_progress=self._show_progress
+            )
+            for node, embedding in zip(nodes, embeddings):
+                node.embedding = embedding
+
+            kg_node_texts = [str(kg_node) for kg_node in kg_nodes_to_insert]
+            kg_embeddings = await self._embed_model.aget_text_embedding_batch(
+                kg_node_texts, show_progress=self._show_progress
+            )
+            for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):
+                kg_node.embedding = embedding
+
+        if self.vector_store is not None and len(kg_nodes_to_insert) > 0:
+            await self._ainsert_nodes_to_vector_index(kg_nodes_to_insert)
+
+        if len(nodes) > 0:
+            # no async version of upsert_llama_nodes; sync call is safe here
+            self.property_graph_store.upsert_llama_nodes(nodes)
+
+        if len(kg_nodes_to_insert) > 0:
+            await self.property_graph_store.aupsert_nodes(kg_nodes_to_insert)
+
+        if len(kg_rels_to_insert) > 0:
+            await self.property_graph_store.aupsert_relations(kg_rels_to_insert)
+
+        if self.property_graph_store.supports_structured_queries:
+            await self.property_graph_store.aget_schema(refresh=True)
+
+        return nodes
+
+    async def ainsert_nodes(
+        self, nodes: Sequence[BaseNode], **insert_kwargs: Any
+    ) -> None:
+        """Async insert nodes; avoids nested asyncio.run() via a true async path."""
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                try:
+                    node.dict()
+                except ValueError:
+                    self._object_map[node.index_id] = node.obj
+                    node.obj = None
+
+        with self._callback_manager.as_trace("ainsert_nodes"):
+            await self.docstore.async_add_documents(nodes, allow_update=True)
+            await self._ainsert_nodes(nodes)
+            await self._storage_context.index_store.async_add_index_struct(
+                self._index_struct
+            )
 
     def _build_index_from_nodes(
         self, nodes: Optional[Sequence[BaseNode]], **build_kwargs: Any
