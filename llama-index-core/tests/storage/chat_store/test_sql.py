@@ -97,7 +97,7 @@ async def test_set_messages(chat_store: SQLAlchemyChatStore):
 
 @pytest.mark.asyncio
 async def test_delete_message(chat_store: SQLAlchemyChatStore):
-    """Test deleting a specific message."""
+    """Test deleting a specific message by positional index."""
     batch_messages = [
         ChatMessage(role="user", content="message1"),
         ChatMessage(role="assistant", content="message2"),
@@ -106,16 +106,8 @@ async def test_delete_message(chat_store: SQLAlchemyChatStore):
 
     await chat_store.add_messages("delete_user", batch_messages)
 
-    # Get messages to find their IDs
-    async with chat_store._async_session_factory() as session:
-        result = await session.execute(
-            chat_store._table.select().where(chat_store._table.c.key == "delete_user")
-        )
-        rows = result.fetchall()
-
-    # Delete the middle message
-    middle_id = rows[1].id
-    deleted_message = await chat_store.delete_message("delete_user", middle_id)
+    # Delete the middle message by its positional index (1), not its row id.
+    deleted_message = await chat_store.delete_message("delete_user", 1)
 
     # Verify deletion
     assert deleted_message.content == "message2"
@@ -285,3 +277,48 @@ async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
     messages = await loaded_store.get_messages("dump_user2")
     assert len(messages) == 1
     assert messages[0].content == "message2"
+
+
+@pytest.mark.asyncio
+async def test_delete_message_by_positional_index(
+    chat_store: SQLAlchemyChatStore,
+):
+    """delete_message treats idx as the positional index, not the row id."""
+    await chat_store.add_message("user1", ChatMessage(role="user", content="one"))
+    await chat_store.add_message("user1", ChatMessage(role="assistant", content="two"))
+    await chat_store.add_message("user1", ChatMessage(role="user", content="three"))
+    # Messages for another key must be untouched by positional deletes.
+    await chat_store.add_message("user2", ChatMessage(role="user", content="other"))
+
+    deleted = await chat_store.delete_message("user1", 1)
+    assert deleted is not None
+    assert deleted.content == "two"
+
+    remaining = await chat_store.get_messages("user1")
+    assert [m.content for m in remaining] == ["one", "three"]
+    assert [m.content for m in await chat_store.get_messages("user2")] == ["other"]
+
+    # Out-of-range and negative indices delete nothing.
+    assert await chat_store.delete_message("user1", 5) is None
+    assert await chat_store.delete_message("user1", -1) is None
+    assert len(await chat_store.get_messages("user1")) == 2
+
+    # Deleting index 0 now removes the first remaining message.
+    deleted = await chat_store.delete_message("user1", 0)
+    assert deleted is not None
+    assert deleted.content == "one"
+    assert [m.content for m in await chat_store.get_messages("user1")] == ["three"]
+
+
+@pytest.mark.asyncio
+async def test_delete_last_message(chat_store: SQLAlchemyChatStore):
+    """delete_last_message removes the newest message for a key."""
+    assert await chat_store.delete_last_message("user1") is None
+
+    await chat_store.add_message("user1", ChatMessage(role="user", content="one"))
+    await chat_store.add_message("user1", ChatMessage(role="assistant", content="two"))
+
+    deleted = await chat_store.delete_last_message("user1")
+    assert deleted is not None
+    assert deleted.content == "two"
+    assert [m.content for m in await chat_store.get_messages("user1")] == ["one"]
