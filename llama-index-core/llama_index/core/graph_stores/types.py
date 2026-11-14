@@ -161,13 +161,19 @@ class LabelledPropertyGraph(BaseModel):
     def add_triplet(self, triplet: Triplet) -> None:
         """Add a triplet."""
         subj, rel, obj = triplet
+        rel_key = self._get_relation_key(relation=rel)
+
+        # Update the stored relation when the triplet already exists so that
+        # re-upserting a relation reflects the latest properties/metadata while
+        # keeping the triplet set deduplicated (see #23679).
         if (subj.id, rel.id, obj.id) in self.triplets:
+            self.relations[rel_key] = rel
             return
 
         self.triplets.add((subj.id, rel.id, obj.id))
         self.nodes[subj.id] = subj
         self.nodes[obj.id] = obj
-        self.relations[self._get_relation_key(relation=rel)] = rel
+        self.relations[rel_key] = rel
 
     def add_node(self, node: LabelledNode) -> None:
         """Add a node."""

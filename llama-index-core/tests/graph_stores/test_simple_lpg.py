@@ -144,3 +144,120 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_upsert_relations_updates_properties_on_existing_relation() -> None:
+    """Re-upserting a relation must update its stored properties (see #23679)."""
+    g = SimplePropertyGraphStore()
+
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id="Alice",
+                target_id="Bob",
+                properties={"confidence": 0.1},
+            )
+        ]
+    )
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS",
+                source_id="Alice",
+                target_id="Bob",
+                properties={"confidence": 0.9},
+            )
+        ]
+    )
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties["confidence"] == 0.9
+
+
+def test_upsert_relations_updates_existing_relation_without_duplicating() -> None:
+    """Upserting an existing relation keeps triplet deduplication."""
+    g = SimplePropertyGraphStore()
+
+    g.upsert_relations([Relation(label="KNOWS", source_id="Alice", target_id="Bob")])
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS", source_id="Alice", target_id="Bob", properties={"k": 2}
+            )
+        ]
+    )
+
+    assert len(g.graph.triplets) == 1
+    assert len(g.graph.relations) == 1
+    assert g.graph.relations["Alice_KNOWS_Bob"].properties == {"k": 2}
+    # endpoint nodes are retained
+    assert {"Alice", "Bob"} <= set(g.graph.nodes)
+
+
+def test_upsert_relations_preserves_unrelated_relations() -> None:
+    """Updating one relation must not drop unrelated relations."""
+    g = SimplePropertyGraphStore()
+
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS", source_id="Alice", target_id="Bob", properties={"c": 1}
+            )
+        ]
+    )
+    g.upsert_relations(
+        [
+            Relation(
+                label="LIKES", source_id="Alice", target_id="Carol", properties={"c": 5}
+            )
+        ]
+    )
+    g.upsert_relations(
+        [
+            Relation(
+                label="KNOWS", source_id="Alice", target_id="Bob", properties={"c": 2}
+            )
+        ]
+    )
+
+    assert len(g.graph.triplets) == 2
+    assert g.graph.relations["Alice_KNOWS_Bob"].properties == {"c": 2}
+    assert g.graph.relations["Alice_LIKES_Carol"].properties == {"c": 5}
+
+
+def test_aupsert_relations_updates_properties_on_existing_relation() -> None:
+    """The async upsert path must mirror the sync behavior (see #23679)."""
+    import asyncio
+
+    g = SimplePropertyGraphStore()
+
+    async def _run() -> None:
+        await g.aupsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id="Alice",
+                    target_id="Bob",
+                    properties={"c": 0.1},
+                )
+            ]
+        )
+        await g.aupsert_relations(
+            [
+                Relation(
+                    label="KNOWS",
+                    source_id="Alice",
+                    target_id="Bob",
+                    properties={"c": 0.9},
+                )
+            ]
+        )
+
+    asyncio.run(_run())
+
+    triplets = g.get_triplets(relation_names=["KNOWS"])
+    assert len(triplets) == 1
+    assert triplets[0][1].properties["c"] == 0.9
+    assert len(g.graph.triplets) == 1
