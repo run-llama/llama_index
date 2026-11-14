@@ -2,6 +2,7 @@ from llama_index.core import Settings
 from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.response_synthesizers import get_response_synthesizer
+from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.base.llms.types import LLMMetadata
 import pytest
 
@@ -51,6 +52,20 @@ class CustomMockLLM(MockLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return self.custom_metadata
+
+
+@pytest.mark.parametrize(
+    "response_mode", [ResponseMode.NO_TEXT, ResponseMode.CONTEXT_ONLY]
+)
+def test_supplied_llm_is_used_for_non_generating_modes(response_mode: ResponseMode):
+    Settings.llm = MockLLM(max_tokens=7)
+    supplied_llm = MockLLM(max_tokens=11)
+
+    synthesizer = get_response_synthesizer(
+        llm=supplied_llm, response_mode=response_mode
+    )
+
+    assert synthesizer._llm is supplied_llm
 
 
 def test_prompt_helper_from_supplied_llm_metadata():
