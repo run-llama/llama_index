@@ -38,3 +38,17 @@ def test_extract_keywords_with_start_delimiter() -> None:
         "bar",
         "foobar",
     }
+
+
+def test_extract_keywords_ignores_empty_keywords() -> None:
+    """A trailing or repeated comma must not yield an empty keyword."""
+    assert extract_keywords_given_response(
+        "KEYWORDS: foo, bar,", start_token="KEYWORDS:"
+    ) == {"foo", "bar"}
+    assert extract_keywords_given_response(
+        "KEYWORDS: foo,, bar, ,baz", start_token="KEYWORDS:"
+    ) == {"foo", "bar", "baz"}
+    assert (
+        extract_keywords_given_response("KEYWORDS: , ,", start_token="KEYWORDS:")
+        == set()
+    )

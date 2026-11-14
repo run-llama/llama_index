@@ -69,7 +69,12 @@ def extract_keywords_given_response(
         rk = k
         if lowercase:
             rk = rk.lower()
-        results.append(rk.strip())
+        rk = rk.strip()
+        # a trailing or repeated comma leaves an empty keyword, which would
+        # otherwise be stored as a key of the keyword table
+        if not rk:
+            continue
+        results.append(rk)
 
     # if keyword consists of multiple words, split into subwords
     # (removing stopwords)
