@@ -160,3 +160,21 @@ def test_blank_lines_in_markdown() -> None:
     """
     expected_tups = []
     assert reader.markdown_to_tups(markdown_text) == expected_tups
+
+
+def test_parse_markdown_with_skipped_header_level() -> None:
+    reader = MarkdownReader()
+    # "### C" is nested under "A", "## B" is a sibling of it, so "C" must not
+    # show up in the header path of the "B" section.
+    markdown_text = "# A\ntext-a\n### C\ntext-c\n## B\ntext-b"
+    expected_tups = [("A C", "text-a\ntext-c"), ("A B", "text-b")]
+
+    assert reader.markdown_to_tups(markdown_text) == expected_tups
+
+
+def test_parse_markdown_skipped_header_levels_do_not_leak_into_siblings() -> None:
+    reader = MarkdownReader()
+    markdown_text = "# A\n#### Deep\ndeep\n### Mid\nmid\n## Top\ntop"
+    expected_tups = [("A Deep", "deep"), ("A Mid", "mid"), ("A Top", "top")]
+
+    assert reader.markdown_to_tups(markdown_text) == expected_tups
