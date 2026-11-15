@@ -88,6 +88,10 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.6-sol": 1050000,
     "gpt-5.6-luna": 1050000,
     "gpt-5.6-terra": 1050000,
+    "gpt-6-astra": 1050000,
+    "gpt-6-sol": 1050000,
+    "gpt-6-luna": 1050000,
+    "gpt-6.1-sol": 1050000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
@@ -237,6 +241,8 @@ JSON_SCHEMA_MODELS = [
     "gpt-5.2",
     "gpt-5.4",
     "gpt-5.5",
+    "gpt-6",
+    "gpt-6.1",
 ]
 
 
@@ -246,9 +252,9 @@ def is_chatcomp_api_supported(model: str) -> bool:
 
 def is_json_schema_supported(model: str) -> bool:
     try:
-        from openai.resources.chat.completions import completions
+        from openai.lib import _parsing
 
-        if not hasattr(completions, "_type_to_response_format"):
+        if not hasattr(_parsing, "type_to_response_format_param"):
             return False
 
         return not model.startswith("o1-mini") and any(
