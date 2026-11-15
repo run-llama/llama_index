@@ -5,6 +5,7 @@ Contains parsers for tabular data files.
 
 """
 
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fsspec import AbstractFileSystem
@@ -85,6 +86,8 @@ class PandasCSVReader(BaseReader):
             for more information.
             Set to empty dict by default, this means pandas will try to figure
             out the separators, table head, etc. on its own.
+            With `chunksize` or `iterator`, all chunks are read before returning
+            the documents. `concat_rows` still controls the document boundaries.
 
     """
 
@@ -111,15 +114,22 @@ class PandasCSVReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
-        if fs:
-            with fs.open(file) as f:
-                df = pd.read_csv(f, **self._pandas_config)
-        else:
-            df = pd.read_csv(file, **self._pandas_config)
+        with ExitStack() as stack:
+            source = stack.enter_context(fs.open(file)) if fs else file
+            data = pd.read_csv(source, **self._pandas_config)
+            if isinstance(data, pd.DataFrame):
+                frames = [data]
+            else:
+                frames = stack.enter_context(data)
 
-        text_list = df.apply(
-            lambda row: (self._col_joiner).join(row.astype(str).tolist()), axis=1
-        ).tolist()
+            text_list = []
+            for df in frames:
+                text_list.extend(
+                    df.apply(
+                        lambda row: (self._col_joiner).join(row.astype(str).tolist()),
+                        axis=1,
+                    ).tolist()
+                )
 
         if self._concat_rows:
             return [
