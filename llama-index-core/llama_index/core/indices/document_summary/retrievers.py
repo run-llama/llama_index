@@ -86,7 +86,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         summary_ids = self._index.index_struct.summary_ids
 
         all_summary_ids: List[str] = []
-        all_relevances: List[float] = []
+        all_relevances: List[Optional[float]] = []
         for idx in range(0, len(summary_ids), self._choice_batch_size):
             summary_ids_batch = summary_ids[idx : idx + self._choice_batch_size]
             summary_nodes = self._index.docstore.get_nodes(summary_ids_batch)
@@ -106,10 +106,17 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
             choice_summary_ids = [summary_ids_batch[ci] for ci in choice_idxs]
 
             all_summary_ids.extend(choice_summary_ids)
-            all_relevances.extend(relevances)
+            if relevances is not None:
+                all_relevances.extend(relevances)
+            else:
+                all_relevances.extend([None] * len(choice_summary_ids))
 
         zipped_list = list(zip(all_summary_ids, all_relevances))
-        sorted_list = sorted(zipped_list, key=lambda x: x[1], reverse=True)
+        sorted_list = sorted(
+            zipped_list,
+            key=lambda x: x[1] if x[1] is not None else float("-inf"),
+            reverse=True,
+        )
         top_k_list = sorted_list[: self._choice_top_k]
 
         results = []
@@ -184,10 +191,16 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             )
 
         results = []
-        for summary_id in top_k_summary_ids:
+        for idx, summary_id in enumerate(top_k_summary_ids):
             node_ids = self._index_struct.summary_id_to_node_ids[summary_id]
             nodes = self._docstore.get_nodes(node_ids)
-            results.extend([NodeWithScore(node=n) for n in nodes])
+            score = (
+                query_result.similarities[idx]
+                if query_result.similarities is not None
+                and idx < len(query_result.similarities)
+                else None
+            )
+            results.extend([NodeWithScore(node=n, score=score) for n in nodes])
         return results
 
 
