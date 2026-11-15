@@ -41,7 +41,7 @@ class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
         col_names = [c.name for c in table.c]
         if ref_doc_id_column is not None and ref_doc_id_column not in col_names:
             raise ValueError(
-                f"ref_doc_id_column {ref_doc_id_column} not in table {table_name}"
+                f"ref_doc_id_column {ref_doc_id_column} not in table {self._table_name}"
             )
         self.ref_doc_id_column = ref_doc_id_column
         # then store python types of each column
