@@ -165,6 +165,12 @@ class JSONQueryEngine(BaseQueryEngine):
             query_str=query_bundle.query_str,
         )
 
+        # removes JSONPath: prefix from returned JSON path prompt call
+        if self._json_path_prompt == DEFAULT_JSON_PATH_PROMPT:
+            json_path_response_str = default_output_response_parser(
+                json_path_response_str
+            )
+
         if self._verbose:
             print_text(
                 f"> JSONPath Instructions:\n```\n{json_path_response_str}\n```\n"
@@ -175,12 +181,6 @@ class JSONQueryEngine(BaseQueryEngine):
             self._json_value,
             **self._output_kwargs,
         )
-
-        # removes JSONPath: prefix from returned JSON path prompt call
-        if self._json_path_prompt == DEFAULT_JSON_PATH_PROMPT:
-            json_path_response_str = default_output_response_parser(
-                json_path_response_str
-            )
 
         if self._verbose:
             print_text(f"> JSONPath Output: {json_path_output}\n")
