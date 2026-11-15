@@ -209,8 +209,8 @@ class TestStore:
             (None, ["test-1", "test-7"], None, [7]),
             ([0, 1], ["test-1", "test-7"], None, [1]),
             ([0, 7], ["test-0", "test-7"], "Emma Johnson", [7]),
-            ([], None, None, []),
-            (None, [], None, []),
+            ([], None, None, [0]),
+            (None, [], None, [0]),
             (None, ["missing"], None, []),
             ([0], ["test-1"], None, []),
         ],
@@ -225,6 +225,7 @@ class TestStore:
         author: str | None,
         expected_indices: List[int],
     ) -> None:
+        vector_store.clear()
         vector_store.add(text_node_list)
         query = VectorStoreQuery(
             query_embedding=[1.0, 0.0, 0.0],
@@ -272,6 +273,7 @@ class TestStore:
                 ("filtered", "doc'1", "rejected", [0.95, 0.05, 0.0]),
             ]
         ]
+        vector_store.clear()
         vector_store.add(nodes)
         index = VectorStoreIndex.from_vector_store(
             vector_store, embed_model=MockEmbedding(embed_dim=3)
@@ -293,6 +295,49 @@ class TestStore:
 
         assert [node.node_id for node in result] == ["chunk'1", "chunk'2"]
         assert result[0].score > result[1].score
+
+    @pytest.mark.parametrize("use_async", [False, True])
+    @pytest.mark.parametrize(
+        ("doc_ids", "author", "expected_indices"),
+        [
+            (None, None, [0]),
+            (["test-1", "test-7"], None, [7]),
+            (["test-1", "test-7"], "Emma Johnson", [7]),
+            (["test-0"], "Emma Johnson", []),
+        ],
+    )
+    async def test_default_retriever_id_restrictions(
+        self,
+        vector_store: DuckDBVectorStore,
+        text_node_list: List[TextNode],
+        use_async: bool,
+        doc_ids: List[str] | None,
+        author: str | None,
+        expected_indices: List[int],
+    ) -> None:
+        vector_store.clear()
+        vector_store.add(text_node_list)
+        index = VectorStoreIndex.from_vector_store(
+            vector_store, embed_model=MockEmbedding(embed_dim=3)
+        )
+        retriever = index.as_retriever(
+            similarity_top_k=1,
+            doc_ids=doc_ids,
+            filters=(
+                MetadataFilters(filters=[MetadataFilter(key="author", value=author)])
+                if author is not None
+                else None
+            ),
+        )
+        query = QueryBundle(query_str="query", embedding=[1.0, 0.0, 0.0])
+
+        result = (
+            await retriever.aretrieve(query) if use_async else retriever.retrieve(query)
+        )
+
+        assert [node.node_id for node in result] == [
+            text_node_list[i].node_id for i in expected_indices
+        ]
 
     def test_delete_nodes(
         self, vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
