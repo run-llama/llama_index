@@ -431,3 +431,31 @@ def test_media_resource_hash_with_various_content() -> None:
     # Same content should produce same hash
     resource_text2 = MediaResource(text="hello")
     assert resource_text.hash == resource_text2.hash
+
+
+@pytest.mark.parametrize("as_dict", [False, True])
+def test_build_image_node_image_resource_bytes(
+    png_1px_b64: bytes, as_dict: bool
+) -> None:
+    resource = (
+        {"data": png_1px_b64}
+        if as_dict
+        else MediaResource(data=png_1px_b64, mimetype="image/png")
+    )
+    node = ImageNode(image_resource=resource)
+    assert node.resolve_image().read() == base64.b64decode(png_1px_b64)
+
+
+def test_build_image_node_image_resource_url() -> None:
+    resource = MediaResource(url="https://example.com/image.png?name=%E4%B8%AD")
+    node = ImageNode(image_resource=resource)
+    assert node.image_url == str(resource.url)
+
+
+@pytest.mark.parametrize("as_dict", [False, True])
+def test_empty_image_resource_preserves_explicit_image(
+    png_1px_b64: bytes, as_dict: bool
+) -> None:
+    resource = {"data": b""} if as_dict else MediaResource(data=b"")
+    node = ImageNode(image_resource=resource, image=png_1px_b64)
+    assert node.resolve_image().read() == base64.b64decode(png_1px_b64)

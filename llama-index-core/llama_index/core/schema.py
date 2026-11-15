@@ -868,10 +868,14 @@ class ImageNode(TextNode):
         if "image_resource" in kwargs:
             ir = kwargs.pop("image_resource")
             if isinstance(ir, MediaResource):
+                if ir.data:
+                    kwargs["image"] = ir.data
                 kwargs["image_path"] = ir.path.as_posix() if ir.path else None
-                kwargs["image_url"] = ir.url
+                kwargs["image_url"] = str(ir.url) if ir.url is not None else None
                 kwargs["image_mimetype"] = ir.mimetype
             else:
+                if ir.get("data"):
+                    kwargs["image"] = ir["data"]
                 kwargs["image_path"] = ir.get("path", None)
                 kwargs["image_url"] = ir.get("url", None)
                 kwargs["image_mimetype"] = ir.get("mimetype", None)
