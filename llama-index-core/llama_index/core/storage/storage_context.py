@@ -246,11 +246,14 @@ class StorageContext:
         """Create a StorageContext from dict."""
         docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
-        graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
+        graph_store = (
+            SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
+            if GRAPH_STORE_KEY in save_dict
+            else SimpleGraphStore()
+        )
+        pg_store_dict = save_dict.get(PG_STORE_KEY)
         property_graph_store = (
-            SimplePropertyGraphStore.from_dict(save_dict[PG_STORE_KEY])
-            if save_dict[PG_STORE_KEY]
-            else None
+            SimplePropertyGraphStore.from_dict(pg_store_dict) if pg_store_dict else None
         )
 
         vector_stores: Dict[str, BasePydanticVectorStore] = {}
