@@ -1,6 +1,6 @@
 import pytest
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.tools.types import ToolMetadata
 
@@ -38,3 +38,21 @@ def test_nested_tool_schema() -> None:
 
     assert schema["required"][0] == "inner"
     assert schema["properties"] == {"inner": {"$ref": "#/$defs/Inner"}}
+
+
+def test_tool_metadata_keeps_additional_properties() -> None:
+    """
+    fn_schema model config (extra="forbid") reaches the tool schema.
+
+    https://github.com/run-llama/llama_index/issues/24142
+    """
+
+    class StrictArgs(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+        order_id: str
+
+    metadata = ToolMetadata(description="lookup", fn_schema=StrictArgs)
+    schema = metadata.get_parameters_dict()
+
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["order_id"]["type"] == "string"

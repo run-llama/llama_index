@@ -202,3 +202,45 @@ def test_param_descriptions_do_not_mutate_the_callers_field() -> None:
 
     assert schema.model_json_schema()["properties"]["x"]["description"] == "A string"
     assert shared_field.description is None
+
+
+def test_create_schema_keeps_annotated_field_constraints() -> None:
+    """
+    Constraints declared via Annotated[Field(...)] reach the JSON schema.
+
+    https://github.com/run-llama/llama_index/issues/24142
+    """
+
+    def tmp_function(
+        order_id: Annotated[str, Field(pattern=r"^ORD-[0-9]{6}$")],
+        quantity: Annotated[int, Field(ge=1, le=10)] = 1,
+    ) -> str:
+        return "ok"
+
+    properties = create_schema_from_function("TestSchema", tmp_function)  # type: ignore[arg-type]
+    schema = properties.model_json_schema()["properties"]
+
+    assert schema["order_id"]["pattern"] == r"^ORD-[0-9]{6}$"
+    assert schema["order_id"]["type"] == "string"
+    # Optional param keeps both its constraints and its default
+    assert schema["quantity"]["minimum"] == 1
+    assert schema["quantity"]["maximum"] == 10
+    assert schema["quantity"]["default"] == 1
+
+
+def test_create_schema_annotated_field_with_str_description() -> None:
+    """A bare string description alongside Field metadata is preserved."""
+
+    def tmp_function(
+        code: Annotated[str, "A short code", Field(pattern=r"^[A-Z]{3}$")],
+    ) -> str:
+        return "ok"
+
+    schema = create_schema_from_function(
+        "TestSchema", tmp_function
+    ).model_json_schema()[  # type: ignore[arg-type]
+        "properties"
+    ]
+
+    assert schema["code"]["description"] == "A short code"
+    assert schema["code"]["pattern"] == r"^[A-Z]{3}$"
