@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from llama_index.core.bridge.pydantic import AnyUrl
+import pytest
+from llama_index.core.bridge.pydantic import AnyUrl, ValidationError
 from llama_index.core.schema import MediaResource
 
 
@@ -32,6 +33,11 @@ def test_mimetype_raw_data():
 def test_mimetype_from_path():
     m = MediaResource(path=Path("my-image.jpg"), mimetype=None)
     assert m.mimetype == "image/jpeg"
+
+
+def test_invalid_path_raises_validation_error():
+    with pytest.raises(ValidationError):
+        MediaResource(path=12345)
 
 
 def test_mimetype_prioritizes_data():
