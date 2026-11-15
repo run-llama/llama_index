@@ -5,6 +5,7 @@ NOTE: These are beta functions, might change.
 
 """
 
+import warnings
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -66,10 +67,20 @@ def get_results_df(
     metric_dict = defaultdict(list)
     metric_dict["names"] = names
     for metric_key in metric_keys:
-        for eval_results in eval_results_list:
-            mean_score = np.array(
-                [r.score or 0.0 for r in eval_results[metric_key]]
-            ).mean()
+        for name, eval_results in zip(names, eval_results_list):
+            results = eval_results[metric_key]
+            # None means the evaluator produced no score, and a NaN score
+            # poisons the mean; average only real (finite) scores.
+            scored = [
+                r.score for r in results if r.score is not None and np.isfinite(r.score)
+            ]
+            num_missing = len(results) - len(scored)
+            if num_missing > 0:
+                warnings.warn(
+                    f"Excluding {num_missing} missing or non-finite score(s) "
+                    f"for metric '{metric_key}' of '{name}' when averaging."
+                )
+            mean_score = np.array(scored).mean() if scored else np.nan
             metric_dict[metric_key].append(mean_score)
     return pd.DataFrame(metric_dict)
 
