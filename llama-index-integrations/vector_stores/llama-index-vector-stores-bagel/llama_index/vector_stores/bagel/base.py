@@ -207,11 +207,11 @@ class BagelVectorStore(BasePydanticVectorStore):
                 )
 
             nodes.append(node)
-            similarities.append(1.0 - math.exp(-distance))
+            similarities.append(math.exp(-distance))
             ids.append(node_id)
 
             logger.debug(f"node: {node}")
-            logger.debug(f"similarity: {1.0 - math.exp(-distance)}")
+            logger.debug(f"similarity: {math.exp(-distance)}")
             logger.debug(f"id: {node_id}")
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)

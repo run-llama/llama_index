@@ -1,4 +1,9 @@
+import math
+from unittest.mock import MagicMock, patch
+
+import pytest
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.vector_stores.db2 import base
 from llama_index.vector_stores.db2 import (
     DB2LlamaVS,
     create_table,
@@ -18,6 +23,24 @@ from llama_index.core.vector_stores.types import (
 def test_class():
     names_of_base_classes = [b.__name__ for b in DB2LlamaVS.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
+
+
+def test_query_similarity_decreases_with_distance() -> None:
+    conn = MagicMock()
+    # rows ordered by distance ascending
+    conn.cursor.return_value.fetchall.return_value = [
+        ("closest", "doc", "closest text", "{}", "{}", 0.0),
+        ("farther", "doc", "farther text", "{}", "{}", 1.0),
+    ]
+
+    with patch.object(base, "create_table"):
+        store = DB2LlamaVS(conn, table_name="t", embed_dim=2)
+    result = store.query(
+        VectorStoreQuery(query_embedding=[0.1, 0.2], similarity_top_k=2)
+    )
+
+    assert result.ids == ["closest", "farther"]
+    assert result.similarities == pytest.approx([1.0, math.exp(-1.0)])
 
 
 database = ""
