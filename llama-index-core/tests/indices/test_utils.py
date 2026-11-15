@@ -34,3 +34,16 @@ def test_default_parse_choice_select_answer_fn(answer):
     answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
     assert answer_nums == [2, 4]
     assert answer_relevances == [8, 6]
+
+
+@pytest.mark.parametrize("answer_num", [0, -1])
+def test_default_parse_choice_select_answer_fn_drops_non_positive_choices(answer_num):
+    from llama_index.core.indices.utils import default_parse_choice_select_answer_fn
+
+    answer = (
+        f"answer_num: {answer_num}, answer_relevance: 9\n"
+        "answer_num: 2, answer_relevance: 7"
+    )
+    answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 3)
+    assert answer_nums == [2]
+    assert answer_relevances == [7]
