@@ -5,7 +5,6 @@ An index that is built on top of an existing vector store.
 
 """
 
-import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -447,14 +446,10 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and its nodes by using ref_doc_id."""
-        tasks = [
-            self._vector_store.adelete(ref_doc_id, **delete_kwargs),
-            self._adelete_from_index_struct(ref_doc_id),
-        ]
+        await self._vector_store.adelete(ref_doc_id, **delete_kwargs)
+        await self._adelete_from_index_struct(ref_doc_id)
         if delete_from_docstore:
-            tasks.append(self._adelete_from_docstore(ref_doc_id))
-
-        await asyncio.gather(*tasks)
+            await self._adelete_from_docstore(ref_doc_id)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
