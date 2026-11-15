@@ -9,7 +9,7 @@ try:
 except ImportError:
     raise ImportError(
         "Could not import Autembeddings from chonkie. "
-        "Please install it with `pip install chonkie[all]`."
+        "Please install it with `pip install chonkie[embeddings]`."
     )
 
 
