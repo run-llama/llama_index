@@ -2,6 +2,7 @@
 
 import logging
 from abc import abstractmethod
+from collections.abc import Sized
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -79,6 +80,8 @@ class SQLDocumentContextBuilder:
         """Build context for all tables in the database."""
         context_dict = {}
         for table_name in self._sql_database.get_usable_table_names():
+            if table_name not in documents_dict:
+                continue
             context_dict[table_name] = self.build_table_context_from_documents(
                 documents_dict[table_name], table_name
             )
@@ -160,19 +163,23 @@ class BaseStructDatapointExtractor:
             # if expected type is int or float, try to convert value to int or float
             expected_type = col_types_map[field]
             if expected_type is int:
+                if isinstance(value, bool):
+                    continue
                 try:
                     clean_value = int(value)
-                except ValueError:
+                except (ValueError, TypeError):
                     continue
             elif expected_type is float:
+                if isinstance(value, bool):
+                    continue
                 try:
                     clean_value = float(value)
-                except ValueError:
+                except (ValueError, TypeError):
                     continue
             else:
-                if len(value) == 0:
-                    continue
                 if not isinstance(value, col_types_map[field]):
+                    continue
+                if isinstance(value, Sized) and len(value) == 0:
                     continue
             new_fields[field] = clean_value
         return new_fields
