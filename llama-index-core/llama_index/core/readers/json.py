@@ -39,11 +39,21 @@ def _depth_first_yield(
                 new_path = path[:]
                 new_path.append(key)
                 yield from _depth_first_yield(
-                    value, levels_back, collapse_length, new_path
+                    value,
+                    levels_back,
+                    collapse_length,
+                    new_path,
+                    ensure_ascii=ensure_ascii,
                 )
         elif isinstance(json_data, list):
             for _, value in enumerate(json_data):
-                yield from _depth_first_yield(value, levels_back, collapse_length, path)
+                yield from _depth_first_yield(
+                    value,
+                    levels_back,
+                    collapse_length,
+                    path,
+                    ensure_ascii=ensure_ascii,
+                )
     else:
         new_path = path[-levels_back:]
         new_path.append(str(json_data))
@@ -95,9 +105,10 @@ class JSONReader(BaseReader):
         self.clean_json = clean_json
 
     def load_data(
-        self, input_file: str, extra_info: Optional[Dict] = {}
+        self, input_file: str, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Load data from the input file."""
+        extra_info = extra_info or {}
         try:
             with open(input_file, encoding="utf-8") as f:
                 load_data = []
