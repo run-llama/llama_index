@@ -125,3 +125,22 @@ def test_max_recursion_attack(tmp_path):
 
     finally:
         sys.setrecursionlimit(original_limit)
+
+
+def test_ensure_ascii_nested_collapse() -> None:
+    """Test JSON reader preserves ensure_ascii across nested dicts and lists when collapsing."""
+    with TemporaryDirectory() as tmp_dir:
+        file_name = f"{tmp_dir}/test_ascii.json"
+        with open(file_name, "w", encoding="utf-8") as f:
+            f.write(
+                '{"user": {"city": "北京"}, "tags": ["测试"], "note": "long content exceeding collapse length threshold"}'
+            )
+
+        reader = JSONReader(levels_back=0, collapse_length=25, ensure_ascii=True)
+        data = reader.load_data(file_name)
+        assert len(data) == 1
+        content = data[0].get_content()
+        assert r"\u5317\u4eac" in content
+        assert r"\u6d4b\u8bd5" in content
+        assert "北京" not in content
+        assert "测试" not in content
