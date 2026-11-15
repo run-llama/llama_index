@@ -1,9 +1,10 @@
 """Top-level imports for LlamaIndex."""
 
+import importlib
 import logging
 from importlib.metadata import PackageNotFoundError, version
 from logging import NullHandler
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 try:
     __version__ = version("llama-index-core")
@@ -47,11 +48,6 @@ from llama_index.core.indices import (
     load_indices_from_storage,
 )
 
-# structured
-from llama_index.core.indices.common.struct_store.base import (
-    SQLDocumentContextBuilder,
-)
-
 # prompt helper
 from llama_index.core.indices.prompt_helper import PromptHelper
 
@@ -79,9 +75,6 @@ from llama_index.core.settings import Settings
 
 # storage
 from llama_index.core.storage.storage_context import StorageContext
-
-# sql wrapper
-from llama_index.core.utilities.sql_wrapper import SQLDatabase
 
 # global tokenizer
 from llama_index.core.utils import get_tokenizer, set_global_tokenizer
@@ -144,8 +137,23 @@ from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 
 global_handler: Optional[BaseCallbackHandler] = None
 
-# NOTE: keep for backwards compatibility
-SQLContextBuilder = SQLDocumentContextBuilder
-
 # global tokenizer
 global_tokenizer: Optional[Callable[[str], list]] = None
+
+
+# SQL support imports SQLAlchemy, which is slow to load, so these names are
+# resolved on first access (PEP 562) instead of at package import time.
+_LAZY_IMPORTS = {
+    "SQLDatabase": "llama_index.core.utilities.sql_wrapper",
+    "SQLDocumentContextBuilder": "llama_index.core.indices.common.struct_store.base",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name == "SQLContextBuilder":  # NOTE: kept for backwards compatibility
+        return __getattr__("SQLDocumentContextBuilder")
+    if name in _LAZY_IMPORTS:
+        value = getattr(importlib.import_module(_LAZY_IMPORTS[name]), name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
