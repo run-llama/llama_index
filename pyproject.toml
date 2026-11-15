@@ -4,14 +4,14 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "ipykernel>=6.29.5,<7",
     "mypy==1.11.0",
     "openai",
     "pandas",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest-asyncio",
     "pytest-mock>=3.14.0",
     "pytest",
@@ -39,9 +39,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "llama-index-core>=0.14.25,<0.15.0",
-    "llama-index-embeddings-openai>=0.6.0,<0.7",
-    "llama-index-llms-openai>=0.7.0,<0.8",
+    "llama-index-core>=0.14.26,<0.15.0",
+    "llama-index-embeddings-openai>=0.6.0,<0.9",
+    "llama-index-llms-openai>=0.7.0,<0.10",
     "nltk>=3.9.3",
 ]
 description = "Interface between LLMs and your data"
@@ -65,8 +65,8 @@ maintainers = [
 ]
 name = "llama-index"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
-version = "0.14.25"
+requires-python = ">=3.11,<4.0"
+version = "0.14.26"
 
 [project.urls]
 Documentation = "https://docs.llamaindex.ai/en/stable/"
