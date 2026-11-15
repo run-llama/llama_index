@@ -76,7 +76,7 @@ class SemanticScholarReader(BaseReader):
             return None
 
     def _get_full_text_docs(self, documents: List[Document]) -> List[Document]:
-        from PyPDF2 import PdfReader
+        from pypdf import PdfReader
 
         """
         Gets the full text of the documents from Semantic Scholar
