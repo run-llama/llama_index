@@ -273,17 +273,10 @@ class SchemaLLMPathExtractor(TransformComponent):
     ) -> Dict[str, Any]:
         """Prune invalid properties."""
         if not allowed_props:
-            return props
+            return dict(props)
 
-        props_to_remove = []
-        for key in props:
-            if key not in allowed_props:
-                props_to_remove.append(key)
-
-        for key in props_to_remove:
-            del props[key]
-
-        return props
+        allowed_props_set = set(allowed_props)
+        return {key: val for key, val in props.items() if key in allowed_props_set}
 
     def _prune_invalid_triplets(self, kg_schema: Any) -> Sequence[Triplet]:
         """Prune invalid triplets."""
