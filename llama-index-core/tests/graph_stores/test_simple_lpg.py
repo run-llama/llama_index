@@ -3,6 +3,7 @@ import tempfile
 
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
+    ChunkNode,
     EntityNode,
     Relation,
 )
@@ -144,3 +145,25 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
+
+
+def test_from_dict_does_not_mutate_caller_data() -> None:
+    """Test that from_dict does not clear nodes from the caller's dictionary."""
+    store = SimplePropertyGraphStore()
+    e1 = EntityNode(name="e1")
+    c1 = ChunkNode(text="c1")
+    store.upsert_nodes([e1, c1])
+
+    data = store.to_dict()
+    assert len(data["nodes"]) == 2
+
+    # First load
+    loaded1 = SimplePropertyGraphStore.from_dict(data)
+    assert len(loaded1.graph.get_all_nodes()) == 2
+    # Verify input dictionary was not mutated
+    assert len(data["nodes"]) == 2
+
+    # Second load with same dictionary produces identical store
+    loaded2 = SimplePropertyGraphStore.from_dict(data)
+    assert len(loaded2.graph.get_all_nodes()) == 2
+    assert len(data["nodes"]) == 2

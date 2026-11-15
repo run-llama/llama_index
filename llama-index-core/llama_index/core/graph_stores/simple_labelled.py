@@ -202,7 +202,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
     ) -> "SimplePropertyGraphStore":
         """Load from dict."""
         # need to load nodes manually
-        node_dicts = data["nodes"]
+        node_dicts = data.get("nodes", {})
 
         kg_nodes: Dict[str, LabelledNode] = {}
         for id, node_dict in node_dicts.items():
@@ -213,11 +213,13 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             else:
                 raise ValueError(f"Could not infer node type for data: {node_dict!s}")
 
-        # clear the nodes, to load later
-        data["nodes"] = {}
+        # load the graph with empty nodes dict to avoid mutating caller data;
+        # polymorphic nodes will be re-attached manually
+        graph_dict = dict(data)
+        graph_dict["nodes"] = {}
 
         # load the graph
-        graph = LabelledPropertyGraph.model_validate(data)
+        graph = LabelledPropertyGraph.model_validate(graph_dict)
 
         # add the node back
         graph.nodes = kg_nodes
