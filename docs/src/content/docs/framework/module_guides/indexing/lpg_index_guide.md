@@ -84,7 +84,6 @@ kg_extractor = SimpleLLMPathExtractor(
     llm=llm,
     max_paths_per_chunk=10,
     num_workers=4,
-    show_progress=False,
 )
 ```
 
