@@ -85,3 +85,22 @@ async def test_dynamic_llm_extractor_error_handling(caplog):
     )
     with pytest.raises(ValueError, match="Simulated LLM apredict error"):
         await extractor_strict.acall([node])
+
+
+def test_schema_llm_extractor_prune_invalid_props_does_not_mutate_caller():
+    extractor = SchemaLLMPathExtractor(llm=MockLLM())
+    original_props = {"prop_a": "1", "prop_b": "2", "prop_c": "3"}
+    props_copy = dict(original_props)
+
+    pruned = extractor._prune_invalid_props(
+        original_props, allowed_props=["prop_a", "prop_b"]
+    )
+    assert pruned == {"prop_a": "1", "prop_b": "2"}
+    # Verify caller's dictionary is not modified
+    assert original_props == props_copy
+    assert "prop_c" in original_props
+
+    # Verify None or empty allowed_props returns a copy rather than mutating or aliasing
+    unrestricted = extractor._prune_invalid_props(original_props, allowed_props=None)
+    assert unrestricted == original_props
+    assert unrestricted is not original_props
