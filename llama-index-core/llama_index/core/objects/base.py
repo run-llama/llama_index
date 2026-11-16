@@ -203,7 +203,7 @@ class ObjectIndex(Generic[OT]):
                     persist_dir=persist_dir
                 )
             except Exception as err:
-                raise Exception(
+                raise RuntimeError(
                     "Unable to load from persist dir. The object_node_mapping cannot be loaded."
                 ) from err
             else:
