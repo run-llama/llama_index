@@ -488,11 +488,15 @@ class BaseElementNodeParser(NodeParser):
         for node in nodes:
             if node_inherited and node_inherited.metadata:
                 node.metadata.update(node_inherited.metadata)
-                node.excluded_embed_metadata_keys = (
-                    node_inherited.excluded_embed_metadata_keys
+                node.excluded_embed_metadata_keys.extend(
+                    key
+                    for key in node_inherited.excluded_embed_metadata_keys
+                    if key not in node.excluded_embed_metadata_keys
                 )
-                node.excluded_llm_metadata_keys = (
-                    node_inherited.excluded_llm_metadata_keys
+                node.excluded_llm_metadata_keys.extend(
+                    key
+                    for key in node_inherited.excluded_llm_metadata_keys
+                    if key not in node.excluded_llm_metadata_keys
                 )
         return [
             node
