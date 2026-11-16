@@ -8,6 +8,10 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 Data loaders (readers) live in the [`readers` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) of the LlamaIndex repo, one package per source. See the [data connectors guide](/python/framework/module_guides/loading/connector) for how to use them.
 
+Readers published as their own packages:
+
+- [PDFluent](https://github.com/pdfluent/pdfluent-sdk/tree/main/integrations/llama-index-readers-pdfluent#readme): `llama-index-readers-pdfluent` reads a PDF as blocks, tables or markdown pages with page, bounding box and kind in the metadata. It runs locally.
+
 ## Agent Tools
 
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
