@@ -2,10 +2,13 @@ import os
 import pypdf
 import pytest
 import tempfile
+from io import BytesIO
 from fpdf import FPDF
+from fsspec import AbstractFileSystem
 from llama_index.readers.file import PDFReader
-from pathlib import Path
-from typing import Dict
+from pathlib import Path, PurePosixPath
+from typing import Dict, Union
+from unittest.mock import MagicMock
 
 
 @pytest.fixture()
@@ -23,6 +26,40 @@ def multi_page_pdf() -> FPDF:
 @pytest.fixture()
 def extra_info() -> Dict[str, str]:
     return {"ABC": "abc", "DEF": "def"}
+
+
+@pytest.mark.parametrize("return_full_document", [False, True])
+@pytest.mark.parametrize(
+    "file",
+    [
+        "s3://bucket/folder/example.pdf",
+        "https://example.com/folder/example.pdf",
+        "bucket/folder/example.pdf",
+        PurePosixPath("bucket/folder/example.pdf"),
+    ],
+)
+def test_pdfreader_preserves_remote_paths(
+    multi_page_pdf: FPDF,
+    extra_info: Dict[str, str],
+    file: Union[str, PurePosixPath],
+    return_full_document: bool,
+) -> None:
+    fs = MagicMock(spec=AbstractFileSystem)
+    fs.open.return_value = BytesIO(multi_page_pdf.output())
+    reader = PDFReader(return_full_document=return_full_document)
+
+    docs = reader.load_data(file, extra_info=extra_info, fs=fs)
+
+    fs.open.assert_called_once_with(str(file), "rb")
+    expected_texts = ["Page 1 Content", "Page 2 Content"]
+    if return_full_document:
+        expected_texts = ["\n".join(expected_texts)]
+    assert [doc.text for doc in docs] == expected_texts
+    for page, doc in enumerate(docs):
+        expected_metadata = {"file_name": "example.pdf", **extra_info}
+        if not return_full_document:
+            expected_metadata["page_label"] = str(page + 1)
+        assert doc.metadata == expected_metadata
 
 
 def test_pdfreader_loads_data_into_full_document(multi_page_pdf: FPDF) -> None:
