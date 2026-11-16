@@ -77,7 +77,7 @@ class DashVectorReader(BaseReader):
             sparse_vector=sparse_vector,
         )
         if not ret:
-            raise Exception(f"Failed to query document,Error: {ret}")
+            raise RuntimeError(f"Failed to query document,Error: {ret}")
 
         doc_metas = ret.output
         documents = []
