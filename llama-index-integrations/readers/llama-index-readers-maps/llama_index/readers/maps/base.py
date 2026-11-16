@@ -87,7 +87,7 @@ class OpenMap(BaseReader):
         local_area = localarea
 
         if local_area.lower().strip() in null_list:
-            raise Exception("The Area should not be null")
+            raise ValueError("The Area should not be null")
 
         user = self._get_user()
         lat, lon = self._get_latlon(local_area, user)
