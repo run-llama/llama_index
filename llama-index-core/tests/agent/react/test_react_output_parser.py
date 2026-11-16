@@ -1,4 +1,5 @@
 from llama_index.core.agent.react.output_parser import (
+    action_input_parser,
     extract_final_response,
     extract_tool_use,
     parse_action_reasoning_step,
@@ -15,6 +16,33 @@ Action Input: {'pages': ['coffee'] /* comment */, 'load_kwargs': {}, 'query_str'
         "pages": ["coffee"],
         "load_kwargs": {},
         "query_str": "",
+    }
+
+
+def test_parse_action_reasoning_step_python_literals() -> None:
+    mock_input_text = """\
+Thought: Need to call search with Python literals.
+Action: search
+Action Input: {"query": "coffee", "top_k": 5, "score_threshold": 0.75, "verbose": True, "filter": None}
+"""
+    assert parse_action_reasoning_step(mock_input_text).action_input == {
+        "query": "coffee",
+        "top_k": 5,
+        "score_threshold": 0.75,
+        "verbose": True,
+        "filter": None,
+    }
+
+
+def test_action_input_parser_non_string_scalars_fallback() -> None:
+    # Malformed trailing syntax forces regex fallback past ast.literal_eval
+    malformed = "{'query': 'coffee', 'top_k': 5, 'ratio': -1.5, 'flag': True, ' disabled': False, 'empty': None, trailing}"
+    assert action_input_parser(malformed) == {
+        "query": "coffee",
+        "top_k": 5,
+        "ratio": -1.5,
+        "flag": True,
+        "empty": None,
     }
 
 
