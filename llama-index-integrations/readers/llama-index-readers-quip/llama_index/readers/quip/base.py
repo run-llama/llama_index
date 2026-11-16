@@ -91,4 +91,4 @@ class QuipReader(BasePydanticReader):
                     )
             except requests.exceptions.RequestException as err:
                 raise requests.exceptions.RequestException(f"Request failed: {err}")
-        raise Exception("Maximum retries exceeded")
+        raise ConnectionError("Maximum retries exceeded")
