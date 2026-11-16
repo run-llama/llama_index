@@ -169,13 +169,13 @@ class SimpleGraphStore(GraphStore):
                 f"No existing {__name__} found at {persist_path}. "
                 "Initializing a new graph_store from scratch. "
             )
-            return cls()
+            return cls(fs=fs)
 
         logger.debug(f"Loading {__name__} from {persist_path}.")
         with fs.open(persist_path, "rb") as f:
             data_dict = json.load(f)
             data = SimpleGraphStoreData.from_dict(data_dict)
-        return cls(data)
+        return cls(data, fs=fs)
 
     @classmethod
     def from_dict(cls, save_dict: dict) -> "SimpleGraphStore":
