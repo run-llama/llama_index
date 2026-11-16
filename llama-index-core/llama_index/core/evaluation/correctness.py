@@ -71,8 +71,9 @@ class CorrectnessEvaluator(BaseEvaluator):
     Correctness evaluator.
 
     Evaluates the correctness of a question answering system.
-    This evaluator depends on `reference` answer to be provided, in addition to the
-    query string and response string.
+    The query string and response string are required. A `reference` answer is
+    optional: when it is omitted, a `(NO REFERENCE ANSWER SUPPLIED)` placeholder
+    is passed to the judge and the answer is scored reference-free.
 
     It outputs a score between 1 and 5, where 1 is the worst and 5 is the best,
     along with a reasoning for the score.
