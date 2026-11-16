@@ -39,15 +39,14 @@ class PDFReader(BaseReader):
     )
     def load_data(
         self,
-        file: Union[Path, PurePosixPath],
+        file: Union[str, Path, PurePosixPath],
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         fs = fs or get_default_fs()
         _Path = Path if is_default_fs(fs) else PurePosixPath
-        if not isinstance(file, (Path, PurePosixPath)):
-            file = _Path(file)
+        file_name = _Path(file).name
 
         try:
             import pypdf
@@ -71,7 +70,7 @@ class PDFReader(BaseReader):
 
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
-                metadata = {"file_name": file.name}
+                metadata = {"file_name": file_name}
                 if extra_info is not None:
                     metadata.update(extra_info)
 
@@ -91,7 +90,7 @@ class PDFReader(BaseReader):
                     page_text = pdf.pages[page].extract_text()
                     page_label = pdf.page_labels[page]
 
-                    metadata = {"page_label": page_label, "file_name": file.name}
+                    metadata = {"page_label": page_label, "file_name": file_name}
                     if extra_info is not None:
                         metadata.update(extra_info)
 
