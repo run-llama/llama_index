@@ -84,6 +84,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "CondenseQuestionChatEngine":
         """Initialize a CondenseQuestionChatEngine from default parameters."""
@@ -105,13 +106,19 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 "prefix_messages is not supported for CondenseQuestionChatEngine."
             )
 
+        callback_manager = (
+            callback_manager
+            or kwargs.get("callback_manager")
+            or Settings.callback_manager
+        )
+
         return cls(
             query_engine,
             condense_question_prompt,
             memory,
             llm,
             verbose=verbose,
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager,
         )
 
     def _condense_question(
