@@ -127,3 +127,18 @@ def test_output_parser_format_messages_does_not_mutate_caller() -> None:
     assert "system message" in formatted_sys[0].blocks[0].text
     assert formatted_sys[0].blocks[0].text != "system message"
     assert sys_messages[1].blocks[0].text == "user message"
+
+    # Test file-backed block (e.g. open file handle) does not raise TypeError
+    with open(__file__, "rb") as f:
+        file_msg = ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text="describe this image"),
+                ImageBlock(image=f),
+            ],
+        )
+        formatted_file_msgs = parser.format_messages([file_msg])
+        assert formatted_file_msgs[0] is not file_msg
+        assert formatted_file_msgs[0].blocks[1].image is f
+        assert file_msg.blocks[0].text == "describe this image"
+        assert "describe this image" in formatted_file_msgs[0].blocks[0].text

@@ -52,13 +52,13 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         return query
 
     def _format_message(self, message: ChatMessage) -> ChatMessage:
-        message = message.model_copy(deep=True)
         text_blocks: list[tuple[int, TextBlock]] = [
             (idx, block)
             for idx, block in enumerate(message.blocks)
             if isinstance(block, TextBlock)
         ]
 
+        new_blocks = list(message.blocks)
         # add text to the last text block, or add a new text block
         format_text = ""
         if text_blocks:
@@ -67,12 +67,12 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 
             if format_idx != -1:
                 # this should always be a text block
-                assert isinstance(message.blocks[format_idx], TextBlock)
-                message.blocks[format_idx].text = self.format(format_text)  # type: ignore
+                assert isinstance(new_blocks[format_idx], TextBlock)
+                new_blocks[format_idx] = TextBlock(text=self.format(format_text))
         else:
-            message.blocks.append(TextBlock(text=self.format(format_text)))
+            new_blocks.append(TextBlock(text=self.format(format_text)))
 
-        return message
+        return message.model_copy(update={"blocks": new_blocks})
 
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
