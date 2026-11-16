@@ -146,7 +146,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         if obj_node_mapping:
             return obj_node_mapping
         else:
-            raise Exception(errors)
+            raise ValueError(errors)
 
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
