@@ -226,7 +226,7 @@ class DocugamiReader(BaseReader):
                 all_documents.extend(data["documents"])
                 url = data.get("next", None)
             else:
-                raise Exception(
+                raise ConnectionError(
                     f"Failed to download {url} (status: {response.status_code})"
                 )
 
@@ -249,7 +249,7 @@ class DocugamiReader(BaseReader):
                 all_projects.extend(data["projects"])
                 url = data.get("next", None)
             else:
-                raise Exception(
+                raise ConnectionError(
                     f"Failed to download {url} (status: {response.status_code})"
                 )
 
@@ -278,7 +278,7 @@ class DocugamiReader(BaseReader):
                 # Not found is ok, just means no published projects
                 return per_file_metadata
             else:
-                raise Exception(
+                raise ConnectionError(
                     f"Failed to download {url} (status: {response.status_code})"
                 )
 
@@ -319,7 +319,7 @@ class DocugamiReader(BaseReader):
                         metadata[heading] = value[: self.max_metadata_length]
                     per_file_metadata[doc_id] = metadata
                 else:
-                    raise Exception(
+                    raise ConnectionError(
                         f"Failed to download {artifact_url}/content "
                         + "(status: {response.status_code})"
                     )
@@ -350,7 +350,7 @@ class DocugamiReader(BaseReader):
                 additional_doc_metadata=additional_metadata,
             )
         else:
-            raise Exception(
+            raise ConnectionError(
                 f"Failed to download {url} (status: {response.status_code})"
             )
 
@@ -375,7 +375,7 @@ class DocugamiReader(BaseReader):
             self.access_token = access_token
 
         if not self.access_token:
-            raise Exception(
+            raise ValueError(
                 "Please specify access token as argument or set the DOCUGAMI_API_KEY"
                 " env var."
             )
