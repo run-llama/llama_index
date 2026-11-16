@@ -1,7 +1,9 @@
 """ReAct output parser."""
 
+import ast
+import json as stdlib_json
 import re
-from typing import Tuple
+from typing import Any, Tuple
 
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
@@ -25,11 +27,42 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     return thought, action, action_input
 
 
+_SCALAR_LITERALS = {
+    "true": True,
+    "True": True,
+    "false": False,
+    "False": False,
+    "null": None,
+    "None": None,
+}
+
+
+def _parse_scalar_token(token: str) -> Any:
+    if token in _SCALAR_LITERALS:
+        return _SCALAR_LITERALS[token]
+    try:
+        return stdlib_json.loads(token)
+    except Exception:
+        return token
+
+
 def action_input_parser(json_str: str) -> dict:
+    try:
+        parsed = ast.literal_eval(json_str)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
     processed_string = re.sub(r"(?<!\w)\'|\'(?!\w)", '"', json_str)
-    pattern = r'"(\w+)":\s*"([^"]*)"'
-    matches = re.findall(pattern, processed_string)
-    return dict(matches)
+    pattern = (
+        r'"(\w+)":\s*(?:"([^"]*)"|'
+        r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|True|False|None)\b)"
+    )
+    result: dict = {}
+    for key, str_val, scalar_val in re.findall(pattern, processed_string):
+        result[key] = _parse_scalar_token(scalar_val) if scalar_val != "" else str_val
+    return result
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
