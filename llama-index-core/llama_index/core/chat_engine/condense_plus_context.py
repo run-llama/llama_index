@@ -148,6 +148,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
@@ -158,6 +159,12 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history=chat_history, token_limit=llm.metadata.context_window - 256
         )
 
+        callback_manager = (
+            callback_manager
+            or kwargs.get("callback_manager")
+            or Settings.callback_manager
+        )
+
         return cls(
             retriever=retriever,
             llm=llm,
@@ -166,7 +173,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             context_refine_prompt=context_refine_prompt,
             condense_prompt=condense_prompt,
             skip_condense=skip_condense,
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager,
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,
