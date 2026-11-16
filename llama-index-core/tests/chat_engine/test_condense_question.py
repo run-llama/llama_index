@@ -100,11 +100,13 @@ def test_condense_question_chat_engine_custom_callback_manager() -> None:
     custom_cb = CallbackManager([handler])
     query_engine = Mock(spec=BaseQueryEngine)
     query_engine.query.side_effect = lambda x: Response(response=x)
+    mem = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda s: s.split())
 
     # 1. Passed explicitly as callback_manager
     engine = CondenseQuestionChatEngine.from_defaults(
         query_engine=query_engine,
         llm=MockLLM(),
+        memory=mem,
         callback_manager=custom_cb,
     )
     assert engine.callback_manager is custom_cb
@@ -117,9 +119,11 @@ def test_condense_question_chat_engine_custom_callback_manager() -> None:
     custom_cb_kwargs = CallbackManager([handler_kwargs])
     query_engine_kwargs = Mock(spec=BaseQueryEngine)
     query_engine_kwargs.query.side_effect = lambda x: Response(response=x)
+    mem_kwargs = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda s: s.split())
     engine_kwargs = CondenseQuestionChatEngine.from_defaults(
         query_engine=query_engine_kwargs,
         llm=MockLLM(),
+        memory=mem_kwargs,
         **{"callback_manager": custom_cb_kwargs},
     )
     assert engine_kwargs.callback_manager is custom_cb_kwargs
