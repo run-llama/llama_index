@@ -101,6 +101,15 @@ class GlobalsHelper:
         except Exception as e:
             print(f"NLTK download error: {e}")
 
+    @staticmethod
+    def _make_punkt_tokenizer() -> "PunktSentenceTokenizer":
+        """Build the default sentence tokenizer, which also ends sentences on ``।`` and ``॥``."""
+        from nltk.tokenize import PunktSentenceTokenizer
+
+        from llama_index.core._punkt import PunktLanguageVarsWithDanda
+
+        return PunktSentenceTokenizer(lang_vars=PunktLanguageVarsWithDanda())
+
     @property
     def stopwords(self) -> List[str]:
         """Get stopwords, ensuring data is downloaded."""
@@ -109,10 +118,9 @@ class GlobalsHelper:
             self.wait_for_nltk_check()
 
             from nltk.corpus import stopwords
-            from nltk.tokenize import PunktSentenceTokenizer
 
             self._stopwords = stopwords.words("english")
-            self._punkt_tokenizer = PunktSentenceTokenizer()
+            self._punkt_tokenizer = self._make_punkt_tokenizer()
 
         return self._stopwords
 
@@ -124,9 +132,8 @@ class GlobalsHelper:
             self.wait_for_nltk_check()
 
             from nltk.corpus import stopwords
-            from nltk.tokenize import PunktSentenceTokenizer
 
-            self._punkt_tokenizer = PunktSentenceTokenizer()
+            self._punkt_tokenizer = self._make_punkt_tokenizer()
             self._stopwords = stopwords.words("english")
 
         return self._punkt_tokenizer
