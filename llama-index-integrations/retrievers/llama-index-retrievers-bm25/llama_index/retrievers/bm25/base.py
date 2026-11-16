@@ -33,6 +33,7 @@ DEFAULT_PERSIST_ARGS = {
     "similarity_top_k": "similarity_top_k",
     "_verbose": "verbose",
     "corpus_weight_mask": "corpus_weight_mask",
+    "language": "language",
 }
 
 DEFAULT_PERSIST_FILENAME = "retriever.json"
@@ -84,6 +85,7 @@ class BM25Retriever(BaseRetriever):
         filters: Optional[MetadataFilters] = None,
         corpus_weight_mask: Optional[List[int]] = None,
     ) -> None:
+        self.language = language
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
         self.token_pattern = token_pattern
@@ -230,6 +232,7 @@ class BM25Retriever(BaseRetriever):
         query = query_bundle.query_str
         tokenized_query = bm25s.tokenize(
             query,
+            stopwords=self.language,
             stemmer=self.stemmer if not self.skip_stemming else None,
             token_pattern=self.token_pattern,
             show_progress=self._verbose,
