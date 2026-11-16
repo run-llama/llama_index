@@ -13,6 +13,8 @@ from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.core.llms.mock import MockLLM
 import pytest
 from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.chat_engine.simple import SimpleChatEngine
 from llama_index.core.chat_engine.types import StreamingAgentChatResponse
 
@@ -194,3 +196,55 @@ def test_simple_chat_engine_astream_exception_handling():
         pytest.fail(
             "Exception was not correctly handled - ended up in asyncio cleanup performed during garbage collection"
         )
+
+
+def test_simple_chat_engine_custom_callback_manager() -> None:
+    """Test that custom callback_manager passed to from_defaults is respected."""
+
+    class CustomTraceHandler(BaseCallbackHandler):
+        def __init__(self) -> None:
+            super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+            self.traces: list[tuple[str, str | None]] = []
+
+        def on_event_start(self, *args: Any, **kwargs: Any) -> str:
+            return ""
+
+        def on_event_end(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def start_trace(self, trace_id: str | None = None) -> None:
+            self.traces.append(("start", trace_id))
+
+        def end_trace(
+            self, trace_id: str | None = None, trace_map: dict | None = None
+        ) -> None:
+            self.traces.append(("end", trace_id))
+
+    handler = CustomTraceHandler()
+    custom_cb = CallbackManager([handler])
+    mem = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda s: s.split())
+
+    # 1. Passed explicitly as callback_manager
+    engine = SimpleChatEngine.from_defaults(
+        llm=MockLLM(),
+        memory=mem,
+        callback_manager=custom_cb,
+    )
+    assert engine.callback_manager is custom_cb
+    engine.chat("hello")
+    assert ("start", "chat") in handler.traces
+    assert ("end", "chat") in handler.traces
+
+    # 2. Passed via **kwargs
+    handler_kwargs = CustomTraceHandler()
+    custom_cb_kwargs = CallbackManager([handler_kwargs])
+    mem_kwargs = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda s: s.split())
+    engine_kwargs = SimpleChatEngine.from_defaults(
+        llm=MockLLM(),
+        memory=mem_kwargs,
+        **{"callback_manager": custom_cb_kwargs},
+    )
+    assert engine_kwargs.callback_manager is custom_cb_kwargs
+    engine_kwargs.chat("hello again")
+    assert ("start", "chat") in handler_kwargs.traces
+    assert ("end", "chat") in handler_kwargs.traces
