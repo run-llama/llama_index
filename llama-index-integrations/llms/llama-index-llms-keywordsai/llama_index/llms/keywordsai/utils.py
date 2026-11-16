@@ -49,7 +49,7 @@ def get_keywords_models():
     def _get_models() -> List[Dict]:
         response = requests.get("https://api.keywordsai.co/api/models/public")
         if not response.ok:
-            raise Exception(f"Failed to fetch models: {response.status_code}")
+            raise ConnectionError(f"Failed to fetch models: {response.status_code}")
 
         data = response.json()
         models = [m for m in data["models"] if m.get("input_cost")]
