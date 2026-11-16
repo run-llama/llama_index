@@ -167,7 +167,7 @@ class Clarifai(LLM):
                 .data.text.raw
             )
         except Exception as e:
-            raise Exception(f"Prediction failed: {e}")
+            raise RuntimeError(f"Prediction failed: {e}")
         return ChatResponse(message=ChatMessage(content=response))
 
     def complete(
@@ -189,7 +189,7 @@ class Clarifai(LLM):
                 .data.text.raw
             )
         except Exception as e:
-            raise Exception(f"Prediction failed: {e}")
+            raise RuntimeError(f"Prediction failed: {e}")
         return CompletionResponse(text=response)
 
     def stream_chat(
