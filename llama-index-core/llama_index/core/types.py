@@ -52,6 +52,7 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         return query
 
     def _format_message(self, message: ChatMessage) -> ChatMessage:
+        message = message.model_copy(deep=True)
         text_blocks: list[tuple[int, TextBlock]] = [
             (idx, block)
             for idx, block in enumerate(message.blocks)
@@ -77,14 +78,17 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         """Format a list of messages with structured output formatting instructions."""
         # NOTE: apply output parser to either the first message if it's a system message
         #       or the last message
-        if messages:
-            if messages[0].role == MessageRole.SYSTEM:
-                # get text from the last text blocks
-                messages[0] = self._format_message(messages[0])
-            else:
-                messages[-1] = self._format_message(messages[-1])
+        if not messages:
+            return []
 
-        return messages
+        formatted_messages = list(messages)
+        if formatted_messages[0].role == MessageRole.SYSTEM:
+            # get text from the last text blocks
+            formatted_messages[0] = self._format_message(formatted_messages[0])
+        else:
+            formatted_messages[-1] = self._format_message(formatted_messages[-1])
+
+        return formatted_messages
 
     @classmethod
     def __get_pydantic_core_schema__(

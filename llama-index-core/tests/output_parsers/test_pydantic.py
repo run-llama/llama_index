@@ -91,3 +91,39 @@ def test_pydantic_format_preserves_non_ascii_schema_descriptions() -> None:
     assert "H\\u2082O" not in formatted_query
     assert "€" in formatted_query
     assert "\\u20ac" not in formatted_query
+
+
+def test_output_parser_format_messages_does_not_mutate_caller() -> None:
+    """Test that format_messages avoids mutating caller message list and ChatMessage blocks."""
+    parser = PydanticOutputParser(output_cls=AttrDict)
+    original_user_msg = ChatMessage(
+        role="user",
+        blocks=[
+            TextBlock(text="user message"),
+        ],
+    )
+    original_sys_msg = ChatMessage(
+        role="system",
+        blocks=[
+            TextBlock(text="system message"),
+        ],
+    )
+
+    # Test user message list (formats last message)
+    user_messages = [original_user_msg]
+    formatted_user = parser.format_messages(user_messages)
+    assert formatted_user is not user_messages
+    assert formatted_user[0] is not original_user_msg
+    assert original_user_msg.blocks[0].text == "user message"
+    assert "user message" in formatted_user[0].blocks[0].text
+    assert formatted_user[0].blocks[0].text != "user message"
+
+    # Test system message list (formats first message)
+    sys_messages = [original_sys_msg, original_user_msg]
+    formatted_sys = parser.format_messages(sys_messages)
+    assert formatted_sys is not sys_messages
+    assert formatted_sys[0] is not original_sys_msg
+    assert original_sys_msg.blocks[0].text == "system message"
+    assert "system message" in formatted_sys[0].blocks[0].text
+    assert formatted_sys[0].blocks[0].text != "system message"
+    assert sys_messages[1].blocks[0].text == "user message"
