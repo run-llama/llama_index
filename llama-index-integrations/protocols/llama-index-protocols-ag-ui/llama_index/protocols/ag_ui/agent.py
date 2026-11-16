@@ -184,7 +184,11 @@ class AGUIChatWorkflow(Workflow):
     def _snapshot_messages(self, ctx: Context, chat_history: List[ChatMessage]) -> None:
         # inject tool calls into the assistant message
         for msg in chat_history:
-            if msg.role == "assistant":
+            # Messages from the client already carry their exact AG-UI tool
+            # calls; re-deriving them would re-serialize the argument strings.
+            if msg.role == "assistant" and not msg.additional_kwargs.get(
+                "ag_ui_tool_calls"
+            ):
                 tool_calls = self.llm.get_tool_calls_from_response(
                     ChatResponse(message=msg), error_on_no_tool_call=False
                 )
