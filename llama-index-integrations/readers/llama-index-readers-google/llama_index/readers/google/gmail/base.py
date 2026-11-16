@@ -129,7 +129,7 @@ class GmailReader(BaseReader, BaseModel):
                     continue
                 result.append(message_data)
         except Exception as e:
-            raise Exception("Can't get message data" + str(e))
+            raise ValueError("Can't get message data" + str(e))
 
         return result
 
@@ -191,7 +191,7 @@ class GmailReader(BaseReader, BaseModel):
                 body = soup.get_text()
             return body.decode("utf-8")
         except Exception as e:
-            raise Exception("Can't parse message body" + str(e))
+            raise ValueError("Can't parse message body" + str(e))
 
 
 if __name__ == "__main__":
