@@ -665,3 +665,52 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+
+def _upserts_and_delete_pipeline() -> IngestionPipeline:
+    return IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=512), MockEmbedding(embed_dim=8)],
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    )
+
+
+def test_upserts_and_delete_removes_docs_sharing_a_hash() -> None:
+    """Docs with identical content must each be deleted once they drop out."""
+    pipeline = _upserts_and_delete_pipeline()
+
+    # two distinct documents that happen to have identical content, and so
+    # identical hashes
+    pipeline.run(
+        documents=[
+            Document(id_="doc-a", text="shared boilerplate text"),
+            Document(id_="doc-b", text="shared boilerplate text"),
+        ]
+    )
+    assert set(pipeline.docstore.docs.keys()) == {"doc-a", "doc-b"}
+
+    # neither is supplied any more, so both must be removed
+    pipeline.run(documents=[Document(id_="doc-c", text="totally new content")])
+
+    assert set(pipeline.docstore.docs.keys()) == {"doc-c"}
+    assert len(pipeline.vector_store.data.embedding_dict) == 1
+
+
+@pytest.mark.asyncio
+async def test_aupserts_and_delete_removes_docs_sharing_a_hash() -> None:
+    """Async twin of test_upserts_and_delete_removes_docs_sharing_a_hash."""
+    pipeline = _upserts_and_delete_pipeline()
+
+    await pipeline.arun(
+        documents=[
+            Document(id_="doc-a", text="shared boilerplate text"),
+            Document(id_="doc-b", text="shared boilerplate text"),
+        ]
+    )
+    assert set(pipeline.docstore.docs.keys()) == {"doc-a", "doc-b"}
+
+    await pipeline.arun(documents=[Document(id_="doc-c", text="totally new content")])
+
+    assert set(pipeline.docstore.docs.keys()) == {"doc-c"}
+    assert len(pipeline.vector_store.data.embedding_dict) == 1

@@ -493,10 +493,11 @@ class IngestionPipeline(BaseModel):
                 continue  # document exists and is unchanged, so skip it
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-            # Identify missing docs and delete them from docstore and vector store
-            existing_doc_ids_before = set(
-                self.docstore.get_all_document_hashes().values()
-            )
+            # Identify missing docs and delete them from docstore and vector store.
+            # Read the ids directly: get_all_document_hashes() is keyed by hash,
+            # so documents sharing identical content collapse onto one entry and
+            # the ones that dropped out would never be deleted.
+            existing_doc_ids_before = self.docstore.get_all_document_ids()
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 self.docstore.delete_document(ref_doc_id)
@@ -729,10 +730,11 @@ class IngestionPipeline(BaseModel):
                 continue  # document exists and is unchanged, so skip it
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-            # Identify missing docs and delete them from docstore and vector store
-            existing_doc_ids_before = set(
-                (await self.docstore.aget_all_document_hashes()).values()
-            )
+            # Identify missing docs and delete them from docstore and vector store.
+            # Read the ids directly: get_all_document_hashes() is keyed by hash,
+            # so documents sharing identical content collapse onto one entry and
+            # the ones that dropped out would never be deleted.
+            existing_doc_ids_before = await self.docstore.aget_all_document_ids()
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 await self.docstore.adelete_document(ref_doc_id)
