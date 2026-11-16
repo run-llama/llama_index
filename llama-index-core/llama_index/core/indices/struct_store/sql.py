@@ -15,7 +15,7 @@ from llama_index.core.indices.struct_store.base import BaseStructStoreIndex
 from llama_index.core.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
-from llama_index.core.llms.utils import LLMType
+from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import BaseNode
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
@@ -158,7 +158,10 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
         )
 
         if query_mode == SQLQueryMode.NL:
-            return NLStructStoreQueryEngine(self, **kwargs)
+            query_engine = NLStructStoreQueryEngine(self, **kwargs)
+            if llm is not None:
+                query_engine._llm = resolve_llm(llm)
+            return query_engine
         elif query_mode == SQLQueryMode.SQL:
             return SQLStructStoreQueryEngine(self, **kwargs)
         else:
