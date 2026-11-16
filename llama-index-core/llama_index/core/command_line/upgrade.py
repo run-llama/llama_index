@@ -269,7 +269,7 @@ def upgrade_file(file_path: str) -> None:
     elif file_path.endswith((".py", ".md")):
         upgrade_py_md_file(file_path)
     else:
-        raise Exception(f"File type not supported: {file_path}")
+        raise ValueError(f"File type not supported: {file_path}")
 
 
 def _is_hidden(path: Path) -> bool:
