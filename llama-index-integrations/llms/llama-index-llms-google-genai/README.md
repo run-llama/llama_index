@@ -23,7 +23,7 @@ To generate a poem using the Gemini model, use the following code:
 ```python
 from llama_index.llms.google_genai import GoogleGenAI
 
-llm = GoogleGenAI(model="gemini-3-flash-preview")
+llm = GoogleGenAI(model="gemini-4-hydrogen")
 resp = llm.complete("Write a poem about a magic backpack")
 print(resp)
 ```
@@ -44,7 +44,7 @@ messages = [
     ),
 ]
 
-llm = GoogleGenAI(model="gemini-3-flash-preview")
+llm = GoogleGenAI(model="gemini-4-hydrogen")
 resp = llm.chat(messages)
 print(resp)
 ```
@@ -56,7 +56,7 @@ To stream content responses in real-time:
 ```python
 from llama_index.llms.google_genai import GoogleGenAI
 
-llm = GoogleGenAI(model="gemini-3-flash-preview")
+llm = GoogleGenAI(model="gemini-4-hydrogen")
 resp = llm.stream_complete(
     "The story of Sourcrust, the bread creature, is really interesting. It all started when..."
 )
@@ -70,7 +70,7 @@ To stream chat responses:
 from llama_index.core.llms import ChatMessage
 from llama_index.llms.google_genai import GoogleGenAI
 
-llm = GoogleGenAI(model="gemini-3-flash-preview")
+llm = GoogleGenAI(model="gemini-4-hydrogen")
 messages = [
     ChatMessage(role="user", content="Hello friend!"),
     ChatMessage(role="assistant", content="Yarr what is shakin' matey?"),
@@ -88,7 +88,7 @@ To use a specific model, you can configure it like this:
 ```python
 from llama_index.llms.google_genai import GoogleGenAI
 
-llm = GoogleGenAI(model="gemini-3-flash-preview")
+llm = GoogleGenAI(model="gemini-4-hydrogen")
 resp = llm.complete("Write a short, but joyous, ode to LlamaIndex")
 print(resp)
 ```
@@ -100,7 +100,7 @@ To use the asynchronous completion API:
 ```python
 from llama_index.llms.google_genai import GoogleGenAI
 
-llm = GoogleGenAI(model="gemini-3-flash-preview")
+llm = GoogleGenAI(model="gemini-4-hydrogen")
 resp = await llm.acomplete("Llamas are famous for ")
 print(resp)
 ```

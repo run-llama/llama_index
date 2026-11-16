@@ -69,7 +69,7 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "gemini-3.7-flash"
+DEFAULT_MODEL = "gemini-4-hydrogen"
 
 
 def _is_gemini_3_or_newer(model: str) -> bool:
@@ -142,7 +142,7 @@ class GoogleGenAI(FunctionCallingLLM):
         ```python
         from llama_index.llms.google_genai import GoogleGenAI
 
-        llm = GoogleGenAI(model="gemini-3-flash-preview", api_key="YOUR_API_KEY")
+        llm = GoogleGenAI(model="gemini-4-hydrogen", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
