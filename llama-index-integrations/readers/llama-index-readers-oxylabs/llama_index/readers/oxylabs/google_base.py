@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Any
 
 from llama_index.core import Document
+from llama_index.core.bridge.pydantic import Field, field_validator
 
 from oxylabs.sources.response import Response
 
@@ -27,6 +28,13 @@ class ResponseElement:
 
 
 class OxylabsGoogleBaseReader(OxylabsBaseReader):
+    result_categories: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Result categories to keep in the returned document. Any of"
+            f" {RESULT_CATEGORIES}. Empty means keep every category."
+        ),
+    )
     parsing_recursion_depth: int = 5
     image_binary_content_attributes: list[str] = ["image_data", "data"]
     excluded_result_attributes: list[str] = ["pos_overall"]
@@ -53,16 +61,25 @@ class OxylabsGoogleBaseReader(OxylabsBaseReader):
             "Not implemented in the base class! Use one the child classes instead!"
         )
 
-    @staticmethod
-    def validate_response_categories(result_categories: list) -> list:
-        validated_categories = []
-        for result_category in result_categories:
-            if result_category in RESULT_CATEGORIES:
-                validated_categories.append(result_category)
+    @field_validator("result_categories")
+    @classmethod
+    def _validate_result_categories(cls, value: list[str]) -> list[str]:
+        """
+        Reject unknown categories rather than dropping them.
 
-        return validated_categories
+        Silently ignoring a typo would return every category while looking
+        like the filter had been applied.
+        """
+        unknown = [category for category in value if category not in RESULT_CATEGORIES]
+        if unknown:
+            raise ValueError(
+                f"Unknown result categories: {unknown}."
+                f" Valid categories are {RESULT_CATEGORIES}."
+            )
 
-    def _process_responses(self, res: list[dict], **kwargs: Any) -> str:
+        return value
+
+    def _process_responses(self, res: list[dict]) -> str:
         result_ = "No good search result found"
 
         result_category_processing_map = {
@@ -74,10 +91,7 @@ class OxylabsGoogleBaseReader(OxylabsBaseReader):
         }
 
         snippets: list[str] = []
-        validated_categories = self.validate_response_categories(
-            kwargs.get("result_categories", [])
-        )
-        result_categories_ = validated_categories or []
+        result_categories_ = self.result_categories
 
         for validated_response in res:
             if result_categories_:

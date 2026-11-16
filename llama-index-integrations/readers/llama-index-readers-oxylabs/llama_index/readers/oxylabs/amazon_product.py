@@ -8,7 +8,7 @@ class OxylabsAmazonProductReader(OxylabsBaseReader):
     """
     Get data about Amazon product.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/amazon/product
+    https://developers.oxylabs.io/api-targets/e-commerce/amazon/product
     """
 
     top_level_header: str = "Products"
