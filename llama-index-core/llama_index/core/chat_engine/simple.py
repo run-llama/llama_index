@@ -43,6 +43,7 @@ class SimpleChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
@@ -63,12 +64,17 @@ class SimpleChatEngine(BaseChatEngine):
             ]
 
         prefix_messages = prefix_messages or []
+        callback_manager = (
+            callback_manager
+            or kwargs.get("callback_manager")
+            or Settings.callback_manager
+        )
 
         return cls(
             llm=llm,
             memory=memory,
             prefix_messages=prefix_messages,
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager,
         )
 
     @trace_method("chat")
