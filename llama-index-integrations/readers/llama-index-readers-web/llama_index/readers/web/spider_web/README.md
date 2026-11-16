@@ -6,7 +6,7 @@ Spider allows you to use high performance proxies to prevent detection, caches A
 
 ## Prerequisites
 
-You need to have a Spider api key to use this loader. You can get one on [spider.cloud](https://spider.cloud).
+You need to have a Spider api key to use this loader. You can get one on [spider.cloud](https://spider.cloud). To check a URL before you write any code, [run one scrape in the browser](https://spider.cloud/web-scraper/?utm_source=llamaindex&utm_medium=partner&utm_campaign=partner-framework-docs-numbers) and read the markdown it returns.
 
 ```pip
 pip install llama-index
