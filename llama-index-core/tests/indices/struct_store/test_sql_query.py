@@ -419,3 +419,69 @@ def test_sql_table_retriever_query_engine_with_cols_retriever(
 | 2 | bar |
 | 8 | hello |"""
     )
+
+
+def test_sql_context_container_builder_and_as_query_engine_llm(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test SQLContextContainerBuilder kwargs/QueryBundle handling and SQLStructStoreIndex.as_query_engine(llm=...)."""
+    from unittest.mock import MagicMock, patch
+    from llama_index.core.indices.struct_store.container_builder import (
+        SQLContextContainerBuilder,
+    )
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.schema import QueryBundle
+
+    index_kwargs, _ = struct_kwargs
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine)
+
+    with patch.object(
+        sql_database,
+        "get_usable_table_names",
+        wraps=sql_database.get_usable_table_names,
+    ) as mock_get_tables:
+        builder = SQLContextContainerBuilder(
+            sql_database,
+            context_dict={table_name: "Users table context"},
+        )
+        assert mock_get_tables.call_count == 1
+
+    mock_index = MagicMock()
+    mock_query_engine = MagicMock()
+    mock_query_engine.query.return_value = "schema context result"
+    mock_index.as_query_engine.return_value = mock_query_engine
+
+    result = builder.query_index_for_context(
+        mock_index,
+        QueryBundle(query_str="find user foo"),
+        similarity_top_k=3,
+    )
+    assert result == "schema context result"
+    mock_index.as_query_engine.assert_called_once_with(similarity_top_k=3)
+    called_query = mock_query_engine.query.call_args[0][0]
+    assert "find user foo" in called_query
+    assert "QueryBundle(" not in called_query
+
+    docs = [Document(text="user_id:2,foo:bar")]
+    sql_index = SQLStructStoreIndex.from_documents(
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        **index_kwargs,
+    )
+    custom_llm = MockLLM()
+    nl_engine = sql_index.as_query_engine(llm=custom_llm)
+    assert nl_engine._llm is custom_llm
+

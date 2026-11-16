@@ -1,6 +1,6 @@
 """SQL Container builder."""
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.common.struct_store.base import (
@@ -8,7 +8,7 @@ from llama_index.core.indices.common.struct_store.base import (
 )
 from llama_index.core.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.core.readers.base import Document
-from llama_index.core.schema import BaseNode, QueryType
+from llama_index.core.schema import BaseNode, QueryBundle, QueryType
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 
 DEFAULT_CONTEXT_QUERY_TMPL = (
@@ -41,22 +41,24 @@ class SQLContextContainerBuilder:
     ):
         """Initialize params."""
         self.sql_database = sql_database
+        usable_table_names = list(self.sql_database.get_usable_table_names())
 
         # if context_dict provided, validate that all keys are valid table names
         if context_dict is not None:
             # validate context_dict keys are valid table names
             context_keys = set(context_dict.keys())
-            if not context_keys.issubset(
-                set(self.sql_database.get_usable_table_names())
-            ):
+            usable_table_set = set(usable_table_names)
+            if not context_keys.issubset(usable_table_set):
                 raise ValueError(
                     "Invalid context table names: "
-                    f"{context_keys - set(self.sql_database.get_usable_table_names())}"
+                    f"{context_keys - usable_table_set}"
                 )
         self.context_dict = context_dict or {}
         # build full context from sql_database
         self.full_context_dict = self._build_context_from_sql_database(
-            self.sql_database, current_context=self.context_dict
+            self.sql_database,
+            current_context=self.context_dict,
+            table_names=usable_table_names,
         )
         self.context_str = context_str
 
@@ -78,11 +80,17 @@ class SQLContextContainerBuilder:
         self,
         sql_database: SQLDatabase,
         current_context: Optional[Dict[str, str]] = None,
+        table_names: Optional[Sequence[str]] = None,
     ) -> Dict[str, str]:
         """Get tables schema + optional context as a single string."""
         current_context = current_context or {}
         result_context = {}
-        for table_name in sql_database.get_usable_table_names():
+        usable_tables = (
+            table_names
+            if table_names is not None
+            else sql_database.get_usable_table_names()
+        )
+        for table_name in usable_tables:
             table_desc = sql_database.get_single_table_info(table_name)
             table_text = f"Schema of table {table_name}:\n{table_desc}\n"
             if table_name in current_context:
@@ -140,8 +148,13 @@ class SQLContextContainerBuilder:
         if query_tmpl is None:
             context_query_str = query_str
         else:
-            context_query_str = query_tmpl.format(orig_query_str=query_str)
-        query_engine = index.as_query_engine()
+            raw_query_str = (
+                query_str.query_str
+                if isinstance(query_str, QueryBundle)
+                else query_str
+            )
+            context_query_str = query_tmpl.format(orig_query_str=raw_query_str)
+        query_engine = index.as_query_engine(**index_kwargs)
         response = query_engine.query(context_query_str)
         context_str = str(response)
         if store_context_str:
