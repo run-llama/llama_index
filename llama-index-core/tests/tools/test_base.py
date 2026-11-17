@@ -2,10 +2,10 @@
 
 import contextvars
 import json
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import pytest
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict, Field
 from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.schema import Document, TextNode
@@ -603,3 +603,34 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_function_tool_keeps_annotated_field_constraints() -> None:
+    """`Field(...)` constraints on an `Annotated` parameter survive into the JSON schema."""
+
+    def issue_refund(
+        order_id: Annotated[str, Field(pattern=r"^ORD-[0-9]{6}$")], amount: int
+    ) -> str:
+        return "refunded"
+
+    tool = FunctionTool.from_defaults(
+        fn=issue_refund, name="issue_refund", description="Refund an order"
+    )
+    order_id_schema = tool.metadata.get_parameters_dict()["properties"]["order_id"]
+    assert order_id_schema["pattern"] == r"^ORD-[0-9]{6}$"
+
+
+def test_tool_metadata_keeps_additional_properties() -> None:
+    """`get_parameters_dict()` keeps `additionalProperties` from the fn schema."""
+
+    class LookupArgs(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+        order_id: str
+
+    tool = FunctionTool.from_defaults(
+        fn=lambda order_id: "ok",
+        name="lookup_order",
+        description="Look up an order",
+        fn_schema=LookupArgs,
+    )
+    assert tool.metadata.get_parameters_dict()["additionalProperties"] is False
