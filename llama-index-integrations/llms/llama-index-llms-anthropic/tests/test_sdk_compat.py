@@ -183,3 +183,18 @@ def test_chat_omits_temperature_for_models_that_forbid_it() -> None:
     assert "temperature" not in kwargs
     assert kwargs["model"] == "claude-opus-4-7"
     assert llm.temperature == 0.2
+
+
+def test_bedrock_body_keeps_bedrock_api_version() -> None:
+    llm = Anthropic(
+        model="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        aws_region="us-east-1",
+        aws_access_key_id="placeholder",
+        aws_secret_access_key="placeholder",
+    )
+    assert llm._get_all_kwargs()["extra_body"] == {
+        "anthropic_version": "bedrock-2023-05-31"
+    }
+    # a caller-supplied version still wins
+    kwargs = llm._get_all_kwargs(extra_body={"anthropic_version": "2026-10-21"})
+    assert kwargs["extra_body"]["anthropic_version"] == "2026-10-21"

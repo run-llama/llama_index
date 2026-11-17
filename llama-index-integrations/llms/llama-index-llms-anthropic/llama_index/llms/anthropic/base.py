@@ -413,6 +413,14 @@ class Anthropic(FunctionCallingLLM):
         # after _model_kwargs. Strip them when this SDK cannot accept them.
         self._drop_unsupported_sampling_kwargs(kwargs)
 
+        if isinstance(self._client, anthropic.AnthropicBedrock):
+            # anthropic 2.x writes "2026-10-21" into Bedrock bodies, which some
+            # Bedrock models reject. 0.x/1.x sent "bedrock-2023-05-31".
+            kwargs["extra_body"] = {
+                "anthropic_version": "bedrock-2023-05-31",
+                **(kwargs.get("extra_body") or {}),
+            }
+
         return kwargs
 
     def _completion_response_from_chat_response(
