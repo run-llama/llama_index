@@ -19,11 +19,12 @@ def md_to_df(md_str: str) -> Any:
     md_str = md_str.replace("|", '","')
 
     # Remove the second line (table header separator)
-    lines = md_str.split("\n")
-    md_str = "\n".join(lines[:1] + lines[2:])
+    lines = [line.strip() for line in md_str.split("\n")]
+    lines = [line for line in lines if line]
+    if len(lines) > 1:
+        lines = lines[:1] + lines[2:]
 
     # Remove the first and last second char of the line (the pipes, transformed to ",")
-    lines = md_str.split("\n")
     md_str = "\n".join([line[2:-2] for line in lines])
 
     # Check if the table is empty
