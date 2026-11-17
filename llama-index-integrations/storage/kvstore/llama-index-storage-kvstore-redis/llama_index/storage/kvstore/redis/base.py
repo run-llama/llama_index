@@ -14,8 +14,6 @@ from redis import ConnectionPool, Redis
 from redis.connection import Connection, SSLConnection, UnixDomainSocketConnection
 from redis.retry import Retry
 
-_ASYNC_REDIS_PARAMS = frozenset(inspect.signature(AsyncRedis.__init__).parameters)
-
 
 def _async_kwargs_from_sync_client(redis_client: Redis) -> Dict[str, Any]:
     """
@@ -33,6 +31,10 @@ def _async_kwargs_from_sync_client(redis_client: Redis) -> Dict[str, Any]:
             client doesn't support.
 
     """
+    # The async constructor's accepted options differ across redis-py 5-8, so
+    # ask it rather than hard-code a list.
+    accepted = inspect.signature(AsyncRedis).parameters
+
     pool = redis_client.connection_pool
     if type(pool) is not ConnectionPool:
         raise ValueError(f"unsupported connection pool {type(pool)!r}")
@@ -61,16 +63,14 @@ def _async_kwargs_from_sync_client(redis_client: Redis) -> Dict[str, Any]:
         )
 
     unsupported_tls = sorted(
-        k
-        for k, v in kwargs.items()
-        if k.startswith("ssl") and v and k not in _ASYNC_REDIS_PARAMS
+        k for k, v in kwargs.items() if k.startswith("ssl") and v and k not in accepted
     )
     if unsupported_tls:
         raise ValueError(
             f"TLS settings unsupported by the async client: {unsupported_tls}"
         )
 
-    return {k: v for k, v in kwargs.items() if k in _ASYNC_REDIS_PARAMS}
+    return {k: v for k, v in kwargs.items() if k in accepted}
 
 
 class RedisKVStore(BaseKVStore):
