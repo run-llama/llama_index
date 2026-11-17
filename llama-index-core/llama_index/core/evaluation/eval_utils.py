@@ -66,11 +66,21 @@ def get_results_df(
     metric_dict = defaultdict(list)
     metric_dict["names"] = names
     for metric_key in metric_keys:
+        missing_counts = []
         for eval_results in eval_results_list:
-            mean_score = np.array(
-                [r.score or 0.0 for r in eval_results[metric_key]]
-            ).mean()
-            metric_dict[metric_key].append(mean_score)
+            results = eval_results[metric_key]
+            # A missing or non-finite score means the judge result could not be parsed;
+            # averaging it as 0.0 (or letting NaN poison the mean) misranks systems.
+            scores = [
+                score
+                for score in (r.score for r in results)
+                if score is not None and np.isfinite(score)
+            ]
+            missing_counts.append(len(results) - len(scores))
+            metric_dict[metric_key].append(
+                float(np.mean(scores)) if scores else float("nan")
+            )
+        metric_dict[f"{metric_key}_n_missing"] = missing_counts
     return pd.DataFrame(metric_dict)
 
 
