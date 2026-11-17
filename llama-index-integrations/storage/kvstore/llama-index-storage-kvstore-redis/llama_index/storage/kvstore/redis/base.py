@@ -1,3 +1,4 @@
+import inspect
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -8,7 +9,68 @@ from llama_index.core.storage.kvstore.types import (
 )
 
 from redis.asyncio import Redis as AsyncRedis
-from redis import Redis
+from redis.asyncio.retry import Retry as AsyncRetry
+from redis import ConnectionPool, Redis
+from redis.connection import Connection, SSLConnection, UnixDomainSocketConnection
+from redis.retry import Retry
+
+_ASYNC_REDIS_PARAMS = frozenset(inspect.signature(AsyncRedis.__init__).parameters)
+
+
+def _async_kwargs_from_sync_client(redis_client: Redis) -> Dict[str, Any]:
+    """
+    Build ``redis.asyncio.Redis`` kwargs that reach the same server as a sync client.
+
+    redis-py records the transport in the pool's ``connection_class``, not in
+    ``connection_kwargs``, and the sync kwargs carry keys the async
+    constructor rejects (redis-py 8 adds several), so they can't be passed
+    through unchanged.
+
+    Raises:
+        ValueError: If the async client can't match the sync one: a custom
+            pool or connection class (``BlockingConnectionPool`` or Sentinel,
+            for instance), a sync connect callback, or TLS settings the async
+            client doesn't support.
+
+    """
+    pool = redis_client.connection_pool
+    if type(pool) is not ConnectionPool:
+        raise ValueError(f"unsupported connection pool {type(pool)!r}")
+    kwargs = dict(pool.connection_kwargs)
+    kwargs["max_connections"] = pool.max_connections
+
+    connection_class = pool.connection_class
+    if connection_class is UnixDomainSocketConnection:
+        kwargs["unix_socket_path"] = kwargs.pop("path", None)
+    elif connection_class is SSLConnection:
+        kwargs["ssl"] = True
+    elif connection_class is not Connection:
+        raise ValueError(f"unsupported connection class {connection_class!r}")
+
+    if kwargs.get("redis_connect_func") is not None:
+        raise ValueError("a sync `redis_connect_func` can't be reused")
+
+    retry = kwargs.get("retry")
+    if isinstance(retry, Retry):
+        # The async client awaits ``retry.call_with_retry``, so it needs the
+        # async ``Retry``; both keep the same three attributes.
+        kwargs["retry"] = AsyncRetry(
+            backoff=retry._backoff,
+            retries=retry._retries,
+            supported_errors=retry._supported_errors,  # type: ignore[arg-type]
+        )
+
+    unsupported_tls = sorted(
+        k
+        for k, v in kwargs.items()
+        if k.startswith("ssl") and v and k not in _ASYNC_REDIS_PARAMS
+    )
+    if unsupported_tls:
+        raise ValueError(
+            f"TLS settings unsupported by the async client: {unsupported_tls}"
+        )
+
+    return {k: v for k, v in kwargs.items() if k in _ASYNC_REDIS_PARAMS}
 
 
 class RedisKVStore(BaseKVStore):
@@ -48,12 +110,12 @@ class RedisKVStore(BaseKVStore):
                 self._async_redis_client = async_redis_client
             else:
                 try:
-                    self._async_redis_client = AsyncRedis.from_url(
-                        self._redis_client.connection_pool.connection_kwargs["url"]
+                    self._async_redis_client = AsyncRedis(
+                        **_async_kwargs_from_sync_client(self._redis_client)
                     )
-                except Exception:
+                except Exception as e:
                     print(
-                        "Could not create async redis client from sync client, "
+                        f"Could not create async redis client from sync client ({e}), "
                         "pass in `async_redis_client` explicitly."
                     )
                     self._async_redis_client = None
