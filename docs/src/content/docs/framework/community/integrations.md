@@ -60,3 +60,4 @@ for full tracing integrations.
 - [Poe](https://github.com/poe-platform/poe-protocol/tree/main/llama_poe)
 - [Airbyte](https://airbyte.com/tutorials/airbyte-and-llamaindex-elt-and-chat-with-your-data-warehouse-without-writing-sql)
 - [Fleet](/python/framework/community/integrations/fleet_libraries_context)
+- [schemagate](https://github.com/ashishsinha1602/llama-index-retrievers-schemagate)
