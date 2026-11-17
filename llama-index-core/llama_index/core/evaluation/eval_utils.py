@@ -66,11 +66,21 @@ def get_results_df(
     metric_dict = defaultdict(list)
     metric_dict["names"] = names
     for metric_key in metric_keys:
+        missing_counts = []
         for eval_results in eval_results_list:
-            mean_score = np.array(
-                [r.score or 0.0 for r in eval_results[metric_key]]
-            ).mean()
-            metric_dict[metric_key].append(mean_score)
+            results = eval_results[metric_key]
+            # A missing or non-finite score means the judge result could not be parsed;
+            # averaging it as 0.0 (or letting NaN poison the mean) misranks systems.
+            scores = [
+                score
+                for score in (r.score for r in results)
+                if score is not None and np.isfinite(score)
+            ]
+            missing_counts.append(len(results) - len(scores))
+            metric_dict[metric_key].append(
+                float(np.mean(scores)) if scores else float("nan")
+            )
+        metric_dict[f"{metric_key}_n_missing"] = missing_counts
     return pd.DataFrame(metric_dict)
 
 
@@ -89,12 +99,20 @@ def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
         # Return None or default values if the response is empty
         return None, "No response"
 
-    score_str, reasoning_str = eval_response.split("\n", 1)
+    # A judge may answer with a single line (for example just `4.0`), so the response must not
+    # be required to contain a newline before it can be parsed.
+    score_str, separator, reasoning_str = eval_response.partition("\n")
 
     try:
         score = float(score_str)
     except ValueError:
         score = None
 
-    reasoning = reasoning_str.lstrip("\n")
+    if separator:
+        reasoning = reasoning_str.lstrip("\n")
+    elif score is not None:
+        reasoning = ""
+    else:
+        # A one-line response without a score is all feedback.
+        reasoning = eval_response
     return score, reasoning
