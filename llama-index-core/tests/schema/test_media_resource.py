@@ -1,4 +1,5 @@
-from pathlib import Path
+import json
+from pathlib import Path, PureWindowsPath
 
 from llama_index.core.bridge.pydantic import AnyUrl
 from llama_index.core.schema import MediaResource
@@ -53,3 +54,23 @@ def test_hash():
         == "04414a5f03ad7fa055229b4d3690d47427cb0b65bc7eb8f770d1ecbd54ab4909"
     )
     assert MediaResource().hash == ""
+
+
+def test_serialize_path_is_posix_on_every_platform():
+    """
+    A persisted MediaResource must not embed the platform path separator.
+
+    WindowsPath cannot be instantiated on POSIX, so PureWindowsPath stands in:
+    it has the same __str__ and as_posix() behaviour. model_construct bypasses
+    field validation, which would otherwise reject a non-Path.
+    """
+    resource = MediaResource.model_construct(path=PureWindowsPath("a/b/c.txt"))
+    assert resource.model_dump()["path"] == "a/b/c.txt"
+    assert json.loads(resource.model_dump_json())["path"] == "a/b/c.txt"
+
+
+def test_serialize_path_unchanged_on_posix():
+    """
+    Parity guard: the POSIX serialization is not altered by the above.
+    """
+    assert MediaResource(path=Path("a/b/c.txt")).model_dump()["path"] == "a/b/c.txt"
