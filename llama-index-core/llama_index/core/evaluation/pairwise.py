@@ -65,13 +65,17 @@ def _default_parser_function(
 ) -> Tuple[Optional[bool], Optional[float], Optional[str]]:
     # Extract from response
     feedback: Optional[str] = ""
-    if "[[A]]" in eval_response:
+    # The default prompt asks for the explanation first and the verdict last, so only a
+    # verdict token at the end of the response is decisive. Searching the whole response
+    # would let a label mentioned in the explanation override the actual verdict.
+    verdict = eval_response.rstrip()
+    if verdict.endswith("[[A]]"):
         passing: Optional[bool] = True
         score = 1.0
-    elif "[[B]]" in eval_response:
+    elif verdict.endswith("[[B]]"):
         passing = False
         score = 0.0
-    elif "[[C]]" in eval_response:
+    elif verdict.endswith("[[C]]"):
         passing = None
         score = 0.5
     else:
