@@ -138,6 +138,11 @@ def force_single_tool_call(response: ChatResponse) -> None:
         ] + [tool_calls[0]]
 
 
+def _is_cut_off(response: ChatResponse) -> bool:
+    choices = getattr(response.raw, "choices", None)
+    return bool(choices) and choices[0].finish_reason == "length"
+
+
 class OpenAI(FunctionCallingLLM):
     """
     OpenAI LLM.
@@ -1041,6 +1046,15 @@ class OpenAI(FunctionCallingLLM):
             for block in response.message.blocks
             if isinstance(block, ToolCallBlock)
         ]
+        has_tool_calls = tool_calls or response.message.additional_kwargs.get(
+            "tool_calls"
+        )
+        if has_tool_calls and _is_cut_off(response):
+            raise ValueError(
+                "The model's reply was cut off (finish_reason='length') before its "
+                "tool call arguments were complete, so the tool call was not run. "
+                "Increase max_tokens or shorten the request."
+            )
         if tool_calls:
             if len(tool_calls) < 1:
                 if error_on_no_tool_call:
