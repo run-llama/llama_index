@@ -11,7 +11,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, TextBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection, LLM
@@ -331,7 +331,22 @@ class CodeActAgent(BaseWorkflowAgent):
             tool_calls.extend(extra_tool_calls)
 
         # Add the response to the scratchpad
-        message = ChatMessage(role="assistant", content=full_response_text)
+        message = chat_response.message
+        if (
+            self.streaming
+            and full_response_text
+            and message.content != full_response_text
+        ):
+            # Some streams return chunk-only messages. Keep the accumulated text
+            # alongside the final message's tool calls and other non-text blocks.
+            message = message.model_copy(
+                update={
+                    "blocks": [
+                        TextBlock(text=full_response_text),
+                        *[b for b in message.blocks if not isinstance(b, TextBlock)],
+                    ]
+                }
+            )
         scratchpad.append(message)
         await ctx.store.set(self.scratchpad_key, scratchpad)
 
