@@ -166,6 +166,9 @@ class RedisVectorStore(BasePydanticVectorStore):
     Args:
         schema (IndexSchema, optional): Redis index schema object.
         redis_client (Redis, optional): Redis client connection.
+        redis_client_async (RedisAsync, optional): Async Redis client used by the
+            async methods. If omitted, it is built from redis_url, or from
+            redis_client's connection settings.
         redis_url (str, optional): Redis server URL.
             Defaults to "redis://localhost:6379".
         overwrite (bool, optional): Whether to overwrite the index if it already exists.
@@ -175,6 +178,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         ValueError: If your Redis server does not have search or JSON enabled.
         ValueError: If a Redis connection failed to be established.
         ValueError: If an invalid schema is provided.
+        ValueError: If redis_client_async is omitted and cannot be built from
+            redis_client (a Cluster or Sentinel client, or a setting the async
+            client does not support).
 
     Example:
         from redisvl.schema import IndexSchema
