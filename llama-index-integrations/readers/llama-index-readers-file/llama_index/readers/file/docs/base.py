@@ -39,15 +39,22 @@ class PDFReader(BaseReader):
     )
     def load_data(
         self,
-        file: Union[Path, PurePosixPath],
+        file: Union[Path, PurePosixPath, str],
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         fs = fs or get_default_fs()
-        _Path = Path if is_default_fs(fs) else PurePosixPath
-        if not isinstance(file, (Path, PurePosixPath)):
-            file = _Path(file)
+        # A remote URI such as s3://bucket/file.pdf must reach fs.open unchanged.
+        # Converting it to a Path collapses the scheme to s3:/bucket/file.pdf,
+        # so a Path is only used here to obtain the file name for metadata.
+        if isinstance(file, (Path, PurePosixPath)):
+            file_name = file.name
+            open_path = str(file)
+        else:
+            open_path = file
+            _Path = Path if is_default_fs(fs) else PurePosixPath
+            file_name = _Path(file).name
 
         try:
             import pypdf
@@ -56,7 +63,7 @@ class PDFReader(BaseReader):
                 "pypdf is required to read PDF files: `pip install pypdf`"
             )
 
-        with fs.open(str(file), "rb") as fp:
+        with fs.open(open_path, "rb") as fp:
             # Load the file in memory if the filesystem is not the default one to avoid
             # issues with pypdf
             stream = fp if is_default_fs(fs) else io.BytesIO(fp.read())
@@ -71,7 +78,7 @@ class PDFReader(BaseReader):
 
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
-                metadata = {"file_name": file.name}
+                metadata = {"file_name": file_name}
                 if extra_info is not None:
                     metadata.update(extra_info)
 
@@ -91,7 +98,7 @@ class PDFReader(BaseReader):
                     page_text = pdf.pages[page].extract_text()
                     page_label = pdf.page_labels[page]
 
-                    metadata = {"page_label": page_label, "file_name": file.name}
+                    metadata = {"page_label": page_label, "file_name": file_name}
                     if extra_info is not None:
                         metadata.update(extra_info)
 
