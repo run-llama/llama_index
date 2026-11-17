@@ -1,3 +1,4 @@
+import io
 import os
 import pypdf
 import pytest
@@ -5,7 +6,19 @@ import tempfile
 from fpdf import FPDF
 from llama_index.readers.file import PDFReader
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
+
+
+class _RecordingFileSystem:
+    """A minimal non local filesystem that records the path passed to open."""
+
+    def __init__(self, pdf_bytes: bytes) -> None:
+        self.pdf_bytes = pdf_bytes
+        self.opened_paths: List[str] = []
+
+    def open(self, path: str, mode: str = "rb"):
+        self.opened_paths.append(path)
+        return io.BytesIO(self.pdf_bytes)
 
 
 @pytest.fixture()
@@ -103,3 +116,44 @@ def test_pdfreader_loads_metadata_into_multiple_documents(
         assert docs[page].metadata == expected_metadata
 
     os.remove(temp_file.name)
+
+
+def _pdf_bytes(multi_page_pdf: FPDF) -> bytes:
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, suffix=".pdf"
+    ) as temp_file:
+        multi_page_pdf.output(temp_file.name)
+
+    with open(temp_file.name, "rb") as f:
+        pdf_bytes = f.read()
+
+    os.remove(temp_file.name)
+    return pdf_bytes
+
+
+def test_pdfreader_preserves_remote_uri_for_fs_open(
+    multi_page_pdf: FPDF,
+) -> None:
+    fs = _RecordingFileSystem(_pdf_bytes(multi_page_pdf))
+
+    reader = PDFReader(return_full_document=True)
+    docs = reader.load_data("s3://bucket/folder/example.pdf", fs=fs)
+
+    assert fs.opened_paths == ["s3://bucket/folder/example.pdf"]
+    assert len(docs) == 1
+    assert docs[0].metadata["file_name"] == "example.pdf"
+    assert "Page 1 Content" in docs[0].text
+
+
+def test_pdfreader_preserves_remote_uri_per_page(
+    multi_page_pdf: FPDF,
+) -> None:
+    fs = _RecordingFileSystem(_pdf_bytes(multi_page_pdf))
+
+    reader = PDFReader(return_full_document=False)
+    docs = reader.load_data("https://example.com/folder/example.pdf", fs=fs)
+
+    assert fs.opened_paths == ["https://example.com/folder/example.pdf"]
+    assert len(docs) == multi_page_pdf.pages_count
+    assert docs[0].metadata["file_name"] == "example.pdf"
+    assert docs[0].text == "Page 1 Content"
