@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    "ruff",
+]
+
+[project]
+name = "llama-index-readers-clearfetch"
+version = "0.1.0"
+description = "llama-index readers clearfetch integration"
+authors = [{name = "ClearFetch Team", email = "support@clearfetch.dev"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "zenkdom"}]
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "requests>=2.28.0",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.clearfetch"
+
+[tool.llamahub.class_authors]
+ClearFetchReader = "zenkdom"
