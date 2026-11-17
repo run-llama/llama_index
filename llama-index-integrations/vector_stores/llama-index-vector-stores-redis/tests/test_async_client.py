@@ -57,6 +57,11 @@ def test_resp3():
     assert _async_kwargs(Redis(host="db.example", protocol=3))["protocol"] == 3
 
 
+def test_max_connections_survives():
+    client = _async_client_from_sync(Redis(host="db.example", max_connections=500))
+    assert client.connection_pool.max_connections == 500
+
+
 def test_sync_retry_becomes_async_retry():
     sync_client = Redis(host="db.example", retry=SyncRetry(ConstantBackoff(0.5), 7))
     retry = _async_kwargs(sync_client)["retry"]

@@ -83,8 +83,10 @@ def _async_client_from_sync(redis_client: Redis) -> RedisAsync:
     A sync pool's ``connection_kwargs`` cannot be passed to ``redis.asyncio.Redis``
     as-is: TLS and unix sockets are encoded in the pool's connection class rather
     than in the kwargs, and newer redis-py versions add internal keys the async
-    constructor rejects. Settings the async client cannot honour raise rather than
-    being dropped.
+    constructor rejects. A connection setting the async constructor does not accept
+    raises if it is set, rather than being dropped. The pool's ``max_connections``
+    carries over; other pool-level behaviour (a blocking pool, client-side
+    caching, a custom connection class) does not.
     """
     pool = getattr(redis_client, "connection_pool", None)
     if pool is None or isinstance(pool, SentinelConnectionPool):
@@ -109,7 +111,7 @@ def _async_client_from_sync(redis_client: Redis) -> RedisAsync:
         )
 
     accepted = inspect.signature(RedisAsync.__init__).parameters
-    async_kwargs = {}
+    async_kwargs = {"max_connections": pool.max_connections}
     for key, value in kwargs.items():
         if key in accepted:
             async_kwargs[key] = value
