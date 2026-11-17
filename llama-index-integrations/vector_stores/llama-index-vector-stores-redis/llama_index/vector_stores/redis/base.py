@@ -4,14 +4,18 @@ Redis Vector store index.
 An index that is built on top of an existing vector store.
 """
 
+import inspect
 import logging
 from typing import Any, Dict, List, Optional, Pattern
 
 import fsspec
 import re
 from redis import Redis
-import redis.asyncio as redis_async
 from redis.asyncio import Redis as RedisAsync
+from redis.asyncio.retry import Retry as AsyncRetry
+from redis.connection import SSLConnection, UnixDomainSocketConnection
+from redis.retry import Retry as SyncRetry
+from redis.sentinel import SentinelConnectionPool
 from redis.exceptions import RedisError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 from redisvl.index import SearchIndex, AsyncSearchIndex
@@ -56,6 +60,65 @@ NO_DOCS = "No docs found on index"
 NO_INDEXED_FILTERS = (
     "One or more requested filter fields are not present in the Redis index schema."
 )
+
+# Keys that newer redis-py versions add to a sync pool's ``connection_kwargs``
+# for their own bookkeeping. They are not connection settings, and
+# ``redis.asyncio.Redis`` does not accept them.
+_SYNC_POOL_INTERNAL_KWARGS = frozenset(
+    {
+        "himport_registry",
+        "maint_notifications_config",
+        "maint_notifications_pool_handler",
+        "orig_host_address",
+        "orig_socket_connect_timeout",
+        "orig_socket_timeout",
+    }
+)
+
+
+def _async_client_from_sync(redis_client: Redis) -> RedisAsync:
+    """
+    Build an asyncio client with the same connection settings as a sync client.
+
+    A sync pool's ``connection_kwargs`` cannot be passed to ``redis.asyncio.Redis``
+    as-is: TLS and unix sockets are encoded in the pool's connection class rather
+    than in the kwargs, and newer redis-py versions add internal keys the async
+    constructor rejects. Settings the async client cannot honour raise rather than
+    being dropped.
+    """
+    pool = getattr(redis_client, "connection_pool", None)
+    if pool is None or isinstance(pool, SentinelConnectionPool):
+        raise ValueError(
+            "Cannot derive an async client from a Redis Cluster or Sentinel client. "
+            "Pass redis_client_async to RedisVectorStore as well."
+        )
+
+    kwargs = dict(pool.connection_kwargs)
+    if issubclass(pool.connection_class, SSLConnection):
+        kwargs["ssl"] = True
+    elif issubclass(pool.connection_class, UnixDomainSocketConnection):
+        kwargs["unix_socket_path"] = kwargs.pop("path")
+    if isinstance(kwargs.get("retry"), SyncRetry):
+        # The async connection awaits its retry policy, so a sync Retry would
+        # never retry. Rebuild it with the same backoff, count and errors.
+        sync_retry = kwargs["retry"]
+        kwargs["retry"] = AsyncRetry(
+            backoff=sync_retry._backoff,
+            retries=sync_retry._retries,
+            supported_errors=sync_retry._supported_errors,
+        )
+
+    accepted = inspect.signature(RedisAsync.__init__).parameters
+    async_kwargs = {}
+    for key, value in kwargs.items():
+        if key in accepted:
+            async_kwargs[key] = value
+        elif value and key not in _SYNC_POOL_INTERNAL_KWARGS:
+            raise ValueError(
+                f"The async Redis client does not support the {key!r} setting of "
+                "the sync client. Pass redis_client_async to RedisVectorStore as well."
+            )
+    return RedisAsync(**async_kwargs)
 
 
 class TokenEscaper:
@@ -186,20 +249,16 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
         self._redis_client_async = redis_client_async
         if redis_client or redis_url:
+            if not self._redis_client_async:
+                self._redis_client_async = (
+                    _async_client_from_sync(redis_client)
+                    if redis_client
+                    else RedisAsync.from_url(redis_url)
+                )
             if redis_url and not redis_client:
                 redis_client = Redis.from_url(redis_url)
             self._redis_client = redis_client
             self.create_index()
-            if not self._redis_client_async:
-                self._redis_client_async = redis_async.Redis(
-                    host=redis_client.connection_pool.connection_kwargs["host"],
-                    port=redis_client.connection_pool.connection_kwargs["port"],
-                    **{
-                        k: v
-                        for k, v in redis_client.connection_pool.connection_kwargs.items()
-                        if k not in ["host", "port"]
-                    },
-                )
         if not redis_client and not redis_url and not redis_client_async:
             raise Exception(
                 "Either redis_client, redis_url, or redis_client_async need to be defined"
