@@ -64,6 +64,39 @@ def test_azure_openai_responses_constructor(
     assert sync_kwargs["api_key"] == "mock-key"
 
 
+@patch("llama_index.llms.azure_openai.responses.AsyncAzureOpenAI")
+@patch("llama_index.llms.azure_openai.responses.SyncAzureOpenAI")
+def test_azure_openai_responses_custom_azure_ad_token_provider(
+    sync_azure_mock: MagicMock, async_azure_mock: MagicMock
+) -> None:
+    """
+    Verify that a custom azure ad token provider set for AzureOpenAIResponses.
+
+    When a token provider is configured, only the provider is passed to
+    the SDK clients built in __init__: openai>=3.4.0 rejects passing both
+    api_key and azure_ad_token_provider (MutuallyExclusiveAuthError).
+    The provider must not be evaluated merely to populate api_key.
+    """
+    custom_azure_ad_token_provider = MagicMock(return_value="mock_api_key")
+
+    AzureOpenAIResponses(
+        engine="my-deployment",
+        model="gpt-4o",
+        use_azure_ad=True,
+        azure_ad_token_provider=custom_azure_ad_token_provider,
+        azure_endpoint="https://test.openai.azure.com/",
+        api_version="2025-03-01-preview",
+    )
+
+    custom_azure_ad_token_provider.assert_not_called()
+    sync_azure_mock.assert_called_once()
+    async_azure_mock.assert_called_once()
+    for mock in (sync_azure_mock, async_azure_mock):
+        kwargs = mock.call_args.kwargs
+        assert kwargs["azure_ad_token_provider"] is custom_azure_ad_token_provider
+        assert "api_key" not in kwargs
+
+
 @patch("llama_index.llms.azure_openai.base.SyncAzureOpenAI")
 def test_custom_http_client(sync_azure_openai_mock: MagicMock) -> None:
     """

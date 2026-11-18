@@ -132,15 +132,17 @@ class AzureOpenAIResponses(OpenAIResponses):
 
         # Resolve the API key before building clients
         if use_azure_ad:
-            if azure_ad_token_provider:
-                api_key = azure_ad_token_provider()
-            else:
+            if azure_ad_token_provider is None:
                 self._azure_ad_token = refresh_openai_azuread_token(None)
                 api_key = self._azure_ad_token.token
+            # else: the provider is passed through to the SDK as-is. Do not
+            # evaluate it merely to populate api_key: openai>=3.4.0 rejects
+            # passing both api_key and azure_ad_token_provider
+            # (MutuallyExclusiveAuthError).
         else:
             api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY")
 
-        if api_key is None:
+        if api_key is None and azure_ad_token_provider is None:
             raise ValueError(
                 "You must set an `api_key` parameter. "
                 "Alternatively, you can set the AZURE_OPENAI_API_KEY env var OR set `use_azure_ad=True`."
@@ -149,7 +151,6 @@ class AzureOpenAIResponses(OpenAIResponses):
         # Build Azure clients before calling super().__init__() to avoid the
         # parent trying to create plain OpenAI clients with Azure-specific kwargs.
         credential_kwargs = {
-            "api_key": api_key,
             "max_retries": max_retries,
             "timeout": timeout,
             "azure_endpoint": azure_endpoint,
@@ -159,6 +160,8 @@ class AzureOpenAIResponses(OpenAIResponses):
             "api_version": api_version,
             "default_headers": default_headers,
         }
+        if azure_ad_token_provider is None:
+            credential_kwargs.setdefault("api_key", api_key)
 
         sync_client = SyncAzureOpenAI(**credential_kwargs, http_client=http_client)
         async_client = AsyncAzureOpenAI(
