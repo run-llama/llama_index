@@ -164,7 +164,7 @@ def set_base64_and_mimetype_for_image_docs(
             image_doc.image_mimetype = infer_image_mimetype_from_file_path(
                 image_doc.image_path
             )
-        else:
+        elif not image_doc.image_mimetype:
             # Defaults to `image/jpeg` if the mimetype cannot be inferred
             image_doc.image_mimetype = "image/jpeg"
     return image_documents
