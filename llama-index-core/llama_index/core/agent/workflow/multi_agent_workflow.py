@@ -82,7 +82,7 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     if can_handoff_to.get(
         current_agent_name, []
     ) is not None and to_agent not in can_handoff_to.get(current_agent_name, []):
-        return f"Agent {to_agent} cannot hand off to {current_agent_name}. Please select a valid agent to hand off to."
+        return f"Agent {current_agent_name} cannot hand off to {to_agent}. Please select a valid agent to hand off to."
 
     await ctx.store.set("next_agent", to_agent)
     handoff_output_prompt = await ctx.store.get(
