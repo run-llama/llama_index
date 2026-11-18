@@ -1,6 +1,7 @@
 """Test embedding utility functions."""
 
 import numpy as np
+import pytest
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_mmr_embeddings,
@@ -108,3 +109,14 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_ignores_zero_norm_embedding() -> None:
+    """A zero-vector embedding must not displace a scored one from the top-k."""
+    similarities, ids = get_top_k_embeddings(
+        [1.0, 0.0],
+        [[1.0, 0.0], [0.5, 0.5], [0.0, 0.0]],
+        similarity_top_k=2,
+    )
+    assert ids == [0, 1]
+    assert similarities == pytest.approx([1.0, np.sqrt(0.5)])

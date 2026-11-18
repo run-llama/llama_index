@@ -66,6 +66,10 @@ def similarity(
     else:
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+        if norm == 0:
+            # A zero vector has no direction; return 0.0 instead of nan, which
+            # would otherwise slip through top-k comparisons.
+            return 0.0
         return product / norm
 
 
