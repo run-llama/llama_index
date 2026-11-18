@@ -55,7 +55,7 @@ def _evaluator(counter: Dict[str, int]) -> RelevancyEvaluator:
     return RelevancyEvaluator(llm=_make_stub_llm("YES", counter))
 
 
-@pytest.mark.parametrize("contexts", [[], [""], ["", ""]])
+@pytest.mark.parametrize("contexts", [[], [""], ["", ""], ["   ", "\n"]])
 def test_empty_contexts_are_invalid_not_scored(contexts: List[str]) -> None:
     counter = {"calls": 0}
     result = _evaluator(counter).evaluate(
@@ -68,9 +68,12 @@ def test_empty_contexts_are_invalid_not_scored(contexts: List[str]) -> None:
     assert result.score is None
 
 
-def test_empty_response_is_invalid_not_scored() -> None:
+@pytest.mark.parametrize("response", ["", "   ", "\n"])
+def test_empty_response_is_invalid_not_scored(response: str) -> None:
     counter = {"calls": 0}
-    result = _evaluator(counter).evaluate(query=QUERY, response="", contexts=CONTEXTS)
+    result = _evaluator(counter).evaluate(
+        query=QUERY, response=response, contexts=CONTEXTS
+    )
     assert counter["calls"] == 0
     assert result.invalid_result is True
     assert result.invalid_reason
