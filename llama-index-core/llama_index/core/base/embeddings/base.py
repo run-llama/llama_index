@@ -1,6 +1,7 @@
 """Base embeddings file."""
 
 import asyncio
+import hashlib
 import uuid
 from abc import abstractmethod
 from enum import Enum
@@ -94,7 +95,10 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     # Use Any to avoid import loops
     embeddings_cache: Optional[Any] = Field(
         default=None,
-        description="Cache for the embeddings: if None, the embeddings are not cached",
+        description=(
+            "Cache for the embeddings: if None, the embeddings are not cached. "
+            "Entries are scoped to the embedding class and model_name."
+        ),
     )
     # Expected type: BaseRateLimiter (from llama_index.core.rate_limiter)
     rate_limiter: Optional[Any] = Field(
@@ -173,7 +177,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 query_embedding = self._get_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
-                    key=query, collection="embeddings"
+                    key=query, collection=self._embeddings_cache_collection()
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -185,7 +189,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     self.embeddings_cache.put(
                         key=query,
                         val={str(uuid.uuid4()): query_embedding},
-                        collection="embeddings",
+                        collection=self._embeddings_cache_collection(),
                     )
             event.on_end(
                 payload={
@@ -219,7 +223,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 query_embedding = await self._aget_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
-                    key=query, collection="embeddings"
+                    key=query, collection=self._embeddings_cache_collection()
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -231,7 +235,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     await self.embeddings_cache.aput(
                         key=query,
                         val={str(uuid.uuid4()): query_embedding},
-                        collection="embeddings",
+                        collection=self._embeddings_cache_collection(),
                     )
 
             event.on_end(
@@ -315,6 +319,17 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             await self.rate_limiter.async_acquire()
         return await self._aget_text_embeddings(texts)
 
+    def _embeddings_cache_collection(self) -> str:
+        """Cache collection for this model, so models never share cached vectors."""
+        # The Python type, not class_name(): subclasses that do not override
+        # class_name() all report "base_component".
+        cls = type(self)
+        model_id = f"{cls.__module__}.{cls.__qualname__}:{self.model_name}"
+        # Hashed so model names such as `BAAI/bge-small-en-v1.5` stay valid
+        # collection names on every KV store backend.
+        digest = hashlib.sha256(model_id.encode("utf-8")).hexdigest()[:16]
+        return f"embeddings_{digest}"
+
     def _get_text_embeddings_cached(self, texts: List[str]) -> List[Embedding]:
         """
         Get text embeddings from cache. If not in cache, generate them.
@@ -325,8 +340,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         embeddings: List[Optional[Embedding]] = [None for i in range(len(texts))]
         # Tuples of (index, text) to be able to keep same order of embeddings
         non_cached_texts: List[Tuple[int, str]] = []
+        collection = self._embeddings_cache_collection()
         for i, txt in enumerate(texts):
-            cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
+            cached_emb = self.embeddings_cache.get(key=txt, collection=collection)
             if cached_emb is not None:
                 cached_key = next(iter(cached_emb.keys()))
                 embeddings[i] = cached_emb[cached_key]
@@ -343,7 +359,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 self.embeddings_cache.put(
                     key=texts[orig_i],
                     val={str(uuid.uuid4()): text_embedding},
-                    collection="embeddings",
+                    collection=collection,
                 )
         return cast(List[Embedding], embeddings)
 
@@ -357,9 +373,10 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         embeddings: List[Optional[Embedding]] = [None for i in range(len(texts))]
         # Tuples of (index, text) to be able to keep same order of embeddings
         non_cached_texts: List[Tuple[int, str]] = []
+        collection = self._embeddings_cache_collection()
         for i, txt in enumerate(texts):
             cached_emb = await self.embeddings_cache.aget(
-                key=txt, collection="embeddings"
+                key=txt, collection=collection
             )
             if cached_emb is not None:
                 cached_key = next(iter(cached_emb.keys()))
@@ -377,7 +394,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 await self.embeddings_cache.aput(
                     key=texts[orig_i],
                     val={str(uuid.uuid4()): text_embedding},
-                    collection="embeddings",
+                    collection=collection,
                 )
         return cast(List[Embedding], embeddings)
 
@@ -406,7 +423,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 text_embedding = self._get_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
-                    key=text, collection="embeddings"
+                    key=text, collection=self._embeddings_cache_collection()
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -418,7 +435,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     self.embeddings_cache.put(
                         key=text,
                         val={str(uuid.uuid4()): text_embedding},
-                        collection="embeddings",
+                        collection=self._embeddings_cache_collection(),
                     )
 
             event.on_end(
@@ -453,7 +470,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 text_embedding = await self._aget_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
-                    key=text, collection="embeddings"
+                    key=text, collection=self._embeddings_cache_collection()
                 )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
@@ -465,7 +482,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     await self.embeddings_cache.aput(
                         key=text,
                         val={str(uuid.uuid4()): text_embedding},
-                        collection="embeddings",
+                        collection=self._embeddings_cache_collection(),
                     )
 
             event.on_end(
