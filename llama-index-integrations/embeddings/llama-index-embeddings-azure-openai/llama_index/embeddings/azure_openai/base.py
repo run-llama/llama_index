@@ -167,19 +167,20 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
     def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         if self.use_azure_ad:
-            if self.azure_ad_token_provider:
-                self.api_key = self.azure_ad_token_provider()
-            else:
+            if self.azure_ad_token_provider is None:
                 self._azure_ad_token = refresh_openai_azuread_token(
                     self._azure_ad_token
                 )
                 self.api_key = self._azure_ad_token.token
+            # else: the provider is passed through to the SDK as-is. Do not
+            # copy its token into api_key: openai>=3.4.0 rejects passing
+            # both api_key and azure_ad_token_provider
+            # (MutuallyExclusiveAuthError).
         else:
             self.api_key = get_from_param_or_env(
                 "api_key", self.api_key, "AZURE_OPENAI_API_KEY"
             )
-        return {
-            "api_key": self.api_key,
+        kwargs: Dict[str, Any] = {
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
@@ -188,6 +189,9 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
         }
+        if self.azure_ad_token_provider is None:
+            kwargs["api_key"] = self.api_key
+        return kwargs
 
     @classmethod
     def class_name(cls) -> str:

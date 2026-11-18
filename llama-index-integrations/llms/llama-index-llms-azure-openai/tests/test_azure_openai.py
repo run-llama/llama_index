@@ -88,6 +88,10 @@ def test_custom_http_client(sync_azure_openai_mock: MagicMock) -> None:
 def test_custom_azure_ad_token_provider(sync_azure_openai_mock: MagicMock):
     """
     Verify that a custom azure ad token provider set for AzureOpenAI.
+
+    When a token provider is configured, only the provider is passed to
+    the SDK: openai>=3.4.0 rejects passing both api_key and
+    azure_ad_token_provider (MutuallyExclusiveAuthError).
     """
 
     def custom_azure_ad_token_provider() -> str:
@@ -102,7 +106,9 @@ def test_custom_azure_ad_token_provider(sync_azure_openai_mock: MagicMock):
         azure_ad_token_provider=custom_azure_ad_token_provider,
     )
     azure_openai.complete("test prompt")
-    assert azure_openai.api_key == "mock_api_key"
+    kwargs = sync_azure_openai_mock.call_args.kwargs
+    assert kwargs["azure_ad_token_provider"] is custom_azure_ad_token_provider
+    assert "api_key" not in kwargs
 
 
 def mock_chat_completion_stream_with_filter_results(
