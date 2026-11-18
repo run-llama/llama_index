@@ -72,7 +72,7 @@ class ObjectRetriever(Generic[OT]):
 
         nodes = await self._retriever.aretrieve(query_bundle)
         for node_postprocessor in self._node_postprocessors:
-            nodes = node_postprocessor.postprocess_nodes(
+            nodes = await node_postprocessor.apostprocess_nodes(
                 nodes, query_bundle=query_bundle
             )
 
