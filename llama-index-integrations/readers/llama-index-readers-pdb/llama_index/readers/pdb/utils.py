@@ -23,7 +23,11 @@ def get_pdb_publications_from_rcsb(pdb_id: str) -> List[Dict]:
 def parse_rcsb_publication_dict(entry_response: Dict, pubmed_response: Dict):
     parsed_dict = {}
     citations = entry_response["citation"]
-    primary_citation = next([pub for pub in citations if pub["id"] == "primary"])
+    primary_citation = next(
+        (pub for pub in citations if pub["id"] == "primary"), None
+    )
+    if primary_citation is None:
+        raise ValueError("RCSB entry response contains no primary citation")
     parsed_dict[primary_citation["title"]] = {
         "doi": pubmed_response["rcsb_pubmed_doi"],
         "abstract": {"abstract": pubmed_response["rcsb_pubmed_abstract_text"]},
