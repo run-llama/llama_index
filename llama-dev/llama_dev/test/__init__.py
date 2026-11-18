@@ -402,9 +402,16 @@ def _uv_sync(
 def _uv_install_local(
     package_path: Path, env: dict[str, str], install_local: set[Path]
 ) -> subprocess.CompletedProcess:  # pragma: no cover
-    """Run 'uv pip install -U <package_path1>, <package_path2>, ...' for locally changed packages."""
+    """
+    Run 'uv pip install <package_path1> <package_path2> ...' for locally changed packages.
+
+    No -U: the package's own locked dependencies stay as uv.lock pinned them, and
+    only what the local packages newly require gets installed or upgraded. With -U,
+    every dependency jumped to its newest release (SQLAlchemy 2.1, openai 3.x) and
+    tests failed for reasons unrelated to the change under test.
+    """
     return subprocess.run(
-        ["uv", "pip", "install", "-U", *install_local],
+        ["uv", "pip", "install", *install_local],
         cwd=package_path,
         text=True,
         capture_output=True,
