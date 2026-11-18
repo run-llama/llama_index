@@ -175,13 +175,13 @@ class VectorContextRetriever(BasePGRetriever):
                 )
 
         for triplet in triplets:
-            score1 = (
-                scores[kg_ids.index(triplet[0].id)] if triplet[0].id in kg_ids else 0.0
-            )
-            score2 = (
-                scores[kg_ids.index(triplet[2].id)] if triplet[2].id in kg_ids else 0.0
-            )
-            new_scores.append(max(score1, score2))
+            # Unretrieved endpoints must not override negative similarities with zero.
+            triplet_scores = [
+                scores[kg_ids.index(node.id)]
+                for node in (triplet[0], triplet[2])
+                if node.id in kg_ids
+            ]
+            new_scores.append(max(triplet_scores, default=0.0))
 
         assert len(triplets) == len(new_scores)
 
@@ -247,13 +247,12 @@ class VectorContextRetriever(BasePGRetriever):
                 )
 
         for triplet in triplets:
-            score1 = (
-                scores[kg_ids.index(triplet[0].id)] if triplet[0].id in kg_ids else 0.0
-            )
-            score2 = (
-                scores[kg_ids.index(triplet[2].id)] if triplet[2].id in kg_ids else 0.0
-            )
-            new_scores.append(max(score1, score2))
+            triplet_scores = [
+                scores[kg_ids.index(node.id)]
+                for node in (triplet[0], triplet[2])
+                if node.id in kg_ids
+            ]
+            new_scores.append(max(triplet_scores, default=0.0))
 
         assert len(triplets) == len(new_scores)
 
