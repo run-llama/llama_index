@@ -1,6 +1,7 @@
 """Pairwise evaluation."""
 
 import asyncio
+import re
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
@@ -59,25 +60,33 @@ DEFAULT_EVAL_TEMPLATE = ChatPromptTemplate(
     ]
 )
 
+# passing, score for each verdict token the default prompt asks for.
+_VERDICT_SCORES: dict[str, Tuple[Optional[bool], float]] = {
+    "A": (True, 1.0),
+    "B": (False, 0.0),
+    "C": (None, 0.5),
+}
+
 
 def _default_parser_function(
     eval_response: str,
 ) -> Tuple[Optional[bool], Optional[float], Optional[str]]:
     # Extract from response
     feedback: Optional[str] = ""
-    if "[[A]]" in eval_response:
-        passing: Optional[bool] = True
-        score = 1.0
-    elif "[[B]]" in eval_response:
-        passing = False
-        score = 0.0
-    elif "[[C]]" in eval_response:
-        passing = None
-        score = 0.5
-    else:
+    # The default prompt asks for the explanation first and the verdict last, but a judge may still
+    # put punctuation, Markdown or a parenthetical after the token: `[[B]].`, `**[[B]]**`,
+    # `[[B]] (B gave more detail)`. The last token in the response is the one that follows the
+    # comparison, so a label mentioned while comparing the answers cannot override the verdict, and
+    # every format the previous "first token found anywhere" check accepted still parses.
+    verdicts = re.findall(r"\[\[([ABC])\]\]", eval_response)
+    passing: Optional[bool]
+    score: Optional[float]
+    if not verdicts:
         passing = None
         score = None
         feedback = None
+    else:
+        passing, score = _VERDICT_SCORES[verdicts[-1]]
     return passing, score, feedback
 
 
