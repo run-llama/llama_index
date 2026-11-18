@@ -219,8 +219,8 @@ class SambaNovaCloud(LLM):
     def __init__(self, **kwargs: Any) -> None:
         """Init and validate environment variables."""
         kwargs["sambanova_url"] = get_from_param_or_env(
-            "sambanova_api_key",
-            kwargs.get("sambanova_api_key"),
+            "sambanova_url",
+            kwargs.get("sambanova_url"),
             "SAMBANOVA_URL",
             default="https://api.sambanova.ai/v1/chat/completions",
         )
