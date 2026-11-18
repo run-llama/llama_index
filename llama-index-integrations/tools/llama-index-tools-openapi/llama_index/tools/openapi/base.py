@@ -8,6 +8,11 @@ import requests
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
+#: Path item keys that describe an operation. Everything else a path item may
+#: carry (``parameters``, ``summary``, ``description``, ``servers``, vendor
+#: extensions) is not an endpoint.
+HTTP_METHODS = ("get", "post", "patch", "put", "delete")
+
 
 class OpenAPIToolSpec(BaseToolSpec):
     """
@@ -118,16 +123,20 @@ class OpenAPIToolSpec(BaseToolSpec):
         endpoints = []
         for path_template, operations in spec["paths"].items():
             for operation, operation_detail in operations.items():
+                # Skip the path item fields that are not operations: a path item
+                # may declare shared `parameters` (a list) next to its methods,
+                # which has no `operationId` and would raise AttributeError.
+                if operation not in HTTP_METHODS:
+                    continue
                 operation_id = operation_detail.get("operationId")
                 if operation_id_filter is None or operation_id_filter(operation_id):
-                    if operation in ["get", "post", "patch", "put", "delete"]:
-                        # preserve order so the LLM "reads" the description first before all the
-                        # schema details
-                        details = OrderedDict()
-                        details["verb"] = operation.upper()
-                        details["path_template"] = path_template
-                        details.update(reduce_details(operation_detail))
-                        endpoints.append(details)
+                    # preserve order so the LLM "reads" the description first before all the
+                    # schema details
+                    details = OrderedDict()
+                    details["verb"] = operation.upper()
+                    details["path_template"] = path_template
+                    details.update(reduce_details(operation_detail))
+                    endpoints.append(details)
 
         return {
             "servers": spec["servers"],

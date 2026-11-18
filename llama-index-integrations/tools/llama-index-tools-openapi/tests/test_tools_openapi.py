@@ -39,6 +39,39 @@ def test_request_body():
     assert isinstance(operation["requestBody"], dict)
 
 
+def test_path_level_parameters_are_not_operations():
+    openapi_spec = {
+        "openapi": "3.0.0",
+        "info": {"title": "Pets", "version": "1.0.0", "description": "Pets API"},
+        "servers": [{"url": "https://api.example.com"}],
+        "paths": {
+            "/pets/{petId}": {
+                # Path items may declare parameters shared by all their operations.
+                "parameters": [
+                    {
+                        "name": "petId",
+                        "in": "path",
+                        "required": True,
+                        "schema": {"type": "string"},
+                    }
+                ],
+                "get": {
+                    "operationId": "getPetById",
+                    "description": "Get a pet",
+                    "responses": {"200": {"description": "ok"}},
+                },
+            }
+        },
+    }
+    llamaindex_tool_spec = OpenAPIToolSpec(spec=openapi_spec)
+    deserialized = json.loads(llamaindex_tool_spec.load_openapi_spec()[0].text)
+    endpoints = deserialized["endpoints"]
+
+    assert [
+        (endpoint["verb"], endpoint["path_template"]) for endpoint in endpoints
+    ] == [("GET", "/pets/{petId}")]
+
+
 def load_example_spec():
     current_file_path = Path(__file__).resolve()
     example_file = current_file_path.parent / "example.json"
