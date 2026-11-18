@@ -64,7 +64,7 @@ class MarkdownNodeParser(NodeParser):
 
             # Only parse headers if we're not in a code block
             if not code_block:
-                header_match = re.match(r"^(#+)\s(.*)", line)
+                header_match = re.match(r"^(#{1,6})\s(.*)", line)
                 if header_match:
                     # Save the previous section before starting a new one
                     if current_section.strip():
