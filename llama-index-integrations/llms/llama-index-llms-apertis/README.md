@@ -22,7 +22,7 @@ Apertis supports multiple API formats:
 
 ### Get Your API Key
 
-Obtain your API key from [Apertis API](https://api.apertis.ai/token).
+Obtain your API key from [Apertis API](https://apertis.ai/setting?tab=keys).
 
 ### Initialize Apertis
 

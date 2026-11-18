@@ -20,7 +20,7 @@ class CometAPI(OpenAILike):
 
     CometAPI provides access to various state-of-the-art LLM models including GPT series,
     Claude series, Gemini series, and more. To use CometAPI, you need to obtain an API key
-    from https://api.cometapi.com/console/token.
+    from https://www.cometapi.com/console/token.
 
     Examples:
         `pip install llama-index-llms-cometapi`
@@ -42,7 +42,7 @@ class CometAPI(OpenAILike):
     """
 
     model: str = Field(
-        description="The CometAPI model to use. See https://api.cometapi.com/pricing for available models."
+        description="The CometAPI model to use. See https://www.cometapi.com/pricing/ for available models."
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
