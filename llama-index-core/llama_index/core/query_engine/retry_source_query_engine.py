@@ -71,7 +71,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
             assert len(source_evals) == len(orig_nodes)
             new_docs = []
             for node, eval_result in zip(orig_nodes, source_evals):
-                if eval_result:
+                if eval_result.passing:
                     new_docs.append(Document(text=node.node.get_content()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
