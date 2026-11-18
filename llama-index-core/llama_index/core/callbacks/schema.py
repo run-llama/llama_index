@@ -89,7 +89,7 @@ class CBEvent:
         if not self.time:
             self.time = datetime.now().strftime(TIMESTAMP_FORMAT)
         if not self.id_:
-            self.id = str(uuid.uuid4())
+            self.id_ = str(uuid.uuid4())
 
 
 @dataclass
