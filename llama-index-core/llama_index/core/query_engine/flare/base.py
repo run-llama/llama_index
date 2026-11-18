@@ -5,6 +5,7 @@ Active Retrieval Augmented Generation.
 
 """
 
+import asyncio
 from typing import Any, Dict, Optional, List
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -257,7 +258,14 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         return Response(response=cur_response, source_nodes=source_nodes)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return self._query(query_bundle)
+        """
+        Query and get response asynchronously.
+
+        The FLARE loop (lookahead generation, retrieval, answer insertion) is
+        synchronous, so offload ``_query`` to a worker thread to avoid blocking
+        the event loop.
+        """
+        return await asyncio.to_thread(self._query, query_bundle)
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # if the query engine is a retriever, then use the retrieve method
