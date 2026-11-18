@@ -1,16 +1,20 @@
 import time
+from typing import Any, List, Optional
 
 import pytest
 
 from llama_index.core import MockEmbedding
 from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.chat_engine.condense_plus_context import (
     CondensePlusContextChatEngine,
 )
 from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.schema import Document
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.schema import Document, NodeWithScore, QueryBundle
 
 SYSTEM_PROMPT = "Talk like a pirate."
 
@@ -142,3 +146,73 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+def test_condense_plus_context_custom_callback_manager() -> None:
+    """Test that custom callback_manager passed to from_defaults is respected."""
+
+    class CustomTraceHandler(BaseCallbackHandler):
+        def __init__(self) -> None:
+            super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+            self.traces: list[tuple[str, str | None]] = []
+
+        def on_event_start(self, *args: Any, **kwargs: Any) -> str:
+            return ""
+
+        def on_event_end(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def start_trace(self, trace_id: str | None = None) -> None:
+            self.traces.append(("start", trace_id))
+
+        def end_trace(
+            self, trace_id: str | None = None, trace_map: dict | None = None
+        ) -> None:
+            self.traces.append(("end", trace_id))
+
+    class DummyPostprocessor(BaseNodePostprocessor):
+        def _postprocess_nodes(
+            self,
+            nodes: List[NodeWithScore],
+            query_bundle: Optional[QueryBundle] = None,
+        ) -> List[NodeWithScore]:
+            return nodes
+
+    index = VectorStoreIndex.from_documents(
+        [Document.example()], embed_model=MockEmbedding(embed_dim=3)
+    )
+    retriever = index.as_retriever()
+
+    # 1. Passed explicitly as callback_manager
+    handler = CustomTraceHandler()
+    custom_cb = CallbackManager([handler])
+    postprocessor = DummyPostprocessor()
+    engine = CondensePlusContextChatEngine.from_defaults(
+        retriever,
+        llm=MockLLM(),
+        memory=ChatMemoryBuffer.from_defaults(),
+        node_postprocessors=[postprocessor],
+        callback_manager=custom_cb,
+    )
+    assert engine.callback_manager is custom_cb
+    assert postprocessor.callback_manager is custom_cb
+    engine.chat("Hello World!")
+    assert ("start", "chat") in handler.traces
+    assert ("end", "chat") in handler.traces
+
+    # 2. Passed via **kwargs
+    handler_kwargs = CustomTraceHandler()
+    custom_cb_kwargs = CallbackManager([handler_kwargs])
+    postprocessor_kwargs = DummyPostprocessor()
+    engine_kwargs = CondensePlusContextChatEngine.from_defaults(
+        retriever,
+        llm=MockLLM(),
+        memory=ChatMemoryBuffer.from_defaults(),
+        node_postprocessors=[postprocessor_kwargs],
+        **{"callback_manager": custom_cb_kwargs},
+    )
+    assert engine_kwargs.callback_manager is custom_cb_kwargs
+    assert postprocessor_kwargs.callback_manager is custom_cb_kwargs
+    engine_kwargs.chat("Hello again!")
+    assert ("start", "chat") in handler_kwargs.traces
+    assert ("end", "chat") in handler_kwargs.traces
