@@ -145,6 +145,15 @@ class ReActAgent(BaseWorkflowAgent):
             chat_history=llm_input,
             current_reasoning=current_reasoning,
         )
+        # The stripped system message can carry more than the agent's own prompt,
+        # for example the content of configured memory blocks. Keep it, rather
+        # than replacing the model's only system message with the formatter header.
+        if system_prompt and input_chat and input_chat[0].role.value == "system":
+            header = input_chat[0].content or ""
+            if system_prompt not in header:
+                input_chat[0] = ChatMessage(
+                    role="system", content=f"{header}\n\n{system_prompt}".strip()
+                )
         # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
         # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
         # so just don't write events if the context is not running.
