@@ -1,12 +1,15 @@
 import pytest
 
-from llama_index.core.base.llms.types import MessageRole
+from llama_index.core import Settings
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.response.schema import (
     AsyncStreamingResponse,
     Response,
     StreamingResponse,
 )
+from llama_index.core.indices.prompt_helper import ChatPromptHelper
 from llama_index.core.llms.mock import MockLLMWithChatMemoryOfLastCall
+from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
 
@@ -185,3 +188,101 @@ class TestSimpleSummarize:
             "image",
             "text",
         ]
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("different_field", ["role", "additional_kwargs"])
+def test_get_response_preserves_unmerged_messages(
+    streaming: bool, different_field: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(Settings, "_tokenizer", lambda text: list(text))
+    llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+    synthesizer = SimpleSummarize(llm=llm, multimodal=True, streaming=streaming)
+    second_kwargs = (
+        {"role": MessageRole.ASSISTANT}
+        if different_field == "role"
+        else {"additional_kwargs": {"source": "second"}}
+    )
+    chunks = [
+        ChatMessage(content="first source"),
+        ChatMessage(content="second unique source", **second_kwargs),
+    ]
+
+    response = synthesizer.get_response_from_messages("test", chunks)
+    if streaming:
+        list(response)
+
+    prompt = "\n".join(message.content or "" for message in llm.last_chat_messages)
+    assert "first source" in prompt
+    assert "second unique source" in prompt
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("different_field", ["role", "additional_kwargs"])
+async def test_aget_response_preserves_unmerged_messages(
+    streaming: bool, different_field: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(Settings, "_tokenizer", lambda text: list(text))
+    llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+    synthesizer = SimpleSummarize(llm=llm, multimodal=True, streaming=streaming)
+    second_kwargs = (
+        {"role": MessageRole.ASSISTANT}
+        if different_field == "role"
+        else {"additional_kwargs": {"source": "second"}}
+    )
+    chunks = [
+        ChatMessage(content="first source"),
+        ChatMessage(content="second unique source", **second_kwargs),
+    ]
+
+    response = await synthesizer.aget_response_from_messages("test", chunks)
+    if streaming:
+        async for _ in response:
+            pass
+
+    prompt = "\n".join(message.content or "" for message in llm.last_chat_messages)
+    assert "first source" in prompt
+    assert "second unique source" in prompt
+
+
+def test_unmerged_messages_share_context_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(Settings, "_tokenizer", lambda text: list(text))
+    llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+    helper = ChatPromptHelper(context_window=700, num_output=10)
+    synthesizer = SimpleSummarize(llm=llm, multimodal=True, chat_prompt_helper=helper)
+    chunks = [
+        ChatMessage(content="a" * 200),
+        ChatMessage(content="b" * 200, role=MessageRole.ASSISTANT),
+    ]
+
+    synthesizer.get_response_from_messages("test", chunks)
+
+    context = llm.last_chat_messages[-1].content
+    assert "a" * 20 in context
+    assert "b" * 20 in context
+    prompt_tokens = TokenCounter().estimate_tokens_in_messages(llm.last_chat_messages)
+    assert prompt_tokens + helper.num_output <= helper.context_window
+
+
+def test_get_response_from_empty_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(Settings, "_tokenizer", lambda text: list(text))
+    llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+    synthesizer = SimpleSummarize(llm=llm, multimodal=True)
+
+    assert synthesizer.get_response_from_messages("test", []) == " ".join(["text"] * 10)
+
+
+@pytest.mark.asyncio
+async def test_aget_response_from_empty_messages(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(Settings, "_tokenizer", lambda text: list(text))
+    llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+    synthesizer = SimpleSummarize(llm=llm, multimodal=True)
+
+    assert await synthesizer.aget_response_from_messages("test", []) == " ".join(
+        ["text"] * 10
+    )
