@@ -12,6 +12,7 @@ from llama_index.core.indices.property_graph.transformations.schema_llm import (
 from llama_index.core.indices.property_graph.transformations.dynamic_llm import (
     DynamicLLMPathExtractor,
 )
+from llama_index.core.indices.property_graph.utils import default_parse_triplets_fn
 
 
 class FailingMockLLM(MockLLM):
@@ -85,3 +86,18 @@ async def test_dynamic_llm_extractor_error_handling(caplog):
     )
     with pytest.raises(ValueError, match="Simulated LLM apredict error"):
         await extractor_strict.acall([node])
+
+
+def test_default_parse_triplets_fn_numbered_and_nested_parentheses():
+    response = (
+        "1) (Alice, knows, Bob)\n"
+        "(2) (Python (programming language), created_by, Guido van Rossum)\n"
+        "(Bob, works_at, Acme (US)); (Acme (US), located_in, New York)\n"
+        "3) Not a valid triplet ("
+    )
+    assert default_parse_triplets_fn(response) == [
+        ("Alice", "Knows", "Bob"),
+        ("Python (programming language)", "Created_by", "Guido van rossum"),
+        ("Bob", "Works_at", "Acme (us)"),
+        ("Acme (us)", "Located_in", "New york"),
+    ]
