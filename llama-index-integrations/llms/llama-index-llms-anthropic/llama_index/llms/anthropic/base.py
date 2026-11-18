@@ -1075,6 +1075,28 @@ class Anthropic(FunctionCallingLLM):
 
         return tool_selections
 
+    def _structured_llm_kwargs(
+        self, llm_kwargs: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Build the kwargs for the native structured-output ``parse()`` calls.
+
+        The structured-output path talks to the SDK directly and never goes
+        through ``_get_all_kwargs``, so instance-level extended-thinking config
+        (``thinking_dict`` and the temperature it requires) has to be threaded
+        explicitly. Temperature is taken from ``_model_kwargs`` so it is omitted
+        for models that reject it (``ANTHROPIC_NO_TEMP_MODELS``), mirroring the
+        chat path. Explicit per-call ``llm_kwargs`` take precedence.
+        """
+        kwargs: Dict[str, Any] = {}
+        if self.thinking_dict:
+            kwargs["thinking"] = self.thinking_dict
+            temperature = self._model_kwargs.get("temperature")
+            if temperature is not None:
+                kwargs["temperature"] = temperature
+        kwargs.update(llm_kwargs or {})
+        return kwargs
+
     @dispatcher.span
     def structured_predict(
         self,
@@ -1098,7 +1120,7 @@ class Anthropic(FunctionCallingLLM):
             output_format=output_cls,
             system=system,
             betas=["structured-outputs-2025-11-13"],
-            **(llm_kwargs or {}),
+            **self._structured_llm_kwargs(llm_kwargs),
         )
         parsed = response.parsed_output
         stop_reason = response.stop_reason
@@ -1132,7 +1154,7 @@ class Anthropic(FunctionCallingLLM):
             output_format=output_cls,
             system=system,
             betas=["structured-outputs-2025-11-13"],
-            **(llm_kwargs or {}),
+            **self._structured_llm_kwargs(llm_kwargs),
         )
         parsed = response.parsed_output
         stop_reason = response.stop_reason
@@ -1168,7 +1190,7 @@ class Anthropic(FunctionCallingLLM):
             output_format=output_cls,
             system=system,
             betas=["structured-outputs-2025-11-13"],
-            **(llm_kwargs or {}),
+            **self._structured_llm_kwargs(llm_kwargs),
         )
         parsed = response.parsed_output
         stop_reason = response.stop_reason
@@ -1209,7 +1231,7 @@ class Anthropic(FunctionCallingLLM):
             output_format=output_cls,
             system=system,
             betas=["structured-outputs-2025-11-13"],
-            **(llm_kwargs or {}),
+            **self._structured_llm_kwargs(llm_kwargs),
         )
         parsed = response.parsed_output
         stop_reason = response.stop_reason
