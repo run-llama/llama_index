@@ -25,4 +25,6 @@ LlamaIndex supports local LLMs via several integration packages:
 - `llama-index-llms-openai-like`: any server that exposes an OpenAI-compatible API (text-generation-webui, LM Studio, vLLM, etc.).
 - `llama-index-llms-ollama`: Ollama (llama3, mistral, qwen, etc.).
 
+The Ollama and OpenAI-like packages also work with other servers that speak those APIs. For example, [llamay](https://llamay.com) serves Ollama's API on port 11435, so `Ollama(model="qwen2.5:7b", base_url="http://localhost:11435")` uses it with no other change.
+
 Browse the [full list of LLM integrations](/python/framework/module_guides/models/llms/modules).
