@@ -11,6 +11,7 @@ from llama_index.core.objects.table_node_mapping import (
     SQLTableSchema,
 )
 from llama_index.core.objects.tool_node_mapping import SimpleToolNodeMapping
+from llama_index.core.schema import TextNode
 from llama_index.core.tools.function_tool import FunctionTool
 from pytest_mock import MockerFixture
 
@@ -57,6 +58,13 @@ def test_simple_object_node_mapping_persist() -> None:
 
     loaded_node_mapping = SimpleObjectNodeMapping.from_persist_dir()
     assert node_mapping.obj_node_mapping == loaded_node_mapping.obj_node_mapping
+
+
+@pytest.mark.parametrize("node_id", ["legacy-id", "0"])
+def test_simple_object_node_mapping_legacy_node_id(node_id: str) -> None:
+    """Nodes without a known mapping ID can still be resolved by their text."""
+    mapping = SimpleObjectNodeMapping.from_objects(["alpha"])
+    assert mapping.from_node(TextNode(id_=node_id, text="alpha")) == "alpha"
 
 
 def test_tool_object_node_mapping() -> None:
