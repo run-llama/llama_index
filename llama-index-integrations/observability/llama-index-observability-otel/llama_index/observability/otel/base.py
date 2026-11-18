@@ -5,7 +5,11 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
 
 import llama_index_instrumentation as instrument
-from llama_index.observability.otel.utils import _is_otel_supported_type, flatten_dict
+from llama_index.observability.otel.utils import (
+    _is_otel_supported_type,
+    flatten_dict,
+    gen_ai_attributes_from_event,
+)
 from llama_index_instrumentation.base.event import BaseEvent
 from llama_index_instrumentation.event_handlers import BaseEventHandler
 from llama_index_instrumentation.span import SimpleSpan, active_span_id
@@ -312,6 +316,17 @@ class OTelCompatibleEventHandler(BaseEventHandler):
                     attrs=["bold"],
                 )
             return
+
+        # Standard GenAI attributes (model, token usage) go on the span itself,
+        # where OTel backends look for them. Never let this break the app.
+        try:
+            gen_ai_attributes = gen_ai_attributes_from_event(event)
+            if gen_ai_attributes:
+                self.span_handler.all_spans[current_span_id].set_attributes(
+                    gen_ai_attributes
+                )
+        except Exception:
+            _logger.debug("Could not set GenAI attributes", exc_info=True)
 
         try:
             event_data = event.model_dump()
