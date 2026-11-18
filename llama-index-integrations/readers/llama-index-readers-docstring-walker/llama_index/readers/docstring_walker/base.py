@@ -3,12 +3,12 @@
 import ast
 import logging
 import os
-from typing import List
+from typing import List, Union
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
-TYPES_TO_PROCESS = {ast.FunctionDef, ast.ClassDef}
+TYPES_TO_PROCESS = {ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef}
 
 log = logging.getLogger(__name__)
 
@@ -174,7 +174,11 @@ class DocstringWalker(BaseReader):
             sub_texts.append(sub_text)
         return text + "\n".join(sub_texts)
 
-    def process_function(self, func_node: ast.FunctionDef, parent_node: str) -> str:
+    def process_function(
+        self,
+        func_node: Union[ast.FunctionDef, ast.AsyncFunctionDef],
+        parent_node: str,
+    ) -> str:
         """
         Process a function node in the AST and add it to the graph. Build node text.
 
@@ -217,7 +221,7 @@ class DocstringWalker(BaseReader):
             str: The result of processing the element.
 
         """
-        if isinstance(elem, ast.FunctionDef):
+        if isinstance(elem, (ast.FunctionDef, ast.AsyncFunctionDef)):
             return self.process_function(elem, parent_node)
         elif isinstance(elem, ast.ClassDef):
             return self.process_class(elem, parent_node)
