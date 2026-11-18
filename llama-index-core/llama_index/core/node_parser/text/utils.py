@@ -25,14 +25,17 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
 
 def split_text_keep_separator(text: str, separator: str) -> List[str]:
     """
-    Split text with separator and keep the separator at the end of each split.
+    Split text with separator and preserve the separator by prefixing it to each segment after the first.
+
+    This ensures lossless reassembly such that ''.join(result) == text.
 
     Args:
         text (str): The text to split.
         separator (str): The separator to split on.
 
     Returns:
-        List[str]: List of text segments with separators preserved at the end of each split.
+        List[str]: List of non-empty text segments with the separator preserved
+            at the beginning of each segment after the first.
 
     """
     parts = text.split(separator)
@@ -46,7 +49,10 @@ def split_by_sep(sep: str, keep_sep: bool = True) -> Callable[[str], List[str]]:
 
     Args:
         sep (str): The separator to split on.
-        keep_sep (bool, optional): Whether to keep the separator in the output. Defaults to True.
+        keep_sep (bool, optional): Whether to keep the separator in the output.
+            If True, preserves the separator prefixed to each segment after the first
+            via `split_text_keep_separator`. If False, splits standardly via `str.split`.
+            Defaults to True.
 
     Returns:
         Callable[[str], List[str]]: A function that takes a string and returns a list of split strings.
