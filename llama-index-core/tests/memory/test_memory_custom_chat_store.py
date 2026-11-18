@@ -4,9 +4,10 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, TextBlock
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.memory.memory import Memory
+from llama_index.core.memory.memory import InsertMethod, Memory
+from llama_index.core.memory.memory_blocks.static import StaticMemoryBlock
 from llama_index.core.storage.chat_store.base_db import (
     AsyncDBChatStore,
     MessageStatus,
@@ -170,3 +171,41 @@ async def test_waterfall_archives_into_custom_chat_store(chat_store):
     assert len(messages) == 1
     assert "z " in messages[0].content
     assert len(chat_store.archived["test_user"]) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("insert_method", "role"),
+    [(InsertMethod.SYSTEM, "system"), (InsertMethod.USER, "user")],
+)
+async def test_memory_reads_do_not_modify_stored_messages(
+    chat_store, insert_method, role
+):
+    """Repeated recall must not write rendered memory back into chat history."""
+    memory = Memory.from_defaults(
+        token_limit=1000,
+        session_id="read_isolation",
+        chat_store=chat_store,
+        insert_method=insert_method,
+        memory_blocks=[StaticMemoryBlock(name="facts", static_content="Likes tea")],
+        tokenizer_fn=str.split,
+    )
+    original = ChatMessage(role=role, content="Original message")
+    await memory.aset([original])
+    stored_before = original.model_dump()
+
+    first = await memory.aget()
+    first_before = first[0].model_dump()
+    second = await memory.aget()
+
+    assert "Likes tea" in first[0].content
+    assert second[0].model_dump() == first_before
+    assert first[0].model_dump() == first_before
+    assert original.model_dump() == stored_before
+    assert (await memory.aget_all())[0].model_dump() == stored_before
+
+    # A caller may edit the returned content without updating persisted history.
+    second[0].blocks.append(TextBlock(text="Caller edit"))
+    second[0].blocks[1].text = "Edited original text"
+    assert original.model_dump() == stored_before
+    assert first[0].model_dump() == first_before
