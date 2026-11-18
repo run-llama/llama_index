@@ -148,3 +148,50 @@ def test_persist_and_load():
         # Clean up the test_retriever directory
         if os.path.exists("test_retriever"):
             shutil.rmtree("test_retriever")
+
+
+def test_empty_nodes_validation():
+    import pytest
+
+    with pytest.raises(ValueError, match="Please pass at least one node"):
+        BM25Retriever(nodes=[])
+
+    with pytest.raises(ValueError, match="No valid tokens found"):
+        BM25Retriever(nodes=[Document(text="")])
+
+
+def test_persist_and_load_with_custom_config():
+    documents = [Document(text="LlamaIndex retriever persistence test")]
+    splitter = SentenceSplitter(chunk_size=1024)
+    nodes = splitter.get_nodes_from_documents(documents)
+
+    custom_pattern = r"\w+"
+    retriever = BM25Retriever.from_defaults(
+        nodes=nodes,
+        token_pattern=custom_pattern,
+        skip_stemming=True,
+        language="en",
+    )
+
+    try:
+        retriever.persist("test_custom_retriever")
+        loaded = BM25Retriever.from_persist_dir("test_custom_retriever")
+        assert loaded.token_pattern == custom_pattern
+        assert loaded.skip_stemming is True
+        assert loaded.language == "en"
+
+        results = loaded.retrieve("retriever")
+        assert len(results) > 0
+    finally:
+        if os.path.exists("test_custom_retriever"):
+            shutil.rmtree("test_custom_retriever")
+
+
+def test_similarity_top_k_zero():
+    documents = [Document.example()]
+    splitter = SentenceSplitter(chunk_size=1024)
+    nodes = splitter.get_nodes_from_documents(documents)
+
+    retriever = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=0)
+    results = retriever.retrieve("What is llama index?")
+    assert results == []
