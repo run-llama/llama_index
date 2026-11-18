@@ -153,7 +153,7 @@ llama_index.core.set_global_handler(
 #### Guides
 
 - [Trace LlamaIndex with Arize AX](https://arize.com/docs/ax/integrations/python-agent-frameworks/llamaindex/llamaindex-tracing)
-- [Arize agent evaluation guide](https://arize.com/guides/ai-agent-handbook/agent-evaluation/)
+- [Arize agent evaluation guide](https://arize.com/ai-agents/agent-evaluation/)
 - [Arize LLM evaluation guide](https://arize.com/resources/llm-evaluation/)
 
 ![](./../../_static/integrations/arize_phoenix.png)

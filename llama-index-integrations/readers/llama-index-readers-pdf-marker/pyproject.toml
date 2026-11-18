@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "torch",
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
@@ -28,10 +28,10 @@ dev = [
 
 [project]
 name = "llama-index-readers-pdf-marker"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index readers marker integration"
 authors = [{name = "Nathan LENAS", email = "nathan.lenas@lmddc.lu"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 dependencies = [
