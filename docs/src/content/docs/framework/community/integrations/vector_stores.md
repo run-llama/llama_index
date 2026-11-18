@@ -51,6 +51,7 @@ as the storage backend for `VectorStoreIndex`.
 - Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](/python/examples/vector_stores/tablestoredemo). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
 - TiDB (`TiDBVectorStore`). [Quickstart](/python/examples/vector_stores/tidbvector). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
+- TopK (`TopKVectorStore`). [Quickstart](https://github.com/topk-io/llama-index-vector-stores-topk#readme).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - VectorX DB (`VectorXVectorStore`). [Quickstart](https://docs.vectorxdb.ai/quickstart)
 - Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)

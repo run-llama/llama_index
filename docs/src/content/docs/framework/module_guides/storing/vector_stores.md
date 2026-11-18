@@ -61,6 +61,7 @@ We are actively adding more integrations and improving feature coverage for each
 | TiDB                       | cloud                   | ✓                  |               | ✓      | ✓               |                               |
 | TencentVectorDB            | cloud                   | ✓                  | ✓             | ✓      | ✓               |                               |
 | Timescale                  |                         | ✓                  |               | ✓      | ✓               | ✓                             |
+| TopK                       | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | Typesense                  | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
 | Upstash                    | cloud                   |                    |               |        | ✓               |                               |
 | VectorX DB                 | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓                             |
