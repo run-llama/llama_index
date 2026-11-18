@@ -85,11 +85,14 @@ def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
         Tuple[float, str]: A tuple containing the score as a float and the reasoning as a string.
 
     """
-    if not eval_response.strip():
+    stripped = eval_response.strip()
+    if not stripped:
         # Return None or default values if the response is empty
         return None, "No response"
 
-    score_str, reasoning_str = eval_response.split("\n", 1)
+    parts = stripped.split("\n", 1)
+    score_str = parts[0]
+    reasoning_str = parts[1] if len(parts) > 1 else ""
 
     try:
         score = float(score_str)
