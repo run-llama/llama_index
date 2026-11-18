@@ -197,7 +197,9 @@ class Memory(BaseMemory):
     When the FIFO queue reaches the token limit, the oldest messages within the pressure size are ejected from the FIFO queue.
     The messages are then processed by each memory block.
 
-    When pulling messages from this memory, the memory blocks are processed in order, and the messages are injected into the system message or the latest user message.
+    When pulling messages from this memory, the memory blocks are read sequentially by default.
+    Independent blocks can be read concurrently with `memory_blocks_concurrency`.
+    Results retain their priority order when injected into the system message or the latest user message.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -217,6 +219,11 @@ class Memory(BaseMemory):
     memory_blocks: List[BaseMemoryBlock] = Field(
         default_factory=list,
         description="The list of memory blocks to use.",
+    )
+    memory_blocks_concurrency: int = Field(
+        default=1,
+        ge=1,
+        description="Maximum simultaneous memory block reads per retrieval. Defaults to sequential reads.",
     )
     memory_blocks_template: RichPromptTemplate = Field(
         default=DEFAULT_MEMORY_BLOCKS_TEMPLATE,
@@ -308,6 +315,7 @@ class Memory(BaseMemory):
         async_database_uri: Optional[str] = None,
         async_engine: Optional[AsyncEngine] = None,
         db_schema: Optional[str] = None,
+        memory_blocks_concurrency: int = 1,
     ) -> "Memory":
         """Initialize Memory."""
         session_id = session_id or generate_chat_store_key()
@@ -331,6 +339,7 @@ class Memory(BaseMemory):
             sql_store=sql_store,
             session_id=session_id,
             memory_blocks=memory_blocks or [],
+            memory_blocks_concurrency=memory_blocks_concurrency,
             chat_history_token_ratio=chat_history_token_ratio,
             token_flush_size=token_flush_size,
             memory_blocks_template=memory_blocks_template,
@@ -456,25 +465,48 @@ class Memory(BaseMemory):
         if isinstance(input, str):
             block_input = [*chat_history, ChatMessage(role="user", content=input)]
 
-        # Process memory blocks in priority order
-        for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
+        async def read_block(memory_block: BaseMemoryBlock) -> Tuple[str, Any]:
             content = await memory_block.aget(
                 block_input, session_id=self.session_id, **block_kwargs
             )
-
-            # Handle different return types from memory blocks
-            if content and isinstance(content, list):
-                # Memory block returned content blocks
-                content_per_memory_block[memory_block.name] = content
-            elif content and isinstance(content, str):
-                # Memory block returned a string
-                content_per_memory_block[memory_block.name] = content
-            elif not content:
-                continue
-            else:
+            if content and not isinstance(content, (list, str)):
                 raise ValueError(
                     f"Invalid content type received from memory block {memory_block.name}: {type(content)}"
                 )
+            return memory_block.name, content
+
+        memory_blocks = sorted(self.memory_blocks, key=lambda x: -x.priority)
+        if self.memory_blocks_concurrency == 1:
+            for memory_block in memory_blocks:
+                name, content = await read_block(memory_block)
+                if content:
+                    content_per_memory_block[name] = content
+        else:
+            semaphore = asyncio.Semaphore(self.memory_blocks_concurrency)
+
+            async def read_with_limit(memory_block: BaseMemoryBlock) -> Tuple[str, Any]:
+                async with semaphore:
+                    return await read_block(memory_block)
+
+            tasks = [
+                asyncio.create_task(read_with_limit(memory_block))
+                for memory_block in memory_blocks
+            ]
+            reads = asyncio.gather(*tasks)
+            try:
+                # Cancel reads explicitly below, so parent cancellation cannot
+                # cancel a block again while it is awaiting resource cleanup.
+                results = await asyncio.shield(reads)
+            finally:
+                # Finish cleanup before propagating a failed or cancelled retrieval.
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(reads, *tasks, return_exceptions=True)
+
+            for name, content in results:
+                if content:
+                    content_per_memory_block[name] = content
 
         return content_per_memory_block
 
