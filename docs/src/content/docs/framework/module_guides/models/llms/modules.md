@@ -56,6 +56,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Replicate Llama2](/python/examples/llm/llama_2)
 - [Replicate Vicuna](/python/examples/llm/vicuna)
 - [Replicate Vector Index Llama2](/python/examples/vector_stores/simpleindexdemollama2)
+- [Runcrate](/python/examples/llm/runcrate)
 - [RunGPT](/python/examples/llm/rungpt)
 - [SageMaker](/python/examples/llm/sagemaker_endpoint_llm)
 - [SambaNova Systems](/python/examples/llm/sambanovasystems)
