@@ -156,3 +156,43 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+class _AlwaysSimilarSplitter(SemanticDoubleMergingSplitterNodeParser):
+    """Similarity is pinned so only the chunk-size arithmetic decides where chunks end."""
+
+    def _similarity(self, text_a: str, text_b: str) -> float:
+        return 1.0
+
+
+def test_multi_character_merging_separator_respects_max_chunk_size() -> None:
+    """A separator longer than one character must not push merged chunks over max_chunk_size."""
+    max_chunk_size = 100
+    separator = "\n\n---\n\n"
+
+    splitter = _AlwaysSimilarSplitter(
+        max_chunk_size=max_chunk_size, merging_separator=separator, merging_range=1
+    )
+
+    # 50 + 49 + len(" ") == 100, so the old guard treated this as a fit.
+    merged = splitter._merge_initial_chunks(["A" * 50, "B" * 49])
+    assert max(len(chunk) for chunk in merged) <= max_chunk_size
+
+    created = splitter._create_initial_chunks(["A" * 50, "B" * 20, "C" * 20])
+    assert max(len(chunk) for chunk in created) <= max_chunk_size
+
+
+@pytest.mark.parametrize("separator_len", [1, 2, 4, 8, 16])
+def test_merging_never_exceeds_max_chunk_size(separator_len: int) -> None:
+    """Sweep the boundary for a range of separator lengths."""
+    max_chunk_size = 100
+    splitter = _AlwaysSimilarSplitter(
+        max_chunk_size=max_chunk_size,
+        merging_separator="s" * separator_len,
+        merging_range=1,
+    )
+
+    for first in range(1, max_chunk_size - 1):
+        second = max_chunk_size - first - 1
+        merged = splitter._merge_initial_chunks(["A" * first, "B" * second])
+        assert max(len(chunk) for chunk in merged) <= max_chunk_size
