@@ -112,7 +112,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
         cur_depth = 0
         graph_triplets = self.get_triplets(ids=[gn.id for gn in graph_nodes])
-        seen_triplets = set()
+        seen_triplets = {str(t) for t in graph_triplets}
 
         while len(graph_triplets) > 0 and cur_depth < depth:
             triplets.extend(graph_triplets)
