@@ -54,17 +54,39 @@ class NotionPageReader(BasePydanticReader):
         """Get the name identifier of the class."""
         return "NotionPageReader"
 
+    @staticmethod
+    def _get_block_text(block_obj: Dict[str, Any]) -> List[str]:
+        """
+        Return the text pieces of a block's type-specific object.
+
+        Uses ``plain_text`` so that every rich text type is kept (``text``,
+        ``mention`` and ``equation``), and reads ``table_row`` blocks, whose
+        text lives in ``cells`` rather than ``rich_text``.
+        """
+        if "rich_text" in block_obj:
+            return [rt.get("plain_text", "") for rt in block_obj["rich_text"]]
+        if "cells" in block_obj:
+            cells = [
+                "".join(rt.get("plain_text", "") for rt in cell)
+                for cell in block_obj["cells"]
+            ]
+            return [" | ".join(cells)]
+        return []
+
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
-        """Read a block."""
-        done = False
+        """Read a block and its children, following pagination."""
         result_lines_arr = []
-        cur_block_id = block_id
-        while not done:
-            block_url = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
-            query_dict: Dict[str, Any] = {}
+        block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
+        start_cursor: Optional[str] = None
+        while True:
+            # The children endpoint is paginated (max 100 per page). The next
+            # page is requested from the same block with `start_cursor`.
+            params: Dict[str, Any] = {"page_size": 100}
+            if start_cursor is not None:
+                params["start_cursor"] = start_cursor
 
             res = self._request_with_retry(
-                "GET", block_url, headers=self.headers, json=query_dict
+                "GET", block_url, headers=self.headers, params=params
             )
             data = res.json()
 
@@ -72,14 +94,10 @@ class NotionPageReader(BasePydanticReader):
                 result_type = result["type"]
                 result_obj = result[result_type]
 
-                cur_result_text_arr = []
-                if "rich_text" in result_obj:
-                    for rich_text in result_obj["rich_text"]:
-                        # skip if doesn't have text object
-                        if "text" in rich_text:
-                            text = rich_text["text"]["content"]
-                            prefix = "\t" * num_tabs
-                            cur_result_text_arr.append(prefix + text)
+                prefix = "\t" * num_tabs
+                cur_result_text_arr = [
+                    prefix + text for text in self._get_block_text(result_obj)
+                ]
 
                 result_block_id = result["id"]
                 has_children = result["has_children"]
@@ -92,11 +110,9 @@ class NotionPageReader(BasePydanticReader):
                 cur_result_text = "\n".join(cur_result_text_arr)
                 result_lines_arr.append(cur_result_text)
 
-            if data["next_cursor"] is None:
-                done = True
+            if not data.get("has_more") or data.get("next_cursor") is None:
                 break
-            else:
-                cur_block_id = data["next_cursor"]
+            start_cursor = data["next_cursor"]
 
         return "\n".join(result_lines_arr)
 
@@ -106,6 +122,7 @@ class NotionPageReader(BasePydanticReader):
         url: str,
         headers: Dict[str, str],
         json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
         """Make a request with retry and rate limit handling."""
         max_retries = 5
@@ -113,7 +130,9 @@ class NotionPageReader(BasePydanticReader):
 
         for attempt in range(max_retries):
             try:
-                response = requests.request(method, url, headers=headers, json=json)
+                response = requests.request(
+                    method, url, headers=headers, json=json, params=params
+                )
                 response.raise_for_status()
                 return response
             except requests.exceptions.HTTPError:
