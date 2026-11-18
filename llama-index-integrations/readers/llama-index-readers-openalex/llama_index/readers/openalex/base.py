@@ -35,12 +35,10 @@ class OpenAlexReader(BaseReader):
         self.email = email
 
     def _search_openalex(self, query, fields):
-        base_url = "https://api.openalex.org/works?search="
-        fields_param = f"&select={fields}"
-        email_param = f"&mailto={self.email}"
-        full_url = base_url + query + fields_param + email_param
+        base_url = "https://api.openalex.org/works"
+        params = {"search": query, "select": fields, "mailto": self.email}
         try:
-            response = requests.get(full_url, timeout=10)
+            response = requests.get(base_url, params=params, timeout=10)
             response.raise_for_status()  # Check if request is successful
             data = response.json()  # Parse JSON data
             if "error" in data:
@@ -55,12 +53,14 @@ class OpenAlexReader(BaseReader):
         return None
 
     def _fulltext_search_openalex(self, query, fields):
-        base_url = "https://api.openalex.org/works?filter=fulltext.search:"
-        fields_param = f"&select={fields}"
-        email_param = f"&mailto={self.email}"
-        full_url = base_url + query + fields_param + email_param
+        base_url = "https://api.openalex.org/works"
+        params = {
+            "filter": f"fulltext.search:{query}",
+            "select": fields,
+            "mailto": self.email,
+        }
         try:
-            response = requests.get(full_url, timeout=10)
+            response = requests.get(base_url, params=params, timeout=10)
             response.raise_for_status()  # Check if request is successful
             data = response.json()  # Parse JSON data
             if "error" in data:
