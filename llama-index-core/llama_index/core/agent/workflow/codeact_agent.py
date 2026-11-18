@@ -11,7 +11,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, ContentBlock, TextBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection, LLM
@@ -168,6 +168,25 @@ class CodeActAgent(BaseWorkflowAgent):
 
         return None
 
+    @staticmethod
+    def _merge_system_content(
+        msg: ChatMessage, system_prompt: str
+    ) -> Union[str, List[ContentBlock]]:
+        """Put the code act prompt in front of what the system message already has."""
+        existing = msg.content or ""
+        if not existing:
+            return system_prompt
+        if system_prompt in existing:
+            # already there, e.g. when the caller passes the same prompt every step
+            return msg.content
+        merged = f"{system_prompt}\n\n{existing}"
+        if msg.blocks:
+            return [
+                TextBlock(text=merged),
+                *[b for b in msg.blocks if not isinstance(b, TextBlock)],
+            ]
+        return merged
+
     def _get_tool_descriptions(self, tools: Sequence[BaseTool]) -> str:
         """
         Generate tool descriptions for the system prompt using tool metadata.
@@ -283,10 +302,17 @@ class CodeActAgent(BaseWorkflowAgent):
         )
 
         # Add or overwrite system message
+        #
+        # Memory puts the memory blocks in the first system message, so keep whatever
+        # that message already holds and append the code act prompt instead of
+        # replacing it -- otherwise the blocks never reach the model.
         has_system = False
         for i, msg in enumerate(current_llm_input):
             if msg.role.value == "system":
-                current_llm_input[i] = ChatMessage(role="system", content=system_prompt)
+                current_llm_input[i] = ChatMessage(
+                    role="system",
+                    content=self._merge_system_content(msg, system_prompt),
+                )
                 has_system = True
                 break
 
