@@ -1,8 +1,7 @@
-import asyncio
 import logging
 from typing import Any, Callable, Optional, Sequence, Union
 
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import asyncio_run, run_jobs
 from llama_index.core.indices.property_graph.utils import (
     default_parse_triplets_fn,
 )
@@ -92,7 +91,7 @@ class SimpleLLMPathExtractor(TransformComponent):
         self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> Sequence[BaseNode]:
         """Extract triples from nodes."""
-        return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
+        return asyncio_run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
     async def _aextract(self, node: BaseNode) -> BaseNode:
         """Extract triples from a node."""
