@@ -37,6 +37,18 @@ class StructuredDataReader(BaseReader):
         self._col_index = col_index
         self._col_metadata = col_metadata
 
+    @staticmethod
+    def _is_column_config_unset(column_config: Any) -> bool:
+        """
+        Whether a column configuration was left out.
+
+        Only ``None`` and an empty list mean "not configured": ``0`` is a valid
+        column selector (the first column), so a truthiness check would drop it.
+        """
+        if column_config is None:
+            return True
+        return isinstance(column_config, (list, tuple)) and len(column_config) == 0
+
     def _load_dataframe(
         self, file: Path, fs: Optional[AbstractFileSystem] = None
     ) -> pd.DataFrame:
@@ -95,7 +107,8 @@ class StructuredDataReader(BaseReader):
         """Parse file."""
         df = self._load_dataframe(file, fs)
 
-        assert self._col_index, f"The col_index must be specified"
+        if self._is_column_config_unset(self._col_index):
+            raise ValueError("The col_index must be specified")
         self._validate_column("col_index", self._col_index, df)
 
         if isinstance(self._col_index, int) or (
@@ -113,7 +126,7 @@ class StructuredDataReader(BaseReader):
         elif isinstance(df_text, pd.Series):
             text_list = df_text.tolist()
 
-        if not self._col_metadata:
+        if self._is_column_config_unset(self._col_metadata):
             return [
                 Document(text=text_tuple, metadata=(extra_info or {}))
                 for text_tuple in text_list
