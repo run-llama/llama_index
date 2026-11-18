@@ -22,6 +22,8 @@ LlamaPacks are deprecated. See the [dedicated page](/python/framework/community/
 
 We support [a huge number of LLMs](/python/framework/module_guides/models/llms/modules).
 
+- [Donkey Development Kit](https://docs.donkey-kit.dev/frameworks/llamaindex): a governed `OpenAILike` LLM pointed at a MuleSoft Omni Gateway LLM proxy, with gateway policy refusals raised as typed exceptions
+
 ## Observability/Tracing/Evaluation
 
 Check out our [one-click observability](/python/framework/module_guides/observability) page
