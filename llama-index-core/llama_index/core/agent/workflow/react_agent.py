@@ -1,4 +1,5 @@
 import uuid
+import warnings
 from typing import List, Sequence, Optional, cast
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
@@ -79,7 +80,18 @@ class ReActAgent(BaseWorkflowAgent):
             react_header = prompts["react_header"]
             if isinstance(react_header, str):
                 react_header = PromptTemplate(react_header)
-            self.formatter.system_header = react_header.format()
+            new_header = react_header.format()
+            for var in ("tool_desc", "tool_names"):
+                if f"{{{var}}}" not in new_header:
+                    warnings.warn(
+                        f"Updated react_header is missing required placeholder "
+                        f"'{{{var}}}'. The agent may not function correctly. "
+                        f"Use '{{{var}}}' (not pre-formatted) in your prompt "
+                        f"template.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+            self.formatter.system_header = new_header
 
     async def _get_response(self, current_llm_input: List[ChatMessage]) -> ChatResponse:
         return await self.llm.achat(current_llm_input)
