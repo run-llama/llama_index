@@ -1,11 +1,13 @@
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import pytest
 
 from llama_index.core import MockEmbedding
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.chat_engine.context import ContextChatEngine
 from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.llms.mock import MockLLM
@@ -252,3 +254,58 @@ async def test_aget_nodes_calls_async_postprocessor() -> None:
 
     assert postprocessor.called_async is True
     assert postprocessor.called_sync is False
+
+
+def test_context_chat_engine_custom_callback_manager() -> None:
+    """Test that custom callback_manager passed to from_defaults is respected."""
+
+    class CustomTraceHandler(BaseCallbackHandler):
+        def __init__(self) -> None:
+            super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+            self.traces: list[tuple[str, str | None]] = []
+
+        def on_event_start(self, *args: Any, **kwargs: Any) -> str:
+            return ""
+
+        def on_event_end(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def start_trace(self, trace_id: str | None = None) -> None:
+            self.traces.append(("start", trace_id))
+
+        def end_trace(
+            self, trace_id: str | None = None, trace_map: dict | None = None
+        ) -> None:
+            self.traces.append(("end", trace_id))
+
+    # 1. Passed explicitly as callback_manager
+    handler = CustomTraceHandler()
+    custom_cb = CallbackManager([handler])
+    postprocessor = _TrackingPostprocessor()
+    engine = ContextChatEngine.from_defaults(
+        retriever=_DummyRetriever(),
+        llm=MockLLM(),
+        node_postprocessors=[postprocessor],
+        callback_manager=custom_cb,
+    )
+    assert engine.callback_manager is custom_cb
+    assert postprocessor.callback_manager is custom_cb
+    engine.chat("Hello World!")
+    assert ("start", "chat") in handler.traces
+    assert ("end", "chat") in handler.traces
+
+    # 2. Passed via **kwargs
+    handler_kwargs = CustomTraceHandler()
+    custom_cb_kwargs = CallbackManager([handler_kwargs])
+    postprocessor_kwargs = _TrackingPostprocessor()
+    engine_kwargs = ContextChatEngine.from_defaults(
+        retriever=_DummyRetriever(),
+        llm=MockLLM(),
+        node_postprocessors=[postprocessor_kwargs],
+        **{"callback_manager": custom_cb_kwargs},
+    )
+    assert engine_kwargs.callback_manager is custom_cb_kwargs
+    assert postprocessor_kwargs.callback_manager is custom_cb_kwargs
+    engine_kwargs.chat("Hello again!")
+    assert ("start", "chat") in handler_kwargs.traces
+    assert ("end", "chat") in handler_kwargs.traces
