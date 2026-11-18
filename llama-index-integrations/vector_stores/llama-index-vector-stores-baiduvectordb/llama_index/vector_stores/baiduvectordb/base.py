@@ -151,6 +151,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
     _vdb_client: Any = PrivateAttr()
     _database: Any = PrivateAttr()
     _table: Any = PrivateAttr()
+    _metric_type: str = PrivateAttr(default=DEFAULT_METRIC_TYPE)
 
     def __init__(
         self,
@@ -174,6 +175,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
         self._init_client(endpoint, account, api_key)
         self._create_database_if_not_exists(database_name)
         self._create_table(table_params)
+        self._metric_type = self._get_metric_type(table_params.metric_type).value
 
     @classmethod
     def class_name(cls) -> str:
@@ -370,6 +372,22 @@ class BaiduVectorDB(BasePydanticVectorStore):
                     index_type_value, support_index_types
                 )
             )
+
+    def _distance_to_similarity(self, distance: Optional[float]) -> Optional[float]:
+        """
+        Convert a Mochow search distance into a higher-is-better similarity.
+
+        Mochow returns the raw L2 distance for L2 tables, where a smaller value
+        means a closer match, while COSINE and IP distances already grow with
+        similarity. ``VectorStoreQueryResult.similarities`` must rank the
+        closest match highest, so L2 distances are mapped to
+        ``1 / (1 + distance)``.
+        """
+        if distance is None:
+            return None
+        if self._metric_type == "L2":
+            return 1.0 / (1.0 + distance)
+        return distance
 
     @staticmethod
     def _get_metric_type(metric_type_value: str) -> Any:
@@ -617,7 +635,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
         similarities = []
         ids = []
         for row in rows:
-            similarities.append(row.get("distance"))
+            similarities.append(self._distance_to_similarity(row.get("distance")))
             row_data = row.get("row", {})
             ids.append(row_data.get(FIELD_ID))
 
