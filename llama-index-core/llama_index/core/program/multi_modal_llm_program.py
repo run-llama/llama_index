@@ -119,7 +119,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         else:
             image_docs = cast(Optional[List[ImageBlock]], image_documents)
 
-        blocks: List[Union[ImageBlock, TextBlock]] = (
+        blocks: List[Union[ImageBlock, TextBlock]] = list(
             cast(Optional[List[Union[ImageBlock, TextBlock]]], image_docs)
             or cast(Optional[List[Union[ImageBlock, TextBlock]]], self._image_documents)
             or []
@@ -158,7 +158,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         else:
             image_docs = cast(Optional[List[ImageBlock]], image_documents)
 
-        blocks: List[Union[ImageBlock, TextBlock]] = (
+        blocks: List[Union[ImageBlock, TextBlock]] = list(
             cast(Optional[List[Union[ImageBlock, TextBlock]]], image_docs)
             or cast(Optional[List[Union[ImageBlock, TextBlock]]], self._image_documents)
             or []
