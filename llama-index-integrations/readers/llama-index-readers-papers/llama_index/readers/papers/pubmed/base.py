@@ -57,11 +57,12 @@ class PubmedReader(BaseReader):
                     title = "Pubmed Paper"
                     try:
                         title = next(
-                            [
+                            (
                                 p["text"]
                                 for p in info["documents"][0]["passages"]
                                 if p["infons"]["section_type"] == "TITLE"
-                            ]
+                            ),
+                            title,
                         )
                     except KeyError:
                         pass
