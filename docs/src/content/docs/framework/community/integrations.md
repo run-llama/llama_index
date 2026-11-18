@@ -8,11 +8,14 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 Data loaders (readers) live in the [`readers` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) of the LlamaIndex repo, one package per source. See the [data connectors guide](/python/framework/module_guides/loading/connector) for how to use them.
 
+- [Anakin](https://github.com/Anakin-Inc/llamaindex-anakin/tree/main/llama-index-readers-anakin) (`llama-index-readers-anakin`): load web pages, site crawls, web search results and site maps as Documents
+
 ## Agent Tools
 
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Anakin](https://github.com/Anakin-Inc/llamaindex-anakin/tree/main/llama-index-tools-anakin) (`llama-index-tools-anakin`): scrape, search, map and crawl the web, run deep research, use pre-built actions on hundreds of sites, monitor pages for changes and drive an AI cloud browser
 
 ## LlamaPacks -- Code Templates
 
