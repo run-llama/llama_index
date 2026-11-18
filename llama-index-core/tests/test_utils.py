@@ -1,7 +1,7 @@
 """Test utils."""
 
 from pathlib import Path
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
 from unittest import mock
 import os
 import time
@@ -353,3 +353,110 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+class _APIError(Exception):
+    pass
+
+
+class _RateLimitError(_APIError):
+    pass
+
+
+class _AuthError(_APIError):
+    pass
+
+
+def test_retry_check_fn_applies_to_subclasses() -> None:
+    """
+    The `except` clause catches subclasses, so the check_fn lookup has to as well.
+
+    Registering a base class used to mean its check_fn was skipped for every subclass, so a
+    non-retryable subclass was retried the full max_tries.
+    """
+    checks: List[Exception] = []
+
+    def only_rate_limits(e: Exception) -> bool:
+        checks.append(e)
+        return "rate limit" in str(e).lower()
+
+    def run(exc: Exception) -> int:
+        checks.clear()
+        calls = 0
+
+        def fn() -> None:
+            nonlocal calls
+            calls += 1
+            raise exc
+
+        with pytest.raises(_APIError):
+            retry_on_exceptions_with_backoff(
+                fn,
+                [ErrorToRetry(_APIError, only_rate_limits)],
+                max_tries=3,
+                min_backoff_secs=0,
+                max_backoff_secs=0,
+            )
+        return calls
+
+    # Registered class itself: unchanged.
+    assert run(_APIError("rate limit")) == 3
+    assert run(_APIError("bad request")) == 1
+
+    # Subclasses now go through the same predicate.
+    assert run(_RateLimitError("rate limit")) == 3
+    assert run(_AuthError("invalid api key")) == 1
+
+
+def test_retry_check_fn_prefers_the_most_specific_registration() -> None:
+    """A subclass registered next to its base keeps its own check_fn."""
+    seen: List[str] = []
+
+    def base_check(e: Exception) -> bool:
+        seen.append("base")
+        return True
+
+    def subclass_check(e: Exception) -> bool:
+        seen.append("subclass")
+        return False
+
+    def fn() -> None:
+        raise _RateLimitError("boom")
+
+    with pytest.raises(_RateLimitError):
+        retry_on_exceptions_with_backoff(
+            fn,
+            [
+                ErrorToRetry(_APIError, base_check),
+                ErrorToRetry(_RateLimitError, subclass_check),
+            ],
+            max_tries=3,
+            min_backoff_secs=0,
+            max_backoff_secs=0,
+        )
+
+    assert seen == ["subclass"]
+
+
+@pytest.mark.asyncio
+async def test_aretry_check_fn_applies_to_subclasses() -> None:
+    calls = 0
+
+    def only_rate_limits(e: Exception) -> bool:
+        return "rate limit" in str(e).lower()
+
+    async def fn() -> None:
+        nonlocal calls
+        calls += 1
+        raise _AuthError("invalid api key")
+
+    with pytest.raises(_AuthError):
+        await aretry_on_exceptions_with_backoff(
+            fn,
+            [ErrorToRetry(_APIError, only_rate_limits)],
+            max_tries=3,
+            min_backoff_secs=0,
+            max_backoff_secs=0,
+        )
+
+    assert calls == 1
