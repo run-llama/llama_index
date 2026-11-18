@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Optional
 
@@ -71,8 +72,8 @@ class RetryQueryEngine(BaseQueryEngine):
             return new_query_engine.query(new_query)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Not supported."""
-        return self._query(query_bundle)
+        """Run the synchronous retry path without blocking the event loop."""
+        return await asyncio.to_thread(self._query, query_bundle)
 
 
 class RetryGuidelineQueryEngine(BaseQueryEngine):
@@ -142,5 +143,5 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
             return new_query_engine.query(new_query)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Not supported."""
-        return self._query(query_bundle)
+        """Run the synchronous retry path without blocking the event loop."""
+        return await asyncio.to_thread(self._query, query_bundle)
