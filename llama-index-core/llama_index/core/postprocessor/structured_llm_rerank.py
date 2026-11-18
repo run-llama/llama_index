@@ -188,6 +188,18 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             for node, relevance in zip(choice_nodes, relevances)
         ]
 
+    async def _apredict_batch(
+        self, nodes_batch: List[BaseNode], query_str: str
+    ) -> Union[BaseModel, str]:
+        try:
+            return await self.llm.astructured_predict(
+                **self._get_predict_kwargs(nodes_batch, query_str)
+            )
+        except Exception as exc:
+            if self._raise_on_structured_prediction_failure:
+                raise
+            return str(exc)
+
     def _rerank_start_event(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> None:
@@ -237,9 +249,14 @@ class StructuredLLMRerank(BaseNodePostprocessor):
         ) as event:
             for batch_idx, nodes_batch in enumerate(node_batches):
                 # call each batch independently
-                result: Union[BaseModel, str] = self.llm.structured_predict(
-                    **self._get_predict_kwargs(nodes_batch, query_bundle.query_str)
-                )
+                try:
+                    result: Union[BaseModel, str] = self.llm.structured_predict(
+                        **self._get_predict_kwargs(nodes_batch, query_bundle.query_str)
+                    )
+                except Exception as exc:
+                    if self._raise_on_structured_prediction_failure:
+                        raise
+                    result = str(exc)
                 initial_results.extend(
                     self._parse_batch_result(result, nodes_batch, batch_idx)
                 )
@@ -271,9 +288,7 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             # call each batch independently, in parallel
             results: List[Union[BaseModel, str]] = await run_jobs(
                 [
-                    self.llm.astructured_predict(
-                        **self._get_predict_kwargs(nodes_batch, query_bundle.query_str)
-                    )
+                    self._apredict_batch(nodes_batch, query_bundle.query_str)
                     for nodes_batch in node_batches
                 ]
             )
