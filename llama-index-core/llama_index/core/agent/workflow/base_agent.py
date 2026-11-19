@@ -42,7 +42,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.agent.utils import generate_structured_response
-from llama_index.core.llms import ChatMessage, ChatResponse, LLM, TextBlock
+from llama_index.core.llms import ChatMessage, ChatResponse, LLM, MessageRole, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -490,11 +490,21 @@ class BaseWorkflowAgent(
         return agent_output
 
     async def _generate_early_stopping_response(
-        self, ctx: Context, max_iterations: int
+        self, ctx: Context, ev: AgentOutput, max_iterations: int
     ) -> StopEvent:
         """Generate a final response when max iterations is reached with early_stopping_method='generate'."""
         memory: BaseMemory = await ctx.store.get("memory")
+        # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's messages
+        await self.finalize(ctx, ev, memory)
         messages = await memory.aget()
+        if (
+            messages
+            and messages[-1].role == MessageRole.ASSISTANT
+            and messages[-1].additional_kwargs.get("tool_calls")
+        ):
+            # the tool calls of the last step are never run when we stop early, so
+            # that message has no tool results to pair with
+            messages = messages[:-1]
 
         early_stopping_prompt = DEFAULT_EARLY_STOPPING_PROMPT.format(
             max_iterations=max_iterations
@@ -543,7 +553,9 @@ class BaseWorkflowAgent(
                 "early_stopping_method", default="force"
             )
             if early_stopping_method == "generate":
-                return await self._generate_early_stopping_response(ctx, max_iterations)
+                return await self._generate_early_stopping_response(
+                    ctx, ev, max_iterations
+                )
             else:
                 raise WorkflowRuntimeError(
                     f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
