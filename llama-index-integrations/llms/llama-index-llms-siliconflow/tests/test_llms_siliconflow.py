@@ -1,4 +1,6 @@
 import json
+import aiohttp
+import requests
 import pytest
 import types
 from typing import Optional, Type
@@ -278,3 +280,67 @@ async def test_astream_chat():
             headers=llm._headers,
             timeout=llm.timeout,
         )
+
+
+def _status_response(status: int) -> Response:
+    response = Response()
+    response.status_code = status
+    response._content = b"{}"
+    return response
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 404, 422])
+def test_client_error_is_sent_once(status):
+    llm = SiliconFlow(api_key="...", max_retries=3)
+    with mock.patch(
+        "requests.Session.post", return_value=_status_response(status)
+    ) as mock_post:
+        with pytest.raises(requests.HTTPError):
+            llm.complete("...")
+    assert mock_post.call_count == 1
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_transient_error_is_retried(status):
+    llm = SiliconFlow(api_key="...", max_retries=2)
+    with mock.patch(
+        "requests.Session.post", return_value=_status_response(status)
+    ) as mock_post:
+        with pytest.raises(requests.HTTPError):
+            llm.complete("...")
+    assert mock_post.call_count == 2
+
+
+class FailingAsyncResponse(MockAsyncResponse):
+    def __init__(self, status: int) -> None:
+        super().__init__(json_data={})
+        self.status = status
+
+    def raise_for_status(self) -> None:
+        raise aiohttp.ClientResponseError(
+            request_info=mock.Mock(real_url="https://api.siliconflow.cn"),
+            history=(),
+            status=self.status,
+        )
+
+
+@pytest.mark.asyncio
+async def test_async_client_error_is_sent_once():
+    llm = SiliconFlow(api_key="...", max_retries=3)
+    with mock.patch(
+        "aiohttp.ClientSession.post", return_value=FailingAsyncResponse(401)
+    ) as mock_post:
+        with pytest.raises(aiohttp.ClientResponseError):
+            await llm.acomplete("...")
+    assert mock_post.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_async_transient_error_is_retried():
+    llm = SiliconFlow(api_key="...", max_retries=2)
+    with mock.patch(
+        "aiohttp.ClientSession.post", return_value=FailingAsyncResponse(503)
+    ) as mock_post:
+        with pytest.raises(aiohttp.ClientResponseError):
+            await llm.acomplete("...")
+    assert mock_post.call_count == 2

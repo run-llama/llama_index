@@ -119,6 +119,33 @@ def is_function_calling_llm(model: str):
     return model in FUNCTION_CALLING_OPTIONS
 
 
+# Status codes worth sending again: timeouts, conflicts, rate limits and server errors.
+# Any other 4xx (bad key, bad model, context too long) fails identically on every
+# attempt, so it is raised at once instead of being re-sent max_retries times.
+_RETRYABLE_STATUS = frozenset({408, 409, 429})
+
+
+def _is_retryable(exc: BaseException) -> bool:
+    """True for errors a second identical request can fix."""
+    status = None
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        status = exc.response.status_code
+    elif isinstance(exc, aiohttp.ClientResponseError):
+        status = exc.status
+    if status is not None:
+        return status in _RETRYABLE_STATUS or status >= 500
+    return isinstance(
+        exc,
+        (
+            requests.ConnectionError,
+            requests.Timeout,
+            aiohttp.ClientConnectionError,
+            aiohttp.ServerTimeoutError,
+            TimeoutError,
+        ),
+    )
+
+
 def create_retry_decorator(
     max_retries: int,
     min_seconds: float = 1,
@@ -141,7 +168,7 @@ def create_retry_decorator(
             if random_exponential
             else tenacity.wait_random(min=min_seconds, max=max_seconds)
         ),
-        retry=tenacity.retry_if_exception_type(Exception),
+        retry=tenacity.retry_if_exception(_is_retryable),
         reraise=True,
     )
 
@@ -158,7 +185,7 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         retryer = tenacity.Retrying(
             stop=tenacity.stop_after_attempt(max_retries),
             wait=tenacity.wait_random_exponential(min=1, max=20),
-            retry=tenacity.retry_if_exception_type(Exception),
+            retry=tenacity.retry_if_exception(_is_retryable),
             reraise=True,
         )
         return retryer(lambda: f(self, *args, **kwargs))
@@ -169,13 +196,15 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         if max_retries <= 0:
             return await f(self, *args, **kwargs)
 
-        retryer = tenacity.Retrying(
+        # AsyncRetrying awaits each attempt; the sync Retrying only created the
+        # coroutine, so an async call that failed was never retried at all.
+        retryer = tenacity.AsyncRetrying(
             stop=tenacity.stop_after_attempt(max_retries),
             wait=tenacity.wait_random_exponential(min=1, max=20),
-            retry=tenacity.retry_if_exception_type(Exception),
+            retry=tenacity.retry_if_exception(_is_retryable),
             reraise=True,
         )
-        return await retryer(lambda: f(self, *args, **kwargs))
+        return await retryer(f, self, *args, **kwargs)
 
     return async_wrapper if inspect.iscoroutinefunction(f) else wrapper
 
@@ -428,9 +457,9 @@ class SiliconFlow(FunctionCallingLLM):
                 headers=self._headers,
                 timeout=self.timeout,
             ) as response:
+                response.raise_for_status()
                 response_json = await response.json()
                 message: dict = response_json["choices"][0]["message"]
-                response.raise_for_status()
                 return ChatResponse(
                     message=ChatMessage(
                         content=message["content"],
