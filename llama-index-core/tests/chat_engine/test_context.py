@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 import pytest
 
 from llama_index.core import MockEmbedding
+from llama_index.core.chat_engine.types import ChatMode
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.callbacks import CallbackManager
@@ -309,3 +310,19 @@ def test_context_chat_engine_custom_callback_manager() -> None:
     engine_kwargs.chat("Hello again!")
     assert ("start", "chat") in handler_kwargs.traces
     assert ("end", "chat") in handler_kwargs.traces
+
+
+def test_context_chat_engine_custom_callback_manager_from_index() -> None:
+    custom_cb = CallbackManager([])
+    index = VectorStoreIndex.from_documents(
+        [Document.example()], embed_model=MockEmbedding(embed_dim=3)
+    )
+
+    engine = index.as_chat_engine(
+        chat_mode=ChatMode.CONTEXT,
+        llm=MockLLM(),
+        callback_manager=custom_cb,
+    )
+
+    assert engine.callback_manager is custom_cb
+    assert engine._retriever.callback_manager is custom_cb
