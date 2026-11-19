@@ -54,6 +54,7 @@ import_path = "llama_index.llms.openai"
 
 [tool.llamahub.class_authors]
 OpenAI = "llama-index"
+OpenAIBatchProcessor = "llama-index"
 OpenAIResponses = "llama-index"
 
 [tool.mypy]
