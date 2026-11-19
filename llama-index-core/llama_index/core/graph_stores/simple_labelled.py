@@ -164,9 +164,12 @@ class SimplePropertyGraphStore(PropertyGraphStore):
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
-        """Persist the graph store to a file."""
+        """Persist the graph store to a file, creating parent directories as needed."""
         if fs is None:
             fs = fsspec.filesystem("file")
+        parent = os.path.dirname(persist_path)
+        if parent and not fs.exists(parent):
+            fs.makedirs(parent, exist_ok=True)
         with fs.open(persist_path, "w", encoding="utf-8") as f:
             f.write(self.graph.model_dump_json())
 
