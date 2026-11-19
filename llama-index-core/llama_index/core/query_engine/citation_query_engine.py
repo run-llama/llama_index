@@ -282,12 +282,14 @@ class CitationQueryEngine(BaseQueryEngine):
                 object.
 
         """
-        retriever = retriever or index.as_retriever(**kwargs)
-
         callback_manager = (
             callback_manager
-            or kwargs.get("callback_manager")
+            or kwargs.pop("callback_manager", None)
             or Settings.callback_manager
+        )
+
+        retriever = retriever or index.as_retriever(
+            callback_manager=callback_manager, **kwargs
         )
 
         if response_synthesizer is None:

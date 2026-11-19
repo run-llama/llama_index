@@ -297,6 +297,7 @@ def test_citation_query_engine_custom_callback_manager() -> None:
     assert engine.callback_manager is custom_cb
     assert engine._response_synthesizer.callback_manager is custom_cb
     assert postprocessor.callback_manager is custom_cb
+    assert index.as_retriever.call_args.kwargs.get("callback_manager") is custom_cb
 
     # 2. Passed via **kwargs
     handler_kwargs = CustomTraceHandler()
@@ -311,3 +312,6 @@ def test_citation_query_engine_custom_callback_manager() -> None:
     assert engine_kwargs.callback_manager is custom_cb_kwargs
     assert engine_kwargs._response_synthesizer.callback_manager is custom_cb_kwargs
     assert postprocessor_kwargs.callback_manager is custom_cb_kwargs
+    assert (
+        index.as_retriever.call_args.kwargs.get("callback_manager") is custom_cb_kwargs
+    )
