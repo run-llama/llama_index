@@ -2,6 +2,8 @@ import dataclasses
 
 import pytest
 
+from llama_index.core.indices.property_graph.retriever import PGRetriever
+from llama_index.core.schema import NodeWithScore, TextNode
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -48,3 +50,23 @@ def test_vsq_field_filter_pattern() -> None:
     query = VectorStoreQuery(**filtered)  # must not raise
     assert query.query_str == "test query"
     assert query.similarity_top_k == 3
+
+
+def test_pg_retriever_deduplicate_retains_highest_score_and_empty_text_nodes() -> None:
+    """PGRetriever._deduplicate should keep the highest score for duplicate texts and preserve distinct empty-text nodes."""
+    retriever = PGRetriever(sub_retrievers=[], use_async=False)
+
+    nodes = [
+        NodeWithScore(node=TextNode(id_="n1", text="A -> B -> C"), score=None),
+        NodeWithScore(node=TextNode(id_="n2", text="X -> Y -> Z"), score=0.4),
+        NodeWithScore(node=TextNode(id_="n3", text="A -> B -> C"), score=0.75),
+        NodeWithScore(node=TextNode(id_="n4", text="X -> Y -> Z"), score=0.92),
+        NodeWithScore(node=TextNode(id_="n5", text="X -> Y -> Z"), score=0.15),
+        NodeWithScore(node=TextNode(id_="empty_1", text=""), score=0.5),
+        NodeWithScore(node=TextNode(id_="empty_2", text=""), score=0.8),
+    ]
+
+    deduped = retriever._deduplicate(nodes)
+    assert len(deduped) == 4
+    assert [n.node.node_id for n in deduped] == ["n3", "n4", "empty_1", "empty_2"]
+    assert [n.score for n in deduped] == [0.75, 0.92, 0.5, 0.8]
