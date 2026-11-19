@@ -4,10 +4,11 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "torch",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -16,7 +17,7 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
@@ -24,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-node-parser-chonkie"
-version = "0.1.2"
+version = "0.2.0"
 description = "llama-index Chonkie integration"
 authors = [{name = "Hafedh Hichri", email = "hhichri60@gmail.com"}]
 readme = "README.md"
@@ -70,3 +71,12 @@ exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 explicit_package_bases = true
 python_version = "3.10"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+# CPU-only test env: keep the multi-GB CUDA stack out of the lock
+torch = {index = "pytorch-cpu"}

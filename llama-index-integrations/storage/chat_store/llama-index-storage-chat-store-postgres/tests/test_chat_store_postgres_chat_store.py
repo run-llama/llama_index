@@ -71,7 +71,6 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
 
 
 @pytest.fixture()
-@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def postgres_chat_store(
     postgres_container: Dict[str, Union[str, Container]],
 ) -> Generator[PostgresChatStore, None, None]:

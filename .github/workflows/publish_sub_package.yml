@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: >-
+          Space-separated package dirs to publish. Leave empty to scan every
+          sub-package and publish any whose local version is missing from PyPI.
+        required: false
+        default: ""
 
 env:
   PYTHON_VERSION: "3.12"
@@ -20,9 +28,34 @@ jobs:
       - name: Get changed pyproject files
         id: changed-files
         run: |
-          echo "changed_files=$(git diff --name-only ${{ github.event.before }} \
-            ${{ github.event.after }} | grep -v llama-index-core | \
-            grep llama-index | grep pyproject | xargs)" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.packages }}" ]; then
+              files=""
+              for d in ${{ github.event.inputs.packages }}; do
+                files="$files ${d%/}/pyproject.toml"
+              done
+            else
+              # Scan every sub-package and select those whose local version
+              # is not on PyPI (recovers from partially-failed publish runs).
+              files=""
+              for f in $(git ls-files '*pyproject.toml' | grep -v llama-index-core | grep llama-index); do
+                name=$(grep -m1 '^name = ' "$f" | cut -d'"' -f2)
+                version=$(grep -m1 '^version = ' "$f" | cut -d'"' -f2)
+                if [ -z "$name" ] || [ -z "$version" ]; then
+                  continue
+                fi
+                code=$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/$name/$version/json")
+                if [ "$code" = "404" ]; then
+                  files="$files $f"
+                fi
+              done
+            fi
+          else
+            files=$(git diff --name-only ${{ github.event.before }} \
+              ${{ github.event.after }} | grep -v llama-index-core | \
+              grep llama-index | grep pyproject | xargs)
+          fi
+          echo "changed_files=$(echo $files | xargs)" >> "$GITHUB_OUTPUT"
 
       - name: Install uv and set the python version
         if: ${{ steps.changed-files.outputs.changed_files != '' }}
@@ -38,14 +71,46 @@ jobs:
         run: |
           result=0   # 0 = success so far
 
+          # uv build does not need a synced venv; skip uv sync in dispatch
+          # (backfill) mode where syncing hundreds of packages would exhaust
+          # runner disk and time.
+          sync_cmd="uv sync"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            sync_cmd=":"
+          fi
+
           for file in ${{ steps.changed-files.outputs.changed_files }}; do
-            pkg_dir="$(echo "$file" | sed 's/\/pyproject.toml//')"
-            echo "Publishing $pkg_dir …"
+            pkg_dir="$(dirname "$file")"
+
+            # A push that deletes a package still lists its pyproject in the
+            # diff; there is nothing to publish.
+            if [ ! -d "$pkg_dir" ]; then
+              echo "Skipping $pkg_dir — directory no longer exists"
+              continue
+            fi
+
+            name=$(grep -m1 '^name = ' "$file" | cut -d'"' -f2)
+            version=$(grep -m1 '^version = ' "$file" | cut -d'"' -f2)
+            if [ -z "$name" ] || [ -z "$version" ]; then
+              echo "::error ::Could not parse name/version from $file"
+              result=1
+              continue
+            fi
+
+            # Already on PyPI: a pyproject change without a version bump, or a
+            # re-run after a partial failure. Nothing to do.
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/$name/$version/json")
+            if [ "$code" = "200" ]; then
+              echo "::warning ::$name $version is already on PyPI — skipping"
+              continue
+            fi
+
+            echo "Publishing $name $version from $pkg_dir …"
 
             # Run all three commands; mark failure if any of them fails.
-            cd "$pkg_dir"
             if ! (
-              uv sync \
+              cd "$pkg_dir" \
+              && $sync_cmd \
               && uv build \
               && uv publish --token "$PYPI_TOKEN"
             ); then
@@ -53,6 +118,7 @@ jobs:
               result=1   # remember the failure, but keep going
             fi
 
-            cd - >/dev/null
+            # Keep runner disk bounded when publishing many packages.
+            rm -rf "$pkg_dir/.venv" "$pkg_dir/dist"
           done
           exit $result # exit with a non-zero code if one or more failures

@@ -40,7 +40,9 @@ def test_command_nothing_changed(
         ["--repo-root", data_path, "release", "changelog"],
     )
     assert result.exit_code == 1
-    assert "No pull requests found since the last tag" in result.stdout
+    # click >= 8.2 no longer mixes stderr into stdout; ClickException
+    # messages land on stderr
+    assert "No pull requests found since the last tag" in result.stderr
 
 
 @mock.patch("llama_dev.release.changelog._run_command")
