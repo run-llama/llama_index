@@ -512,6 +512,20 @@ class Refine(BaseSynthesizer):
         dispatcher.event(end_event)
         return response
 
+    async def _arepack_chunks(
+        self,
+        prompt: BasePromptTemplate,
+        chunks: Sequence[Any],
+        **repack_kwargs: Any,
+    ) -> list[Any]:
+        if self._multimodal:
+            return await self._chat_prompt_helper.arepack(
+                prompt, chunks, llm=self._llm, **repack_kwargs
+            )
+        return self._prompt_helper.repack(
+            prompt, chunks, llm=self._llm, **repack_kwargs
+        )
+
     async def _arun_refine_loop(
         self,
         query_str: str,
@@ -527,19 +541,15 @@ class Refine(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         dispatcher.event(start_event)
         max_prompt = get_biggest_prompt([qa_template, refine_template])
-        prompt_helper: PromptHelper | ChatPromptHelper = (
-            self._prompt_helper if not self._multimodal else self._chat_prompt_helper
-        )
         # Make first best guess at how many chunks we can fit in the prompt at once. Increase padding
         # to give more room for the response
         chunks_deque: deque = deque(
             [
                 tc
                 for chunk in chunks
-                for tc in prompt_helper.repack(
+                for tc in await self._arepack_chunks(
                     max_prompt,
                     [chunk],
-                    llm=self._llm,
                     padding=self._response_padding_size,
                 )
             ]
@@ -561,10 +571,9 @@ class Refine(BaseSynthesizer):
                 # Because the existing answer portion is constantly being updated, it may be necessary to
                 # repack the chunk with the new prompt template to ensure it fits. Since the template has been
                 # partially formatted with the actual response, there's no need for the extra padding.
-                repacked = prompt_helper.repack(
+                repacked = await self._arepack_chunks(
                     prompt_template,
                     [chunk],
-                    llm=self._llm,
                 )
                 # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
                 if len(repacked) > 1:
