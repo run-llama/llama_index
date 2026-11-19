@@ -1,6 +1,5 @@
 import json
-import os
-from pathlib import PurePath
+from pathlib import PurePosixPath
 from typing import Any, Dict, Optional
 
 import boto3
@@ -51,8 +50,17 @@ class S3DBKVStore(BaseKVStore):
             path=path,
         )
 
+    def _collection_path(self, collection: str) -> str:
+        """Get the key prefix of a collection, keeping the trailing separator.
+
+        ``PurePosixPath`` keeps the "/" separators S3 keys use on every
+        platform, and the trailing separator keeps a collection prefix from
+        matching sibling collections that start with the same characters.
+        """
+        return f"{PurePosixPath(self._path, collection)}/"
+
     def _get_object_key(self, collection: str, key: str) -> str:
-        return str(PurePath(f"{self._path}/{collection}/{key}.json"))
+        return str(PurePosixPath(self._path, collection, f"{key}.json"))
 
     def put(
         self,
@@ -130,12 +138,12 @@ class S3DBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        collection_path = str(PurePath(f"{self._path}/{collection}/"))
+        collection_path = self._collection_path(collection)
         collection_kv_dict = {}
         for obj in self._bucket.objects.filter(Prefix=collection_path):
             body = obj.get()["Body"].read()
-            json_filename = os.path.split(obj.key)[-1]
-            key = os.path.splitext(json_filename)[0]
+            json_filename = PurePosixPath(obj.key).name
+            key = PurePosixPath(json_filename).stem
             value = json.loads(body)
             collection_kv_dict[key] = value
         return collection_kv_dict
