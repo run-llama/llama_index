@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Optional, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -92,10 +92,15 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         verbose: bool = True,
         use_async: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> "SubQuestionQueryEngine":
-        callback_manager = Settings.callback_manager
-        if len(query_engine_tools) > 0:
-            callback_manager = query_engine_tools[0].query_engine.callback_manager
+        callback_manager = callback_manager or kwargs.get("callback_manager")
+        if callback_manager is None:
+            if len(query_engine_tools) > 0:
+                callback_manager = query_engine_tools[0].query_engine.callback_manager
+            else:
+                callback_manager = Settings.callback_manager
 
         llm = llm or Settings.llm
         if question_gen is None:

@@ -104,3 +104,41 @@ async def test_partial_failure_aquery():
     tools[0].query_engine.aquery.assert_awaited_once()
     tools[1].query_engine.aquery.assert_awaited_once()
     assert len(synth.asynthesize.call_args.kwargs["nodes"]) == 1
+
+
+def test_sub_question_query_engine_custom_callback_manager() -> None:
+    """Test that custom callback_manager passed to from_defaults is respected."""
+    tools, question_gen, synth = _make_components()
+    custom_cb = CallbackManager()
+
+    # 1. Passed explicitly to from_defaults
+    engine = SubQuestionQueryEngine.from_defaults(
+        query_engine_tools=tools,
+        question_gen=question_gen,
+        response_synthesizer=synth,
+        callback_manager=custom_cb,
+    )
+    assert engine.callback_manager is custom_cb
+
+    # 2. Passed via **kwargs to from_defaults
+    custom_cb_kwargs = CallbackManager()
+    engine_kwargs = SubQuestionQueryEngine.from_defaults(
+        query_engine_tools=tools,
+        question_gen=question_gen,
+        response_synthesizer=synth,
+        **{"callback_manager": custom_cb_kwargs},
+    )
+    assert engine_kwargs.callback_manager is custom_cb_kwargs
+
+    # 3. Passed when response_synthesizer is default-created
+    custom_cb_synth = CallbackManager()
+    engine_with_default_synth = SubQuestionQueryEngine.from_defaults(
+        query_engine_tools=tools,
+        question_gen=question_gen,
+        callback_manager=custom_cb_synth,
+    )
+    assert engine_with_default_synth.callback_manager is custom_cb_synth
+    assert (
+        engine_with_default_synth._response_synthesizer.callback_manager
+        is custom_cb_synth
+    )
