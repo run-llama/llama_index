@@ -104,6 +104,7 @@ class ContextChatEngine(BaseChatEngine):
         context_template: Optional[Union[str, PromptTemplate]] = None,
         context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         llm: Optional[LLM] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
@@ -126,13 +127,19 @@ class ContextChatEngine(BaseChatEngine):
         prefix_messages = prefix_messages or []
         node_postprocessors = node_postprocessors or []
 
+        callback_manager = (
+            callback_manager
+            or kwargs.get("callback_manager")
+            or Settings.callback_manager
+        )
+
         return cls(
             retriever,
             llm=llm,
             memory=memory,
             prefix_messages=prefix_messages,
             node_postprocessors=node_postprocessors,
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager,
             context_template=context_template,
             context_refine_template=context_refine_template,
         )
