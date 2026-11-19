@@ -12,6 +12,8 @@ except ImportError:
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.readers.string_iterable import StringIterableReader
+from llama_index.core.schema import Document
+from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 
@@ -52,3 +54,41 @@ def test_ondemand_loader_tool_langchain(
     assert lc_tool.args_schema == _TestSchemaSpec
     response = lc_tool.run({"texts": ["Hello world."], "query_str": "What is?"})
     assert str(response) == "What is?:Hello world."
+
+
+def test_ondemand_loader_tool_default_name_and_from_tool(
+    patch_llm_predictor,
+) -> None:
+    """Test default name, from_tool metadata inheritance, and required query_str."""
+    reader = StringIterableReader()
+    default_tool = OnDemandLoaderTool.from_defaults(
+        reader=reader,
+        index_cls=VectorStoreIndex,
+    )
+    assert default_tool.metadata.get_name() == "LoadData"
+    schema = default_tool.metadata.get_parameters_dict()
+    assert "query_str" in schema.get("required", [])
+    out = default_tool(["Hello world."], query_str="What is?")
+    assert out.tool_name == "LoadData"
+    assert str(out) == "What is?:Hello world."
+
+    def load_docs(texts: List[str]) -> List[Document]:
+        """Load documents from texts."""
+        return [Document(text=t) for t in texts]
+
+    fn_tool = FunctionTool.from_defaults(
+        fn=load_docs,
+        name="custom_doc_loader",
+        description="Custom loader description",
+    )
+    wrapped = OnDemandLoaderTool.from_tool(
+        tool=fn_tool,
+        index_cls=VectorStoreIndex,
+    )
+    assert wrapped.metadata.get_name() == "custom_doc_loader"
+    assert wrapped.metadata.description == "Custom loader description"
+    wrapped_schema = wrapped.metadata.get_parameters_dict()
+    assert "query_str" in wrapped_schema.get("required", [])
+    wrapped_out = wrapped(["Hello world."], query_str="What is?")
+    assert wrapped_out.tool_name == "custom_doc_loader"
+    assert str(wrapped_out) == "What is?:Hello world."

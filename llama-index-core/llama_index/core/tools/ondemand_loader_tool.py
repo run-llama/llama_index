@@ -65,13 +65,14 @@ class OnDemandLoaderTool(AsyncBaseTool):
 
         index_cls = index_cls or VectorStoreIndex
         index_kwargs = index_kwargs or {}
+        name = name or "LoadData"
         if description is None:
             description = f"Tool to load data from {reader.__class__.__name__}"
         if fn_schema is None:
             fn_schema = create_schema_from_function(
-                name or "LoadData",
+                name,
                 reader.load_data,
-                [(query_str_kwargs_key, str, None)],
+                [(query_str_kwargs_key, str)],
             )
 
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
@@ -102,11 +103,15 @@ class OnDemandLoaderTool(AsyncBaseTool):
 
         index_cls = index_cls or VectorStoreIndex
         index_kwargs = index_kwargs or {}
+        name = name or tool.metadata.name or "LoadData"
         if description is None:
-            description = f"Tool to load data from {tool.__class__.__name__}"
+            description = (
+                tool.metadata.description
+                or f"Tool to load data from {tool.__class__.__name__}"
+            )
         if fn_schema is None:
             fn_schema = create_schema_from_function(
-                name or "LoadData", tool._fn, [(query_str_kwargs_key, str, None)]
+                name, tool._fn, [(query_str_kwargs_key, str)]
             )
         metadata = ToolMetadata(
             name=name,
