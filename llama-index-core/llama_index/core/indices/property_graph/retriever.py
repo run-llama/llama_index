@@ -39,14 +39,17 @@ class PGRetriever(BaseRetriever):
         self.show_progress = show_progress
 
     def _deduplicate(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
-        seen = set()
-        deduped = []
+        deduped: dict[str, NodeWithScore] = {}
         for node in nodes:
-            if node.text not in seen:
-                deduped.append(node)
-                seen.add(node.text)
+            key = node.text or node.node.node_id
+            if key not in deduped:
+                deduped[key] = node
+            elif node.score is not None and (
+                deduped[key].score is None or node.score > deduped[key].score
+            ):
+                deduped[key] = node
 
-        return deduped
+        return list(deduped.values())
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         results = []
