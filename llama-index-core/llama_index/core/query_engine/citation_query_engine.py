@@ -252,6 +252,7 @@ class CitationQueryEngine(BaseQueryEngine):
         # class-specific args
         metadata_mode: MetadataMode = MetadataMode.NONE,
         multimodal: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "CitationQueryEngine":
         """
@@ -283,6 +284,12 @@ class CitationQueryEngine(BaseQueryEngine):
         """
         retriever = retriever or index.as_retriever(**kwargs)
 
+        callback_manager = (
+            callback_manager
+            or kwargs.get("callback_manager")
+            or Settings.callback_manager
+        )
+
         if response_synthesizer is None:
             synthesizer_kwargs: dict = {
                 "llm": llm,
@@ -291,6 +298,7 @@ class CitationQueryEngine(BaseQueryEngine):
                 "response_mode": response_mode,
                 "use_async": use_async,
                 "streaming": streaming,
+                "callback_manager": callback_manager,
             }
             if multimodal:
                 synthesizer_kwargs["chat_content_qa_template"] = (
@@ -306,7 +314,7 @@ class CitationQueryEngine(BaseQueryEngine):
             retriever=retriever,
             llm=llm,
             response_synthesizer=response_synthesizer,
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager,
             citation_chunk_size=citation_chunk_size,
             citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,
