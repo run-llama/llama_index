@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage
 
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.prompt_utils import get_biggest_prompt
 from llama_index.core.response_synthesizers.refine import Refine
 from llama_index.core.types import RESPONSE_TEXT_TYPE
@@ -58,17 +59,28 @@ class CompactAndRefine(Refine):
             max_prompt, text_chunks, llm=self._llm, padding=self._response_padding_size
         )
 
-    def _make_compact_message_chunks(
-        self, query_str: str, message_chunks: Sequence[ChatMessage]
-    ) -> List[ChatMessage]:
+    def _get_compact_message_prompt(self, query_str: str) -> BasePromptTemplate:
         qa_template = self._chat_content_qa_template.partial_format(query_str=query_str)
         refine_template = self._chat_content_refine_template.partial_format(
             query_str=query_str
         )
+        return get_biggest_prompt([qa_template, refine_template])
 
-        max_prompt = get_biggest_prompt([qa_template, refine_template])
+    def _make_compact_message_chunks(
+        self, query_str: str, message_chunks: Sequence[ChatMessage]
+    ) -> List[ChatMessage]:
         return self._chat_prompt_helper.repack(
-            max_prompt,
+            self._get_compact_message_prompt(query_str),
+            list(message_chunks),
+            llm=self._llm,
+            padding=self._response_padding_size,
+        )
+
+    async def _amake_compact_message_chunks(
+        self, query_str: str, message_chunks: Sequence[ChatMessage]
+    ) -> List[ChatMessage]:
+        return await self._chat_prompt_helper.arepack(
+            self._get_compact_message_prompt(query_str),
             list(message_chunks),
             llm=self._llm,
             padding=self._response_padding_size,
@@ -98,7 +110,9 @@ class CompactAndRefine(Refine):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        compact_chunks = self._make_compact_message_chunks(query_str, message_chunks)
+        compact_chunks = await self._amake_compact_message_chunks(
+            query_str, message_chunks
+        )
         return await super().aget_response_from_messages(
             query_str=query_str,
             message_chunks=compact_chunks,
