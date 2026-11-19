@@ -179,7 +179,9 @@ class AutoMergingRetriever(BaseRetriever):
                     print(info_str)
 
                 # set score to be average of current node and next node
-                avg_score = ((node.get_score() or 0.0) + (right_node.get_score() or 0.0)) / 2
+                avg_score = (
+                    (node.get_score() or 0.0) + (right_node.get_score() or 0.0)
+                ) / 2
                 new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
         return new_nodes, is_changed
 
