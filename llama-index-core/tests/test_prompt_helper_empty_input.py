@@ -79,3 +79,12 @@ def test_chat_prompt_helper_repack_empty_returns_empty(
     """Sync wrapper ``ChatPromptHelper.repack(prompt, [])`` must return ``[]``."""
     ch = ChatPromptHelper(context_window=4096, num_output=256)
     assert ch.repack(prompt, []) == []
+
+
+def test_prompt_helper_repack_skips_none_chunks(prompt: PromptTemplate) -> None:
+    ph = PromptHelper(context_window=4096, num_output=256)
+    packed = ph.repack(prompt, ["hello", None, "  ", "world"])
+    assert packed
+    joined = " ".join(packed)
+    assert "hello" in joined
+    assert "world" in joined
