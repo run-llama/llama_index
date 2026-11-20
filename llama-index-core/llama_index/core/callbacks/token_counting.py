@@ -36,6 +36,22 @@ class TokenCountingEvent:
         self.total_token_count = self.prompt_token_count + self.completion_token_count
 
 
+_PROMPT_TOKEN_KEYS = ("prompt_tokens", "input_tokens", "prompt_token_count")
+_COMPLETION_TOKEN_KEYS = (
+    "completion_tokens",
+    "output_tokens",
+    "candidates_token_count",
+)
+
+
+def _find_token_count(usage: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[int]:
+    """Return the first non-None token count found under ``keys``, else None."""
+    for key in keys:
+        if usage.get(key) is not None:
+            return usage[key]
+    return None
+
+
 def get_tokens_from_response(
     response: Union["CompletionResponse", "ChatResponse"],
 ) -> Tuple[int, int]:
@@ -45,35 +61,25 @@ def get_tokens_from_response(
         raw_response = dict(raw_response or {})
 
     usage = raw_response.get("usage", raw_response.get("usage_metadata", {}))
-    if usage is None:
-        usage = response.additional_kwargs
-
-    if not usage:
-        return 0, 0
-
-    if not isinstance(usage, dict):
+    if usage and not isinstance(usage, dict):
         usage = usage.model_dump()
+    usage = usage or {}
 
-    possible_input_keys = ("prompt_tokens", "input_tokens", "prompt_token_count")
-    possible_output_keys = (
-        "completion_tokens",
-        "output_tokens",
-        "candidates_token_count",
-    )
+    # Some integrations (e.g. Bedrock Converse) report the provider's token
+    # counts in `additional_kwargs` instead of an OpenAI-style `raw["usage"]`.
+    # Raw usage wins per field (an explicit 0 included); `additional_kwargs`
+    # only fills in a field that raw usage does not report.
+    additional_kwargs = response.additional_kwargs or {}
 
-    prompt_tokens = 0
-    for input_key in possible_input_keys:
-        if input_key in usage:
-            prompt_tokens = usage[input_key]
-            break
+    prompt_tokens = _find_token_count(usage, _PROMPT_TOKEN_KEYS)
+    if prompt_tokens is None:
+        prompt_tokens = _find_token_count(additional_kwargs, _PROMPT_TOKEN_KEYS)
 
-    completion_tokens = 0
-    for output_key in possible_output_keys:
-        if output_key in usage:
-            completion_tokens = usage[output_key]
-            break
+    completion_tokens = _find_token_count(usage, _COMPLETION_TOKEN_KEYS)
+    if completion_tokens is None:
+        completion_tokens = _find_token_count(additional_kwargs, _COMPLETION_TOKEN_KEYS)
 
-    return prompt_tokens, completion_tokens
+    return prompt_tokens or 0, completion_tokens or 0
 
 
 def get_llm_token_counts(
