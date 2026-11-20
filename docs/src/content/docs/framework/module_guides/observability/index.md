@@ -751,6 +751,57 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### Axiom
+
+[Axiom](https://axiom.co/) is an observability platform for logs, traces, and metrics. It ingests OpenTelemetry data over OTLP/HTTP, so you can send LlamaIndex traces to Axiom with the [OpenTelemetry integration](#opentelemetry) above.
+
+#### Usage Pattern
+
+Install the following dependencies:
+
+```bash
+pip install llama-index-observability-otel opentelemetry-exporter-otlp-proto-http
+```
+
+Then, configure an OTLP/HTTP span exporter that points to Axiom:
+
+```python
+import os
+
+from llama_index.observability.otel import LlamaIndexOpenTelemetry
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter,
+)
+
+span_exporter = OTLPSpanExporter(
+    endpoint=f"https://{os.environ['AXIOM_DOMAIN']}/v1/traces",
+    headers={
+        "Authorization": f"Bearer {os.environ['AXIOM_API_TOKEN']}",
+        "X-Axiom-Dataset": os.environ["AXIOM_DATASET"],
+    },
+)
+
+instrumentor = LlamaIndexOpenTelemetry(
+    service_name_or_resource="my-llamaindex-app",
+    span_exporter=span_exporter,
+)
+
+if __name__ == "__main__":
+    instrumentor.start_registering()
+    # ... your LlamaIndex code here
+```
+
+- Set `AXIOM_DOMAIN` to your Axiom [edge domain](https://axiom.co/docs/reference/edge-deployments), for example `us-east-1.aws.edge.axiom.co`
+- Set `AXIOM_API_TOKEN` to an Axiom [API token](https://axiom.co/docs/reference/tokens) with ingest permission for the dataset
+- Set `AXIOM_DATASET` to the name of the Axiom dataset that receives the traces
+
+Axiom accepts OTLP over HTTP (`http/protobuf` or JSON), not gRPC.
+
+#### Guides
+
+- [Send OpenTelemetry data to Axiom](https://axiom.co/docs/send-data/opentelemetry)
+- [LLM observability in Axiom](https://axiom.co/docs/use-cases/llm-observability)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
