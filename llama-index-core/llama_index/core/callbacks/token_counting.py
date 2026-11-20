@@ -36,24 +36,8 @@ class TokenCountingEvent:
         self.total_token_count = self.prompt_token_count + self.completion_token_count
 
 
-def get_tokens_from_response(
-    response: Union["CompletionResponse", "ChatResponse"],
-) -> Tuple[int, int]:
-    """Get the token counts from a raw response."""
-    raw_response = response.raw
-    if not isinstance(raw_response, dict):
-        raw_response = dict(raw_response or {})
-
-    usage = raw_response.get("usage", raw_response.get("usage_metadata", {}))
-    if usage is None:
-        usage = response.additional_kwargs
-
-    if not usage:
-        return 0, 0
-
-    if not isinstance(usage, dict):
-        usage = usage.model_dump()
-
+def _get_tokens_from_usage(usage: Dict[str, Any]) -> Tuple[int, int]:
+    """Get the token counts from a provider-reported usage dict."""
     possible_input_keys = ("prompt_tokens", "input_tokens", "prompt_token_count")
     possible_output_keys = (
         "completion_tokens",
@@ -72,6 +56,29 @@ def get_tokens_from_response(
         if output_key in usage:
             completion_tokens = usage[output_key]
             break
+
+    return prompt_tokens, completion_tokens
+
+
+def get_tokens_from_response(
+    response: Union["CompletionResponse", "ChatResponse"],
+) -> Tuple[int, int]:
+    """Get the token counts from a raw response."""
+    raw_response = response.raw
+    if not isinstance(raw_response, dict):
+        raw_response = dict(raw_response or {})
+
+    usage = raw_response.get("usage", raw_response.get("usage_metadata", {}))
+    if usage and not isinstance(usage, dict):
+        usage = usage.model_dump()
+
+    prompt_tokens, completion_tokens = _get_tokens_from_usage(usage or {})
+    if prompt_tokens == 0 and completion_tokens == 0:
+        # Some integrations (e.g. Bedrock Converse) report the provider's token
+        # counts in `additional_kwargs` instead of an OpenAI-style `raw["usage"]`.
+        prompt_tokens, completion_tokens = _get_tokens_from_usage(
+            response.additional_kwargs or {}
+        )
 
     return prompt_tokens, completion_tokens
 
