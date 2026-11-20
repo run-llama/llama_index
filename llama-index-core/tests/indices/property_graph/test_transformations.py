@@ -93,6 +93,7 @@ def test_default_parse_triplets_fn_numbered_and_nested_parentheses():
         "1) (Alice, knows, Bob)\n"
         "(2) (Python (programming language), created_by, Guido van Rossum)\n"
         "(Bob, works_at, Acme (US)); (Acme (US), located_in, New York)\n"
+        "((Carol, knows, Dave))\n"
         "3) Not a valid triplet ("
     )
     assert default_parse_triplets_fn(response) == [
@@ -100,4 +101,5 @@ def test_default_parse_triplets_fn_numbered_and_nested_parentheses():
         ("Python (programming language)", "Created_by", "Guido van rossum"),
         ("Bob", "Works_at", "Acme (us)"),
         ("Acme (us)", "Located_in", "New york"),
+        ("Carol", "Knows", "Dave"),
     ]

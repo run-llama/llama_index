@@ -1,6 +1,26 @@
 from typing import List, Tuple
 
 
+def _strip_enclosing_parens(text: str) -> str:
+    text = text.strip()
+    while len(text) >= 2 and text[0] == "(" and text[-1] == ")":
+        depth = 0
+        enclosed = True
+        for ch in text[1:-1]:
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth < 0:
+                    enclosed = False
+                    break
+        if enclosed and depth == 0:
+            text = text[1:-1].strip()
+        else:
+            break
+    return text
+
+
 def _extract_triplet_candidates(text: str) -> List[str]:
     candidates: List[str] = []
     depth = 0
@@ -13,12 +33,12 @@ def _extract_triplet_candidates(text: str) -> List[str]:
         elif ch == ")" and depth > 0:
             depth -= 1
             if depth == 0 and start != -1:
-                candidates.append(text[start:i])
+                candidates.append(_strip_enclosing_parens(text[start:i]))
                 start = -1
     if not candidates and start != -1:
         close_idx = text.rfind(")")
         if close_idx >= start:
-            candidates.append(text[start:close_idx])
+            candidates.append(_strip_enclosing_parens(text[start:close_idx]))
     return candidates
 
 
