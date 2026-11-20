@@ -53,7 +53,7 @@ class BufferedAsyncIterator(ABC):
         """
         self._buffer_size = buffer_size
         self._buffer: List[Tuple[GitBlobResponseModel, str]] = []
-        self._index = 0
+        self._index = 0  # index of the next item to fetch from the source
 
     @abstractmethod
     async def _fill_buffer(self) -> None:
@@ -80,9 +80,7 @@ class BufferedAsyncIterator(ABC):
         if not self._buffer:
             raise StopAsyncIteration
 
-        item = self._buffer.pop(0)
-        self._index += 1
-        return item
+        return self._buffer.pop(0)
 
 
 class BufferedGitBlobDataIterator(BufferedAsyncIterator):
@@ -155,6 +153,10 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         self._buffer = []
         start = self._index
         end = min(start + self._buffer_size, len(self._blobs_and_paths))
+        # `_index` tracks the next blob to fetch, not the number of buffered
+        # items handed out: a blob that failed to fetch consumes a slot too,
+        # otherwise the following batches would be fetched twice.
+        self._index = end
 
         if start >= end:
             return
@@ -176,8 +178,6 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
             ]
         )
 
-        filtered_results = [result for result in results if result is not None]
-
         if self._verbose:
             end_t = time.time()
             blob_names_and_sizes = [
@@ -189,9 +189,10 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
                 + f"): {end_t - start_t:.2f} seconds"
             )
 
+        # Keep zip aligned with the unfiltered results so that each blob stays
+        # paired with its own path; dropping the failed blobs afterwards.
         self._buffer = [
             (result, path)
-            for result, (_, path) in zip(
-                filtered_results, self._blobs_and_paths[start:end]
-            )
+            for result, (_, path) in zip(results, self._blobs_and_paths[start:end])
+            if result is not None
         ]
