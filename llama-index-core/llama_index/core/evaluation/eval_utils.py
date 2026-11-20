@@ -98,6 +98,8 @@ def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
         score = float(score_str)
     except ValueError:
         score = None
+        if len(parts) == 1:
+            reasoning_str = stripped
 
     reasoning = reasoning_str.lstrip("\n")
     return score, reasoning

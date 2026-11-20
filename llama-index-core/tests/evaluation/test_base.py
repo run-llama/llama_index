@@ -73,4 +73,4 @@ def test_default_parser_single_line_and_leading_newlines() -> None:
     )
     assert default_parser("   ") == (None, "No response")
     assert default_parser("not-a-number\nExplanation") == (None, "Explanation")
-
+    assert default_parser("4.0 Good answer") == (None, "4.0 Good answer")
