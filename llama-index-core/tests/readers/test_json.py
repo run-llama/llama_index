@@ -75,6 +75,20 @@ def test_jsonl() -> None:
         assert data[2].get_content().index("test3") is not None
 
 
+def test_jsonl_skips_blank_lines() -> None:
+    """Blank or whitespace-only JSONL lines should not raise JSONDecodeError."""
+    with TemporaryDirectory() as tmp_dir:
+        file_name = f"{tmp_dir}/blank_lines.jsonl"
+        with open(file_name, "w", encoding="utf-8") as f:
+            f.write('{"test1": "test1"}\n\n  \n{"test2": "test2"}\n')
+
+        reader = JSONReader(is_jsonl=True)
+        data = reader.load_data(file_name)
+        assert len(data) == 2
+        assert "test1" in data[0].get_content()
+        assert "test2" in data[1].get_content()
+
+
 def test_clean_json() -> None:
     """Test JSON reader using the clean_json function."""
     with TemporaryDirectory() as tmp_dir:
