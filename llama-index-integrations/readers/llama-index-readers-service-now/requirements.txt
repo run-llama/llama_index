@@ -268,7 +268,7 @@ matplotlib-inline==0.2.2
     #   ipython
 mccabe==0.7.0
     # via pylint
-mistune==3.3.4
+mistune==3.4.0
     # via nbconvert
 multidict==7.2.1
     # via
