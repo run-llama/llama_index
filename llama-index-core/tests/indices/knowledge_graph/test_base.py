@@ -220,3 +220,14 @@ def test__parse_triplet_response(doc_triplets_with_text_around: List[Document]) 
     assert ("Foo", "Is", "Bar") in parsed_triplets[0]
     assert ("Hello", "Is not", "World") in parsed_triplets[0]
     assert ("Jane", "Is mother of", "Bob") in parsed_triplets[0]
+
+    nested_response = (
+        "1) (Alice, works at, Google (Alphabet))\n"
+        "(Paris (France), capital of, France)\n"
+        "((Alice, knows, Bob))"
+    )
+    assert KnowledgeGraphIndex._parse_triplet_response(nested_response) == [
+        ("Alice", "Works at", "Google (alphabet)"),
+        ("Paris (france)", "Capital of", "France"),
+        ("Alice", "Knows", "Bob"),
+    ]
