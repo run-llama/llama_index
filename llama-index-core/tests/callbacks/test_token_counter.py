@@ -112,3 +112,37 @@ def test_on_event_end_uses_token_counts_from_additional_kwargs() -> None:
 
     assert handler.prompt_llm_token_count == 1200
     assert handler.completion_llm_token_count == 345
+
+
+@pytest.mark.parametrize(
+    ("usage", "additional_kwargs", "expected"),
+    [
+        # Explicit raw zeros are provider-reported values and win.
+        (
+            {"prompt_tokens": 0, "completion_tokens": 0},
+            PROVIDER_TOKEN_COUNTS,
+            (0, 0),
+        ),
+        ({"input_tokens": 0, "output_tokens": 7}, PROVIDER_TOKEN_COUNTS, (0, 7)),
+        # Partial raw usage: only the missing field falls back.
+        ({"prompt_tokens": 10}, {"completion_tokens": 345}, (10, 345)),
+        ({"completion_tokens": 2}, {"input_tokens": 1200}, (1200, 2)),
+        ({"prompt_token_count": 10}, {}, (10, 0)),
+        # A raw key reported as None is unusable and falls back.
+        (
+            {"prompt_tokens": None, "completion_tokens": 2},
+            PROVIDER_TOKEN_COUNTS,
+            (1200, 2),
+        ),
+    ],
+)
+def test_get_tokens_from_response_is_field_aware(
+    usage, additional_kwargs, expected
+) -> None:
+    response = CompletionResponse(
+        text="Paris.",
+        raw={"usage": usage},
+        additional_kwargs=additional_kwargs,
+    )
+
+    assert get_tokens_from_response(response) == expected
