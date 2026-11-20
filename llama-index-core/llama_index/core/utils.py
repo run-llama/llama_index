@@ -5,6 +5,7 @@ import base64
 import inspect
 import os
 import random
+import stat
 import sys
 import time
 import traceback
@@ -61,17 +62,28 @@ class GlobalsHelper:
                 Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
             )
 
-            # Use bundled cache ONLY if it exists and is not empty
-            if bundled_path.exists() and any(bundled_path.iterdir()):
+            # NLTK >= 3.10.4 refuses to read from group/world-writable dirs.
+            # Skip the bundled cache when it has insecure permissions
+            # (common under umask 0002) so we fall through to a private
+            # per-user directory instead.
+            bundled_usable = bundled_path.exists() and any(bundled_path.iterdir())
+            if bundled_usable:
+                mode = bundled_path.stat().st_mode
+                if mode & (stat.S_IWGRP | stat.S_IWOTH):
+                    bundled_usable = False
+
+            if bundled_usable:
                 self._nltk_data_dir = str(bundled_path)
             else:
-                # 2. Fallback to user cache (prevents crash if bundled cache is missing)
+                # 2. Fallback to user cache (prevents crash if bundled cache is
+                #    missing or has insecure permissions)
                 path = Path(platformdirs.user_cache_dir("llama_index"))
                 self._nltk_data_dir = str(path / "_static/nltk_cache")
 
-        # Ensure the directory exists
+        # Ensure the directory exists with owner-only permissions so NLTK
+        # accepts it even under permissive umasks.
         if not os.path.exists(self._nltk_data_dir):
-            os.makedirs(self._nltk_data_dir, exist_ok=True)
+            os.makedirs(self._nltk_data_dir, mode=0o700, exist_ok=True)
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
