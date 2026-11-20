@@ -546,6 +546,7 @@ class OpenAI(FunctionCallingLLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
+            received_finish_reason = False
             for response in client.chat.completions.create(
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
@@ -553,6 +554,8 @@ class OpenAI(FunctionCallingLLM):
                 blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
+                    if response.choices[0].finish_reason is not None:
+                        received_finish_reason = True
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
@@ -608,6 +611,9 @@ class OpenAI(FunctionCallingLLM):
                     raw=response,
                     additional_kwargs=response_additional_kwargs,
                 )
+
+            if not received_finish_reason:
+                raise RuntimeError("Stream ended prematurely without a finish_reason")
 
         return gen()
 
@@ -828,6 +834,7 @@ class OpenAI(FunctionCallingLLM):
 
             is_function = False
             first_chat_chunk = True
+            received_finish_reason = False
             async for response in await aclient.chat.completions.create(
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
@@ -835,6 +842,8 @@ class OpenAI(FunctionCallingLLM):
                 blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
+                    if response.choices[0].finish_reason is not None:
+                        received_finish_reason = True
                     # check if the first chunk has neither content nor tool_calls
                     # this happens when 1106 models end up calling multiple tools
                     if (
@@ -900,6 +909,9 @@ class OpenAI(FunctionCallingLLM):
                     raw=response,
                     additional_kwargs=response_additional_kwargs,
                 )
+
+            if not received_finish_reason:
+                raise RuntimeError("Stream ended prematurely without a finish_reason")
 
         return gen()
 
