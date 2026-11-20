@@ -66,10 +66,19 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         )
 
         response = self.llm.predict(pii_prompt, context_str=text, query_str=task_str)
+        if not isinstance(response, str):
+            response = "" if response is None else str(response)
         splits = response.split("Output Mapping:")
         text_output = splits[0].strip()
+        if len(splits) < 2:
+            return text_output, {}
         json_str_output = splits[1].strip()
-        json_dict = json.loads(json_str_output)
+        try:
+            json_dict = json.loads(json_str_output)
+        except json.JSONDecodeError:
+            json_dict = {}
+        if not isinstance(json_dict, dict):
+            json_dict = {}
         return text_output, json_dict
 
     def _postprocess_nodes(
