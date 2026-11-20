@@ -69,3 +69,10 @@ def test_from_json(my_component):
         '{"class_name": "to_be_popped_out", "foo": "test string"}'
     )
     assert mc.foo == "test string"
+
+
+def test_from_json_accepts_dict(my_component):
+    mc = my_component.from_json(
+        {"class_name": "to_be_popped_out", "foo": "from dict"}
+    )
+    assert mc.foo == "from dict"
