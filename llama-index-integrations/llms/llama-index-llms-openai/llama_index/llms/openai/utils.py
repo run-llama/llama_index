@@ -1085,6 +1085,26 @@ def resolve_tool_choice(
     return tool_choice
 
 
+def _find_tool_call(
+    tool_calls: List[ChoiceDeltaToolCall], tc_delta: ChoiceDeltaToolCall
+) -> Optional[ChoiceDeltaToolCall]:
+    """Return the running tool call a delta continues, or None for a new call."""
+    if not tool_calls:
+        return None
+    if tc_delta.index is not None:
+        for t in tool_calls:
+            if t.index == tc_delta.index:
+                return t
+        return None
+    # Some OpenAI-compatible servers (Gemini's OpenAI endpoint, Mistral) omit
+    # `index`. There a delta with a new id starts a new call; one without an id
+    # continues the latest call.
+    last = tool_calls[-1]
+    if tc_delta.id and last.id and tc_delta.id != last.id:
+        return None
+    return last
+
+
 def update_tool_calls(
     tool_calls: List[ChoiceDeltaToolCall],
     tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
@@ -1100,42 +1120,37 @@ def update_tool_calls(
     Returns:
         List[ChoiceDeltaToolCall]: the updated tool calls
     """
-    # openai provides chunks consisting of tool_call deltas one tool at a time
     if tool_calls_delta is None or len(tool_calls_delta) == 0:
         return tool_calls
 
-    tc_delta = tool_calls_delta[0]
-
-    if len(tool_calls) == 0:
-        tool_calls.append(tc_delta)
-    else:
-        # we need to either update latest tool_call or start a
-        # new tool_call (i.e., multiple tools in this turn) and
-        # accumulate that new tool_call with future delta chunks
-        t = tool_calls[-1]
-        if t.index != tc_delta.index:
+    # A chunk can carry several tool call deltas (Mistral sends parallel calls
+    # together in one chunk), so every delta in it is applied, not just the first.
+    for tc_delta in tool_calls_delta:
+        t = _find_tool_call(tool_calls, tc_delta)
+        if t is None:
             # the start of a new tool call, so append to our running tool_calls list
             tool_calls.append(tc_delta)
-        else:
-            # not the start of a new tool call, so update last item of tool_calls
+            continue
 
-            # validations to get passed by mypy
-            assert t.function is not None
-            assert tc_delta.function is not None
+        # not the start of a new tool call, so update the matching tool_call
 
-            # Initialize fields if they're None
-            # OpenAI(or Compatible)'s streaming API can return partial tool call
-            # information across multiple chunks where some fields may be None in
-            # initial chunks and populated in subsequent ones
-            if t.function.arguments is None:
-                t.function.arguments = ""
-            if t.function.name is None:
-                t.function.name = ""
-            if t.id is None:
-                t.id = ""
+        # validations to get passed by mypy
+        assert t.function is not None
+        assert tc_delta.function is not None
 
-            # Update with delta values
-            t.function.arguments += tc_delta.function.arguments or ""
-            t.function.name += tc_delta.function.name or ""
-            t.id += tc_delta.id or ""
+        # Initialize fields if they're None
+        # OpenAI(or Compatible)'s streaming API can return partial tool call
+        # information across multiple chunks where some fields may be None in
+        # initial chunks and populated in subsequent ones
+        if t.function.arguments is None:
+            t.function.arguments = ""
+        if t.function.name is None:
+            t.function.name = ""
+        if t.id is None:
+            t.id = ""
+
+        # Update with delta values
+        t.function.arguments += tc_delta.function.arguments or ""
+        t.function.name += tc_delta.function.name or ""
+        t.id += tc_delta.id or ""
     return tool_calls

@@ -37,6 +37,7 @@ from llama_index.llms.openai.utils import (
     is_function_calling_model,
     is_json_schema_supported,
     openai_modelname_to_contextsize,
+    update_tool_calls,
     to_openai_message_dicts,
     to_openai_message_dict,
     to_openai_tool,
@@ -883,3 +884,97 @@ def test_responses_api_lone_tool_message_does_not_raise() -> None:
     assert result == [
         {"type": "function_call_output", "output": "xml result", "call_id": "call_1"}
     ]
+
+
+def _deltas(raw: list) -> list:
+    from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+
+    # The SDK builds stream chunks without validation, so a delta the server sent
+    # without `index` arrives with index=None; construct() does the same.
+    return [ChoiceDeltaToolCall.construct(**d) for d in raw]
+
+
+def _summary(tool_calls: list) -> list:
+    return [(t.id, t.function.name, t.function.arguments) for t in tool_calls]
+
+
+def test_update_tool_calls_applies_every_delta_in_a_chunk() -> None:
+    # Recorded Mistral stream (pydantic-ai cassette
+    # test_mistral_stream_parallel_tool_calls[mistral-small-latest]): all three
+    # parallel calls arrive in one chunk.
+    chunk = [
+        {
+            "id": "Fi65w8Plu",
+            "type": "function",
+            "index": 0,
+            "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'},
+        },
+        {
+            "id": "NpJQUR1bV",
+            "type": "function",
+            "index": 1,
+            "function": {"name": "get_weather", "arguments": '{"city": "London"}'},
+        },
+        {
+            "id": "lPaisIfGU",
+            "type": "function",
+            "index": 2,
+            "function": {"name": "get_time", "arguments": '{"tz": "UTC"}'},
+        },
+    ]
+    tool_calls = update_tool_calls([], _deltas(chunk))
+    assert _summary(tool_calls) == [
+        ("Fi65w8Plu", "get_weather", '{"city": "Paris"}'),
+        ("NpJQUR1bV", "get_weather", '{"city": "London"}'),
+        ("lPaisIfGU", "get_time", '{"tz": "UTC"}'),
+    ]
+
+
+def test_update_tool_calls_without_index_keeps_calls_apart() -> None:
+    # Recorded Gemini OpenAI-compatible stream (pydantic-ai cassette
+    # test_compatible_api_gemini_3_tool_call_thought_signature[True]): each call
+    # comes whole in its own chunk and no delta carries `index`.
+    tool_calls: list = []
+    for raw in (
+        {
+            "id": "call_108766",
+            "type": "function",
+            "function": {"name": "get_weather", "arguments": '{"city":"Taipei"}'},
+        },
+        {
+            "id": "call_108772",
+            "type": "function",
+            "function": {"name": "get_weather", "arguments": '{"city":"Kaohsiung"}'},
+        },
+    ):
+        tool_calls = update_tool_calls(tool_calls, _deltas([raw]))
+    assert _summary(tool_calls) == [
+        ("call_108766", "get_weather", '{"city":"Taipei"}'),
+        ("call_108772", "get_weather", '{"city":"Kaohsiung"}'),
+    ]
+
+
+def test_update_tool_calls_accumulates_split_arguments() -> None:
+    tool_calls: list = []
+    for raw in (
+        [
+            {
+                "index": 0,
+                "id": "call_a",
+                "type": "function",
+                "function": {"name": "f", "arguments": ""},
+            }
+        ],
+        [{"index": 0, "function": {"arguments": '{"x"'}}],
+        [
+            {
+                "index": 1,
+                "id": "call_b",
+                "type": "function",
+                "function": {"name": "g", "arguments": "{}"},
+            }
+        ],
+        [{"index": 0, "function": {"arguments": ": 1}"}}],
+    ):
+        tool_calls = update_tool_calls(tool_calls, _deltas(raw))
+    assert _summary(tool_calls) == [("call_a", "f", '{"x": 1}'), ("call_b", "g", "{}")]
