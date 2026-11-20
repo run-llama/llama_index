@@ -935,3 +935,73 @@ def test_from_openai_message_without_reasoning_content() -> None:
     assert len(thinking_blocks) == 0
     assert len(result.blocks) == 1
     assert result.blocks[0].text == "Hello!"
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_raises_on_truncated_stream_without_finish_reason(
+    MockSyncOpenAI: MagicMock,
+) -> None:
+    """Truncated sync stream without finish_reason must raise rather than return partial text."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = [
+            _make_chunk({"role": "assistant", "content": ""}),
+            _make_chunk({"content": "Order 42 has been "}),
+        ]
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        with pytest.raises(RuntimeError, match="finish_reason"):
+            list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+
+@pytest.mark.asyncio
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_astream_chat_raises_on_truncated_stream_without_finish_reason(
+    MockAsyncOpenAI: MagicMock,
+) -> None:
+    """Truncated async stream without finish_reason must raise rather than return partial text."""
+    mock_instance = MockAsyncOpenAI.return_value
+
+    async def mock_truncated_stream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        yield _make_chunk({"role": "assistant", "content": ""})
+        yield _make_chunk({"content": "Order 42 has been "})
+
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_truncated_stream()
+    mock_instance.chat.completions.create = create_fn
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response_gen = await llm.astream_chat([ChatMessage(role="user", content="test")])
+    with pytest.raises(RuntimeError, match="finish_reason"):
+        [r async for r in response_gen]
+
+
+@pytest.mark.asyncio
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_astream_chat_succeeds_with_trailing_empty_choices_chunk(
+    MockAsyncOpenAI: MagicMock,
+) -> None:
+    """A stream with finish_reason followed by a trailing usage-only empty-choices chunk succeeds."""
+    mock_instance = MockAsyncOpenAI.return_value
+
+    async def mock_stream_with_trailing_usage(
+        *args: Any, **kwargs: Any
+    ) -> AsyncGenerator:
+        yield _make_chunk({"role": "assistant", "content": "Hello!"})
+        yield _make_chunk({}, finish_reason="stop")
+        yield ChatCompletionChunk(
+            id="chatcmpl-test",
+            object="chat.completion.chunk",
+            created=1700000000,
+            model="gpt-4o",
+            choices=[],
+        )
+
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_stream_with_trailing_usage()
+    mock_instance.chat.completions.create = create_fn
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response_gen = await llm.astream_chat([ChatMessage(role="user", content="test")])
+    responses = [r async for r in response_gen]
+    assert responses[-1].message.content == "Hello!"
