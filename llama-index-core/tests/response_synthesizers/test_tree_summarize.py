@@ -922,3 +922,92 @@ class TestTreeSummarize:
         assert response1.response == mock_summary_bar
         assert isinstance(response2, PydanticResponse)
         assert response2.response == mock_summary_bar
+
+    @pytest.mark.asyncio
+    async def test_empty_chunks_return_empty_response(self) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=1, is_chat_model=True)
+        synthesizer = TreeSummarize(llm=llm, multimodal=True)
+        assert (
+            synthesizer.get_response(query_str="test", text_chunks=[])
+            == "Empty Response"
+        )
+        assert (
+            await synthesizer.aget_response(query_str="test", text_chunks=[])
+            == "Empty Response"
+        )
+        assert (
+            synthesizer.get_response_from_messages(
+                query_str="test", message_chunks=[]
+            )
+            == "Empty Response"
+        )
+        assert (
+            await synthesizer.aget_response_from_messages(
+                query_str="test", message_chunks=[]
+            )
+            == "Empty Response"
+        )
+        assert (
+            synthesizer.get_response_from_messages(
+                query_str="test", message_chunks=[ChatMessage(blocks=[])]
+            )
+            == "Empty Response"
+        )
+        assert (
+            await synthesizer.aget_response_from_messages(
+                query_str="test", message_chunks=[ChatMessage(blocks=[])]
+            )
+            == "Empty Response"
+        )
+
+    @pytest.mark.asyncio
+    async def test_message_chunks_output_cls_non_basemodel_fallback(self) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=1, is_chat_model=True)
+        tkn_counter = TokenCounter()
+        qa_template = CHAT_CONTENT_TREE_SUMMARIZE_PROMPT.partial_format(
+            query_str="test"
+        )
+        prompt_tokens = tkn_counter.estimate_tokens_in_messages(
+            get_empty_prompt_messages(qa_template)
+        )
+        msg_chunks = [
+            ChatMessage(content="context information1"),
+            ChatMessage(content="context information2"),
+        ]
+
+        for use_async in (False, True):
+            synthesizer = TreeSummarize(
+                llm=llm,
+                chat_prompt_helper=ChatPromptHelper(
+                    context_window=prompt_tokens + DEFAULT_PADDING + 5,
+                    num_output=0,
+                    chunk_overlap_ratio=0,
+                ),
+                output_cls=MockStructuredSummary,
+                use_async=use_async,
+                multimodal=True,
+            )
+            with (
+                patch.object(
+                    MockLLMWithChatMemoryOfLastCall,
+                    "structured_predict",
+                    return_value="fallback-summary",
+                ),
+                patch.object(
+                    MockLLMWithChatMemoryOfLastCall,
+                    "astructured_predict",
+                    return_value="fallback-summary",
+                ),
+            ):
+                assert (
+                    synthesizer.get_response_from_messages(
+                        query_str="test", message_chunks=msg_chunks
+                    )
+                    == "fallback-summary"
+                )
+                assert (
+                    await synthesizer.aget_response_from_messages(
+                        query_str="test", message_chunks=msg_chunks
+                    )
+                    == "fallback-summary"
+                )
