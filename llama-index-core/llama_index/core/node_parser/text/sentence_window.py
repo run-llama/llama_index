@@ -91,20 +91,22 @@ class SentenceWindowNodeParser(NodeParser):
         **kwargs: Any,
     ) -> List[BaseNode]:
         """Parse document into nodes."""
-        all_nodes: List[BaseNode] = []
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
-
-        for node in nodes_with_progress:
-            nodes = self.build_window_nodes_from_documents([node])
-            all_nodes.extend(nodes)
-
-        return all_nodes
+        return self.build_window_nodes_from_documents(nodes_with_progress)
 
     def build_window_nodes_from_documents(
         self, documents: Sequence[Document]
     ) -> List[BaseNode]:
         """Build window nodes from documents."""
         all_nodes: List[BaseNode] = []
+        window_size = self.window_size
+        window_key = self.window_metadata_key
+        orig_text_key = self.original_text_metadata_key
+        excluded_keys = (
+            (window_key,)
+            if window_key == orig_text_key
+            else (window_key, orig_text_key)
+        )
         for doc in documents:
             text = doc.text
             text_splits = self.sentence_splitter(text)
@@ -114,26 +116,26 @@ class SentenceWindowNodeParser(NodeParser):
                 id_func=self.id_func,
             )
 
+            # Pre-extract sentence strings once to avoid repeated Pydantic
+            # attribute lookups across overlapping windows.
+            node_texts = [n.text for n in nodes]
+            num_nodes = len(nodes)
+
             # add window to each node
             for i, node in enumerate(nodes):
-                window_nodes = nodes[
-                    max(0, i - self.window_size) : min(
-                        i + self.window_size + 1, len(nodes)
-                    )
+                window_texts = node_texts[
+                    max(0, i - window_size) : min(i + window_size + 1, num_nodes)
                 ]
 
-                node.metadata[self.window_metadata_key] = " ".join(
-                    [n.text for n in window_nodes]
-                )
-                node.metadata[self.original_text_metadata_key] = node.text
+                node.metadata[window_key] = " ".join(window_texts)
+                node.metadata[orig_text_key] = node_texts[i]
 
-                # exclude window metadata from embed and llm
-                node.excluded_embed_metadata_keys.extend(
-                    [self.window_metadata_key, self.original_text_metadata_key]
-                )
-                node.excluded_llm_metadata_keys.extend(
-                    [self.window_metadata_key, self.original_text_metadata_key]
-                )
+                # exclude window metadata from embed and llm without duplicates
+                for key in excluded_keys:
+                    if key not in node.excluded_embed_metadata_keys:
+                        node.excluded_embed_metadata_keys.append(key)
+                    if key not in node.excluded_llm_metadata_keys:
+                        node.excluded_llm_metadata_keys.append(key)
 
             all_nodes.extend(nodes)
 

@@ -21,3 +21,32 @@ def test_split_and_window() -> None:
         == "This is a test 1.  This is a test 2.  This is a test 3."
     )
     assert nodes[0].metadata["original_text"] == "This is a test 1. "
+
+
+def test_sentence_window_no_duplicate_excluded_metadata_keys() -> None:
+    document = Document(
+        text="This is a test 1. This is a test 2.",
+        excluded_embed_metadata_keys=["custom_embed", "window"],
+        excluded_llm_metadata_keys=["custom_llm", "original_text"],
+    )
+    node_parser = SentenceWindowNodeParser.from_defaults()
+    nodes = node_parser.get_nodes_from_documents([document])
+
+    assert len(nodes) == 2
+    for node in nodes:
+        assert node.excluded_embed_metadata_keys == [
+            "custom_embed",
+            "window",
+            "original_text",
+        ]
+        assert node.excluded_llm_metadata_keys == [
+            "custom_llm",
+            "original_text",
+            "window",
+        ]
+        assert len(node.excluded_embed_metadata_keys) == len(
+            set(node.excluded_embed_metadata_keys)
+        )
+        assert len(node.excluded_llm_metadata_keys) == len(
+            set(node.excluded_llm_metadata_keys)
+        )
