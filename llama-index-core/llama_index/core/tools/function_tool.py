@@ -290,7 +290,15 @@ class FunctionTool(AsyncBaseTool):
                 for field_name, field_info in fn_schema.model_fields.items()
                 if field_name not in partial_param_names
             }
-            fn_schema = create_model(f"{fn_schema.__name__}Partial", **fields)
+            # Rebuilding only the fields drops the source model's config, which would
+            # make the view more permissive than the base schema (losing, for example,
+            # extra="forbid" and any json_schema_extra). The view must hide the
+            # partial params and change nothing else.
+            fn_schema = create_model(
+                f"{fn_schema.__name__}Partial",
+                __config__=fn_schema.model_config or None,
+                **fields,
+            )
 
         tool = FunctionTool(
             fn=self._fn,
