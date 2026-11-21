@@ -115,7 +115,8 @@ def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
 
 
 @pytest.mark.parametrize(
-    "model", ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol"]
+    "model",
+    ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol", "gpt-6.1-terra"],
 )
 def test_get_model_kwargs_excludes_temperature_for_gpt_6(model):
     with patch("llama_index.llms.openai.responses.SyncOpenAI"):
@@ -127,6 +128,16 @@ def test_get_model_kwargs_excludes_temperature_for_gpt_6(model):
     assert kwargs["model"] == model
     assert "temperature" not in kwargs
     assert "top_p" not in kwargs
+
+
+def test_gpt_6_1_terra_reasoning_options():
+    llm = OpenAIResponses(
+        model="gpt-6.1-terra",
+        api_key="fake-api-key",
+        reasoning_options={"effort": "low"},
+    )
+
+    assert llm._get_model_kwargs()["reasoning"] == {"effort": "low"}
 
 
 def test_get_model_kwargs_with_tools_none(default_responses_llm):

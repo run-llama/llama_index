@@ -418,7 +418,8 @@ def test_is_json_schema_supported_supported_models() -> None:
 
 
 @pytest.mark.parametrize(
-    "model", ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol"]
+    "model",
+    ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol", "gpt-6.1-terra"],
 )
 def test_gpt_6_models_registered(model: str) -> None:
     assert openai_modelname_to_contextsize(model) == 1050000
