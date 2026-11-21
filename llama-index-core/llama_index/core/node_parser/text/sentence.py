@@ -319,14 +319,31 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         """
         Post-process chunks.
         Remove whitespace only chunks and remove leading and trailing whitespace.
+        Re-check token count after stripping because whitespace removal can
+        change BPE tokenization and push a chunk over chunk_size.
         """
         new_chunks = []
         for chunk in chunks:
-            stripped_chunk = chunk.strip()
-            if stripped_chunk == "":
+            stripped = chunk.strip()
+            if stripped == "":
                 continue
-            new_chunks.append(stripped_chunk)
+            if self._token_size(stripped) > self.chunk_size:
+                stripped = self._truncate_to_chunk_size(stripped)
+            if stripped:
+                new_chunks.append(stripped)
         return new_chunks
+
+    def _truncate_to_chunk_size(self, text: str) -> str:
+        """Binary-search the longest prefix of text that fits in chunk_size."""
+        lo, hi = 0, len(text)
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            candidate = text[:mid].rstrip()
+            if self._token_size(candidate) <= self.chunk_size:
+                lo = mid
+            else:
+                hi = mid - 1
+        return text[:lo].rstrip()
 
     def _token_size(self, text: str) -> int:
         return len(self._tokenizer(text))
