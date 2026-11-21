@@ -5,7 +5,7 @@ import json
 from typing import List, Optional
 
 import pytest
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict, Field
 from llama_index.core.llms import TextBlock, ImageBlock, DocumentBlock, VideoBlock
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.schema import Document, TextNode
@@ -223,6 +223,109 @@ def test_function_tool_partial_params() -> None:
     assert tool(x=1).raw_input == {"args": (), "kwargs": {"x": 1, "y": 2}}
     assert tool(x=1, y=3).raw_output == "x: 1, y: 3"
     assert tool(x=1, y=3).raw_input == {"args": (), "kwargs": {"x": 1, "y": 3}}
+
+
+def test_function_tool_with_partial_params_returns_request_scoped_view() -> None:
+    class LookupSchema(BaseModel):
+        query: str
+        client_id: str
+        debug_mode: bool = False
+
+    def lookup_client(query: str, client_id: str, debug_mode: bool = False) -> str:
+        return f"{client_id}: {query}: {debug_mode}"
+
+    tool = FunctionTool.from_defaults(
+        lookup_client,
+        fn_schema=LookupSchema,
+    )
+
+    user_tool = tool.with_partial_params({"client_id": "client-123"})
+
+    assert tool.metadata.fn_schema is LookupSchema
+    assert tool.partial_params == {}
+    assert user_tool.partial_params == {"client_id": "client-123"}
+
+    assert tool.metadata.fn_schema is not None
+    original_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "client_id" in original_schema["properties"]
+
+    assert user_tool.metadata.fn_schema is not None
+    request_schema = user_tool.metadata.fn_schema.model_json_schema()
+    assert "client_id" not in request_schema["properties"]
+    assert "query" in request_schema["properties"]
+    assert "debug_mode" in request_schema["properties"]
+
+    assert user_tool(query="renewal").raw_output == "client-123: renewal: False"
+    assert user_tool(query="renewal").raw_input == {
+        "args": (),
+        "kwargs": {"client_id": "client-123", "query": "renewal"},
+    }
+    assert tool(query="renewal", client_id="admin-picked").raw_output == (
+        "admin-picked: renewal: False"
+    )
+
+
+def test_function_tool_with_partial_params_preserves_existing_partial_params() -> None:
+    def lookup_client(query: str, client_id: str, debug_mode: bool = False) -> str:
+        return f"{client_id}: {query}: {debug_mode}"
+
+    tool = FunctionTool.from_defaults(
+        lookup_client,
+        partial_params={"debug_mode": False},
+    )
+
+    user_tool = tool.with_partial_params({"client_id": "client-123"})
+
+    assert user_tool.partial_params == {
+        "debug_mode": False,
+        "client_id": "client-123",
+    }
+
+    assert tool.metadata.fn_schema is not None
+    original_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "client_id" in original_schema["properties"]
+    assert "debug_mode" not in original_schema["properties"]
+
+    assert user_tool.metadata.fn_schema is not None
+    request_schema = user_tool.metadata.fn_schema.model_json_schema()
+    assert "query" in request_schema["properties"]
+    assert "client_id" not in request_schema["properties"]
+    assert "debug_mode" not in request_schema["properties"]
+
+    assert user_tool(query="renewal").raw_output == "client-123: renewal: False"
+
+
+def test_function_tool_with_partial_params_preserves_schema_config() -> None:
+    """
+    A request-scoped view must hide the partial params and change nothing else.
+
+    Rebuilding the schema from its fields alone silently drops the source model's
+    config, which makes the view more permissive than the tool it came from.
+    """
+
+    class StrictSchema(BaseModel):
+        model_config = ConfigDict(
+            extra="forbid", json_schema_extra={"x-contract": "preserve-me"}
+        )
+
+        query: str
+        client_id: str
+
+    def lookup_client(query: str, client_id: str) -> str:
+        return f"{client_id}: {query}"
+
+    tool = FunctionTool.from_defaults(lookup_client, fn_schema=StrictSchema)
+    user_tool = tool.with_partial_params({"client_id": "client-123"})
+
+    assert user_tool.metadata.fn_schema is not None
+    view_schema = user_tool.metadata.fn_schema.model_json_schema()
+
+    assert "client_id" not in view_schema["properties"]
+    assert "query" in view_schema["properties"]
+    # the two properties the rebuild used to lose
+    assert view_schema.get("additionalProperties") is False
+    assert view_schema.get("x-contract") == "preserve-me"
+    assert user_tool.metadata.fn_schema.model_config.get("extra") == "forbid"
 
 
 @pytest.mark.asyncio
