@@ -68,6 +68,12 @@ class RankGPTRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
+
+        # Resolve the default LLM first: the rerank event reports its model name.
+        self._ensure_llm()
+
         dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
@@ -76,9 +82,6 @@ class RankGPTRerank(BaseNodePostprocessor):
                 model_name=self.llm.metadata.model_name,
             )
         )
-
-        if query_bundle is None:
-            raise ValueError("Query bundle must be provided.")
 
         items = {
             "query": query_bundle.query_str,
