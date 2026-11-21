@@ -58,7 +58,7 @@ retriever = VectorIndexRetriever(
 
 # configure reranker
 reranker = RankLLMRerank(
-    model=model_name
+    model=model_name,
     top_n=reranker_top_n,
 )
 ```

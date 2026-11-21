@@ -89,3 +89,18 @@ def test_import_with_prompt_mode_from_rankllm_module(monkeypatch):
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
     reranker = rankllm_rerank.RankLLMRerank(top_n=1, batch_size=1)
     assert reranker.prompt_mode == prompt_mode.RANK_GPT
+
+
+def test_optional_fields_default_to_none(monkeypatch):
+    _mock_rankllm_modules(monkeypatch)
+    _clear_rankllm_rerank_modules(monkeypatch)
+
+    rankllm_rerank = importlib.import_module("llama_index.postprocessor.rankllm_rerank")
+
+    # top_n and batch_size are Optional, so they should not be required
+    reranker = rankllm_rerank.RankLLMRerank(model="rank_zephyr")
+    assert reranker.top_n is None
+    assert reranker.batch_size is None
+
+    reranker = rankllm_rerank.RankLLMRerank(model="rank_zephyr", top_n=3)
+    assert reranker.top_n == 3

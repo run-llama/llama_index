@@ -35,14 +35,16 @@ class RankLLMRerank(BaseNodePostprocessor):
 
     model: str = Field(description="Model name.", default="rank_zephyr")
     top_n: Optional[int] = Field(
-        description="Number of nodes to return sorted by reranking score."
+        description="Number of nodes to return sorted by reranking score.",
+        default=None,
     )
     window_size: int = Field(
         description="Reranking window size. Applicable only for listwise and pairwise models.",
         default=20,
     )
     batch_size: Optional[int] = Field(
-        description="Reranking batch size. Applicable only for pointwise models."
+        description="Reranking batch size. Applicable only for pointwise models.",
+        default=None,
     )
     context_size: int = Field(
         description="Maximum number of tokens for the context window.", default=4096
