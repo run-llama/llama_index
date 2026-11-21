@@ -1,3 +1,4 @@
+import re
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Sequence, Any
@@ -19,6 +20,20 @@ from llama_index.core.schema import (
 )
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.vector_stores import SimpleVectorStore
+
+
+class CollapseWhitespace(TransformComponent):
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
+        for node in nodes:
+            node.set_content(" ".join(node.get_content().split()))
+        return nodes
+
+
+class RedactEmails(TransformComponent):
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
+        for node in nodes:
+            node.set_content(re.sub(r"\S+@\S+", "[email]", node.get_content()))
+        return nodes
 
 
 def test_build_pipeline() -> None:
@@ -400,6 +415,20 @@ def test_pipeline_with_transform_error() -> None:
     assert pipeline.docstore.get_node("1", raise_error=False) is None
 
 
+def test_pipeline_cache_does_not_skip_unnamed_transformations() -> None:
+    """
+    Regression test: transformations that don't override `class_name()` shared
+    one cache key. When the first one left the nodes unchanged, the second one
+    was served the first one's cached output and never ran.
+    """
+    pipeline = IngestionPipeline(transformations=[CollapseWhitespace(), RedactEmails()])
+
+    # single-spaced already, so CollapseWhitespace has nothing to change
+    nodes = pipeline.run(documents=[Document(text="Contact alice@example.com today.")])
+
+    assert nodes[0].get_content() == "Contact [email] today."
+
+
 @pytest.mark.asyncio
 async def test_arun_pipeline() -> None:
     pipeline = IngestionPipeline(
@@ -638,6 +667,17 @@ async def test_async_pipeline_with_transform_error() -> None:
         await pipeline.arun(documents=[document1])
 
     assert pipeline.docstore.get_node("1", raise_error=False) is None
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_cache_does_not_skip_unnamed_transformations() -> None:
+    pipeline = IngestionPipeline(transformations=[CollapseWhitespace(), RedactEmails()])
+
+    nodes = await pipeline.arun(
+        documents=[Document(text="Contact alice@example.com today.")]
+    )
+
+    assert nodes[0].get_content() == "Contact [email] today."
 
 
 def test_docstore_strategy_not_mutated_on_run_without_vector_store() -> None:

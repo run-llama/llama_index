@@ -12,6 +12,23 @@ class DummyTransform(TransformComponent):
         return nodes
 
 
+class OtherDummyTransform(TransformComponent):
+    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        return nodes
+
+
+class NamedTransform(DummyTransform):
+    @classmethod
+    def class_name(cls) -> str:
+        return "NamedTransform"
+
+
+class RenamedTransform(DummyTransform):
+    @classmethod
+    def class_name(cls) -> str:
+        return "NamedTransform"
+
+
 def test_cache() -> None:
     cache = IngestionCache()
     transformation = DummyTransform()
@@ -45,3 +62,24 @@ def test_cache_clear() -> None:
 
     cache.clear()
     assert cache.get(hash) is None
+
+
+def test_transformation_hash_differs_between_unnamed_transformations() -> None:
+    # neither class overrides class_name(), so they serialize identically
+    assert DummyTransform().to_dict() == OtherDummyTransform().to_dict()
+
+    nodes = [TextNode(text="dummy")]
+    hash = get_transformation_hash(nodes, DummyTransform())
+
+    assert hash != get_transformation_hash(nodes, OtherDummyTransform())
+    assert hash == get_transformation_hash(nodes, DummyTransform())
+
+
+def test_transformation_hash_follows_declared_class_name() -> None:
+    # a declared class_name() stays the identity, so renaming or moving such a
+    # class does not invalidate its cache entries
+    nodes = [TextNode(text="dummy")]
+
+    assert get_transformation_hash(nodes, NamedTransform()) == get_transformation_hash(
+        nodes, RenamedTransform()
+    )
