@@ -1976,7 +1976,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-nebius"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2008,7 +2008,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-embeddings-openai", specifier = ">=0.6.0,<0.7" },
+    { name = "llama-index-embeddings-openai", specifier = ">=0.6.0,<0.9" },
 ]
 
 [package.metadata.requires-dev]
@@ -2035,15 +2035,15 @@ dev = [
 
 [[package]]
 name = "llama-index-embeddings-openai"
-version = "0.6.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-core" },
     { name = "openai" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/06/52/eb56a4887501651fb17400f7f571c1878109ff698efbe0bbac9165a5603d/llama_index_embeddings_openai-0.6.0.tar.gz", hash = "sha256:eb3e6606be81cb89125073e23c97c0a6119dabb4827adbd14697c2029ad73f29", size = 7629, upload-time = "2026-03-12T20:21:27.234Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/a7/d4f4a6fa56d2ca9c51de77b4892c1c1232e6d503f879c2197a4939215897/llama_index_embeddings_openai-0.8.0.tar.gz", hash = "sha256:752154841505cbe35fabfc90eae2703f541bb672a4e14e282b92c0d58673d2ad", size = 7620, upload-time = "2026-11-14T02:08:18.822Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/d1/4bb0b80f4057903110060f617ef519197194b3ff5dd6153d850c8f5676fa/llama_index_embeddings_openai-0.6.0-py3-none-any.whl", hash = "sha256:039bb1007ad4267e25ddb89a206dfdab862bfb87d58da4271a3919e4f9df4d61", size = 7666, upload-time = "2026-03-12T20:21:28.079Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/4b/45c77632157028514dca0855f872aeab085bb203795a61877e7bce827cda/llama_index_embeddings_openai-0.8.0-py3-none-any.whl", hash = "sha256:e9e03ecb2a8bbe3c93c7bd0a8c8d2cdce94342e167895c60c901c3b51048606a", size = 7666, upload-time = "2026-11-14T02:08:17.905Z" },
 ]
 
 [[package]]
