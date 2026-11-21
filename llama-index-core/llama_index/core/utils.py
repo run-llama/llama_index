@@ -41,6 +41,25 @@ if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
 
 
+def _is_group_or_world_writable(path: Union[str, Path]) -> bool:
+    """
+    Return True if users other than the owner can write to ``path``.
+
+    nltk>=3.10.4 refuses to download into or read from such a data directory.
+    """
+    if os.name == "nt":
+        # Windows does not use POSIX permission bits
+        return False
+    return bool(os.stat(path).st_mode & 0o022)
+
+
+def _ensure_private_dir(path: Union[str, Path]) -> None:
+    """Create ``path`` if needed and drop group/world write access if we own it."""
+    os.makedirs(path, exist_ok=True)
+    if _is_group_or_world_writable(path) and os.stat(path).st_uid == os.getuid():
+        os.chmod(path, os.stat(path).st_mode & 0o777 & ~0o022)
+
+
 class GlobalsHelper:
     """Helper to retrieve globals with asynchronous NLTK data loading."""
 
@@ -61,13 +80,19 @@ class GlobalsHelper:
                 Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
             )
 
-            # Use bundled cache ONLY if it exists and is not empty
-            if bundled_path.exists() and any(bundled_path.iterdir()):
+            # Use bundled cache ONLY if it exists, is not empty and is not
+            # group/world-writable (otherwise NLTK refuses to use it)
+            if (
+                bundled_path.exists()
+                and any(bundled_path.iterdir())
+                and not _is_group_or_world_writable(bundled_path)
+            ):
                 self._nltk_data_dir = str(bundled_path)
             else:
                 # 2. Fallback to user cache (prevents crash if bundled cache is missing)
                 path = Path(platformdirs.user_cache_dir("llama_index"))
                 self._nltk_data_dir = str(path / "_static/nltk_cache")
+                _ensure_private_dir(self._nltk_data_dir)
 
         # Ensure the directory exists
         if not os.path.exists(self._nltk_data_dir):

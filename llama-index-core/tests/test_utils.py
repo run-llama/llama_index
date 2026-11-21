@@ -353,3 +353,75 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+@pytest.fixture()
+def isolated_nltk_helper(tmp_path, monkeypatch):
+    """GlobalsHelper whose bundled and user NLTK cache paths live in tmp_path."""
+    import nltk
+
+    import llama_index.core.utils as utils_module
+
+    fake_pkg_dir = tmp_path / "pkg"
+    fake_pkg_dir.mkdir()
+    # wait_for_nltk_check() locates the bundled cache relative to utils.__file__
+    monkeypatch.setattr(utils_module, "__file__", str(fake_pkg_dir / "utils.py"))
+    monkeypatch.setattr(
+        utils_module.platformdirs,
+        "user_cache_dir",
+        lambda *args, **kwargs: str(tmp_path / "user_cache"),
+    )
+    monkeypatch.delenv("NLTK_DATA", raising=False)
+    monkeypatch.setattr(nltk.data, "path", list(nltk.data.path))
+
+    helper = utils_module.GlobalsHelper()
+    # no network access in unit tests
+    monkeypatch.setattr(helper, "_download_nltk_data", lambda: None)
+
+    bundled = fake_pkg_dir / "_static" / "nltk_cache"
+    user_cache = tmp_path / "user_cache" / "_static" / "nltk_cache"
+    return helper, bundled, user_cache
+
+
+def _is_group_or_world_writable(path: Path) -> bool:
+    return bool(os.stat(path).st_mode & 0o022)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permissions only")
+def test_nltk_data_dir_skips_group_writable_bundled_cache(
+    isolated_nltk_helper,
+) -> None:
+    helper, bundled, user_cache = isolated_nltk_helper
+    (bundled / "corpora").mkdir(parents=True)
+    os.chmod(bundled, 0o775)  # what umask 0002 produces
+
+    helper.wait_for_nltk_check()
+
+    # nltk>=3.10.4 refuses to use a group-writable data dir, so it must not be picked
+    assert helper._nltk_data_dir == str(user_cache)
+    assert not _is_group_or_world_writable(user_cache)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permissions only")
+def test_nltk_data_dir_makes_existing_user_cache_private(
+    isolated_nltk_helper,
+) -> None:
+    helper, _, user_cache = isolated_nltk_helper
+    user_cache.mkdir(parents=True)
+    os.chmod(user_cache, 0o775)  # left behind by an earlier run under umask 0002
+
+    helper.wait_for_nltk_check()
+
+    assert helper._nltk_data_dir == str(user_cache)
+    assert not _is_group_or_world_writable(user_cache)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permissions only")
+def test_nltk_data_dir_uses_private_bundled_cache(isolated_nltk_helper) -> None:
+    helper, bundled, _ = isolated_nltk_helper
+    (bundled / "corpora").mkdir(parents=True)
+    os.chmod(bundled, 0o755)
+
+    helper.wait_for_nltk_check()
+
+    assert helper._nltk_data_dir == str(bundled)
