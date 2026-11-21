@@ -122,6 +122,19 @@ def test_resource_id_fn(sqlite_engine):
     assert docs[1].id_ == "custom-2"
 
 
+def test_resource_id_fn_non_string_falls_back(sqlite_engine):
+    """A non-string `document_id` result must not break Document creation."""
+    reader = _create_reader(sqlite_engine)
+    docs = _get_all_docs(
+        reader,
+        document_id=lambda row: row["id"],  # INTEGER primary key
+    )
+
+    assert len(docs) == 2
+    assert all(isinstance(doc.id_, str) for doc in docs)
+    assert docs[0].id_ != docs[1].id_
+
+
 def test_lazy_load_data_generator(sqlite_engine):
     """`lazy_load_data` should yield Documents lazily."""
     reader = _create_reader(sqlite_engine)
