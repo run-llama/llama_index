@@ -136,23 +136,40 @@ class AutoMergingRetriever(BaseRetriever):
                 continue
 
             cur_node = cast(BaseNode, node.node)
-            # if there's a node in the middle, add that to the queue
+            next_list_node = cast(BaseNode, nodes[idx + 1].node)
+
+            # Determine if there is a one-chunk gap between the current node
+            # and the next node in the list.  The gap can appear in either
+            # document direction: cur_node … gap … next_list_node  (forward)
+            # or  next_list_node … gap … cur_node  (reverse, when the vector
+            # store returns hits in non-document order).
+            gap_node_info = None
             if (
                 cur_node.next_node is not None
-                and cur_node.next_node == nodes[idx + 1].node.prev_node
+                and cur_node.next_node == next_list_node.prev_node
             ):
-                is_changed = True
-                next_node = self._storage_context.docstore.get_document(
-                    cur_node.next_node.node_id
-                )
-                next_node = cast(BaseNode, next_node)
+                # Forward direction: cur_node -> gap -> next_list_node
+                gap_node_info = cur_node.next_node
+            elif (
+                next_list_node.next_node is not None
+                and next_list_node.next_node == cur_node.prev_node
+            ):
+                # Reverse direction: next_list_node -> gap -> cur_node
+                gap_node_info = next_list_node.next_node
 
-                next_node_text = truncate_text(
-                    next_node.get_content(metadata_mode=MetadataMode.NONE), 100
+            if gap_node_info is not None:
+                is_changed = True
+                gap_node = self._storage_context.docstore.get_document(
+                    gap_node_info.node_id
+                )
+                gap_node = cast(BaseNode, gap_node)
+
+                gap_node_text = truncate_text(
+                    gap_node.get_content(metadata_mode=MetadataMode.NONE), 100
                 )
                 info_str = (
-                    f"> Filling in node. Node id: {cur_node.next_node.node_id}"
-                    f"> Node text: {next_node_text}\n"
+                    f"> Filling in node. Node id: {gap_node_info.node_id}"
+                    f"> Node text: {gap_node_text}\n"
                 )
                 logger.info(info_str)
                 if self._verbose:
@@ -160,7 +177,7 @@ class AutoMergingRetriever(BaseRetriever):
 
                 # set score to be average of current node and next node
                 avg_score = (node.get_score() + nodes[idx + 1].get_score()) / 2
-                new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
+                new_nodes.append(NodeWithScore(node=gap_node, score=avg_score))
         return new_nodes, is_changed
 
     def _try_merging(
