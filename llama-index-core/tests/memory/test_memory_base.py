@@ -337,3 +337,58 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+async def test_flush_size_clamped_to_history_budget():
+    """Test that token_flush_size is clamped when it exceeds the history budget.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/24117.
+    With a small token_limit (e.g. 3644), the default flush size of 3000 exceeds
+    the history budget (token_limit * chat_history_token_ratio = 2550), causing
+    nearly all chat history to be archived on each flush.
+    """
+    memory = Memory(
+        token_limit=3644,
+        chat_history_token_ratio=0.7,
+        session_id="test_flush_clamp",
+    )
+    history_budget = int(3644 * 0.7)
+    assert memory.token_flush_size <= history_budget, (
+        f"token_flush_size ({memory.token_flush_size}) must not exceed "
+        f"history budget ({history_budget})"
+    )
+
+
+@pytest.mark.asyncio
+async def test_flush_preserves_history_with_small_token_limit():
+    """Test that flush doesn't wipe nearly all history with small token limits.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/24117.
+    """
+    memory = Memory(
+        token_limit=3644,
+        chat_history_token_ratio=0.7,
+        session_id="test_small_limit",
+    )
+
+    for i in range(40):
+        await memory.aput(ChatMessage(role="user", content=f"Message {i}. " + "word " * 100))
+        await memory.aput(ChatMessage(role="assistant", content=f"Reply {i}. " + "word " * 100))
+
+    messages = await memory.aget()
+    assert len(messages) > 2, (
+        f"Expected more than 2 messages after flush, got {len(messages)}. "
+        "Flush size likely exceeds the history budget."
+    )
+
+
+@pytest.mark.asyncio
+async def test_from_defaults_clamps_flush_size():
+    """Test that from_defaults clamps flush size to history budget."""
+    memory = Memory.from_defaults(
+        token_limit=3644,
+        chat_history_token_ratio=0.7,
+    )
+    history_budget = int(3644 * 0.7)
+    assert memory.token_flush_size <= history_budget

@@ -273,9 +273,11 @@ class Memory(BaseMemory):
         if tokenizer_fn is None:
             values["tokenizer_fn"] = get_tokenizer()
 
+        chat_history_token_ratio = values.get("chat_history_token_ratio", 0.7)
+        history_budget = int(token_limit * chat_history_token_ratio)
         if values.get("token_flush_size", -1) < 1:
             values["token_flush_size"] = int(token_limit * 0.1)
-        elif values.get("token_flush_size", -1) > token_limit:
+        elif values.get("token_flush_size", -1) > history_budget:
             values["token_flush_size"] = int(token_limit * 0.1)
 
         # validate all blocks have unique names
@@ -322,8 +324,9 @@ class Memory(BaseMemory):
         if chat_history is not None:
             asyncio_run(sql_store.set_messages(session_id, chat_history))
 
-        if token_flush_size > token_limit:
-            token_flush_size = int(token_limit * 0.7)
+        history_budget = int(token_limit * chat_history_token_ratio)
+        if token_flush_size > history_budget:
+            token_flush_size = int(token_limit * 0.1)
 
         return cls(
             token_limit=token_limit,
