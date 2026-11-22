@@ -1103,3 +1103,34 @@ def test_chat_prompt_helper_json_in_prompt() -> None:
     texts = prompt_helper.repack(prompt, [ChatMessage(content="hello_world")])
     assert len(texts) == 1
     assert prompt.template_vars == ["topic"]
+
+
+def test_chat_prompt_helper_uses_own_tokenizer() -> None:
+    """Test that truncate and repack measure messages with the helper's tokenizer."""
+
+    def char_tokenizer(text: str) -> list:
+        return list(text)
+
+    prompt = ChatPromptTemplate(message_templates=[ChatMessage(content="test{text}")])
+    prompt_helper = ChatPromptHelper(
+        context_window=200,
+        num_output=0,
+        chunk_overlap_ratio=0,
+        tokenizer=char_tokenizer,
+    )
+    messages = [
+        ChatMessage(content="word " * 100),
+        ChatMessage(content="text " * 100),
+    ]
+
+    budget = prompt_helper._get_available_chunk_size(prompt, num_chunks=2)
+    truncated = prompt_helper.truncate(prompt, messages)
+    assert truncated
+    for message in truncated:
+        assert message.estimate_tokens(tokenizer=char_tokenizer) <= budget
+
+    budget = prompt_helper._get_available_chunk_size(prompt, num_chunks=1)
+    repacked = prompt_helper.repack(prompt, messages)
+    assert repacked
+    for message in repacked:
+        assert message.estimate_tokens(tokenizer=char_tokenizer) <= budget
