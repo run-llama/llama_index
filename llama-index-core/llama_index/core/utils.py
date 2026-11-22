@@ -61,17 +61,27 @@ class GlobalsHelper:
                 Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
             )
 
-            # Use bundled cache ONLY if it exists and is not empty
-            if bundled_path.exists() and any(bundled_path.iterdir()):
+            # Use bundled cache ONLY if it exists, is not empty, and is
+            # not group/world-writable (nltk >=3.10.4 refuses writable dirs).
+            if (
+                bundled_path.exists()
+                and any(bundled_path.iterdir())
+                and not (bundled_path.stat().st_mode & 0o022)
+            ):
                 self._nltk_data_dir = str(bundled_path)
             else:
                 # 2. Fallback to user cache (prevents crash if bundled cache is missing)
                 path = Path(platformdirs.user_cache_dir("llama_index"))
                 self._nltk_data_dir = str(path / "_static/nltk_cache")
 
-        # Ensure the directory exists
+        # Ensure the directory exists with restrictive permissions so
+        # nltk >=3.10.4 accepts it (rejects group/world-writable dirs).
         if not os.path.exists(self._nltk_data_dir):
-            os.makedirs(self._nltk_data_dir, exist_ok=True)
+            os.makedirs(self._nltk_data_dir, mode=0o700, exist_ok=True)
+        else:
+            dir_mode = os.stat(self._nltk_data_dir).st_mode
+            if dir_mode & 0o022:
+                os.chmod(self._nltk_data_dir, dir_mode & ~0o022)
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
