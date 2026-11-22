@@ -1024,3 +1024,108 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_process_response_event_response_failed():
+    """Test that process_response_event raises ValueError on ResponseFailedEvent."""
+    from openai.types.responses import ResponseFailedEvent, Response
+    from openai.types.responses.response_error import ResponseError
+
+    error = ResponseError(
+        code="server_error",
+        message="model crashed",
+        misalignment=None,
+        param=None,
+        type=None,
+    )
+    response = Response(
+        id="resp_test_failed",
+        created_at=1762750000.0,
+        model="gpt-4o",
+        object="response",
+        output=[],
+        parallel_tool_calls=True,
+        tool_choice="auto",
+        tools=[],
+        status="failed",
+        error=error,
+    )
+    event = ResponseFailedEvent(
+        response=response,
+        sequence_number=1,
+        type="response.failed",
+    )
+
+    with pytest.raises(ValueError, match=r"\[server_error\] model crashed"):
+        OpenAIResponses.process_response_event(
+            event=event,
+            built_in_tool_calls=[],
+            additional_kwargs={},
+            current_tool_call=None,
+            track_previous_responses=False,
+        )
+
+
+def test_process_response_event_response_failed_no_error():
+    """Test that process_response_event raises ValueError on ResponseFailedEvent with no error details."""
+    from openai.types.responses import ResponseFailedEvent, Response
+
+    response = Response(
+        id="resp_test_failed_no_err",
+        created_at=1762750000.0,
+        model="gpt-4o",
+        object="response",
+        output=[],
+        parallel_tool_calls=True,
+        tool_choice="auto",
+        tools=[],
+        status="failed",
+        error=None,
+    )
+    event = ResponseFailedEvent(
+        response=response,
+        sequence_number=1,
+        type="response.failed",
+    )
+
+    with pytest.raises(ValueError, match="failed with no error details"):
+        OpenAIResponses.process_response_event(
+            event=event,
+            built_in_tool_calls=[],
+            additional_kwargs={},
+            current_tool_call=None,
+            track_previous_responses=False,
+        )
+
+
+def test_process_response_event_response_incomplete():
+    """Test that process_response_event raises ValueError on ResponseIncompleteEvent."""
+    from openai.types.responses import ResponseIncompleteEvent, Response
+    from openai.types.responses.response import IncompleteDetails
+
+    response = Response(
+        id="resp_test_incomplete",
+        created_at=1762750000.0,
+        model="gpt-4o",
+        object="response",
+        output=[],
+        parallel_tool_calls=True,
+        tool_choice="auto",
+        tools=[],
+        status="incomplete",
+        incomplete_details=IncompleteDetails(reason="max_output_tokens"),
+    )
+    event = ResponseIncompleteEvent(
+        response=response,
+        sequence_number=1,
+        type="response.incomplete",
+    )
+
+    with pytest.raises(ValueError, match="incomplete: max_output_tokens"):
+        OpenAIResponses.process_response_event(
+            event=event,
+            built_in_tool_calls=[],
+            additional_kwargs={},
+            current_tool_call=None,
+            track_previous_responses=False,
+        )

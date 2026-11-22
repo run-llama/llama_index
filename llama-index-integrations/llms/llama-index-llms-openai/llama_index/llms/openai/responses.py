@@ -27,6 +27,8 @@ from openai.types.responses import (
     ResponseCodeInterpreterToolCall,
     ResponseImageGenCallPartialImageEvent,
     ResponseOutputItemDoneEvent,
+    ResponseFailedEvent,
+    ResponseIncompleteEvent,
 )
 from openai.types.responses.response_output_item import ImageGenerationCall, McpCall
 from typing import (
@@ -671,6 +673,26 @@ class OpenAIResponses(FunctionCallingLLM):
                         ),
                     )
                 )
+        elif isinstance(event, ResponseFailedEvent):
+            # Response failed -- raise so callers do not silently get an empty answer
+            error = getattr(event.response, "error", None)
+            if error:
+                code = getattr(error, "code", "unknown")
+                message = getattr(error, "message", "unknown error")
+                raise ValueError(
+                    f"OpenAI Responses API request failed: [{code}] {message}"
+                )
+            raise ValueError(
+                "OpenAI Responses API request failed with no error details"
+            )
+        elif isinstance(event, ResponseIncompleteEvent):
+            # Response ended incomplete -- raise so callers do not silently get a
+            # truncated answer reported as success
+            details = getattr(event.response, "incomplete_details", None)
+            reason = getattr(details, "reason", "unknown") if details else "unknown"
+            raise ValueError(
+                f"OpenAI Responses API request incomplete: {reason}"
+            )
         elif isinstance(event, ResponseCompletedEvent):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):
