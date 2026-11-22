@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-singlestore"
-version = "0.7.0"
+version = "0.7.1"
 description = "llama-index readers singlestore integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.11,<4.0"
@@ -38,7 +38,7 @@ keywords = [
     "singlestore",
 ]
 dependencies = [
-    "llama-index-readers-database>=0.5.0,<0.6",
+    "llama-index-readers-database>=0.5.0,<0.9",
     "pymysql>=1.1.0,<2",
     "llama-index-core>=0.13.0,<0.15",
 ]

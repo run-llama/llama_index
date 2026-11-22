@@ -1998,7 +1998,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-box"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "box-sdk-gen" },
@@ -2034,7 +2034,7 @@ dev = [
 requires-dist = [
     { name = "box-sdk-gen", specifier = ">=1.5.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-readers-box", specifier = ">=0.4.0,<0.5" },
+    { name = "llama-index-readers-box", specifier = ">=0.4.0,<0.8" },
 ]
 
 [package.metadata.requires-dev]
