@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import functools
 import os
+import re
 from importlib.metadata import PackageNotFoundError, version
 import typing
 from typing import (
@@ -69,6 +70,21 @@ import google.genai.types as types
 dispatcher = instrument.get_dispatcher(__name__)
 
 DEFAULT_MODEL = "gemini-3.7-flash"
+
+
+def _is_gemini_3_or_newer(model: str) -> bool:
+    """Check if the model is Gemini 3 or newer."""
+    model_name = model.split("/")[-1].lower()
+    if not model_name:
+        return False
+    # Pre-Gemini 3 models: gemini-1.x, gemini-2.x, gemini-pro, gemini-flash, gemini-exp
+    return not bool(
+        re.match(
+            r"^gemini-(?:[12](?:\.\d+)?|exp|(?:pro|flash)(?!-(?:lite-)?latest$))(?:-|$)",
+            model_name,
+        )
+    )
+
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -191,7 +207,7 @@ class GoogleGenAI(FunctionCallingLLM):
     ):
         if temperature is None:
             # Gemini 3-series models may error if temperature is set.
-            if "gemini-3" not in model:
+            if not _is_gemini_3_or_newer(model):
                 temperature = DEFAULT_TEMPERATURE
 
         # API keys are optional. The API can be authorised via OAuth (detected
