@@ -2013,7 +2013,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-docstore-elasticsearch"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2045,7 +2045,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-storage-kvstore-elasticsearch", specifier = ">=0.4.0,<0.5" },
+    { name = "llama-index-storage-kvstore-elasticsearch", specifier = ">=0.4.0,<0.7" },
 ]
 
 [package.metadata.requires-dev]

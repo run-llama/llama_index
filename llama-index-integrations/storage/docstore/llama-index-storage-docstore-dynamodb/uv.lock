@@ -2023,7 +2023,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-docstore-dynamodb"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
@@ -2057,7 +2057,7 @@ dev = [
 requires-dist = [
     { name = "boto3", specifier = ">=1.35.0,<2" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-storage-kvstore-dynamodb", specifier = ">=0.4.0,<0.5" },
+    { name = "llama-index-storage-kvstore-dynamodb", specifier = ">=0.4.0,<0.7" },
 ]
 
 [package.metadata.requires-dev]
