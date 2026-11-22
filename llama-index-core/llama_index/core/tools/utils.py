@@ -59,6 +59,7 @@ def create_schema_from_function(
         param_default = params[param_name].default
         description = None
         json_schema_extra: dict[str, Any] = {}
+        annotated_field_info: Optional[FieldInfo] = None
 
         if get_origin(param_type) is typing.Annotated:
             args = get_args(param_type)
@@ -67,6 +68,7 @@ def create_schema_from_function(
             if isinstance(args[1], str):
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
+                annotated_field_info = args[1]
                 description = args[1].description
                 if args[1].json_schema_extra and isinstance(
                     args[1].json_schema_extra, dict
@@ -88,11 +90,25 @@ def create_schema_from_function(
             param_type = Any
 
         if param_default is params[param_name].empty:
-            # Required field
-            fields[param_name] = (
-                param_type,
-                FieldInfo(description=description, json_schema_extra=json_schema_extra),
-            )
+            # Required field – reuse the full FieldInfo from an Annotated
+            # annotation so that validators like pattern, min_length, etc.
+            # are preserved, merging in the resolved description and any
+            # json_schema_extra we accumulated (e.g. date formats).
+            if annotated_field_info is not None:
+                merged = FieldInfo.merge_field_infos(
+                    annotated_field_info,
+                    description=description,
+                    json_schema_extra=json_schema_extra or None,
+                )
+                fields[param_name] = (param_type, merged)
+            else:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo(
+                        description=description,
+                        json_schema_extra=json_schema_extra,
+                    ),
+                )
         elif isinstance(param_default, FieldInfo):
             # Field with pydantic.Field as default value
             if param_default.description is None and description is not None:

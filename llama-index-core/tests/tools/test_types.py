@@ -25,6 +25,19 @@ def test_toolmetadata_openai_tool_description_max_length() -> None:
         ToolMetadata(invalid_description).to_openai_tool()
 
 
+def test_get_parameters_dict_preserves_additional_properties() -> None:
+    """additionalProperties must survive get_parameters_dict (GH-24142)."""
+    from pydantic import ConfigDict
+
+    class StrictArgs(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+        order_id: str
+
+    meta = ToolMetadata(description="test", fn_schema=StrictArgs)
+    params = meta.get_parameters_dict()
+    assert params.get("additionalProperties") is False
+
+
 def test_nested_tool_schema() -> None:
     tool = get_function_tool(Outer)
     schema = tool.metadata.get_parameters_dict()

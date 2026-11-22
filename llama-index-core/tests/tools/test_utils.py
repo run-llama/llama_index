@@ -189,6 +189,24 @@ def test_param_descriptions_do_not_override_an_explicit_description() -> None:
     assert actual_schema["properties"]["y"]["description"] == "From the field"
 
 
+def test_create_schema_preserves_annotated_field_constraints() -> None:
+    """Field validators like pattern and min_length from Annotated params
+    must appear in the generated JSON schema (GH-24142)."""
+
+    def issue_refund(
+        order_id: Annotated[str, Field(pattern=r"^ORD-[0-9]{6}$")],
+        reason: Annotated[str, Field(min_length=5, max_length=200)],
+    ) -> str:
+        return "ok"
+
+    schema = create_schema_from_function("TestSchema", issue_refund)
+    props = schema.model_json_schema()["properties"]
+
+    assert props["order_id"]["pattern"] == r"^ORD-[0-9]{6}$"
+    assert props["reason"]["minLength"] == 5
+    assert props["reason"]["maxLength"] == 200
+
+
 def test_param_descriptions_do_not_mutate_the_callers_field() -> None:
     """Filling in a description must not write back to the shared FieldInfo."""
     shared_field = Field("a")
