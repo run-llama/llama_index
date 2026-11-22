@@ -2,6 +2,7 @@ import pytest
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.program.function_program import get_function_tool
+from llama_index.core.tools import FunctionTool
 from llama_index.core.tools.types import ToolMetadata
 
 
@@ -38,3 +39,23 @@ def test_nested_tool_schema() -> None:
 
     assert schema["required"][0] == "inner"
     assert schema["properties"] == {"inner": {"$ref": "#/$defs/Inner"}}
+
+
+def test_no_arg_tool_declares_required() -> None:
+    def ping() -> str:
+        """Ping the service."""
+        return "pong"
+
+    schema = FunctionTool.from_defaults(fn=ping).metadata.get_parameters_dict()
+    assert schema["required"] == []
+    openai_tool = FunctionTool.from_defaults(fn=ping).metadata.to_openai_tool()
+    assert openai_tool["function"]["parameters"]["required"] == []
+
+
+def test_all_optional_tool_declares_required() -> None:
+    def search(query: str = "", limit: int = 5) -> str:
+        """Search."""
+        return query
+
+    schema = FunctionTool.from_defaults(fn=search).metadata.get_parameters_dict()
+    assert schema["required"] == []
