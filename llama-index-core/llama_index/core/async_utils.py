@@ -41,9 +41,11 @@ def asyncio_run(coro: Coroutine) -> Any:
     If there is no existing event loop, creates a new one.
     If an event loop is already running, uses threading to run in a separate thread.
     """
+    loop_found = False
     try:
         # Check if there's an existing event loop
         loop = asyncio.get_event_loop()
+        loop_found = True
 
         # Check if the loop is already running
         if loop.is_running():
@@ -67,14 +69,20 @@ def asyncio_run(coro: Coroutine) -> Any:
             return loop.run_until_complete(coro)
 
     except RuntimeError as e:
+        # A RuntimeError raised while running the coroutine is not a nesting problem: it must reach the caller
+        # unchanged, and the coroutine must not be run again.
+        if loop_found:
+            raise
         # If we can't get the event loop, we're likely in a different thread
         try:
             return asyncio.run(coro)
         except RuntimeError as e:
+            if "cannot be called from a running event loop" not in str(e):
+                raise
             raise RuntimeError(
                 "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
                 "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
-            )
+            ) from e
 
 
 def run_async_tasks(
