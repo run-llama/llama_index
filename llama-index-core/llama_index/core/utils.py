@@ -236,6 +236,19 @@ class ErrorToRetry:
     check_fn: Optional[Callable[[Any], bool]] = None
 
 
+def _get_error_check_fn(
+    error_checks: Dict[Type[Exception], Optional[Callable[[Any], bool]]],
+    exception: Exception,
+) -> Optional[Callable[[Any], bool]]:
+    """Return the check function configured for the closest class of `exception`."""
+    # The `except` clause that catches an exception also catches its subclasses, so the check function of a listed
+    # class must decide for them too.
+    for exception_cls in type(exception).__mro__:
+        if exception_cls in error_checks:
+            return error_checks[exception_cls]
+    return None
+
+
 def retry_on_exceptions_with_backoff(
     lambda_fn: Callable,
     errors_to_retry: List[ErrorToRetry],
@@ -277,7 +290,7 @@ def retry_on_exceptions_with_backoff(
             tries += 1
             if tries >= max_tries:
                 raise
-            check_fn = error_checks.get(e.__class__)
+            check_fn = _get_error_check_fn(error_checks, e)
             if check_fn and not check_fn(e):
                 raise
             time.sleep(backoff_secs)
@@ -325,7 +338,7 @@ async def aretry_on_exceptions_with_backoff(
             tries += 1
             if tries >= max_tries:
                 raise
-            check_fn = error_checks.get(e.__class__)
+            check_fn = _get_error_check_fn(error_checks, e)
             if check_fn and not check_fn(e):
                 raise
             await asyncio.sleep(backoff_secs)

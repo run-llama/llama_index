@@ -210,6 +210,27 @@ def test_retry_on_conditional_exceptions() -> None:
     assert call_count == 1
 
 
+class ConditionalSubclassException(ConditionalException):
+    """Exception of a subclass of the class listed in `errors_to_retry`."""
+
+
+@pytest.mark.parametrize("should_retry, expected_calls", [(True, 3), (False, 1)])
+def test_retry_applies_the_check_function_of_a_listed_class_to_its_subclasses(
+    should_retry: bool, expected_calls: int
+) -> None:
+    """Make sure the check function of a listed class also decides for the subclasses the retry catches."""
+    global call_count
+    call_count = 0
+    with pytest.raises(ConditionalSubclassException):
+        retry_on_exceptions_with_backoff(
+            lambda: fn_with_exception(ConditionalSubclassException(should_retry)),
+            [ErrorToRetry(ConditionalException, lambda e: e.should_retry)],
+            max_tries=3,
+            min_backoff_secs=0.0,
+        )
+    assert call_count == expected_calls
+
+
 def test_iter_batch() -> None:
     """Check iter_batch works as expected on regular, lazy and empty sequences."""
     lst = list(range(6))
