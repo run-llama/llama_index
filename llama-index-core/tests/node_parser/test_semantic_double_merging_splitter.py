@@ -156,3 +156,58 @@ def test_clean_text_advanced() -> None:
         "this is a test text containing some stopwords like the and a"
     )
     assert cleaned == "test text containing stopwords like"
+
+
+def test_include_prev_next_rel_false_no_relationships() -> None:
+    """Regression test for GH-23675.
+
+    When include_prev_next_rel=False, build_semantic_nodes_from_nodes() must NOT
+    attach PREVIOUS or NEXT relationships to any node.
+    """
+    from llama_index.core.schema import NodeRelationship
+
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        include_prev_next_rel=False,
+        max_chunk_size=1000,
+    )
+    nodes = splitter.get_nodes_from_documents([doc])
+    for node in nodes:
+        assert NodeRelationship.PREVIOUS not in node.relationships, (
+            f"Node '{node.node_id}' unexpectedly has a PREVIOUS relationship "
+            "even though include_prev_next_rel=False"
+        )
+        assert NodeRelationship.NEXT not in node.relationships, (
+            f"Node '{node.node_id}' unexpectedly has a NEXT relationship "
+            "even though include_prev_next_rel=False"
+        )
+
+
+def test_include_prev_next_rel_true_has_relationships() -> None:
+    """When include_prev_next_rel=True (default), PREVIOUS/NEXT links must be present
+    for all nodes except the first (no PREVIOUS) and last (no NEXT).
+    """
+    from llama_index.core.schema import NodeRelationship
+
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        include_prev_next_rel=True,
+        max_chunk_size=1000,
+    )
+    nodes = splitter.get_nodes_from_documents([doc])
+    if len(nodes) >= 2:
+        # Every node except the first must have a PREVIOUS relationship
+        for node in nodes[1:]:
+            assert NodeRelationship.PREVIOUS in node.relationships, (
+                f"Node '{node.node_id}' is missing PREVIOUS relationship "
+                "even though include_prev_next_rel=True"
+            )
+        # Every node except the last must have a NEXT relationship
+        for node in nodes[:-1]:
+            assert NodeRelationship.NEXT in node.relationships, (
+                f"Node '{node.node_id}' is missing NEXT relationship "
+                "even though include_prev_next_rel=True"
+            )
+
