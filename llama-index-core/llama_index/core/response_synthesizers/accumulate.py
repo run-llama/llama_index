@@ -65,6 +65,9 @@ class Accumulate(BaseSynthesizer):
         return [item for sublist in md_array for item in sublist]
 
     def _format_response(self, outputs: List[Any], separator: str) -> str:
+        if not outputs:
+            return "Empty Response"
+
         responses: List[str] = []
         for response in outputs:
             responses.append(response or "Empty Response")
@@ -74,14 +77,10 @@ class Accumulate(BaseSynthesizer):
         )
 
     def _make_prompt_kwargs(self, chunk: str | ChatMessage) -> dict[str, Any]:
-        if self._multimodal:
-            template = self._chat_content_qa_template.partial_format(
-                query_str="{query_str}"
-            )
-            return {"context_messages": [chunk], "template": template}
+        if isinstance(chunk, ChatMessage):
+            return {"context_messages": [chunk]}
         else:
-            template = self._text_qa_template.partial_format(query_str="{query_str}")
-            return {"context_str": chunk, "template": template}
+            return {"context_str": chunk}
 
     def _give_responses(
         self,
@@ -91,8 +90,7 @@ class Accumulate(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> List[Any]:
         repacked: list[str] | list[ChatMessage]
-        if self._multimodal:
-            assert isinstance(chunk, ChatMessage)
+        if isinstance(chunk, ChatMessage):
             template = self._chat_content_qa_template.partial_format(
                 query_str=query_str
             )
