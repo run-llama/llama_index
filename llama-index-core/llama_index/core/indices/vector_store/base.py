@@ -117,9 +117,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         return VectorIndexRetriever(
             self,
-            node_ids=list(self.index_struct.nodes_dict.values()),
-            callback_manager=self._callback_manager,
-            object_map=self._object_map,
+            node_ids=kwargs.pop(
+                "node_ids", list(self.index_struct.nodes_dict.values())
+            ),
+            callback_manager=kwargs.pop("callback_manager", self._callback_manager),
+            object_map=kwargs.pop("object_map", self._object_map),
             **kwargs,
         )
 

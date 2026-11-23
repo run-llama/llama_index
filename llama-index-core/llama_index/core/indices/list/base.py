@@ -78,17 +78,18 @@ class SummaryIndex(BaseIndex[IndexList]):
             SummaryIndexRetriever,
         )
 
+        object_map = kwargs.pop("object_map", self._object_map)
         if retriever_mode == ListRetrieverMode.DEFAULT:
-            return SummaryIndexRetriever(self, object_map=self._object_map, **kwargs)
+            return SummaryIndexRetriever(self, object_map=object_map, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
             embed_model = embed_model or Settings.embed_model
             return SummaryIndexEmbeddingRetriever(
-                self, object_map=self._object_map, embed_model=embed_model, **kwargs
+                self, object_map=object_map, embed_model=embed_model, **kwargs
             )
         elif retriever_mode == ListRetrieverMode.LLM:
             llm = llm or Settings.llm
             return SummaryIndexLLMRetriever(
-                self, object_map=self._object_map, llm=llm, **kwargs
+                self, object_map=object_map, llm=llm, **kwargs
             )
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")

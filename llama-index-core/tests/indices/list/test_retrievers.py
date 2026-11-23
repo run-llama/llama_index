@@ -89,3 +89,14 @@ def test_llm_query(documents: List[Document], patch_token_text_splitter) -> None
 
     assert nodes[0].node.get_content() == "This is a test."
     assert nodes[1].node.get_content() == "This is a test v2."
+
+
+def test_as_retriever_custom_object_map(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """Test that custom object_map can be passed to as_retriever without TypeError."""
+    index = SummaryIndex.from_documents(documents)
+    custom_map = {"key": "val"}
+    retriever = index.as_retriever(object_map=custom_map)
+    assert retriever.object_map == custom_map
+
