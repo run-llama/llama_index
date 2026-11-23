@@ -7,7 +7,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v10
+      - uses: actions/stale@v11
         with:
           # PR configuration
           stale-pr-message: "This PR is stale because it has been open 50 days with no activity. Remove stale label or comment or this will be closed in 10 days."
