@@ -4,7 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import requests
+from google.auth.credentials import AnonymousCredentials
 from google.genai.errors import APIError
+from google.genai.types import HttpOptions
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
@@ -12,6 +14,163 @@ from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 def test_embedding_class():
     emb = GoogleGenAIEmbedding(api_key="...")
     assert isinstance(emb, BaseEmbedding)
+
+
+@pytest.fixture
+def provider_env(monkeypatch):
+    # Replace the mapping without inspecting or copying ambient provider secrets.
+    env = {}
+    monkeypatch.setattr(os, "environ", env)
+    return env
+
+
+@pytest.mark.parametrize(
+    ("flag", "expected_vertexai"),
+    [
+        (None, False),
+        ("", False),
+        ("false", False),
+        ("False", False),
+        ("FALSE", False),
+        ("0", False),
+        ("garbage", False),
+        ("yes", False),
+        ("on", False),
+        ("2", False),
+        (" true", False),
+        ("true ", False),
+        (" 1 ", False),
+        (" ", False),
+        ("\ttrue\n", False),
+        ("true", True),
+        ("TRUE", True),
+        ("TrUe", True),
+        ("1", True),
+    ],
+)
+@pytest.mark.parametrize(
+    ("api_key", "expected_api_key"),
+    [("explicit-key", "explicit-key"), (None, "environment-key")],
+)
+@pytest.mark.parametrize(
+    ("project", "location"),
+    [("environment-project", "environment-location"), (None, None)],
+)
+@patch("google.genai.Client")
+def test_vertexai_env_routing(
+    mock_client_class,
+    provider_env,
+    flag,
+    expected_vertexai,
+    api_key,
+    expected_api_key,
+    project,
+    location,
+):
+    provider_env["GOOGLE_API_KEY"] = "environment-key"
+    provider_env["GEMINI_API_KEY"] = "gemini-key"
+    if flag is not None:
+        provider_env["GOOGLE_GENAI_USE_VERTEXAI"] = flag
+    if project is not None:
+        provider_env["GOOGLE_CLOUD_PROJECT"] = project
+    if location is not None:
+        provider_env["GOOGLE_CLOUD_LOCATION"] = location
+
+    emb = GoogleGenAIEmbedding(api_key=api_key)
+
+    assert isinstance(emb, BaseEmbedding)
+    assert emb._client is mock_client_class.return_value
+    kwargs = mock_client_class.call_args.kwargs
+    http_options = kwargs["http_options"]
+    assert isinstance(http_options, HttpOptions)
+    if expected_vertexai:
+        mock_client_class.assert_called_once_with(
+            api_key=None,
+            vertexai=True,
+            project=project,
+            location=location,
+            http_options=http_options,
+        )
+    else:
+        assert {"vertexai", "project", "location", "credentials"}.isdisjoint(kwargs)
+        mock_client_class.assert_called_once_with(
+            api_key=expected_api_key, http_options=http_options
+        )
+
+
+@pytest.mark.parametrize("flag", [None, "false", "garbage", "true"])
+@pytest.mark.parametrize(
+    "vertexai_config",
+    [
+        {},
+        {
+            "project": "config-project",
+            "location": "config-location",
+            "credentials": AnonymousCredentials(),
+        },
+        {"project": "config-project"},
+        {"location": "config-location"},
+        {"credentials": AnonymousCredentials()},
+    ],
+)
+@patch("google.genai.Client")
+def test_vertexai_config_precedence(
+    mock_client_class, provider_env, flag, vertexai_config
+):
+    provider_env.update(
+        GOOGLE_API_KEY="environment-key",
+        GOOGLE_CLOUD_PROJECT="environment-project",
+        GOOGLE_CLOUD_LOCATION="environment-location",
+    )
+    if flag is not None:
+        provider_env["GOOGLE_GENAI_USE_VERTEXAI"] = flag
+    original_config = vertexai_config.copy()
+
+    GoogleGenAIEmbedding(api_key="explicit-key", vertexai_config=vertexai_config)
+
+    kwargs = mock_client_class.call_args.kwargs
+    http_options = kwargs["http_options"]
+    assert isinstance(http_options, HttpOptions)
+    mock_client_class.assert_called_once_with(
+        api_key=None, vertexai=True, http_options=http_options, **original_config
+    )
+    assert vertexai_config == original_config
+    if "credentials" in original_config:
+        assert kwargs["credentials"] is original_config["credentials"]
+
+
+@pytest.mark.parametrize(
+    ("api_key", "google_key", "gemini_key", "expected_api_key"),
+    [
+        ("explicit-key", "environment-key", "gemini-key", "explicit-key"),
+        (None, "environment-key", "gemini-key", "environment-key"),
+        ("", "environment-key", "gemini-key", "environment-key"),
+        (None, None, None, None),
+        ("", None, None, None),
+        (None, None, "gemini-key", None),
+        (None, "", "gemini-key", ""),
+        ("", "", "gemini-key", ""),
+    ],
+)
+@patch("google.genai.Client")
+def test_api_key_selection_preserved(
+    mock_client_class, provider_env, api_key, google_key, gemini_key, expected_api_key
+):
+    provider_env["GOOGLE_GENAI_USE_VERTEXAI"] = "false"
+    if google_key is not None:
+        provider_env["GOOGLE_API_KEY"] = google_key
+    if gemini_key is not None:
+        provider_env["GEMINI_API_KEY"] = gemini_key
+
+    GoogleGenAIEmbedding(api_key=api_key)
+
+    kwargs = mock_client_class.call_args.kwargs
+    assert {"vertexai", "project", "location", "credentials"}.isdisjoint(kwargs)
+    assert isinstance(kwargs["http_options"], HttpOptions)
+    # Missing/empty keys are forwarded unchanged for the SDK to handle.
+    mock_client_class.assert_called_once_with(
+        api_key=expected_api_key, http_options=kwargs["http_options"]
+    )
 
 
 # Mock tests that don't require API key

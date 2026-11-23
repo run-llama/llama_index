@@ -199,8 +199,8 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
         vertexai = vertexai_config is not None or os.getenv(
-            "GOOGLE_GENAI_USE_VERTEXAI", False
-        )
+            "GOOGLE_GENAI_USE_VERTEXAI", "false"
+        ).lower() in ("true", "1")
         project = (vertexai_config or {}).get("project") or os.getenv(
             "GOOGLE_CLOUD_PROJECT", None
         )
