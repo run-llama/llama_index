@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+from fsspec.implementations.local import LocalFileSystem
 
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
@@ -98,12 +99,16 @@ def test_query_nodes(hnswlib_store: HnswlibVectorStore):
     assert result.similarities[0] == 0
 
 
-def test_persistence(hnswlib_store: HnswlibVectorStore, tmp_path):
-    persist_path = os.path.join(tmp_path, "storage", "hnswlib.index")
+@pytest.mark.parametrize(
+    "persist_dir", ["", "storage", os.path.join("nested", "storage")]
+)
+@pytest.mark.parametrize("fs", [None, LocalFileSystem()])
+def test_persistence(hnswlib_store: HnswlibVectorStore, tmp_path, persist_dir, fs):
+    persist_path = os.path.join(tmp_path, persist_dir, "hnswlib.index")
     assert not os.path.exists(persist_path)
-    hnswlib_store.persist(persist_path)
+    hnswlib_store.persist(persist_path, fs=fs)
     assert os.path.exists(persist_path)
-    store_from_path = HnswlibVectorStore.from_persist_path(persist_path)
+    store_from_path = HnswlibVectorStore.from_persist_path(persist_path, fs=fs)
     assert set(hnswlib_store.client.get_ids_list()) == set(
         store_from_path.client.get_ids_list()
     )
@@ -115,3 +120,9 @@ def test_persistence(hnswlib_store: HnswlibVectorStore, tmp_path):
         hnswlib_store.client.get_current_count()
         == store_from_path.client.get_current_count()
     )
+
+    result = store_from_path.query(
+        VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
+    )
+    assert result.ids == ["0"]
+    assert result.similarities == pytest.approx([0.0])

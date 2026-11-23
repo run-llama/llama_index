@@ -210,7 +210,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
             raise NotImplementedError("Hnswlib only supports local storage for now.")
 
         parent_directory = Path(persist_path).parent
-        parent_directory.mkdir(exist_ok=True)
+        parent_directory.mkdir(parents=True, exist_ok=True)
 
         config_path = parent_directory / "config.json"
         with open(config_path, "w") as file:
