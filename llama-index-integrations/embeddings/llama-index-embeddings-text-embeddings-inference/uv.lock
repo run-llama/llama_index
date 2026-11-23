@@ -1907,7 +1907,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-text-embeddings-inference"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -1941,7 +1941,7 @@ dev = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.26.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-utils-huggingface", specifier = ">=0.4.0,<0.5" },
+    { name = "llama-index-utils-huggingface", specifier = ">=0.4.0,<0.8" },
 ]
 
 [package.metadata.requires-dev]
@@ -1981,15 +1981,15 @@ wheels = [
 
 [[package]]
 name = "llama-index-utils-huggingface"
-version = "0.4.1"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
     { name = "llama-index-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/ac/d4c064f53766389d9da24881aac0ea4898ce4582d695cb80e7725c2e7f9c/llama_index_utils_huggingface-0.4.1.tar.gz", hash = "sha256:32ffd2d3e1d86ac904f258c86d588915366789860ea1e5200df30b163467cea4", size = 4045, upload-time = "2025-09-08T20:34:42.937Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/fa/2a506c3d1a01fe167183480f52aaed54b261acc6a77ac9ccf2d0f5a7f3fc/llama_index_utils_huggingface-0.7.0.tar.gz", hash = "sha256:9bc9eea03abd0e5c249e7c075fe86670576747bde1b74025f50f76535dff6155", size = 4037, upload-time = "2026-11-14T02:40:17.893Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/a7/02fe573480e0d8af8feb0e1d6e30938a95db742a1265b01caa7977aaf0bb/llama_index_utils_huggingface-0.4.1-py3-none-any.whl", hash = "sha256:cd24f498277593d31964826e3bf33d04f20ced26030677ea45510625c66c16ec", size = 3692, upload-time = "2025-09-08T20:34:42.196Z" },
+    { url = "https://files.pythonhosted.org/packages/77/fd/d2d7812fd62bc1366fd0611f35349982fb96a326c956fe4d66e66d0c8cef/llama_index_utils_huggingface-0.7.0-py3-none-any.whl", hash = "sha256:e29a4a80fe5fc325d0881ddbc1a7f4cea65755805cc66dcb91e94881486cc9f2", size = 3690, upload-time = "2026-11-14T02:40:16.793Z" },
 ]
 
 [[package]]
