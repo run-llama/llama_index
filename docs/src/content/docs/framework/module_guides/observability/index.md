@@ -763,6 +763,18 @@ Install the following dependencies:
 pip install llama-index-observability-otel opentelemetry-exporter-otlp-proto-http
 ```
 
+Next, set your Axiom credentials as environment variables:
+
+```bash
+export AXIOM_DOMAIN="<your-axiom-domain>"
+export AXIOM_TOKEN="<your-axiom-api-token>"
+export AXIOM_DATASET="<your-dataset-name>"
+```
+
+- Set `AXIOM_DOMAIN` to your Axiom [edge domain](https://axiom.co/docs/reference/edge-deployments), for example `us-east-1.aws.edge.axiom.co`
+- Set `AXIOM_TOKEN` to an Axiom [API token](https://axiom.co/docs/reference/tokens) (starts with `xaat-`) with ingest permission for the dataset
+- Set `AXIOM_DATASET` to the name of the Axiom dataset that receives the traces
+
 Then, configure an OTLP/HTTP span exporter that points to Axiom:
 
 ```python
@@ -776,7 +788,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 span_exporter = OTLPSpanExporter(
     endpoint=f"https://{os.environ['AXIOM_DOMAIN']}/v1/traces",
     headers={
-        "Authorization": f"Bearer {os.environ['AXIOM_API_TOKEN']}",
+        "Authorization": f"Bearer {os.environ['AXIOM_TOKEN']}",
         "X-Axiom-Dataset": os.environ["AXIOM_DATASET"],
     },
 )
@@ -791,11 +803,7 @@ if __name__ == "__main__":
     # ... your LlamaIndex code here
 ```
 
-- Set `AXIOM_DOMAIN` to your Axiom [edge domain](https://axiom.co/docs/reference/edge-deployments), for example `us-east-1.aws.edge.axiom.co`
-- Set `AXIOM_API_TOKEN` to an Axiom [API token](https://axiom.co/docs/reference/tokens) with ingest permission for the dataset
-- Set `AXIOM_DATASET` to the name of the Axiom dataset that receives the traces
-
-Axiom accepts OTLP over HTTP (`http/protobuf` or JSON), not gRPC.
+> 📌 Note: Axiom accepts OTLP over HTTP (`http/protobuf` or JSON), not gRPC. If you configure the exporter with `OTEL_EXPORTER_OTLP_*` environment variables instead, don't set `OTEL_EXPORTER_OTLP_ENDPOINT` to a dataset-specific URL such as `https://<your-axiom-domain>/v1/ingest/<your-dataset-name>`, because trace requests to that endpoint return `404`.
 
 #### Guides
 
