@@ -665,3 +665,42 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+
+def test_remove_unstable_values_strips_nested_locals_and_lambda_reprs() -> None:
+    from llama_index.core.ingestion.pipeline import (
+        get_transformation_hash,
+        remove_unstable_values,
+    )
+
+    def make_splitter() -> SentenceSplitter:
+        def local_tokenizer(text: str) -> list[str]:
+            return text.split()
+
+        return SentenceSplitter(chunk_size=25, chunk_overlap=0, tokenizer=local_tokenizer)
+
+    raw = (
+        "{'fn': '<function make_splitter.<locals>.local_tokenizer at 0x7FB9F37A8900>', "
+        "'lam': '<function make_splitter.<locals>.<lambda> at 0x7fb9f37a8910>'}"
+    )
+    assert remove_unstable_values(raw) == "{'fn': '', 'lam': ''}"
+
+    nodes = [TextNode(text="hello world")]
+    splitter_1 = make_splitter()
+    splitter_2 = make_splitter()
+    assert get_transformation_hash(nodes, splitter_1) == get_transformation_hash(
+        nodes, splitter_2
+    )
+
+
+def test_node_batcher_respects_requested_num_batches() -> None:
+    nodes = [TextNode(text=f"node-{i}") for i in range(10)]
+    batches = list(IngestionPipeline._node_batcher(3, nodes))
+    assert len(batches) <= 3
+    assert [n.text for batch in batches for n in batch] == [n.text for n in nodes]
+
+    batches_7_4 = list(IngestionPipeline._node_batcher(4, nodes[:7]))
+    assert len(batches_7_4) <= 4
+    assert [n.text for batch in batches_7_4 for n in batch] == [
+        n.text for n in nodes[:7]
+    ]
