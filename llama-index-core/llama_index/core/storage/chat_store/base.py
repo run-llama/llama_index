@@ -25,7 +25,9 @@ class BaseChatStore(BaseComponent):
         ...
 
     @abstractmethod
-    def add_message(self, key: str, message: ChatMessage) -> None:
+    def add_message(
+        self, key: str, message: ChatMessage, idx: Optional[int] = None
+    ) -> None:
         """Add a message for a key."""
         ...
 
@@ -57,9 +59,14 @@ class BaseChatStore(BaseComponent):
         """Async version of Get messages for a key."""
         return await asyncio.to_thread(self.get_messages, key)
 
-    async def async_add_message(self, key: str, message: ChatMessage) -> None:
+    async def async_add_message(
+        self, key: str, message: ChatMessage, idx: Optional[int] = None
+    ) -> None:
         """Async version of Add a message for a key."""
-        await asyncio.to_thread(self.add_message, key, message)
+        if idx is None:
+            await asyncio.to_thread(self.add_message, key, message)
+        else:
+            await asyncio.to_thread(self.add_message, key, message, idx=idx)
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Async version of Delete messages for a key."""

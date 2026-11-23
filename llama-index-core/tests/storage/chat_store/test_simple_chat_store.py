@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import SimpleChatStore
 
@@ -76,6 +77,54 @@ def test_delete_chat_message_idx() -> None:
     assert chat_store.get_messages("user1") == [
         ChatMessage(role="user", content="world"),
     ]
+
+
+@pytest.mark.asyncio
+async def test_delete_empty_and_negative_idx_and_async_add() -> None:
+    """Test delete_last_message on empty list, negative idx in delete_message, and async_add_message idx."""
+    chat_store = SimpleChatStore()
+
+    await chat_store.async_add_message(
+        "user1", ChatMessage(role="user", content="world")
+    )
+    await chat_store.async_add_message(
+        "user1", ChatMessage(role="user", content="hello"), idx=0
+    )
+    assert chat_store.get_messages("user1") == [
+        ChatMessage(role="user", content="hello"),
+        ChatMessage(role="user", content="world"),
+    ]
+
+    assert chat_store.delete_message("user1", -1) is None
+    assert chat_store.delete_message("user1", 5) is None
+    assert len(chat_store.get_messages("user1")) == 2
+
+    assert chat_store.delete_last_message("user1") == ChatMessage(
+        role="user", content="world"
+    )
+    assert chat_store.delete_last_message("user1") == ChatMessage(
+        role="user", content="hello"
+    )
+    # List for "user1" is now empty; deleting again should return None instead of raising IndexError
+    assert chat_store.delete_last_message("user1") is None
+    assert chat_store.delete_message("user1", -1) is None
+
+
+def test_persist_with_additional_kwargs(tmp_path: Path) -> None:
+    """Test that persisting a ChatMessage with additional_kwargs succeeds under WrapSerializer."""
+    chat_store = SimpleChatStore()
+    msg = ChatMessage(
+        role="assistant",
+        content="hello",
+        additional_kwargs={"tool_call_id": "call_1", "nested": {"k": 1}},
+    )
+    chat_store.add_message("user1", msg)
+
+    persist_path = str(tmp_path / "chat_store_kwargs.json")
+    chat_store.persist(persist_path)
+
+    loaded = SimpleChatStore.from_persist_path(persist_path)
+    assert loaded.get_messages("user1") == [msg]
 
 
 def test_persist_non_ascii_unescaped(tmp_path: Path) -> None:
