@@ -247,9 +247,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
             self._hnswlib_index.set_ef(kwargs["ef"])
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
-        indices, distances = self._hnswlib_index.knn_query(
-            query_embedding_np, query.similarity_top_k
-        )
+        top_k = min(query.similarity_top_k, self._hnswlib_index.get_current_count())
+        indices, distances = self._hnswlib_index.knn_query(query_embedding_np, top_k)
         node_idxs = indices.tolist()[0]
         distances = distances[0].tolist()
         if len(indices) == 0:
