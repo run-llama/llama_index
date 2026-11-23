@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black>=23.7.0,<=26.3.1",
+    "black>=23.7.0,<=26.10.1",
     "boto3",
     "botocore>=1.33.13",
     "codespell[toml]>=v2.2.6",
@@ -15,7 +15,7 @@ dev = [
     "openai",
     "pandas",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
+    "pylint==4.0.9",
     "pytest",
     "pytest-asyncio",
     "pytest-cov~=5.0",
@@ -34,10 +34,10 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.14.25"
+version = "0.14.26"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [
