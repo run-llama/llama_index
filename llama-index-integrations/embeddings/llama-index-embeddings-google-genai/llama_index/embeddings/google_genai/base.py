@@ -131,7 +131,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         embed_batch_size (int): Batch size for embedding. Defaults to 100.
         callback_manager (Optional[CallbackManager]): Callback manager to access the model. Defaults to None.
         retries (int): Maximum number of retries for API calls. Defaults to 3.
-        timeout (int): Timeout for API calls in seconds. Defaults to 10.
+        timeout (int): Timeout for API calls in seconds. Defaults to 60.
         retry_min_seconds (float): Minimum wait time between retries. Defaults to 1.
         retry_max_seconds (float): Maximum wait time between retries. Defaults to 10.
         retry_exponential_base (float): Base for exponential backoff calculation. Defaults to 2.
@@ -235,6 +235,10 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         else:
             http_opts = {}
         http_opts["headers"] = http_opts.get("headers", {}) | client_hdr
+        # HttpOptions.timeout is in milliseconds; an explicit value in
+        # http_options takes precedence over the `timeout` argument.
+        if http_opts.get("timeout") is None and self.timeout is not None:
+            http_opts["timeout"] = int(self.timeout * 1000)
 
         config_params["http_options"] = types.HttpOptions(**http_opts)
 
