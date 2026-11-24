@@ -4,7 +4,7 @@ import pickle
 import pytest
 
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, ToolCallBlock
 from llama_index.core.llms import ChatMessage, MessageRole, MockLLM
 from llama_index.core.memory.chat_summary_memory_buffer import (
     ChatSummaryMemoryBuffer,
@@ -181,6 +181,42 @@ def test_put_get_summarize_message_with_tool_call(summarizer_llm) -> None:
     # Then the history should contain the summarized message
     assert len(history) == 1
     assert history[0].content == FIRST_SUMMARY_RESPONSE
+
+
+def test_prompt_to_summarize_includes_tool_calls_without_text() -> None:
+    tool_call_message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_call_id="call_1",
+                tool_name="get_weather",
+                tool_kwargs={"city": "Paris"},
+            )
+        ],
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "function": {
+                        "name": "get_weather",
+                        "arguments": '{"city": "Paris"}',
+                    },
+                }
+            ]
+        },
+    )
+    assert tool_call_message.content is None
+    memory = ChatSummaryMemoryBuffer.from_defaults(llm=MockLLM())
+
+    prompt = memory._get_prompt_to_summarize(
+        [
+            ChatMessage(role=MessageRole.USER, content="Weather in Paris?"),
+            tool_call_message,
+        ]
+    )
+
+    assert "assistant: Calling a function:" in prompt
+    assert "get_weather" in prompt
 
 
 @pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
