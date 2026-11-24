@@ -32,6 +32,26 @@ def test_legacy_json_to_doc_preserves_doc_id(node_cls, doc_id, extra):
     assert node.id_ == doc_id
 
 
+@pytest.mark.parametrize(
+    "relationships",
+    [None, {}],
+    ids=["null", "empty"],
+)
+def test_legacy_json_to_doc_handles_null_relationships(relationships):
+    doc_dict = {
+        TYPE_KEY: TextNode.get_type(),
+        DATA_KEY: {
+            "text": "hello",
+            "extra_info": {},
+            "doc_id": "d1",
+            "relationships": relationships,
+        },
+    }
+    node = legacy_json_to_doc(doc_dict)
+    assert node.id_ == "d1"
+    assert node.text == "hello"
+
+
 def test_legacy_json_to_doc_unknown_type_raises():
     doc_dict = {
         TYPE_KEY: "not-a-real-node-type",

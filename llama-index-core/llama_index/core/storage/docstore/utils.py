@@ -58,7 +58,7 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
     metadata = data_dict.get("extra_info", {}) or {}
     id_ = data_dict.get("doc_id", None)
 
-    relationships = data_dict.get("relationships", {})
+    relationships = data_dict.get("relationships", {}) or {}
     relationships = {
         NodeRelationship(k): RelatedNodeInfo(node_id=str(v))
         for k, v in relationships.items()
