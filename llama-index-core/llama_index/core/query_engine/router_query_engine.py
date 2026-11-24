@@ -116,17 +116,12 @@ class RouterQueryEngine(BaseQueryEngine):
         summarizer: Optional[TreeSummarize] = None,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        **kwargs: Any,
     ) -> None:
         self._llm = llm or Settings.llm
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
-        callback_manager = (
-            callback_manager
-            or kwargs.get("callback_manager")
-            or Settings.callback_manager
-        )
+        callback_manager = callback_manager or Settings.callback_manager
         self._summarizer = summarizer or TreeSummarize(
             llm=self._llm,
             callback_manager=callback_manager,
@@ -157,6 +152,12 @@ class RouterQueryEngine(BaseQueryEngine):
         selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
 
         assert selector is not None
+
+        callback_manager = (
+            callback_manager
+            or kwargs.pop("callback_manager", None)
+            or Settings.callback_manager
+        )
 
         return cls(
             selector,
@@ -342,14 +343,9 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         summarizer: Optional[TreeSummarize] = None,
         callback_manager: Optional[CallbackManager] = None,
-        **kwargs: Any,
     ) -> None:
         llm = llm or Settings.llm
-        callback_manager = (
-            callback_manager
-            or kwargs.get("callback_manager")
-            or Settings.callback_manager
-        )
+        callback_manager = callback_manager or Settings.callback_manager
         self._summarizer = summarizer or TreeSummarize(
             llm=llm,
             callback_manager=callback_manager,

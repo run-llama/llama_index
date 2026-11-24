@@ -152,6 +152,17 @@ def test_router_query_engine_custom_callback_manager() -> None:
     assert router_kwargs.callback_manager is custom_cb
     assert router_kwargs._summarizer.callback_manager is custom_cb
 
+    # 4. Reject unconsumed constructor kwargs
+    import pytest
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'invalid_arg'"):
+        RouterQueryEngine(
+            selector=selector,
+            query_engine_tools=[tool],
+            llm=MockLLM(),
+            **{"invalid_arg": True},  # type: ignore[arg-type]
+        )
+
 
 def test_tool_retriever_router_query_engine_custom_callback_manager() -> None:
     """Test that custom callback_manager is respected in ToolRetrieverRouterQueryEngine."""
@@ -177,3 +188,13 @@ def test_tool_retriever_router_query_engine_custom_callback_manager() -> None:
     )
     assert router_kwargs.callback_manager is custom_cb
     assert router_kwargs._summarizer.callback_manager is custom_cb
+
+    # 3. Reject unconsumed constructor kwargs
+    import pytest
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'invalid_arg'"):
+        ToolRetrieverRouterQueryEngine(
+            retriever=retriever,
+            llm=MockLLM(),
+            **{"invalid_arg": True},  # type: ignore[arg-type]
+        )
