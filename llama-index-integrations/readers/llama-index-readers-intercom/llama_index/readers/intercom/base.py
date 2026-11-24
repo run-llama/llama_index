@@ -88,6 +88,9 @@ class IntercomReader(BaseReader):
         }
 
         response = requests.get(url, headers=headers)
+        # An error response (e.g. 401 or 429) has no "data" or "pages.next", so without this
+        # check it would look like an empty last page and the result would be silently partial.
+        response.raise_for_status()
 
         response_json = json.loads(response.text)
 
