@@ -48,6 +48,12 @@ def test_mid_object_truncated_literal_completes():
     assert parse_partial_json('{"a": fals, "b": 1}') == {"a": False, "b": 1}
 
 
+def test_two_truncated_literals_in_one_buffer_both_complete():
+    """`re.search` would have repaired only the first fragment and left the second."""
+    assert parse_partial_json('{"a": tru, "b": fals}') == {"a": True, "b": False}
+    assert parse_partial_json('{"a": nu, "b": nul}') == {"a": None, "b": None}
+
+
 def test_quoted_fragment_stays_a_string():
     assert parse_partial_json('{"a": 1, "b": "tru"}') == {"a": 1, "b": "tru"}
 
