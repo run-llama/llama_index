@@ -6,6 +6,7 @@ from llama_index.core.base.response.schema import (
     Response,
     StreamingResponse,
 )
+from llama_index.core.indices.prompt_helper import ChatPromptHelper
 from llama_index.core.llms.mock import MockLLMWithChatMemoryOfLastCall
 from llama_index.core.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
@@ -185,3 +186,43 @@ class TestSimpleSummarize:
             "image",
             "text",
         ]
+
+    @pytest.mark.asyncio
+    async def test_get_response_from_messages__empty_chunks(self) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        synthesizer = SimpleSummarize(llm=llm, multimodal=True)
+
+        sync_resp = synthesizer.get_response_from_messages(
+            query_str="test", message_chunks=[]
+        )
+        assert sync_resp == " ".join(["text"] * 10)
+
+        async_resp = await synthesizer.aget_response_from_messages(
+            query_str="test", message_chunks=[]
+        )
+        assert async_resp == " ".join(["text"] * 10)
+
+    def test_strict_truncation_propagated_to_chat_prompt_helper(
+        self, png_1px_b64: bytes
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        default_synthesizer = SimpleSummarize(
+            llm=llm, multimodal=True, strict_truncation=True
+        )
+        assert default_synthesizer._chat_prompt_helper._strict_truncation is True
+
+        chat_prompt_helper = ChatPromptHelper(
+            context_window=300, num_output=10, strict_truncation=False
+        )
+        synthesizer = SimpleSummarize(
+            llm=llm,
+            chat_prompt_helper=chat_prompt_helper,
+            multimodal=True,
+            strict_truncation=True,
+        )
+        nodes = [NodeWithScore(node=ImageNode(image=png_1px_b64), score=1.0)]
+        synthesizer.synthesize(query="test", nodes=nodes)
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text"
+        ]
+        assert chat_prompt_helper._strict_truncation is False

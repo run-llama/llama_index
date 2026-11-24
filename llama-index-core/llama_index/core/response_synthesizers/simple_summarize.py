@@ -13,6 +13,7 @@ from llama_index.core.prompts.default_prompt_selectors import (
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.types import RESPONSE_TEXT_TYPE
+from llama_index.core.utils import temp_set_attrs
 
 
 class SimpleSummarize(BaseSynthesizer):
@@ -41,6 +42,8 @@ class SimpleSummarize(BaseSynthesizer):
             chat_content_qa_template or CHAT_CONTENT_QA_PROMPT
         )
         self._strict_truncation = strict_truncation
+        if chat_prompt_helper is None and strict_truncation:
+            self._chat_prompt_helper._strict_truncation = strict_truncation
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -135,15 +138,20 @@ class SimpleSummarize(BaseSynthesizer):
         chat_content_qa_template = self._chat_content_qa_template.partial_format(
             query_str=query_str
         )
-        single_message_chunk = ChatMessage.merge(
+        merged_messages = ChatMessage.merge(
             splits=message_chunks,
             chunk_size=sum(m.estimate_tokens() for m in message_chunks),
-        )[0]
-        truncated_chunks = self._chat_prompt_helper.truncate(
-            prompt=chat_content_qa_template,
-            messages=[single_message_chunk],
-            llm=self._llm,
         )
+        with temp_set_attrs(
+            self._chat_prompt_helper,
+            _strict_truncation=self._strict_truncation
+            or self._chat_prompt_helper._strict_truncation,
+        ):
+            truncated_chunks = self._chat_prompt_helper.truncate(
+                prompt=chat_content_qa_template,
+                messages=list(merged_messages[:1]),
+                llm=self._llm,
+            )
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
@@ -175,15 +183,20 @@ class SimpleSummarize(BaseSynthesizer):
         chat_content_qa_template = self._chat_content_qa_template.partial_format(
             query_str=query_str
         )
-        single_message_chunk = ChatMessage.merge(
+        merged_messages = await ChatMessage.amerge(
             splits=message_chunks,
-            chunk_size=sum(m.estimate_tokens() for m in message_chunks),
-        )[0]
-        truncated_chunks = await self._chat_prompt_helper.atruncate(
-            prompt=chat_content_qa_template,
-            messages=[single_message_chunk],
-            llm=self._llm,
+            chunk_size=sum([await m.aestimate_tokens() for m in message_chunks]),
         )
+        with temp_set_attrs(
+            self._chat_prompt_helper,
+            _strict_truncation=self._strict_truncation
+            or self._chat_prompt_helper._strict_truncation,
+        ):
+            truncated_chunks = await self._chat_prompt_helper.atruncate(
+                prompt=chat_content_qa_template,
+                messages=list(merged_messages[:1]),
+                llm=self._llm,
+            )
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
