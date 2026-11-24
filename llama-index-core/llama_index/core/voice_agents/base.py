@@ -127,12 +127,11 @@ class BaseVoiceAgent(ABC):
             out (List[ChatMessage]): exported messages.
 
         """
-        messages = self._messages
-        if limit:
-            if limit <= len(messages):
-                messages = messages[:limit]
-        if filter:
+        messages = list(self._messages)
+        if filter is not None:
             messages = filter(messages)
+        if limit is not None:
+            messages = messages[: max(0, limit)]
         return messages
 
     def export_events(
@@ -153,10 +152,9 @@ class BaseVoiceAgent(ABC):
             out (List[BaseVoiceAgentEvent]): exported events.
 
         """
-        events = self._events
-        if limit:
-            if limit <= len(events):
-                events = events[:limit]
-        if filter:
+        events = list(self._events)
+        if filter is not None:
             events = filter(events)
+        if limit is not None:
+            events = events[: max(0, limit)]
         return events
