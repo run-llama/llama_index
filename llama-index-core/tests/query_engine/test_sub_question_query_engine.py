@@ -142,3 +142,14 @@ def test_sub_question_query_engine_custom_callback_manager() -> None:
         engine_with_default_synth._response_synthesizer.callback_manager
         is custom_cb_synth
     )
+
+    # 4. Reject unconsumed keyword arguments
+    import pytest
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'invalid_arg'"):
+        SubQuestionQueryEngine.from_defaults(
+            query_engine_tools=tools,
+            question_gen=question_gen,
+            response_synthesizer=synth,
+            **{"invalid_arg": True},  # type: ignore[arg-type]
+        )
