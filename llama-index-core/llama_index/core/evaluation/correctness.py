@@ -134,11 +134,14 @@ class CorrectnessEvaluator(BaseEvaluator):
         if query is None or response is None:
             raise ValueError("query, and response must be provided")
 
+        if reference is None or reference == "":
+            raise ValueError("reference must be provided")
+
         eval_response = await self._llm.apredict(
             prompt=self._eval_template,
             query=query,
             generated_answer=response,
-            reference_answer=reference or "(NO REFERENCE ANSWER SUPPLIED)",
+            reference_answer=reference,
         )
 
         # Use the parser function
