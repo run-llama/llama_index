@@ -114,6 +114,7 @@ class BaseRetrievalEvaluator(BaseModel):
         Args:
             query (str): Query string
             expected_ids (List[str]): Expected ids
+            **kwargs: Additional keyword arguments passed to each metric.
 
         Returns:
             RetrievalEvalResult: Evaluation result
@@ -143,7 +144,8 @@ class BaseRetrievalEvaluator(BaseModel):
         and generated response string.
 
         Subclasses can override this method to provide custom evaluation logic and
-        take in additional arguments.
+        take in additional arguments. Additional keyword arguments are passed to
+        each metric.
         """
         retrieved_ids, retrieved_texts = await self._aget_retrieved_ids_and_texts(
             query, mode
@@ -151,7 +153,12 @@ class BaseRetrievalEvaluator(BaseModel):
         metric_dict = {}
         for metric in self.metrics:
             eval_result = metric.compute(
-                query, expected_ids, retrieved_ids, expected_texts, retrieved_texts
+                query,
+                expected_ids,
+                retrieved_ids,
+                expected_texts,
+                retrieved_texts,
+                **kwargs,
             )
             metric_dict[metric.metric_name] = eval_result
 
