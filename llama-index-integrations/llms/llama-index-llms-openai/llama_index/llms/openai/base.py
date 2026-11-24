@@ -658,11 +658,14 @@ class OpenAI(FunctionCallingLLM):
 
         def gen() -> CompletionResponseGen:
             text = ""
+            received_finish_reason = False
             for response in client.completions.create(
                 prompt=prompt,
                 **all_kwargs,
             ):
                 if len(response.choices) > 0:
+                    if response.choices[0].finish_reason is not None:
+                        received_finish_reason = True
                     delta = response.choices[0].text
                     if delta is None:
                         delta = ""
@@ -675,6 +678,9 @@ class OpenAI(FunctionCallingLLM):
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
                 )
+
+            if not received_finish_reason:
+                raise RuntimeError("Stream ended prematurely without a finish_reason")
 
         return gen()
 
@@ -958,11 +964,14 @@ class OpenAI(FunctionCallingLLM):
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
+            received_finish_reason = False
             async for response in await aclient.completions.create(
                 prompt=prompt,
                 **all_kwargs,
             ):
                 if len(response.choices) > 0:
+                    if response.choices[0].finish_reason is not None:
+                        received_finish_reason = True
                     delta = response.choices[0].text
                     if delta is None:
                         delta = ""
@@ -975,6 +984,9 @@ class OpenAI(FunctionCallingLLM):
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
                 )
+
+            if not received_finish_reason:
+                raise RuntimeError("Stream ended prematurely without a finish_reason")
 
         return gen()
 

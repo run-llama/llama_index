@@ -1005,3 +1005,66 @@ async def test_astream_chat_succeeds_with_trailing_empty_choices_chunk(
     response_gen = await llm.astream_chat([ChatMessage(role="user", content="test")])
     responses = [r async for r in response_gen]
     assert responses[-1].message.content == "Hello!"
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_complete_raises_on_truncated_stream_without_finish_reason(
+    MockSyncOpenAI: MagicMock,
+) -> None:
+    """Truncated sync completion stream without finish_reason must raise."""
+    from openai.types.completion import Completion
+    from openai.types.completion_choice import CompletionChoice
+
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.completions.create.return_value = [
+            Completion.model_construct(
+                id="cmpl-test",
+                object="text_completion",
+                created=1700000000,
+                model="gpt-3.5-turbo-instruct",
+                choices=[
+                    CompletionChoice.model_construct(
+                        index=0, text="Order 42 has been ", finish_reason=None
+                    )
+                ],
+            ),
+        ]
+
+        llm = OpenAI(model="gpt-3.5-turbo-instruct", api_key="test-key")
+        with pytest.raises(RuntimeError, match="finish_reason"):
+            list(llm.stream_complete("test"))
+
+
+@pytest.mark.asyncio
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_astream_complete_raises_on_truncated_stream_without_finish_reason(
+    MockAsyncOpenAI: MagicMock,
+) -> None:
+    """Truncated async completion stream without finish_reason must raise."""
+    from openai.types.completion import Completion
+    from openai.types.completion_choice import CompletionChoice
+
+    mock_instance = MockAsyncOpenAI.return_value
+
+    async def mock_truncated_completion_stream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        yield Completion.model_construct(
+            id="cmpl-test",
+            object="text_completion",
+            created=1700000000,
+            model="gpt-3.5-turbo-instruct",
+            choices=[
+                CompletionChoice.model_construct(
+                    index=0, text="Order 42 has been ", finish_reason=None
+                )
+            ],
+        )
+
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_truncated_completion_stream()
+    mock_instance.completions.create = create_fn
+
+    llm = OpenAI(model="gpt-3.5-turbo-instruct", api_key="test-key")
+    response_gen = await llm.astream_complete("test")
+    with pytest.raises(RuntimeError, match="finish_reason"):
+        [r async for r in response_gen]
