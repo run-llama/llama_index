@@ -1146,11 +1146,11 @@ def update_tool_calls(
             t.function.arguments = ""
         if t.function.name is None:
             t.function.name = ""
-        if t.id is None:
-            t.id = ""
 
-        # Update with delta values
+        # Update with delta values. The id is set once: some servers repeat it on
+        # every fragment of a call, and appending would mangle it.
         t.function.arguments += tc_delta.function.arguments or ""
         t.function.name += tc_delta.function.name or ""
-        t.id += tc_delta.id or ""
+        if tc_delta.id and not t.id:
+            t.id = tc_delta.id
     return tool_calls

@@ -978,3 +978,34 @@ def test_update_tool_calls_accumulates_split_arguments() -> None:
     ):
         tool_calls = update_tool_calls(tool_calls, _deltas(raw))
     assert _summary(tool_calls) == [("call_a", "f", '{"x": 1}'), ("call_b", "g", "{}")]
+
+
+def test_update_tool_calls_repeated_id_is_one_call() -> None:
+    # A server that omits `index` and repeats the id on every fragment of one
+    # call must still produce one call with the id unchanged.
+    tool_calls: list = []
+    for raw in (
+        {
+            "id": "c1",
+            "type": "function",
+            "function": {"name": "f", "arguments": '{"x"'},
+        },
+        {"id": "c1", "function": {"arguments": ": "}},
+        {"id": "c1", "function": {"arguments": "1}"}},
+    ):
+        tool_calls = update_tool_calls(tool_calls, _deltas([raw]))
+    assert _summary(tool_calls) == [("c1", "f", '{"x": 1}')]
+
+    # Same with `index` present.
+    tool_calls = []
+    for raw in (
+        {
+            "index": 0,
+            "id": "c1",
+            "type": "function",
+            "function": {"name": "f", "arguments": "{}"},
+        },
+        {"index": 0, "id": "c1", "function": {"arguments": ""}},
+    ):
+        tool_calls = update_tool_calls(tool_calls, _deltas([raw]))
+    assert _summary(tool_calls) == [("c1", "f", "{}")]
