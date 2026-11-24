@@ -4,16 +4,18 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4",
+    "torch",
+    "torchvision",
+    "pytest",
     "pytest-cov>=6.1.1",
 ]
 
 [project]
 name = "llama-index-retrievers-superlinked"
-version = "0.1.3"
+version = "0.3.0"
 description = "LlamaIndex retriever integration for Superlinked"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 license = {text = "MIT"}
 authors = [
     {name = "Superlinked", email = "dev@superlinked.com"},
@@ -50,3 +52,16 @@ SuperlinkedRetriever = "Superlinked"
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
+
+[tool.uv]
+override-dependencies = ["filelock>=4.2.1", "certifi>=2026.10.18"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+# CPU-only test env: keep the multi-GB CUDA stack out of the lock
+torch = {index = "pytorch-cpu"}
+torchvision = {index = "pytorch-cpu"}

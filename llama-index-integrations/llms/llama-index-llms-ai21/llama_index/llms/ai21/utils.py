@@ -15,6 +15,10 @@ JAMBA_MODELS = {
     "jamba-1.5-mini": 256_000,
     "jamba-1.5-large": 256_000,
     "jamba-1.5": 256_000,
+    # Legacy Jurassic-2 models
+    "j2-light": 8_192,
+    "j2-mid": 8_192,
+    "j2-ultra": 8_192,
 }
 
 _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."

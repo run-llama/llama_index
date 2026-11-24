@@ -25,4 +25,4 @@ LlamaIndex supports local LLMs via several integration packages:
 - `llama-index-llms-openai-like`: any server that exposes an OpenAI-compatible API (text-generation-webui, LM Studio, vLLM, etc.).
 - `llama-index-llms-ollama`: Ollama (llama3, mistral, qwen, etc.).
 
-Browse the full list on [LlamaHub](https://llamahub.ai).
+Browse the [full list of LLM integrations](/python/framework/module_guides/models/llms/modules).
