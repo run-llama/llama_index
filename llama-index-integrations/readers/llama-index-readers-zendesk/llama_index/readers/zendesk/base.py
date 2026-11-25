@@ -1,7 +1,7 @@
 """Zendesk reader."""
 
 import json
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -14,21 +14,24 @@ class ZendeskReader(BaseReader):
     Args:
         zendesk_subdomain (str): Zendesk subdomain
         locale (str): Locale of articles
+        timeout (Optional[float]): Request timeout in seconds.
 
     """
 
-    def __init__(self, zendesk_subdomain: str, locale: str = "en-us") -> None:
+    def __init__(
+        self,
+        zendesk_subdomain: str,
+        locale: str = "en-us",
+        timeout: Optional[float] = None,
+    ) -> None:
         """Initialize Zendesk reader."""
         self.zendesk_subdomain = zendesk_subdomain
         self.locale = locale
+        self.timeout = timeout
 
     def load_data(self) -> List[Document]:
         """
         Load data from the workspace.
-
-        Args:
-            workspace_id (str): Workspace ID.
-
 
         Returns:
             List[Document]: List of documents.
@@ -40,7 +43,7 @@ class ZendeskReader(BaseReader):
 
         articles = self.get_all_articles()
         for article in articles:
-            body = article["body"]
+            body = article.get("body")
             if body is None:
                 continue
             soup = BeautifulSoup(body, "html.parser")
@@ -55,13 +58,13 @@ class ZendeskReader(BaseReader):
             results.append(
                 Document(
                     text=body,
-                    extra_info=extra_info,
+                    metadata=extra_info,
                 )
             )
 
         return results
 
-    def get_all_articles(self):
+    def get_all_articles(self) -> List[Dict[str, Any]]:
         articles = []
         next_page = None
 
@@ -75,7 +78,11 @@ class ZendeskReader(BaseReader):
 
         return articles
 
-    def get_articles_page(self, next_page: str = None):
+    def get_articles_page(
+        self,
+        next_page: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ) -> Dict[str, Any]:
         import requests
 
         if next_page is None:
@@ -83,12 +90,17 @@ class ZendeskReader(BaseReader):
         else:
             url = next_page
 
-        response = requests.get(url)
+        request_timeout = timeout if timeout is not None else self.timeout
+        response = requests.get(url, timeout=request_timeout)
+        response.raise_for_status()
 
         response_json = json.loads(response.text)
+        if not isinstance(response_json, dict):
+            raise ValueError(
+                f"Expected JSON object in Zendesk response, got {type(response_json).__name__}"
+            )
 
         next_page = response_json.get("next_page", None)
-
         articles = response_json.get("articles", [])
 
         return {"articles": articles, "next_page": next_page}
