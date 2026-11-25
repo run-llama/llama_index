@@ -1,7 +1,8 @@
 """Sentence splitter."""
 
+from collections import deque
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Deque, List, Optional, Tuple
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -247,31 +248,27 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
         chunks: List[str] = []
-        cur_chunk: List[Tuple[str, int]] = []  # list of (text, length)
-        last_chunk: List[Tuple[str, int]] = []
+        cur_chunk: Deque[Tuple[str, int]] = deque()  # deque of (text, length)
+        last_chunk: Deque[Tuple[str, int]] = deque()
         cur_chunk_len = 0
         new_chunk = True
 
         def close_chunk() -> None:
             nonlocal chunks, cur_chunk, last_chunk, cur_chunk_len, new_chunk
 
-            chunks.append("".join([text for text, length in cur_chunk]))
+            chunks.append("".join(text for text, _ in cur_chunk))
             last_chunk = cur_chunk
-            cur_chunk = []
+            cur_chunk = deque()
             cur_chunk_len = 0
             new_chunk = True
 
             # add overlap to the next chunk using the last one first
             if len(last_chunk) > 0:
-                last_index = len(last_chunk) - 1
-                while (
-                    last_index >= 0
-                    and cur_chunk_len + last_chunk[last_index][1] <= self.chunk_overlap
-                ):
-                    overlap_text, overlap_length = last_chunk[last_index]
+                for overlap_text, overlap_length in reversed(last_chunk):
+                    if cur_chunk_len + overlap_length > self.chunk_overlap:
+                        break
                     cur_chunk_len += overlap_length
-                    cur_chunk.insert(0, (overlap_text, overlap_length))
-                    last_index -= 1
+                    cur_chunk.appendleft((overlap_text, overlap_length))
 
         split_idx = 0
         while split_idx < len(splits):
@@ -290,7 +287,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                         len(cur_chunk) > 0
                         and cur_chunk_len + cur_split.token_size > chunk_size
                     ):
-                        _, length = cur_chunk.pop(0)
+                        _, length = cur_chunk.popleft()
                         cur_chunk_len -= length
 
                 if (
@@ -309,7 +306,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
         # handle the last chunk
         if not new_chunk:
-            chunk = "".join([text for text, length in cur_chunk])
+            chunk = "".join(text for text, _ in cur_chunk)
             chunks.append(chunk)
 
         # run postprocessing to remove blank spaces
