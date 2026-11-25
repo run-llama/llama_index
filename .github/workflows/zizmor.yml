@@ -1,0 +1,28 @@
+name: zizmor
+
+# Static analysis of GitHub Actions workflows (https://docs.zizmor.sh).
+# Findings go to the repo's Security > Code scanning tab; this job does not fail
+# PRs. Part of hardening how we publish packages (Linear INF-459).
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/**"]
+  pull_request:
+    paths: [".github/**"]
+
+permissions: {}
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@1b4550e929643b8b26a62303c6bd64814271a4f1 # v0.9.2
+        with:
+          version: 1.32.0
