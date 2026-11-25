@@ -8,18 +8,18 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           fetch-depth: 0
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           app-id: ${{ secrets.CI_BOT_APP_ID }}
           private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
 
       - name: Classify Issues as Good First Issues
-        uses: run-llama/issue-classifier@v0.2.0
+        uses: run-llama/issue-classifier@d5aa3584e6e0705553a7e4fc5c1f80f99d70bf39 # v0.2.0
         with:
           llama-cloud-api-key: ${{ secrets.LLAMA_CLOUD_API_KEY }}
           github-token: ${{ steps.app-token.outputs.token }}
