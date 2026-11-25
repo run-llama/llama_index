@@ -44,6 +44,8 @@ generate only questions based on the below query.
 {query_str}
 """
 
+_QUESTION_LINE_PREFIX_RE = re.compile(r"^\d+[\).\s]")
+
 
 @deprecated(
     "Deprecated in favor of `LabelledRagDataset` which should be used instead.",
@@ -253,46 +255,41 @@ class DatasetGenerator(PromptMixin):
             summary_indices.append(index)
 
         responses = await async_module.gather(*query_tasks)
+        qr_tasks: List[Coroutine] = []
+        qr_query_keys: List[str] = []
         for idx, response in enumerate(responses):
+            if num is not None and len(queries) >= num:
+                break
             result = str(response).strip().split("\n")
             cleaned_questions = [
-                re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
+                _QUESTION_LINE_PREFIX_RE.sub("", question).strip()
+                for question in result
             ]
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
             ]
+            if num is not None:
+                cleaned_questions = cleaned_questions[: num - len(queries)]
+            if not cleaned_questions:
+                continue
             cur_queries = {
                 str(uuid.uuid4()): question for question in cleaned_questions
             }
             queries.update(cur_queries)
 
             if generate_response:
-                index = summary_indices[idx]
-                qr_tasks = []
-                cur_query_items = list(cur_queries.items())
-                cur_query_keys = [query_id for query_id, _ in cur_query_items]
-                for query_id, query in cur_query_items:
-                    qa_query_engine = index.as_query_engine(
-                        llm=self.llm,
-                        text_qa_template=self.text_qa_template,
-                    )
-                    qr_task = qa_query_engine.aquery(query)
-                    qr_tasks.append(qr_task)
-                qr_responses = await async_module.gather(*qr_tasks)
-                for query_id, qa_response in zip(cur_query_keys, qr_responses):
-                    responses_dict[query_id] = str(qa_response)
-            else:
-                pass
+                qa_query_engine = summary_indices[idx].as_query_engine(
+                    llm=self.llm,
+                    text_qa_template=self.text_qa_template,
+                )
+                for query_id, query in cur_queries.items():
+                    qr_query_keys.append(query_id)
+                    qr_tasks.append(qa_query_engine.aquery(query))
 
-        query_ids = list(queries.keys())
-        if num is not None:
-            query_ids = query_ids[:num]
-            # truncate queries, responses to the subset of query ids
-            queries = {query_id: queries[query_id] for query_id in query_ids}
-            if generate_response:
-                responses_dict = {
-                    query_id: responses_dict[query_id] for query_id in query_ids
-                }
+        if generate_response and qr_tasks:
+            qr_responses = await async_module.gather(*qr_tasks)
+            for query_id, qa_response in zip(qr_query_keys, qr_responses):
+                responses_dict[query_id] = str(qa_response)
 
         return QueryResponseDataset(queries=queries, responses=responses_dict)
 
