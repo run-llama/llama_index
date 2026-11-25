@@ -66,4 +66,6 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 override-dependencies = ["filelock>=4.2.1"]

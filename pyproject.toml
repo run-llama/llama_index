@@ -212,6 +212,9 @@ spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
 
 [tool.uv]
+# Supply-chain hold: uv locks only releases at least 3 days old. Every package
+# without its own [tool.uv] table inherits this one; the ones with a table set it too.
+exclude-newer = "3 days"
 default-groups = [
     "dev",
 ]

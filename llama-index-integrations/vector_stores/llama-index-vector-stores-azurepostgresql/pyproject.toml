@@ -195,5 +195,7 @@ pass_env = [
 
 # Configuration for uv, the project management tool used in the project.
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 # Dependency groups to install by default
 default-groups = "all"

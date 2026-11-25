@@ -75,6 +75,8 @@ markers = [
 ]
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 default-groups = [
     "dev",
 ]

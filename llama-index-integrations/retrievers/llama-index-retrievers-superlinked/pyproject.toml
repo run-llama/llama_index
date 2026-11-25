@@ -54,6 +54,8 @@ addopts = "-q"
 pythonpath = ["src"]
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 override-dependencies = ["filelock>=4.2.1", "certifi>=2026.10.18"]
 
 [[tool.uv.index]]

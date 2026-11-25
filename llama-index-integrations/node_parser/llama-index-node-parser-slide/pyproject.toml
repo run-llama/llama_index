@@ -65,6 +65,8 @@ plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 # nltk >= 3.9.5 refuses to open multiply-linked data files (st_nlink > 1); uv
 # hardlinks venvs from its cache on Linux, so copy instead — these tests read
 # llama-index-core's bundled nltk_cache (stopwords)
