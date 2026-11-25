@@ -1,0 +1,5 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Self-hosted Renovate (run-llama/platform, renovate-org.yml) keeps this repo's GitHub Actions current, and nothing else. Actions are pinned to commit SHAs and the repo refuses unpinned ones, so Renovate is what moves those pins forward. Version updates merge once every check passes; digest-only moves (a re-pointed tag) always wait for a person. Part of hardening OSS package publishing (Linear INF-459). Questions: #infra.",
+  "enabledManagers": ["github-actions"]
+}
