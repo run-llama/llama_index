@@ -41,7 +41,7 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         return cls(sql_database)
 
     def _add_object(self, obj: SQLTableSchema) -> None:
-        raise NotImplementedError
+        """Add object. NOTE: unused."""
 
     def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""
@@ -57,8 +57,9 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             table_text += f"Context of table {obj.table_name}:\n"
             table_text += obj.context_str
             metadata["context"] = obj.context_str
-
-        table_identity = f"{obj.table_name}{obj.context_str}"
+            table_identity = f"{obj.table_name}\x00{obj.context_str}"
+        else:
+            table_identity = obj.table_name
 
         return TextNode(
             id_=str(uuid.uuid5(namespace=uuid.NAMESPACE_DNS, name=table_identity)),
