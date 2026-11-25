@@ -8,9 +8,22 @@ from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.core.utils import globals_helper, truncate_text
 from llama_index.core.vector_stores.types import VectorStoreQueryResult
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple
 
 _logger = logging.getLogger(__name__)
+
+_stopwords_cache: Optional[Tuple[List[str], FrozenSet[str]]] = None
+
+
+def get_stopwords_set() -> FrozenSet[str]:
+    """Get the stopwords as a frozenset for O(1) membership checks."""
+    global _stopwords_cache
+    stopwords = globals_helper.stopwords
+    cache = _stopwords_cache
+    if cache is None or cache[0] is not stopwords:
+        cache = (stopwords, frozenset(stopwords))
+        _stopwords_cache = cache
+    return cache[1]
 
 
 def get_sorted_node_list(node_dict: Dict[int, BaseNode]) -> List[BaseNode]:
@@ -36,11 +49,12 @@ def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[i
 def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
     """Get subtokens from a list of tokens., filtering for stopwords."""
     results = set()
+    stopwords = get_stopwords_set()
     for token in tokens:
         results.add(token)
         sub_tokens = re.findall(r"\w+", token)
         if len(sub_tokens) > 1:
-            results.update({w for w in sub_tokens if w not in globals_helper.stopwords})
+            results.update({w for w in sub_tokens if w not in stopwords})
 
     return results
 
