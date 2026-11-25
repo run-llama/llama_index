@@ -224,3 +224,37 @@ def test_pickle() -> None:
     memory = ChatMemoryBuffer.from_defaults()
     bytes_ = pickle.dumps(memory)
     assert isinstance(pickle.loads(bytes_), ChatMemoryBuffer)
+
+
+def test_get_binary_search_logarithmic_tokenizer_calls() -> None:
+    """Verify trimming long histories uses O(log N) tokenizer calls and skips leading assistant/tool messages."""
+    call_count = 0
+
+    def counting_tokenizer(text: str) -> list[str]:
+        nonlocal call_count
+        call_count += 1
+        return text.split()
+
+    history: list[ChatMessage] = []
+    for i in range(64):
+        history.append(ChatMessage(role=MessageRole.USER, content=f"user_{i} a b"))
+        history.append(
+            ChatMessage(role=MessageRole.ASSISTANT, content=f"assistant_{i} c d")
+        )
+        history.append(ChatMessage(role=MessageRole.TOOL, content=f"tool_{i} e f"))
+
+    # Each 3-message turn has 9 whitespace-separated tokens; allow last 3 turns (27 tokens)
+    memory = ChatMemoryBuffer.from_defaults(
+        chat_history=history,
+        token_limit=27,
+        tokenizer_fn=counting_tokenizer,
+    )
+
+    result = memory.get()
+    assert len(result) == 9
+    assert result[0].role == MessageRole.USER
+    assert result[0].content == "user_61 a b"
+    assert result[-1].content == "tool_63 e f"
+    # 64 candidate turns -> 1 initial check + ceil(log2(64)) <= 8 calls (vs 64 linear calls)
+    assert call_count <= 9
+

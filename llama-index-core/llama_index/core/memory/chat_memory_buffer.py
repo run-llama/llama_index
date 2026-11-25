@@ -121,28 +121,44 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
             raise ValueError("Initial token count exceeds token limit")
 
         message_count = len(chat_history)
+        if message_count == 0:
+            return []
 
         cur_messages = chat_history[-message_count:]
         token_count = self._token_count_for_messages(cur_messages) + initial_token_count
 
-        while token_count > self.token_limit and message_count > 1:
-            message_count -= 1
-            while message_count > 1 and chat_history[-message_count].role in (
-                MessageRole.TOOL,
-                MessageRole.ASSISTANT,
-            ):
-                # we cannot have an assistant message at the start of the chat history
-                # if after removal of the first, we have an assistant message,
-                # we need to remove the assistant message too
-                #
-                # all tool messages should be preceded by an assistant message
-                # if we remove a tool message, we need to remove the assistant message too
-                message_count -= 1
+        if token_count > self.token_limit and message_count > 1:
+            # Build descending candidate suffix lengths that do not start with
+            # an ASSISTANT or TOOL message (with 1 as the final fallback), then
+            # binary search for the largest suffix within token_limit to avoid
+            # O(N^2) repeated full-suffix re-tokenization.
+            candidates = [
+                c
+                for c in range(message_count - 1, 1, -1)
+                if chat_history[-c].role
+                not in (MessageRole.TOOL, MessageRole.ASSISTANT)
+            ]
+            candidates.append(1)
 
-            cur_messages = chat_history[-message_count:]
-            token_count = (
-                self._token_count_for_messages(cur_messages) + initial_token_count
-            )
+            lo, hi = 0, len(candidates) - 1
+            best_count: Optional[int] = None
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                cand_count = candidates[mid]
+                cand_tokens = (
+                    self._token_count_for_messages(chat_history[-cand_count:])
+                    + initial_token_count
+                )
+                if cand_tokens <= self.token_limit:
+                    best_count = cand_count
+                    hi = mid - 1
+                else:
+                    lo = mid + 1
+
+            if best_count is None:
+                return chat_history[-1:]
+
+            return chat_history[-best_count:]
 
         # catch one message longer than token limit, return the most recent message
         # this allows the LLM to raise an error about the message being too long,
