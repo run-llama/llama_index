@@ -12,7 +12,7 @@ from llama_index.core.storage.chat_store.base import BaseChatStore
 def chat_message_serialization(
     chat_message: Any, handler: Any, info: Any
 ) -> Dict[str, Any]:
-    partial_result = handler(chat_message, info)
+    partial_result = handler(chat_message)
 
     for key, value in partial_result.get("additional_kwargs", {}).items():
         value = chat_message._recursive_serialization(value)
@@ -65,13 +65,13 @@ class SimpleChatStore(BaseChatStore):
         """Delete specific message for a key."""
         if key not in self.store:
             return None
-        if idx >= len(self.store[key]):
+        if idx < 0 or idx >= len(self.store[key]):
             return None
         return self.store[key].pop(idx)
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        if key not in self.store:
+        if not self.store.get(key):
             return None
         return self.store[key].pop()
 
