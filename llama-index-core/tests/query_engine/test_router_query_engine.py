@@ -112,3 +112,89 @@ async def test_tool_retriever_router_aquery_does_not_block_event_loop():
 
     assert tool_a.query_engine.aquery.call_count == 1
     assert tool_b.query_engine.aquery.call_count == 1
+
+
+def test_router_query_engine_custom_callback_manager() -> None:
+    """Test that custom callback_manager is respected in RouterQueryEngine."""
+    from llama_index.core.callbacks import CallbackManager
+
+    custom_cb = CallbackManager()
+    selector = _AlwaysMultiSelector()
+    tool = _make_query_engine_tool("a")
+
+    # 1. Passed explicitly to __init__
+    router = RouterQueryEngine(
+        selector=selector,
+        query_engine_tools=[tool],
+        llm=MockLLM(),
+        callback_manager=custom_cb,
+    )
+    assert router.callback_manager is custom_cb
+    assert router._summarizer.callback_manager is custom_cb
+
+    # 2. Passed explicitly to from_defaults
+    router_defaults = RouterQueryEngine.from_defaults(
+        query_engine_tools=[tool],
+        selector=selector,
+        llm=MockLLM(),
+        callback_manager=custom_cb,
+    )
+    assert router_defaults.callback_manager is custom_cb
+    assert router_defaults._summarizer.callback_manager is custom_cb
+
+    # 3. Passed via **kwargs to from_defaults
+    router_kwargs = RouterQueryEngine.from_defaults(
+        query_engine_tools=[tool],
+        selector=selector,
+        llm=MockLLM(),
+        **{"callback_manager": custom_cb},
+    )
+    assert router_kwargs.callback_manager is custom_cb
+    assert router_kwargs._summarizer.callback_manager is custom_cb
+
+    # 4. Reject unconsumed constructor kwargs
+    import pytest
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'invalid_arg'"):
+        RouterQueryEngine(
+            selector=selector,
+            query_engine_tools=[tool],
+            llm=MockLLM(),
+            **{"invalid_arg": True},  # type: ignore[arg-type]
+        )
+
+
+def test_tool_retriever_router_query_engine_custom_callback_manager() -> None:
+    """Test that custom callback_manager is respected in ToolRetrieverRouterQueryEngine."""
+    from llama_index.core.callbacks import CallbackManager
+
+    custom_cb = CallbackManager()
+    retriever = MagicMock()
+
+    # 1. Passed explicitly to __init__
+    router = ToolRetrieverRouterQueryEngine(
+        retriever=retriever,
+        llm=MockLLM(),
+        callback_manager=custom_cb,
+    )
+    assert router.callback_manager is custom_cb
+    assert router._summarizer.callback_manager is custom_cb
+
+    # 2. Passed via **kwargs
+    router_kwargs = ToolRetrieverRouterQueryEngine(
+        retriever=retriever,
+        llm=MockLLM(),
+        **{"callback_manager": custom_cb},
+    )
+    assert router_kwargs.callback_manager is custom_cb
+    assert router_kwargs._summarizer.callback_manager is custom_cb
+
+    # 3. Reject unconsumed constructor kwargs
+    import pytest
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'invalid_arg'"):
+        ToolRetrieverRouterQueryEngine(
+            retriever=retriever,
+            llm=MockLLM(),
+            **{"invalid_arg": True},  # type: ignore[arg-type]
+        )

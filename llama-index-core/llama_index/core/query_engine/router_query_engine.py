@@ -115,18 +115,21 @@ class RouterQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         summarizer: Optional[TreeSummarize] = None,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm or Settings.llm
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
+        callback_manager = callback_manager or Settings.callback_manager
         self._summarizer = summarizer or TreeSummarize(
             llm=self._llm,
+            callback_manager=callback_manager,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._verbose = verbose
 
-        super().__init__(callback_manager=Settings.callback_manager)
+        super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -141,6 +144,7 @@ class RouterQueryEngine(BaseQueryEngine):
         selector: Optional[BaseSelector] = None,
         summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "RouterQueryEngine":
         llm = llm or Settings.llm
@@ -149,11 +153,18 @@ class RouterQueryEngine(BaseQueryEngine):
 
         assert selector is not None
 
+        callback_manager = (
+            callback_manager
+            or kwargs.pop("callback_manager", None)
+            or Settings.callback_manager
+        )
+
         return cls(
             selector,
             query_engine_tools,
             llm=llm,
             summarizer=summarizer,
+            callback_manager=callback_manager,
             **kwargs,
         )
 
@@ -331,15 +342,18 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         retriever: ObjectRetriever[QueryEngineTool],
         llm: Optional[LLM] = None,
         summarizer: Optional[TreeSummarize] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         llm = llm or Settings.llm
+        callback_manager = callback_manager or Settings.callback_manager
         self._summarizer = summarizer or TreeSummarize(
             llm=llm,
+            callback_manager=callback_manager,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._retriever = retriever
 
-        super().__init__(Settings.callback_manager)
+        super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
