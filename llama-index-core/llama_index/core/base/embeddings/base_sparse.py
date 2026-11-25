@@ -40,19 +40,21 @@ def sparse_similarity(
     if len(embedding1) > len(embedding2):
         embedding1, embedding2 = embedding2, embedding1
 
-    # Precompute norms and find common indices
+    # Compute norm1 and dot product in a single pass without allocating key sets
     norm1 = norm2 = dot_product = 0.0
-    common_indices = set(embedding1.keys()) & set(embedding2.keys())
-
     for idx, value in embedding1.items():
-        norm1 += value**2
-        if idx in common_indices:
-            dot_product += value * embedding2[idx]
+        norm1 += value * value
+        val2 = embedding2.get(idx)
+        if val2 is not None:
+            dot_product += value * val2
+
+    if dot_product == 0.0 or norm1 == 0.0:
+        return 0.0
 
     for value in embedding2.values():
-        norm2 += value**2
+        norm2 += value * value
 
-    if norm1 == 0.0 or norm2 == 0.0:
+    if norm2 == 0.0:
         return 0.0
 
     return dot_product / (math.sqrt(norm1) * math.sqrt(norm2))
@@ -182,7 +184,11 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         agg_fn: Optional[Callable[..., SparseEmbedding]] = None,
     ) -> SparseEmbedding:
         """Async get aggregated embedding from multiple queries."""
-        query_embeddings = [await self.aget_query_embedding(query) for query in queries]
+        query_embeddings = list(
+            await asyncio.gather(
+                *(self.aget_query_embedding(query) for query in queries)
+            )
+        )
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 

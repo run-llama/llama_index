@@ -264,7 +264,11 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         agg_fn: Optional[Callable[..., Embedding]] = None,
     ) -> Embedding:
         """Async get aggregated embedding from multiple queries."""
-        query_embeddings = [await self.aget_query_embedding(query) for query in queries]
+        query_embeddings = list(
+            await asyncio.gather(
+                *(self.aget_query_embedding(query) for query in queries)
+            )
+        )
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
