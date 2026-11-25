@@ -221,21 +221,17 @@ class SimpleVectorStore(BasePydanticVectorStore):
         )
 
         if node_ids is not None:
-            node_id_set = set(node_ids)
-
-            def node_filter_fn(node_id: str) -> bool:
-                return node_id in node_id_set and filter_fn(node_id)
-
+            for node_id in set(node_ids):
+                if node_id in self.data.embedding_dict and filter_fn(node_id):
+                    del self.data.embedding_dict[node_id]
+                    del self.data.text_id_to_ref_doc_id[node_id]
+                    self.data.metadata_dict.pop(node_id, None)
         else:
-
-            def node_filter_fn(node_id: str) -> bool:
-                return filter_fn(node_id)
-
-        for node_id in list(self.data.embedding_dict.keys()):
-            if node_filter_fn(node_id):
-                del self.data.embedding_dict[node_id]
-                del self.data.text_id_to_ref_doc_id[node_id]
-                self.data.metadata_dict.pop(node_id, None)
+            for node_id in list(self.data.embedding_dict.keys()):
+                if filter_fn(node_id):
+                    del self.data.embedding_dict[node_id]
+                    del self.data.text_id_to_ref_doc_id[node_id]
+                    self.data.metadata_dict.pop(node_id, None)
 
     def clear(self) -> None:
         """Clear the store."""
