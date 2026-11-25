@@ -1,7 +1,6 @@
 """Test tree index."""
 
-from typing import Any, Dict, List, Optional
-from unittest.mock import patch
+from typing import Dict, List, Optional
 
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.core.indices.tree.base import TreeIndex
@@ -76,24 +75,13 @@ def test_build_tree_with_embed(
     assert all_nodes[5].get_content() == ("This is another test.\nThis is a test v2.")
 
 
-OUTPUTS = [
-    ("Hello world.\nThis is a test.", ""),
-    ("This is another test.\nThis is a test v2.", ""),
-]
-
-
-@patch(
-    "llama_index.core.indices.common_tree.base.run_async_tasks",
-    side_effect=[OUTPUTS],
-)
 def test_build_tree_async(
-    _mock_run_async_tasks: Any,
     documents: List[Document],
     patch_llm_predictor,
     patch_token_text_splitter,
     struct_kwargs: Dict,
 ) -> None:
-    """Test build tree with use_async."""
+    """Test build tree with use_async (summaries are kept whole, see #18172)."""
     index_kwargs, _ = struct_kwargs
     tree = TreeIndex.from_documents(documents, use_async=True, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
