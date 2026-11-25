@@ -63,11 +63,15 @@ class PydanticResponse:
         return self.response.model_dump_json() if self.response else "None"
 
     def __getattr__(self, name: str) -> Any:
-        """Get attribute, but prioritize the pydantic  response object."""
-        if self.response is not None and name in self.response.model_dump():
-            return getattr(self.response, name)
-        else:
-            return None
+        """Get attribute, but prioritize the pydantic response object."""
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
+        response = self.__dict__.get("response")
+        if response is not None and name in response.model_dump():
+            return getattr(response, name)
+        return None
 
     def __post_init_post_parse__(self) -> None:
         """
