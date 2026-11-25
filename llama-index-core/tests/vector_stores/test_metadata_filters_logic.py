@@ -203,3 +203,50 @@ def test_nested_metadata_filters_raise_error() -> None:
     # when the filter function is evaluated.
     with pytest.raises(ValueError, match="Nested MetadataFilters are not supported"):
         fn("n1")
+
+_BOOL_INT_METADATA: Dict[str, Dict[str, Any]] = {
+    "b1": {"stage": False},
+    "b2": {"stage": 0},
+    "b3": {"stage": True},
+    "b4": {"stage": 1},
+}
+
+
+def _matches(operator: FilterOperator, value: Any) -> list:
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="stage", operator=operator, value=value)]
+    )
+    fn = build_metadata_filter_fn(_BOOL_INT_METADATA.__getitem__, filters)
+    return [fn(node_id) for node_id in _BOOL_INT_METADATA]
+
+
+def test_bool_and_int_are_distinct_for_eq_and_ne() -> None:
+    # Chroma and the other backends keep bool and int apart (#24450, #24452);
+    # Python's False == 0 / True == 1 must not make SimpleVectorStore diverge.
+    assert _matches(FilterOperator.EQ, 0) == [False, True, False, False]
+    assert _matches(FilterOperator.EQ, 1) == [False, False, False, True]
+    assert _matches(FilterOperator.NE, 0) == [True, False, True, True]
+    assert _matches(FilterOperator.GT, 0) == [False, False, False, True]
+
+
+_HETEROGENEOUS_METADATA: Dict[str, Dict[str, Any]] = {
+    "h1": {"score": "hello"},
+    "h2": {"score": 5},
+}
+
+
+def _matches_score(operator: FilterOperator, value: Any) -> list:
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="score", operator=operator, value=value)]
+    )
+    fn = build_metadata_filter_fn(_HETEROGENEOUS_METADATA.__getitem__, filters)
+    return [fn(node_id) for node_id in _HETEROGENEOUS_METADATA]
+
+
+def test_range_filters_skip_incomparable_metadata_instead_of_raising() -> None:
+    # A string under a numeric range filter must not raise TypeError and abort
+    # the query (#24451).
+    assert _matches_score(FilterOperator.LT, 0) == [False, False]
+    assert _matches_score(FilterOperator.GT, 0) == [False, True]
+    assert _matches_score(FilterOperator.GTE, 5) == [False, True]
+

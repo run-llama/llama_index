@@ -117,18 +117,38 @@ def build_metadata_filter_fn(
             if metadata_value is None:
                 return operator in (FilterOperator.NE, FilterOperator.NIN)
 
-            if operator == FilterOperator.EQ:
-                return metadata_value == value
-            if operator == FilterOperator.NE:
-                return metadata_value != value
-            if operator == FilterOperator.GT:
-                return metadata_value > value
-            if operator == FilterOperator.GTE:
-                return metadata_value >= value
-            if operator == FilterOperator.LT:
-                return metadata_value < value
-            if operator == FilterOperator.LTE:
-                return metadata_value <= value
+            if operator in (FilterOperator.EQ, FilterOperator.NE):
+                # Python conflates bool and int (False == 0, True == 1); the
+                # other backends keep them distinct, so compare types first
+                # (#24450, #24452).
+                matches = (
+                    isinstance(metadata_value, bool) == isinstance(value, bool)
+                    and metadata_value == value
+                )
+                return matches if operator == FilterOperator.EQ else not matches
+
+            if operator in (
+                FilterOperator.GT,
+                FilterOperator.GTE,
+                FilterOperator.LT,
+                FilterOperator.LTE,
+            ):
+                # A bool is not order-comparable with a number, and metadata
+                # that cannot be ordered against the filter value (e.g. a
+                # string under a numeric range filter) skips the node instead
+                # of aborting the whole query (#24451, #24452).
+                if isinstance(metadata_value, bool) != isinstance(value, bool):
+                    return False
+                try:
+                    if operator == FilterOperator.GT:
+                        return metadata_value > value
+                    if operator == FilterOperator.GTE:
+                        return metadata_value >= value
+                    if operator == FilterOperator.LT:
+                        return metadata_value < value
+                    return metadata_value <= value
+                except TypeError:
+                    return False
             if operator == FilterOperator.IN:
                 return metadata_value in value
             if operator == FilterOperator.NIN:
