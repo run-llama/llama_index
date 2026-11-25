@@ -348,3 +348,57 @@ def test_sql_index_with_index_context(
     # just assert this runs
     sql_query_engine = NLStructStoreQueryEngine(index)
     sql_query_engine.query(QueryBundle("test_table:foo"))
+
+
+def test_clean_and_validate_fields_non_sized_and_null_values(
+    patch_llm_predictor,
+) -> None:
+    """Test BaseStructDatapointExtractor handles bool columns, None, and non-Sized values."""
+    from sqlalchemy import Boolean, Float
+    from llama_index.core.indices.common.struct_store.sql import (
+        SQLStructDatapointExtractor,
+    )
+    from llama_index.core.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
+    from llama_index.core.settings import Settings
+
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    test_table = Table(
+        "typed_table",
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("score", Float, nullable=True),
+        Column("active", Boolean, nullable=True),
+        Column("name", String(16), nullable=True),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine, metadata=metadata_obj)
+
+    extractor = SQLStructDatapointExtractor(
+        Settings.llm,
+        DEFAULT_SCHEMA_EXTRACT_PROMPT,
+        lambda s: {},
+        sql_database,
+        table=test_table,
+    )
+    cleaned = extractor._clean_and_validate_fields(
+        {
+            "user_id": "42",
+            "score": None,
+            "active": True,
+            "name": 123,
+        }
+    )
+    assert cleaned == {"user_id": 42, "active": True}
+
+    # Bool should not be coerced to int/float, and empty string should be skipped
+    cleaned_edge = extractor._clean_and_validate_fields(
+        {
+            "user_id": True,
+            "score": False,
+            "active": "not_a_bool",
+            "name": "",
+        }
+    )
+    assert cleaned_edge == {}
+
