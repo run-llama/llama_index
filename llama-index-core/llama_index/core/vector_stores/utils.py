@@ -118,8 +118,12 @@ def build_metadata_filter_fn(
                 return operator in (FilterOperator.NE, FilterOperator.NIN)
 
             if operator == FilterOperator.EQ:
+                if type(metadata_value) is not type(value):
+                    return False
                 return metadata_value == value
             if operator == FilterOperator.NE:
+                if type(metadata_value) is not type(value):
+                    return True
                 return metadata_value != value
             if operator == FilterOperator.GT:
                 return metadata_value > value
