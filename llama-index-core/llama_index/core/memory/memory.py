@@ -688,9 +688,11 @@ class Memory(BaseMemory):
         if not current_queue:
             return
 
-        tokens_in_current_queue = sum(
-            self._estimate_token_count(message) for message in current_queue
-        )
+        token_counts = {
+            id(message): self._estimate_token_count(message)
+            for message in current_queue
+        }
+        tokens_in_current_queue = sum(token_counts.values())
 
         # If we're over the token limit, initiate waterfall
         token_limit = self.token_limit * self.chat_history_token_ratio
@@ -718,7 +720,7 @@ class Memory(BaseMemory):
                 ):
                     message = reversed_queue.pop()
                     messages_to_flush.append(message)
-                    flushed_tokens += self._estimate_token_count(message)
+                    flushed_tokens += token_counts[id(message)]
 
                 # Ensure we keep at least one message
                 if not reversed_queue and messages_to_flush:
@@ -726,24 +728,17 @@ class Memory(BaseMemory):
 
                 # We need to maintain conversation integrity
                 # Messages should be removed in complete conversation turns
-                chronological_view = reversed_queue[::-1]  # View in chronological order
-
                 # Find the correct conversation boundary
-                # We want the first message in our remaining queue to be a user message
-                # and the last message to be from assistant or tool
-                if chronological_view:
+                # We want the first message in our remaining queue (reversed_queue[-1])
+                # to be a user message and the last message to be from assistant or tool
+                if reversed_queue:
                     # Keep removing messages until first remaining message is from user
                     # This ensures we start with a user message
                     while (
-                        chronological_view
-                        and chronological_view[0].role != "user"
-                        and len(reversed_queue) > 1
+                        len(reversed_queue) > 1
+                        and reversed_queue[-1].role != "user"
                     ):
-                        if reversed_queue:
-                            messages_to_flush.append(reversed_queue.pop())
-                            chronological_view = reversed_queue[::-1]
-                        else:
-                            break
+                        messages_to_flush.append(reversed_queue.pop())
 
                     # If we end up with an empty queue or only a non-user message,
                     # keep at least one full conversation turn
@@ -797,10 +792,8 @@ class Memory(BaseMemory):
                     )
 
                 # Recalculate remaining tokens
-                chronological_view = reversed_queue[::-1]
                 tokens_in_current_queue = sum(
-                    self._estimate_token_count(message)
-                    for message in chronological_view
+                    token_counts[id(message)] for message in reversed_queue
                 )
                 tokens_to_remove = tokens_in_current_queue - token_limit
 

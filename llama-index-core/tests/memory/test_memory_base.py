@@ -337,3 +337,46 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_estimates_tokens_once_per_message(monkeypatch):
+    """Test that _manage_queue estimates token counts once per message across waterfall passes."""
+    memory = Memory(
+        token_limit=100,
+        token_flush_size=25,
+        chat_history_token_ratio=0.5,  # Effective limit: 50 tokens
+        session_id="test_single_pass_token_estimation",
+    )
+
+    chat_messages = []
+    for turn in range(5):
+        chat_messages.extend(
+            [
+                ChatMessage(role="user", content=f"user turn {turn} " + ("u " * 10)),
+                ChatMessage(role="assistant", content=f"call {turn}"),
+                ChatMessage(role="tool", content=f"tool {turn} " + ("t " * 10)),
+                ChatMessage(role="assistant", content=f"final {turn}"),
+            ]
+        )
+
+    await memory.sql_store.add_messages(
+        memory.session_id, chat_messages, status=MessageStatus.ACTIVE
+    )
+
+    orig_estimate = memory._estimate_token_count
+    call_count = 0
+
+    def counting_estimate(item):
+        nonlocal call_count
+        call_count += 1
+        return orig_estimate(item)
+
+    monkeypatch.setattr(memory, "_estimate_token_count", counting_estimate)
+    await memory._manage_queue()
+
+    assert call_count == len(chat_messages)
+    cur_messages = await memory.aget()
+    assert len(cur_messages) > 0
+    assert cur_messages[0].role == "user"
+
