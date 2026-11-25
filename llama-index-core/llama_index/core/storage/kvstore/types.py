@@ -132,11 +132,32 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
         """Put a key-value pair into the store."""
         self.put(key, val, collection=collection)
 
+    def put_all(
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        """Put multiple key-value pairs into the store."""
+        if not kv_pairs:
+            return
+        mapping = self._get_collection_mapping(collection)
+        for key, val in kv_pairs:
+            mapping[key] = val.copy()
+
+    async def aput_all(
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        """Put multiple key-value pairs into the store."""
+        self.put_all(kv_pairs, collection=collection, batch_size=batch_size)
+
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store."""
-        mapping = self._get_collection_mapping(collection)
-
-        if key not in mapping:
+        mapping = self._collections_mappings.get(collection)
+        if mapping is None or key not in mapping:
             return None
         return mapping[key].copy()
 
@@ -148,7 +169,10 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
-        return dict(self._get_collection_mapping(collection))
+        mapping = self._collections_mappings.get(collection)
+        if mapping is None:
+            return {}
+        return {key: val.copy() for key, val in mapping.items()}
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
@@ -156,8 +180,11 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store."""
+        mapping = self._collections_mappings.get(collection)
+        if mapping is None:
+            return False
         try:
-            self._get_collection_mapping(collection).pop(key)
+            mapping.pop(key)
             return True
         except KeyError:
             return False
