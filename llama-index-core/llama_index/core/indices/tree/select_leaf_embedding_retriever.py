@@ -142,12 +142,12 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
 
         selected_nodes: List[BaseNode] = []
         selected_indices: List[int] = []
-        for node, _ in sorted(
-            zip(nodes, similarities), key=lambda x: x[1], reverse=True
+        for idx, (node, _) in sorted(
+            enumerate(zip(nodes, similarities)), key=lambda x: x[1][1], reverse=True
         ):
             if len(selected_nodes) < self.child_branch_factor:
                 selected_nodes.append(node)
-                selected_indices.append(nodes.index(node))
+                selected_indices.append(idx)
             else:
                 break
 

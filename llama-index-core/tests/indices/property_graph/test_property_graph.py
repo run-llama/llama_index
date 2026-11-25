@@ -66,3 +66,39 @@ def test_construction() -> None:
     index.insert_nodes(kg_extractor([]))
 
     assert index._insert_nodes_to_vector_index.call_count == 0
+
+
+def test_vector_context_retriever_scores() -> None:
+    import asyncio
+    from llama_index.core.indices.property_graph.sub_retrievers.vector import (
+        VectorContextRetriever,
+    )
+    from llama_index.core.schema import QueryBundle
+
+    graph_store = SimplePropertyGraphStore()
+    vector_store = SimpleVectorStore()
+    kg_extractor = MockKGExtractor()
+
+    PropertyGraphIndex.from_documents(
+        [Document.example()],
+        property_graph_store=graph_store,
+        vector_store=vector_store,
+        llm=MockLLM(),
+        embed_model=MockEmbedding(embed_dim=256),
+        kg_extractors=[kg_extractor],
+    )
+
+    retriever = VectorContextRetriever(
+        graph_store=graph_store,
+        vector_store=vector_store,
+        embed_model=MockEmbedding(embed_dim=256),
+        include_text=False,
+    )
+    sync_nodes = retriever.retrieve_from_graph(QueryBundle("Logan Canada"))
+    async_nodes = asyncio.run(
+        retriever.aretrieve_from_graph(QueryBundle("Logan Canada"))
+    )
+    assert len(sync_nodes) == 1
+    assert len(async_nodes) == 1
+    assert sync_nodes[0].score == async_nodes[0].score
+
