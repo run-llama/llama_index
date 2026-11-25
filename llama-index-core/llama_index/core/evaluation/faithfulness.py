@@ -5,7 +5,11 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Optional, Sequence, Union
 
-from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.core.evaluation.base import (
+    BaseEvaluator,
+    EvaluationResult,
+    empty_input_invalid_reason,
+)
 from llama_index.core.indices import SummaryIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -164,13 +168,30 @@ class FaithfulnessEvaluator(BaseEvaluator):
         sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Evaluate whether the response is faithful to the contexts."""
+        """
+        Evaluate whether the response is faithful to the contexts.
+
+        ``None`` contexts or response raise ``ValueError``. Empty inputs
+        (an empty context list, contexts that are all empty strings, or an
+        empty response) are not judged: the result has ``invalid_result``
+        set, with ``passing`` and ``score`` left as ``None``.
+        """
         del kwargs  # Unused
 
         await asyncio.sleep(sleep_time_in_seconds)
 
         if contexts is None or response is None:
             raise ValueError("contexts and response must be provided")
+
+        invalid_reason = empty_input_invalid_reason(contexts, response)
+        if invalid_reason is not None:
+            return EvaluationResult(
+                query=query,
+                response=response,
+                contexts=contexts,
+                invalid_result=True,
+                invalid_reason=invalid_reason,
+            )
 
         docs = [Document(text=context) for context in contexts]
         index = SummaryIndex.from_documents(docs)

@@ -135,5 +135,29 @@ class BaseEvaluator(PromptMixin):
         )
 
 
+def empty_input_invalid_reason(
+    contexts: Optional[Sequence[str]],
+    response: Optional[str],
+) -> Optional[str]:
+    """
+    Return why the given evaluator inputs are empty, or None if they are not.
+
+    Input contract shared by evaluators: ``None`` inputs are a caller error
+    (the evaluators raise ``ValueError``), while empty inputs -- an empty
+    context list, contexts that are all empty or whitespace strings, or an
+    empty or whitespace response -- cannot be judged and are reported as an
+    invalid result instead
+    of an ordinary scored pass/fail.
+    """
+    if contexts is not None:
+        if len(contexts) == 0:
+            return "contexts is empty"
+        if all(not context.strip() for context in contexts):
+            return "contexts contain only empty or whitespace strings"
+    if response is not None and not response.strip():
+        return "response is empty or whitespace"
+    return None
+
+
 # legacy: backward compatibility
 Evaluation = EvaluationResult
