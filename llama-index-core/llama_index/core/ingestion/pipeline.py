@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import multiprocessing
 import os
 import re
@@ -50,8 +51,9 @@ def remove_unstable_values(s: str) -> str:
     Examples include:
     - <__main__.Test object at 0x7fb9f3793f50>
     - <function test_fn at 0x7fb9f37a8900>
+    - <function outer.<locals>.inner at 0x7fb9f37a8900>
     """
-    pattern = r"<[\w\s_\. ]+ at 0x[a-z0-9]+>"
+    pattern = r"<[\w\s_\.<> ]+ at 0x[a-fA-F0-9]+>"
     return re.sub(pattern, "", s)
 
 
@@ -511,7 +513,7 @@ class IngestionPipeline(BaseModel):
         num_batches: int, nodes: Union[Sequence[BaseNode], List[Document]]
     ) -> Generator[Union[Sequence[BaseNode], List[Document]], Any, Any]:
         """Yield successive n-sized chunks from lst."""
-        batch_size = max(1, int(len(nodes) / num_batches))
+        batch_size = max(1, math.ceil(len(nodes) / num_batches))
         for i in range(0, len(nodes), batch_size):
             yield nodes[i : i + batch_size]
 
