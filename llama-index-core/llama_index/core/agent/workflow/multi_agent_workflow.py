@@ -324,7 +324,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             async for last_response in response_stream:
                 raw = (
                     last_response.raw.model_dump()
-                    if isinstance(last_response.raw, BaseModel)
+                    if issubclass(type(last_response.raw), BaseModel)
                     else last_response.raw
                 )
                 if ctx.is_running:
