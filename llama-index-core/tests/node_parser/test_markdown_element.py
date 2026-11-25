@@ -1,4 +1,7 @@
 from llama_index.core.llms.mock import MockLLM
+from llama_index.core.node_parser.relational.llama_parse_json_element import (
+    LlamaParseJsonNodeParser,
+)
 from llama_index.core.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
 )
@@ -2797,3 +2800,43 @@ outro text"""
     assert result[1].type == "code"
     assert "def hello():" in result[1].element
     assert result[2].type == "text"
+
+
+def test_extract_elements_large_blocks() -> None:
+    """Test extracting large text and code blocks preserves content in linear time."""
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+
+    text_lines = [f"paragraph line {i}" for i in range(5000)]
+    code_lines = [f"x_{i} = {i}" for i in range(5000)]
+    document = "\n".join(
+        [
+            "# Section",
+            *text_lines,
+            "```python",
+            *code_lines,
+            "```",
+            *text_lines[:100],
+        ]
+    )
+
+    result = node_parser.extract_elements(document)
+
+    assert len(result) == 4
+    assert result[0].type == "title"
+    assert result[0].element == " Section"
+    assert result[1].type == "text"
+    assert result[1].element == "\n".join(text_lines)
+    assert result[2].type == "code"
+    assert result[2].element == "\n".join(["", *code_lines])
+    assert result[3].type == "text"
+    assert result[3].element == "\n".join(text_lines[:100])
+
+    json_parser = LlamaParseJsonNodeParser(llm=MockLLM())
+    json_result = json_parser.extract_elements(document, mode="text")
+    assert len(json_result) == 1
+    assert json_result[0].type == "text"
+    assert json_result[0].element == "\n".join(
+        [" Section", *text_lines, "```python", *code_lines, "```", *text_lines[:100]]
+    )
+
+
