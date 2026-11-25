@@ -353,3 +353,39 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_nltk_cache_fixes_preexisting_group_writable_dir(tmp_path, monkeypatch) -> None:
+    """Test that pre-existing group-writable NLTK cache dirs get fixed to 0o700.
+    
+    Regression test for edge case where os.makedirs(mode=0o700) doesn't fix
+    permissions on existing directories. NLTK 3.10.4+ rejects group/world-writable
+    dirs, so we must explicitly chmod existing directories.
+    """
+    import stat
+    from llama_index.core.utils import get_llama_logger
+    
+    # Create a pre-existing directory with group-writable permissions
+    # (simulates directory created under umask 0002)
+    nltk_cache_dir = tmp_path / "nltk_cache"
+    nltk_cache_dir.mkdir(mode=0o775, parents=True)
+    
+    # Verify it's group-writable
+    initial_mode = nltk_cache_dir.stat().st_mode
+    assert initial_mode & stat.S_IWGRP, "Setup: directory should be group-writable"
+    
+    # Set NLTK_DATA to our test directory
+    monkeypatch.setenv("NLTK_DATA", str(nltk_cache_dir))
+    
+    # Initialize logger (which sets up NLTK cache directory)
+    # This should fix the permissions even though the directory already exists
+    logger = get_llama_logger(__name__)
+    
+    # Verify permissions were fixed to owner-only (0o700)
+    final_mode = nltk_cache_dir.stat().st_mode
+    assert not (final_mode & stat.S_IWGRP), "Directory should no longer be group-writable"
+    assert not (final_mode & stat.S_IWOTH), "Directory should no longer be world-writable"
+    # Check owner has full permissions
+    assert final_mode & stat.S_IRUSR, "Owner should have read permission"
+    assert final_mode & stat.S_IWUSR, "Owner should have write permission"
+    assert final_mode & stat.S_IXUSR, "Owner should have execute permission"
