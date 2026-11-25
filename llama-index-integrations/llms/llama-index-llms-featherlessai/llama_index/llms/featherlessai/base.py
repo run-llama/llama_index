@@ -31,16 +31,17 @@ class FeatherlessLLM(OpenAILike):
         api_base: str = "https://api.featherless.ai/v1",
         is_chat_model: bool = True,
         context_window: Optional[int] = None,
-        is_function_calling_model: bool = False,
+        is_function_calling_model: bool = True,
         **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("FEATHERLESS_API_KEY", None)
+        if context_window is not None:
+            kwargs["context_window"] = context_window
         super().__init__(
             model=model,
             api_key=api_key,
             api_base=api_base,
             is_chat_model=is_chat_model,
-            context_window=context_window,
             is_function_calling_model=is_function_calling_model,
             **kwargs,
         )
