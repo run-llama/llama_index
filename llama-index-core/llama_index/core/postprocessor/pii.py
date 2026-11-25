@@ -111,14 +111,26 @@ class NERPIINodePostprocessor(BaseNodePostprocessor):
 
     def mask_pii(self, ner: Callable, text: str) -> Tuple[str, Dict]:
         """Mask PII in text."""
-        new_text = text
         response = ner(text)
+        if not response:
+            return text, {}
         mapping = {}
-        for entry in response:
-            entity_group_tag = f"[{entry['entity_group']}_{entry['start']}]"
-            new_text = new_text.replace(entry["word"], entity_group_tag).strip()
-            mapping[entity_group_tag] = entry["word"]
-        return new_text, mapping
+        pieces = []
+        last_end = 0
+        for entry in sorted(response, key=lambda e: e["start"]):
+            start = entry["start"]
+            end = entry.get("end", start + len(entry["word"]))
+            if start < last_end:
+                continue
+            entity_group_tag = f"[{entry['entity_group']}_{start}]"
+            pieces.append(text[last_end:start])
+            pieces.append(entity_group_tag)
+            mapping[entity_group_tag] = (
+                text[start:end] if "end" in entry else entry["word"]
+            )
+            last_end = end
+        pieces.append(text[last_end:])
+        return "".join(pieces).strip(), mapping
 
     def _postprocess_nodes(
         self,
