@@ -1103,3 +1103,45 @@ def test_chat_prompt_helper_json_in_prompt() -> None:
     texts = prompt_helper.repack(prompt, [ChatMessage(content="hello_world")])
     assert len(texts) == 1
     assert prompt.template_vars == ["topic"]
+
+
+def test_prompt_helper_structured_llm_does_not_mutate_caller_tools() -> None:
+    """Verify PromptHelper and ChatPromptHelper do not mutate caller-passed tools list when using StructuredLLM."""
+    from llama_index.core.bridge.pydantic import BaseModel
+    from llama_index.core.llms.mock import MockLLM
+    from llama_index.core.tools import FunctionTool
+
+    class OutputModel(BaseModel):
+        answer: str
+
+    def dummy_tool_fn(x: str) -> str:
+        """Dummy tool."""
+        return x
+
+    user_tool = FunctionTool.from_defaults(fn=dummy_tool_fn)
+    caller_tools = [user_tool]
+    sllm = MockLLM().as_structured_llm(OutputModel)
+
+    prompt = PromptTemplate("Context: {text}")
+    prompt_helper = PromptHelper(context_window=2048, num_output=128)
+    chunk_size_1 = prompt_helper._get_available_chunk_size(
+        prompt, num_chunks=1, padding=5, llm=sllm, tools=caller_tools
+    )
+    chunk_size_2 = prompt_helper._get_available_chunk_size(
+        prompt, num_chunks=1, padding=5, llm=sllm, tools=caller_tools
+    )
+    assert caller_tools == [user_tool]
+    assert chunk_size_1 == chunk_size_2
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [ChatMessage(role="user", content="Context: {text}")]
+    )
+    chat_prompt_helper = ChatPromptHelper(context_window=2048, num_output=128)
+    chat_chunk_size_1 = chat_prompt_helper._get_available_chunk_size(
+        chat_prompt, num_chunks=1, padding=5, llm=sllm, tools=caller_tools
+    )
+    chat_chunk_size_2 = chat_prompt_helper._get_available_chunk_size(
+        chat_prompt, num_chunks=1, padding=5, llm=sllm, tools=caller_tools
+    )
+    assert caller_tools == [user_tool]
+    assert chat_chunk_size_1 == chat_chunk_size_2
