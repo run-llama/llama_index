@@ -299,6 +299,26 @@ def test_time_weighted_postprocessor() -> None:
     assert cast(Dict, nodes[0].metadata)[key] != 0
     assert cast(Dict, nodes[3].metadata)[key] == 3
 
+    # Verify a 0.0 node score is preserved rather than coerced to 1.0
+    zero_and_positive_nodes = [
+        NodeWithScore(
+            node=TextNode(text="Zero score node.", id_="z", metadata={key: 4.0}),
+            score=0.0,
+        ),
+        NodeWithScore(
+            node=TextNode(text="Half score node.", id_="h", metadata={key: 4.0}),
+            score=0.5,
+        ),
+    ]
+    postprocessor_zero = TimeWeightedPostprocessor(
+        top_k=2, time_decay=0.5, time_access_refresh=False, now=4.0
+    )
+    ranked = postprocessor_zero.postprocess_nodes(zero_and_positive_nodes)
+    assert [n.node.id_ for n in ranked] == ["h", "z"]
+    assert ranked[0].score == pytest.approx(1.5)
+    assert ranked[1].score == pytest.approx(1.0)
+
+
 
 @pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor() -> None:

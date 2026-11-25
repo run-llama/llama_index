@@ -77,3 +77,31 @@ async def test_dedup_preserves_nodes_with_different_node_ids() -> None:
     async_nodes = await retriever.aretrieve("test")
     assert len(async_nodes) == 2
     assert {n.node.node_id for n in async_nodes} == {"node-1", "node-2"}
+
+
+def test_recursive_retriever_preserves_zero_similarity() -> None:
+    from llama_index.core.base.base_retriever import BaseRetriever
+    from llama_index.core.retrievers import RecursiveRetriever
+    from llama_index.core.schema import NodeWithScore, QueryBundle
+
+    target_node = TextNode(text="Target node", id_="target-node")
+    index_node = IndexNode(
+        text="Index link",
+        id_="index-link",
+        index_id="target-node",
+    )
+
+    class _ZeroScoreRetriever(BaseRetriever):
+        def _retrieve(self, query_bundle: QueryBundle):
+            return [NodeWithScore(node=index_node, score=0.0)]
+
+    recursive_retriever = RecursiveRetriever(
+        root_id="root",
+        retriever_dict={"root": _ZeroScoreRetriever()},
+        node_dict={"target-node": target_node},
+    )
+    results = recursive_retriever.retrieve("query")
+    assert len(results) == 1
+    assert results[0].node.id_ == "target-node"
+    assert results[0].score == 0.0
+
