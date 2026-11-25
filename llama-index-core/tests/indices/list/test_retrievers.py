@@ -89,3 +89,63 @@ def test_llm_query(documents: List[Document], patch_token_text_splitter) -> None
 
     assert nodes[0].node.get_content() == "This is a test."
     assert nodes[1].node.get_content() == "This is a test v2."
+
+
+def test_embedding_retriever_batches_missing_node_embeddings(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """Verify SummaryIndexEmbeddingRetriever._get_embeddings batches missing node embeddings."""
+    index = SummaryIndex.from_documents(documents)
+    retriever = index.as_retriever(retriever_mode="embedding", similarity_top_k=2)
+    assert isinstance(retriever, SummaryIndexEmbeddingRetriever)
+
+    node_ids = index.index_struct.nodes
+    nodes = index.docstore.get_nodes(node_ids)
+    # Pre-populate the first node's embedding so only the remaining nodes need embedding
+    nodes[0].embedding = [1.0, 0.0, 0.0, 0.0, 0.0]
+    for n in nodes[1:]:
+        n.embedding = None
+
+    batch_calls: List[List[str]] = []
+    text_embed_map: Dict[str, List[float]] = {
+        "Hello world.": [1.0, 0.0, 0.0, 0.0, 0.0],
+        "This is a test.": [0.0, 1.0, 0.0, 0.0, 0.0],
+        "This is another test.": [0.0, 0.0, 1.0, 0.0, 0.0],
+        "This is a test v2.": [0.0, 0.0, 0.0, 1.0, 0.0],
+    }
+
+    def fake_batch(texts: List[str], **kwargs: Any) -> List[List[float]]:
+        batch_calls.append(list(texts))
+        return [text_embed_map[t] for t in texts]
+
+    with (
+        patch.object(
+            type(retriever._embed_model),
+            "get_agg_embedding_from_queries",
+            return_value=[0.0, 1.0, 0.0, 0.0, 0.0],
+        ),
+        patch.object(
+            type(retriever._embed_model),
+            "get_text_embedding_batch",
+            side_effect=fake_batch,
+        ),
+        patch.object(
+            type(retriever._embed_model),
+            "get_text_embedding",
+            side_effect=AssertionError("Single-node get_text_embedding should not be called"),
+        ),
+    ):
+        from llama_index.core.schema import QueryBundle
+
+        q_emb, node_embs = retriever._get_embeddings(QueryBundle("What is?"), nodes)
+
+    assert q_emb == [0.0, 1.0, 0.0, 0.0, 0.0]
+    assert len(batch_calls) == 1
+    assert batch_calls[0] == [
+        "This is a test.",
+        "This is another test.",
+        "This is a test v2.",
+    ]
+    assert len(node_embs) == 4
+    assert node_embs[1] == [0.0, 1.0, 0.0, 0.0, 0.0]
+

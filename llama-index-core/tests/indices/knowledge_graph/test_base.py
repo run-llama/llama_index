@@ -176,6 +176,55 @@ def test_build_kg_similarity(
 @patch.object(
     KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
+def test_kg_insert_batches_and_deduplicates_triplet_embeddings(
+    _patch_extract_triplets: Any,
+) -> None:
+    """Verify KnowledgeGraphIndex._insert batches unique missing triplet embeddings."""
+    embed_model = MockEmbedding()
+    index = KnowledgeGraphIndex(
+        [TextNode(text="(foo, is, bar)")],
+        include_embeddings=True,
+        embed_model=embed_model,
+    )
+    assert set(index.index_struct.embedding_dict.keys()) == {"('foo', 'is', 'bar')"}
+
+    batch_calls: List[List[str]] = []
+    orig_batch = embed_model.get_text_embedding_batch
+
+    def record_batch(texts: List[str], **kwargs: Any) -> List[List[float]]:
+        batch_calls.append(list(texts))
+        return orig_batch(texts, **kwargs)
+
+    with (
+        patch.object(MockEmbedding, "get_text_embedding_batch", side_effect=record_batch),
+        patch.object(
+            MockEmbedding,
+            "get_text_embedding",
+            side_effect=AssertionError("Unbatched get_text_embedding should not be called"),
+        ),
+    ):
+        index.insert_nodes(
+            [
+                TextNode(text="(foo, is, bar)\n(hello, is not, world)"),
+                TextNode(text="(hello, is not, world)\n(Jane, is mother of, Bob)"),
+            ]
+        )
+
+    assert len(batch_calls) == 1
+    assert batch_calls[0] == [
+        "('hello', 'is not', 'world')",
+        "('Jane', 'is mother of', 'Bob')",
+    ]
+    assert set(index.index_struct.embedding_dict.keys()) == {
+        "('foo', 'is', 'bar')",
+        "('hello', 'is not', 'world')",
+        "('Jane', 'is mother of', 'Bob')",
+    }
+
+
+@patch.object(
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
 def test_build_kg(
     _patch_extract_triplets: Any, documents: List[Document], patch_token_text_splitter
 ) -> None:

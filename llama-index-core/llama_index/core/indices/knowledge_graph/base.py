@@ -221,18 +221,24 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 index_struct.add_node([subj, obj], n)
 
             if self.include_embeddings:
-                triplet_texts = [str(t) for t in triplets]
-
-                embed_outputs = self._embed_model.get_text_embedding_batch(
-                    triplet_texts, show_progress=self._show_progress
-                )
-                for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
-                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
+                triplet_texts = [
+                    rel_text
+                    for rel_text in dict.fromkeys(str(t) for t in triplets)
+                    if rel_text not in index_struct.embedding_dict
+                ]
+                if triplet_texts:
+                    embed_outputs = self._embed_model.get_text_embedding_batch(
+                        triplet_texts, show_progress=self._show_progress
+                    )
+                    for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
+                        index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
+        missing_triplet_texts: List[str] = []
+        seen_triplet_texts = set(self._index_struct.embedding_dict)
         for n in nodes:
             triplets = self._extract_triplets(
                 n.get_content(metadata_mode=MetadataMode.LLM)
@@ -245,10 +251,17 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 self._index_struct.add_node([subj, obj], n)
                 if (
                     self.include_embeddings
-                    and triplet_str not in self._index_struct.embedding_dict
+                    and triplet_str not in seen_triplet_texts
                 ):
-                    rel_embedding = self._embed_model.get_text_embedding(triplet_str)
-                    self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
+                    seen_triplet_texts.add(triplet_str)
+                    missing_triplet_texts.append(triplet_str)
+
+        if missing_triplet_texts:
+            embed_outputs = self._embed_model.get_text_embedding_batch(
+                missing_triplet_texts, show_progress=self._show_progress
+            )
+            for rel_text, rel_embed in zip(missing_triplet_texts, embed_outputs):
+                self._index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         # Update the storage context's index_store
         self._storage_context.index_store.add_index_struct(self._index_struct)
