@@ -214,6 +214,8 @@ class VoyageEmbedding(MultiModalEmbedding):
             inputs=[[processed_image]],
             input_type=input_type,
             truncation=self.truncation if self.truncation is not None else True,
+            output_dtype=self.output_dtype,
+            output_dimension=self.output_dimension,
         ).embeddings[0]
 
     async def _aembed_image(
@@ -231,6 +233,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 inputs=[[processed_image]],
                 input_type=input_type,
                 truncation=self.truncation if self.truncation is not None else True,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             )
         ).embeddings[0]
 
@@ -291,6 +295,8 @@ class VoyageEmbedding(MultiModalEmbedding):
             inputs=[[video]],
             input_type=input_type,
             truncation=self.truncation if self.truncation is not None else True,
+            output_dtype=self.output_dtype,
+            output_dimension=self.output_dimension,
         ).embeddings[0]
 
     async def aget_video_embedding(
@@ -322,6 +328,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 inputs=[[video]],
                 input_type=input_type,
                 truncation=self.truncation if self.truncation is not None else True,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             )
         ).embeddings[0]
 
@@ -353,6 +361,8 @@ class VoyageEmbedding(MultiModalEmbedding):
             inputs=videos,
             input_type=input_type,
             truncation=self.truncation if self.truncation is not None else True,
+            output_dtype=self.output_dtype,
+            output_dimension=self.output_dimension,
         ).embeddings
 
     async def aget_video_embeddings(
@@ -384,6 +394,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 inputs=videos,
                 input_type=input_type,
                 truncation=self.truncation if self.truncation is not None else True,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             )
         ).embeddings
 
@@ -407,6 +419,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                     model=self.model_name,
                     input_type=input_type,
                     truncation=self.truncation if self.truncation is not None else True,
+                    output_dtype=self.output_dtype,
+                    output_dimension=self.output_dimension,
                 ).embeddings
                 embeddings.extend(batch_embeddings)
             else:
@@ -443,6 +457,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                     model=self.model_name,
                     input_type=input_type,
                     truncation=self.truncation if self.truncation is not None else True,
+                    output_dtype=self.output_dtype,
+                    output_dimension=self.output_dimension,
                 )
                 embeddings.extend(r.embeddings)
             else:
