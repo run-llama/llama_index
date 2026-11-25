@@ -1,13 +1,14 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from llama_index.core.agent.workflow import BaseWorkflowAgent
+from llama_index.core.agent.workflow import BaseWorkflowAgent, FunctionAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
     ToolCallResult,
 )
 from llama_index.core.llms import ChatMessage
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import FunctionTool, ToolOutput
 from llama_index.core.workflow.context import Context
@@ -62,6 +63,108 @@ def test_agent():
         tools=[],
         llm=None,  # Will use default
     )
+
+
+@pytest.mark.asyncio
+async def test_function_agent_records_all_parallel_results_before_return_direct(
+    mock_context, mock_memory
+):
+    """All parallel tool responses must be recorded before returning directly."""
+    agent = FunctionAgent(llm=MockFunctionCallingLLM())
+    mock_context.store.get.return_value = []
+
+    direct_result = ToolCallResult(
+        tool_name="direct_tool",
+        tool_kwargs={},
+        tool_id="direct-id",
+        tool_output=ToolOutput(
+            content="direct result",
+            tool_name="direct_tool",
+            raw_input={},
+            raw_output="direct result",
+            is_error=False,
+        ),
+        return_direct=True,
+    )
+    ordinary_result = ToolCallResult(
+        tool_name="ordinary_tool",
+        tool_kwargs={},
+        tool_id="ordinary-id",
+        tool_output=ToolOutput(
+            content="ordinary result",
+            tool_name="ordinary_tool",
+            raw_input={},
+            raw_output="ordinary result",
+            is_error=False,
+        ),
+        return_direct=False,
+    )
+
+    await agent.handle_tool_call_results(
+        mock_context, [direct_result, ordinary_result], mock_memory
+    )
+
+    scratchpad = mock_context.store.set.await_args.args[1]
+    recorded_tool_ids = [
+        message.additional_kwargs["tool_call_id"]
+        for message in scratchpad
+        if message.role == "tool"
+    ]
+    assert recorded_tool_ids == ["direct-id", "ordinary-id"]
+    assert [message.role for message in scratchpad] == ["tool", "tool", "assistant"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("first_name", "first_error", "second_direct", "expected_id"),
+    [
+        ("direct_tool", True, False, None),
+        ("direct_tool", True, True, "second-id"),
+        ("handoff", False, True, None),
+        ("handoff", True, True, "second-id"),
+        ("direct_tool", False, True, "first-id"),
+    ],
+)
+async def test_function_agent_selects_first_successful_direct_result(
+    mock_context, mock_memory, first_name, first_error, second_direct, expected_id
+):
+    agent = FunctionAgent(llm=MockFunctionCallingLLM())
+    mock_context.store.get.return_value = []
+    results = [
+        ToolCallResult(
+            tool_name=name,
+            tool_kwargs={},
+            tool_id=tool_id,
+            tool_output=ToolOutput(
+                content=tool_id,
+                tool_name=name,
+                raw_input={},
+                raw_output=tool_id,
+                is_error=is_error,
+            ),
+            return_direct=return_direct,
+        )
+        for name, tool_id, is_error, return_direct in [
+            (first_name, "first-id", first_error, True),
+            ("second_tool", "second-id", False, second_direct),
+        ]
+    ]
+
+    await agent.handle_tool_call_results(mock_context, results, mock_memory)
+
+    scratchpad = mock_context.store.set.await_args.args[1]
+    assert [message.role for message in scratchpad] == ["tool", "tool"] + (
+        ["assistant"] if expected_id is not None else []
+    )
+    assert [
+        message.additional_kwargs["tool_call_id"] for message in scratchpad[:2]
+    ] == [
+        "first-id",
+        "second-id",
+    ]
+    if expected_id is not None:
+        assert scratchpad[-1].content == expected_id
+        assert scratchpad[-1].additional_kwargs["tool_call_id"] == expected_id
 
 
 @pytest.mark.asyncio
