@@ -142,7 +142,9 @@ class BatchEvalRunner:
         return new_inputs_list
 
     def _validate_nested_eval_kwargs_types(
-        self, eval_kwargs_lists: Dict[str, Any]
+        self,
+        eval_kwargs_lists: Dict[str, Any],
+        expected_len: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Ensure eval kwargs are acceptable format.
@@ -157,28 +159,45 @@ class BatchEvalRunner:
                 f"eval_kwargs_lists must be a dict. Got {eval_kwargs_lists}"
             )
 
+        validated: Dict[str, Any] = {}
+        mode: Optional[str] = None
         for evaluator, eval_kwargs in eval_kwargs_lists.items():
             if isinstance(eval_kwargs, list):
+                if mode == "dict":
+                    raise ValueError(
+                        "Cannot mix single-evaluator (list) and multi-evaluator (dict) "
+                        f"values in eval_kwargs_lists. Got {evaluator}: {eval_kwargs}"
+                    )
+                mode = "list"
                 # maintain backwards compatibility - for use with single evaluator
-                eval_kwargs_lists[evaluator] = self._validate_and_clean_inputs(
-                    eval_kwargs
-                )[0]
+                cleaned = self._validate_and_clean_inputs(eval_kwargs)[0]
+                if expected_len is not None and len(cleaned) != expected_len:
+                    raise ValueError("All inputs must have the same length.")
+                validated[evaluator] = cleaned
             elif isinstance(eval_kwargs, dict):
+                if mode == "list":
+                    raise ValueError(
+                        "Cannot mix single-evaluator (list) and multi-evaluator (dict) "
+                        f"values in eval_kwargs_lists. Got {evaluator}: {eval_kwargs}"
+                    )
+                mode = "dict"
                 # for use with multiple evaluators
-                for k in eval_kwargs:
-                    v = eval_kwargs[k]
+                nested: Dict[str, Any] = {}
+                for k, v in eval_kwargs.items():
                     if not isinstance(v, list):
                         raise ValueError(
                             f"nested inner values in eval_kwargs must be a list. Got {evaluator}: {k}: {v}"
                         )
-                    eval_kwargs_lists[evaluator][k] = self._validate_and_clean_inputs(
-                        v
-                    )[0]
+                    cleaned = self._validate_and_clean_inputs(v)[0]
+                    if expected_len is not None and len(cleaned) != expected_len:
+                        raise ValueError("All inputs must have the same length.")
+                    nested[k] = cleaned
+                validated[evaluator] = nested
             else:
                 raise ValueError(
                     f"eval_kwargs must be a list or a dict. Got {evaluator}: {eval_kwargs}"
                 )
-        return eval_kwargs_lists
+        return validated
 
     def _get_eval_kwargs(
         self, eval_kwargs_lists: Dict[str, Any], idx: int
@@ -220,7 +239,9 @@ class BatchEvalRunner:
         queries, response_strs, contexts_list = self._validate_and_clean_inputs(
             queries, response_strs, contexts_list
         )
-        eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
+        eval_kwargs_lists = self._validate_nested_eval_kwargs_types(
+            eval_kwargs_lists, expected_len=len(queries)
+        )
 
         # boolean to check if using multi kwarg evaluator
         multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
@@ -280,7 +301,9 @@ class BatchEvalRunner:
 
         """
         queries, responses = self._validate_and_clean_inputs(queries, responses)
-        eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
+        eval_kwargs_lists = self._validate_nested_eval_kwargs_types(
+            eval_kwargs_lists, expected_len=len(queries)
+        )
 
         # boolean to check if using multi kwarg evaluator
         multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(

@@ -1,4 +1,5 @@
 from typing import Any, Optional, Sequence
+import pytest
 
 from llama_index.core.base.response.schema import Response
 from llama_index.core.evaluation import BaseEvaluator
@@ -117,5 +118,72 @@ def test_batch_runner() -> None:
     )
     assert get_eval_results("evaluator1", results) == 0.5
     assert get_eval_results("evaluator2", results) == 1.0
-    assert get_eval_results("evaluator1", results) == 0.5
-    assert get_eval_results("evaluator2", results) == 1.0
+
+
+def test_batch_runner_eval_kwargs_validation() -> None:
+    runner = BatchEvalRunner(
+        evaluators={
+            "evaluator1": MockEvaluator(),
+            "evaluator2": MockEvaluator(),
+        }
+    )
+    queries = ["query1", "query2"]
+    response_strs = ["response1", "response2"]
+    responses = [
+        Response(response="response1", source_nodes=[]),
+        Response(response="response2", source_nodes=[]),
+    ]
+
+    # Mismatched length in single-evaluator eval_kwargs (too short or too long)
+    with pytest.raises(ValueError, match="All inputs must have the same length"):
+        runner.evaluate_response_strs(
+            queries=queries,
+            response_strs=response_strs,
+            reference=["response1"],
+        )
+    with pytest.raises(ValueError, match="All inputs must have the same length"):
+        runner.evaluate_responses(
+            queries=queries,
+            responses=responses,
+            reference=["response1", "response2", "response3"],
+        )
+
+    # Mismatched length in multi-evaluator nested eval_kwargs
+    with pytest.raises(ValueError, match="All inputs must have the same length"):
+        runner.evaluate_response_strs(
+            queries=queries,
+            response_strs=response_strs,
+            evaluator1={"reference": ["response1"]},
+        )
+    with pytest.raises(ValueError, match="All inputs must have the same length"):
+        runner.evaluate_responses(
+            queries=queries,
+            responses=responses,
+            evaluator1={"reference": ["response1", "response2", "response3"]},
+        )
+
+    # Mixing single-evaluator list and multi-evaluator dict values
+    with pytest.raises(ValueError, match="Cannot mix single-evaluator"):
+        runner.evaluate_response_strs(
+            queries=queries,
+            response_strs=response_strs,
+            evaluator1={"reference": ["response1", "response2"]},
+            reference=["response1", "response2"],
+        )
+    with pytest.raises(ValueError, match="Cannot mix single-evaluator"):
+        runner.evaluate_responses(
+            queries=queries,
+            responses=responses,
+            reference=["response1", "response2"],
+            evaluator1={"reference": ["response1", "response2"]},
+        )
+
+    # Caller's nested dict is not mutated in-place
+    nested_input = {"evaluator1": {"reference": ["response1", "response2"]}}
+    original_inner = nested_input["evaluator1"]
+    validated = runner._validate_nested_eval_kwargs_types(
+        nested_input, expected_len=2
+    )
+    assert validated is not nested_input
+    assert validated["evaluator1"] is not original_inner
+
