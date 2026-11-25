@@ -1,9 +1,13 @@
 import os
+from contextlib import asynccontextmanager
 from httpx2 import AsyncClient
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
-from llama_index.tools.mcp.client import enable_sse
+from llama_index.tools.mcp.client import (
+    _prompt_content_to_block,
+    enable_sse,
+)
 from mcp import types
 
 
@@ -310,3 +314,111 @@ async def test_streamable_http_tuple_unpack():
 
     # streamable_http_client was called for the https endpoint
     assert mock_shc.called
+
+
+def _client_with_prompt_messages(messages):
+    """
+    Build a client whose session returns the given prompt messages.
+
+    No MCP server is spawned: _run_session is stubbed, so only the
+    get_prompt() content-conversion code is exercised.
+    """
+    client = BasicMCPClient("python", args=["-c", "pass"])
+
+    class FakeSession:
+        async def get_prompt(self, name, arguments=None):
+            return types.GetPromptResult(
+                messages=[
+                    types.PromptMessage(role="user", content=message)
+                    for message in messages
+                ]
+            )
+
+    @asynccontextmanager
+    async def fake_run_session():
+        yield FakeSession()
+
+    client._run_session = fake_run_session
+    return client
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_content_variants():
+    """
+    Regression test for #21270: every spec-valid prompt content
+    variant converts to a block instead of raising.
+    """
+    client = _client_with_prompt_messages(
+        [
+            types.TextContent(type="text", text="hello"),
+            types.ImageContent(type="image", data="aGVsbG8=", mime_type="image/png"),
+            types.AudioContent(type="audio", data="aGVsbG8=", mime_type="audio/wav"),
+            types.EmbeddedResource(
+                type="resource",
+                resource=types.TextResourceContents(
+                    uri="file:///x.txt", mime_type="text/plain", text="embedded text"
+                ),
+            ),
+            types.EmbeddedResource(
+                type="resource",
+                resource=types.BlobResourceContents(
+                    uri="file:///x.png", mime_type="image/png", blob="aGVsbG8="
+                ),
+            ),
+            types.EmbeddedResource(
+                type="resource",
+                resource=types.BlobResourceContents(
+                    uri="file:///x.wav", mime_type="audio/wav", blob="aGVsbG8="
+                ),
+            ),
+            types.ResourceLink(
+                type="resource_link",
+                name="pic",
+                uri="file:///pic.png",
+                mime_type="image/png",
+            ),
+            types.ResourceLink(
+                type="resource_link",
+                name="doc",
+                uri="file:///doc.txt",
+                mime_type="text/plain",
+            ),
+        ]
+    )
+
+    result = await client.get_prompt("p")
+
+    block_types = [message.blocks[0].block_type for message in result]
+    assert block_types == [
+        "text",
+        "image",
+        "audio",
+        "text",
+        "image",
+        "audio",
+        "image",
+        "text",
+    ]
+    assert result[0].blocks[0].text == "hello"
+    assert result[2].blocks[0].format == "wav"
+    assert result[3].blocks[0].text == "embedded text"
+    assert result[4].blocks[0].image_mimetype == "image/png"
+    assert str(result[6].blocks[0].url) == "file:///pic.png"
+    assert result[7].blocks[0].text == "file:///doc.txt"
+
+
+def test_prompt_content_to_block_rejects_unmapped_content():
+    """Fail-fast behavior is preserved for content with no block mapping."""
+    with pytest.raises(ValueError, match="Unsupported content type"):
+        _prompt_content_to_block(object())
+    with pytest.raises(ValueError, match="Unsupported embedded resource"):
+        _prompt_content_to_block(
+            types.EmbeddedResource(
+                type="resource",
+                resource=types.BlobResourceContents(
+                    uri="file:///x.bin",
+                    mime_type="application/octet-stream",
+                    blob="aGVsbG8=",
+                ),
+            )
+        )
