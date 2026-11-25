@@ -107,6 +107,22 @@ def test_get_set_compare(patch_llm_predictor, patch_token_text_splitter) -> None
 
     assert len(playground.indices) == 1
 
+    # Expanding `playground.indices` to more elements than before must refresh `index_colors`
+    playground.indices = [
+        VectorStoreIndex.from_documents(
+            documents=documents, embed_model=MockEmbedding()
+        ),
+        SummaryIndex.from_documents(documents),
+    ]
+    assert len(playground.indices) == 2
+    assert set(playground.index_colors.keys()) == {"0", "1"}
+
+    # Subset `retriever_modes` mapping should only run configured index types without KeyError
+    playground.retriever_modes = {VectorStoreIndex: ["default"]}
+    subset_results = playground.compare("Who is?", to_pandas=False)
+    assert len(subset_results) == 1
+    assert subset_results[0]["Index"] == "VectorStoreIndex"
+
 
 def test_from_docs(patch_llm_predictor, patch_token_text_splitter) -> None:
     """Test initialization via a list of documents."""
