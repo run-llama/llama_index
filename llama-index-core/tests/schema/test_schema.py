@@ -361,6 +361,16 @@ def test_image_document_embeddings():
     assert doc.text_embedding == [1.0, 2.0, 3.0]
     assert doc.text_resource.embeddings == {"dense": [1.0, 2.0, 3.0]}
 
+    doc_with_kwarg = ImageDocument(text="foo", text_embedding=[4.0, 5.0])
+    assert doc_with_kwarg.text_embedding == [4.0, 5.0]
+    assert doc_with_kwarg.text_resource is not None
+    assert doc_with_kwarg.text_resource.embeddings == {"dense": [4.0, 5.0]}
+
+    doc_without_text = ImageDocument(image=b"123456", text_embedding=[6.0, 7.0])
+    assert doc_without_text.text_embedding == [6.0, 7.0]
+    assert doc_without_text.text_resource is not None
+    assert doc_without_text.text_resource.embeddings == {"dense": [6.0, 7.0]}
+
 
 def test_image_document_path_serialization(tmp_path: Path):
     content = httpx.get(
