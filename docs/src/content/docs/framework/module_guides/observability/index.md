@@ -407,6 +407,39 @@ _[Example trace link in Langfuse](https://cloud.langfuse.com/project/cloramnkj00
 - [Langfuse Documentation](https://langfuse.com/docs/integrations/llama-index/get-started)
 - [Tracing LlamaIndex Agents](https://langfuse.com/docs/integrations/llama-index/workflows)
 
+### LangWatch
+
+[LangWatch](https://langwatch.ai/) is an open-source LLM observability, evaluation and agent simulation platform. It traces your LlamaIndex application through the [OpenInference LlamaIndex instrumentation](https://github.com/Arize-ai/openinference/tree/main/python/instrumentation/openinference-instrumentation-llama-index) and OpenTelemetry, so queries, retrievals and LLM calls show up as traces in the LangWatch UI.
+
+#### Usage Pattern
+
+Install `llama-index`, `langwatch` and the OpenInference instrumentation:
+
+```bash
+pip install llama-index langwatch openinference-instrumentation-llama-index
+```
+
+Set your LangWatch API key, which you can get from your project settings on [LangWatch](https://app.langwatch.ai/):
+
+```python
+import os
+
+os.environ["LANGWATCH_API_KEY"] = "your-langwatch-api-key"
+```
+
+Then initialize LangWatch with the LlamaIndex instrumentor. Run your LlamaIndex application as usual and traces are sent to LangWatch automatically.
+
+```python
+import langwatch
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+
+langwatch.setup(instrumentors=[LlamaIndexInstrumentor()])
+```
+
+#### Example Guides
+
+- [LangWatch LlamaIndex Integration](https://langwatch.ai/docs/integration/python/integrations/llamaindex)
+
 ### Literal AI
 
 [Literal AI](https://literalai.com/) is the go-to LLM evaluation and observability solution, enabling engineering and product teams to ship LLM applications reliably, faster and at scale. This is possible through a collaborative development cycle involving prompt engineering, LLM observability, LLM evaluation and LLM monitoring. Conversation Threads and Agent Runs can be automatically logged on Literal AI.
