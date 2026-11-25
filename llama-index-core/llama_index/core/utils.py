@@ -82,8 +82,14 @@ class GlobalsHelper:
 
         # Ensure the directory exists with owner-only permissions so NLTK
         # accepts it even under permissive umasks.
-        if not os.path.exists(self._nltk_data_dir):
-            os.makedirs(self._nltk_data_dir, mode=0o700, exist_ok=True)
+        os.makedirs(self._nltk_data_dir, mode=0o700, exist_ok=True)
+        # Fix permissions on pre-existing directories (os.makedirs mode parameter
+        # only applies when creating new directories, not for existing ones)
+        try:
+            os.chmod(self._nltk_data_dir, 0o700)
+        except (OSError, PermissionError):
+            # If we can't fix permissions, NLTK will handle the error
+            pass
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
