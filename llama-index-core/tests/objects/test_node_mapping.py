@@ -90,6 +90,21 @@ def test_tool_object_node_mapping() -> None:
         tool3
     ).get_text()
     assert node_mapping.from_node(node_mapping.to_node(tool3)) == tool3
+    assert node_mapping.obj_node_mapping == {
+        "test_tool": tool1,
+        "test_tool2": tool2,
+        "test_tool3": tool3,
+    }
+
+    with pytest.raises(ValueError, match="Object must be of type"):
+        SimpleToolNodeMapping.from_objects(["not_a_tool"])  # type: ignore
+
+    unnamed_tool = FunctionTool.from_defaults(fn=lambda x: x, description="no name")
+    unnamed_tool.metadata.name = None
+    with pytest.raises(ValueError, match="Tool name must be set"):
+        SimpleToolNodeMapping.from_objects([unnamed_tool])
+    with pytest.raises(ValueError, match="Tool name must be set"):
+        node_mapping.add_object(unnamed_tool)
 
 
 def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:

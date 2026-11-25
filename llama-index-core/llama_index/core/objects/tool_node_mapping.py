@@ -40,9 +40,11 @@ class BaseToolNodeMapping(BaseObjectNodeMapping[BaseTool]):
     def validate_object(self, obj: BaseTool) -> None:
         if not isinstance(obj, BaseTool):
             raise ValueError(f"Object must be of type {BaseTool}")
+        if obj.metadata.name is None:
+            raise ValueError("Tool name must be set")
 
     @property
-    def obj_node_mapping(self) -> Dict[int, Any]:
+    def obj_node_mapping(self) -> Dict[Any, Any]:
         """The mapping data structure between node and object."""
         raise NotImplementedError("Subclasses should implement this!")
 
@@ -74,7 +76,14 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
 
     def __init__(self, objs: Optional[Sequence[BaseTool]] = None) -> None:
         objs = objs or []
+        for obj in objs:
+            self.validate_object(obj)
         self._tools = {tool.metadata.name: tool for tool in objs}
+
+    @property
+    def obj_node_mapping(self) -> Dict[Any, Any]:
+        """The mapping data structure between node and object."""
+        return self._tools
 
     @classmethod
     def from_objects(
@@ -126,11 +135,20 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
 
     def __init__(self, objs: Optional[Sequence[QueryEngineTool]] = None) -> None:
         objs = objs or []
+        for obj in objs:
+            self.validate_object(obj)
         self._tools = {tool.metadata.name: tool for tool in objs}
+
+    @property
+    def obj_node_mapping(self) -> Dict[Any, Any]:
+        """The mapping data structure between node and object."""
+        return self._tools
 
     def validate_object(self, obj: QueryEngineTool) -> None:
         if not isinstance(obj, QueryEngineTool):
             raise ValueError(f"Object must be of type {QueryEngineTool}")
+        if obj.metadata.name is None:
+            raise ValueError("Tool name must be set")
 
     @classmethod
     def from_objects(
@@ -139,8 +157,6 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
         return cls(objs)
 
     def _add_object(self, tool: QueryEngineTool) -> None:
-        if tool.metadata.name is None:
-            raise ValueError("Tool name must be set")
         self._tools[tool.metadata.name] = tool
 
     def to_node(self, obj: QueryEngineTool) -> TextNode:

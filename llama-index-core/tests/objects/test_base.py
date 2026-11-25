@@ -98,3 +98,11 @@ def test_object_index_with_tools() -> None:
         [tool1, tool2], object_mapping, index_cls=SummaryIndex
     )
     assert obj_retriever.as_retriever().retrieve("test") == [tool1, tool2]
+
+
+def test_object_index_empty_default_mapping() -> None:
+    """Test ObjectIndex.from_objects([]) defaults to SimpleObjectNodeMapping."""
+    obj_index = ObjectIndex.from_objects([], index_cls=SummaryIndex)
+    assert isinstance(obj_index.object_node_mapping, SimpleObjectNodeMapping)
+    obj_index.insert_object("a")
+    assert obj_index.as_retriever().retrieve("test") == ["a"]

@@ -16,7 +16,7 @@ def get_object_mapping(
     """Get object mapping according to object."""
     if from_node_fn is not None and to_node_fn is not None:
         return FnNodeMapping.from_objects(objects, from_node_fn, to_node_fn)
-    elif all(isinstance(obj, BaseTool) for obj in objects):
+    elif len(objects) > 0 and all(isinstance(obj, BaseTool) for obj in objects):
         return SimpleToolNodeMapping.from_objects(objects)
     else:
         return SimpleObjectNodeMapping.from_objects(objects)
