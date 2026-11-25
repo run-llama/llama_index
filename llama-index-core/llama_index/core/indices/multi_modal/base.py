@@ -470,12 +470,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         for vector_store in self._storage_context.vector_stores.values():
             vector_store.delete(ref_doc_id)
 
-            if self._store_nodes_override or self._vector_store.stores_text:
-                ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
-                if ref_doc_info is not None:
-                    for node_id in ref_doc_info.node_ids:
-                        self._index_struct.delete(node_id)
-                        self._vector_store.delete(node_id)
+        if self._store_nodes_override or self._vector_store.stores_text:
+            ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
+            if ref_doc_info is not None:
+                for node_id in ref_doc_info.node_ids:
+                    self._index_struct.delete(node_id)
+                    self._vector_store.delete(node_id)
 
         if delete_from_docstore:
             self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
