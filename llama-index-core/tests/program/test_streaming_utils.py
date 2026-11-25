@@ -287,3 +287,111 @@ def test_process_streaming_content_incremental_validation_error_fallback():
     # Should still have the name field
     if hasattr(result, "name"):
         assert result.name == "John"
+
+
+class Address(BaseModel):
+    """Nested address model for list extraction tests."""
+
+    city: str
+    zip_code: str
+
+
+class Contact(BaseModel):
+    """Contact model with nested model and list fields."""
+
+    name: str
+    address: Address
+    tags: List[str] = Field(default_factory=list)
+
+
+class Directory(BaseModel):
+    """Directory model containing nested Contact objects."""
+
+    title: str = ""
+    contacts: List[Contact] = Field(default_factory=list)
+
+
+def test_process_streaming_content_incremental_preserves_cur_object_on_unparsable_chunk() -> (
+    None
+):
+    """Unparsable mid-stream boundaries must preserve cur_object instead of resetting."""
+    cur_person = Person(name="John", age=30, hobbies=["reading"])
+
+    for content in [
+        '{"name": "John", "age": 30, ',
+        '{"name": "John", "age": 30, "hobbies": ',
+        '{"name": "John", "age": 30, "extra": "abc\\',
+        '{"name": "John\\u00',
+        '```json\n{"name": "John", "age": 30',
+    ]:
+        response = ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=content)
+        )
+        result = process_streaming_content_incremental(response, Person, cur_person)
+        assert isinstance(result, Person)
+        assert result.name == "John"
+        assert result.age == 30
+        assert result.hobbies == ["reading"]
+
+
+def test_process_streaming_content_incremental_multi_chunk_no_reset() -> None:
+    """Simulated token stream across commas/colons should never flicker to empty."""
+    chunks = [
+        '{"name": "John"',
+        '{"name": "John", ',
+        '{"name": "John", "age": ',
+        '{"name": "John", "age": 30',
+        '{"name": "John", "age": 30, "hobbies": ["reading"',
+        '{"name": "John", "age": 30, "hobbies": ["reading", "coding"]}',
+    ]
+    curr = None
+    for chunk in chunks:
+        resp = ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=chunk)
+        )
+        curr = process_streaming_content_incremental(resp, Person, curr)
+        assert curr.name == "John"
+
+    assert isinstance(curr, Person)
+    assert curr.age == 30
+    assert curr.hobbies == ["reading", "coding"]
+
+
+def test_parse_partial_list_items_nested_objects_and_braces_in_strings() -> None:
+    """Nested objects and braces inside string literals should parse intact."""
+    list_content = (
+        '{"name": "Alice {lead}", "address": {"city": "NYC", "zip_code": "10001"}, "tags": ["eng"]}, '
+        '{"name": "Bob", "address": {"city": "SF"'
+    )
+
+    items = _parse_partial_list_items(list_content, "contacts", Directory)
+    assert len(items) == 2
+    assert items[0] == {
+        "name": "Alice {lead}",
+        "address": {"city": "NYC", "zip_code": "10001"},
+        "tags": ["eng"],
+    }
+    assert items[1] == {"name": "Bob", "address": {"city": "SF"}}
+
+
+def test_extract_partial_list_progress_brackets_in_strings_and_nested_arrays() -> None:
+    """Closing brackets inside strings or nested arrays must not truncate list extraction."""
+    from llama_index.core.program.utils import create_flexible_model
+
+    partial_cls = create_flexible_model(Directory)
+    current_dir = Directory(title="Engineering")
+    content = (
+        '{"title": "Engineering", "contacts": ['
+        '{"name": "Alice [admin]", "address": {"city": "NYC", "zip_code": "10001"}, "tags": ["a", "b"]}, '
+        '{"name": "Bob [ops]", "address": {"city": "LA", "zip_code": "90001"}, "tags": ["c"]'
+    )
+
+    extracted = _extract_partial_list_progress(
+        content, Directory, current_dir, partial_cls
+    )
+    assert extracted is not None
+    assert extracted.title == "Engineering"
+    assert len(extracted.contacts) == 2
+    assert extracted.contacts[0]["name"] == "Alice [admin]"
+    assert extracted.contacts[0]["tags"] == ["a", "b"]
+    assert extracted.contacts[1]["name"] == "Bob [ops]"
