@@ -7,6 +7,7 @@ from typing import Dict, cast
 import pytest
 from llama_index.core.postprocessor.node import (
     KeywordNodePostprocessor,
+    LongContextReorder,
     PrevNextNodePostprocessor,
 )
 from llama_index.core.postprocessor.node_recency import (
@@ -379,3 +380,17 @@ def test_keyword_postprocessor_for_non_english() -> None:
         assert len(new_nodes) == 2
     except ImportError:
         pass
+
+
+def test_long_context_reorder() -> None:
+    """Test LongContextReorder postprocessor."""
+    postprocessor = LongContextReorder()
+    assert postprocessor.postprocess_nodes([]) == []
+
+    nodes = [
+        NodeWithScore(node=TextNode(text=f"node_{i}", id_=str(i)), score=float(score))
+        for i, score in enumerate([0.3, 0.1, 0.5, 0.2, 0.4])
+    ]
+    reordered = postprocessor.postprocess_nodes(nodes)
+    assert [n.score for n in reordered] == [0.5, 0.3, 0.1, 0.2, 0.4]
+
