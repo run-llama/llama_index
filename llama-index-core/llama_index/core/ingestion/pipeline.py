@@ -24,6 +24,7 @@ from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.schema import (
+    BaseComponent,
     BaseNode,
     Document,
     MetadataMode,
@@ -65,6 +66,15 @@ def get_transformation_hash(
 
     transformation_dict = transformation.to_dict()
     transform_string = remove_unstable_values(str(transformation_dict))
+
+    # Classes that don't override `class_name()` all serialize under the default
+    # name, so only their import path tells them apart. Classes that declare a
+    # name keep the key they always had.
+    if transformation.class_name() == BaseComponent.class_name():
+        transformation_cls = type(transformation)
+        transform_string += (
+            f"{transformation_cls.__module__}.{transformation_cls.__qualname__}"
+        )
 
     return sha256((nodes_str + transform_string).encode("utf-8")).hexdigest()
 
