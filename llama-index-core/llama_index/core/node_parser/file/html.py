@@ -77,7 +77,8 @@ class HTMLNodeParser(NodeParser):
 
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         soup = BeautifulSoup(text, "html.parser")
-        html_nodes = []
+        # (section text, metadata) pairs, turned into nodes in one batch below
+        sections: List[tuple[str, dict]] = []
         last_tag = None
         current_section = ""
 
@@ -91,23 +92,15 @@ class HTMLNodeParser(NodeParser):
                 # Skip empty sections (e.g. a container tag whose only children
                 # are themselves extracted tags) to avoid emitting blank nodes.
                 if current_section.strip():
-                    html_nodes.append(
-                        self._build_node_from_split(
-                            current_section.strip(), node, {"tag": last_tag}
-                        )
-                    )
+                    sections.append((current_section.strip(), {"tag": last_tag}))
                 if isinstance(tag, Tag):
                     last_tag = tag.name
                 current_section = f"{tag_text}\n"
 
         if current_section.strip():
-            html_nodes.append(
-                self._build_node_from_split(
-                    current_section.strip(), node, {"tag": last_tag}
-                )
-            )
+            sections.append((current_section.strip(), {"tag": last_tag}))
 
-        return html_nodes
+        return self._build_nodes_from_sections(sections, node)
 
     def _extract_text_from_tag(
         self, tag: Union["Tag", "NavigableString", "PageElement"]
@@ -138,9 +131,31 @@ class HTMLNodeParser(NodeParser):
         metadata: dict,
     ) -> TextNode:
         """Build node from single text split."""
-        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+        return self._build_nodes_from_sections([(text_split, metadata)], node)[0]
+
+    def _build_nodes_from_sections(
+        self,
+        sections: List[tuple[str, dict]],
+        node: BaseNode,
+    ) -> List[TextNode]:
+        """
+        Build nodes from (text, metadata) sections.
+
+        All nodes are built in a single call so that the source node's hash is
+        computed once instead of once per section.
+        """
+        if type(self)._build_node_from_split is not HTMLNodeParser._build_node_from_split:
+            return [
+                self._build_node_from_split(text, node, metadata)
+                for text, metadata in sections
+            ]
+
+        nodes = build_nodes_from_splits(
+            [text for text, _ in sections], node, id_func=self.id_func
+        )
 
         if self.include_metadata:
-            node.metadata = {**node.metadata, **metadata}
+            for built_node, (_, metadata) in zip(nodes, sections):
+                built_node.metadata = {**built_node.metadata, **metadata}
 
-        return node
+        return nodes
