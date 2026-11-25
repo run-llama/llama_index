@@ -128,7 +128,7 @@ class KeywordTable(IndexStruct):
     @property
     def node_ids(self) -> Set[str]:
         """Get all node ids."""
-        return set.union(*self.table.values())
+        return set().union(*self.table.values())
 
     @property
     def keywords(self) -> Set[str]:
