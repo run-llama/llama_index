@@ -96,9 +96,9 @@ class IndexGraph(IndexStruct):
     ) -> None:
         """Insert under parent node."""
         new_index = new_index or self.size
+        self.node_id_to_children_ids.setdefault(node.node_id, [])
         if parent_node is None:
             self.root_nodes[new_index] = node.node_id
-            self.node_id_to_children_ids[node.node_id] = []
         else:
             if parent_node.node_id not in self.node_id_to_children_ids:
                 self.node_id_to_children_ids[parent_node.node_id] = []
