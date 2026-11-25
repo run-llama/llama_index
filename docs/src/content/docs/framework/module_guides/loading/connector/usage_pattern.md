@@ -4,13 +4,18 @@ title: Usage Pattern
 
 ## Get Started
 
-Each data loader contains a "Usage" section showing how that loader can be used. At the core of using each loader is a `download_loader` function, which
-downloads the loader file into a module that you can use within your application.
+Readers are distributed as separate integration packages. Install the package for
+the data source you need, then import its reader class directly into your
+application.
 
 Example usage:
 
+```bash
+pip install llama-index-readers-google
+```
+
 ```python
-from llama_index.core import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex
 
 from llama_index.readers.google import GoogleDocsReader
 
