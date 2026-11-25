@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+import pytest
 
 from llama_index.core.indices.composability.graph import ComposableGraph
 from llama_index.core.indices.list.base import SummaryIndex
@@ -53,7 +54,39 @@ def test_load_graph_from_storage_simple(
     # load index
     new_graph = load_graph_from_storage(new_storage_context, root_id=graph.root_id)
 
+    assert (
+        new_graph.get_index(vector_index_1.index_id).index_struct.summary
+        == "vector index 1"
+    )
+    assert (
+        new_graph.get_index(vector_index_2.index_id).index_struct.summary
+        == "vector index 2"
+    )
+    assert (
+        new_graph.get_index(summary_index.index_id).index_struct.summary
+        == "summary index"
+    )
+
     new_query_engine = new_graph.as_query_engine()
     new_response = new_query_engine.query("test query")
 
     assert str(response) == str(new_response)
+
+
+def test_composable_graph_mismatched_summaries_does_not_mutate_indices(
+    documents: List[Document],
+) -> None:
+    storage_context = StorageContext.from_defaults()
+    index_1 = SummaryIndex.from_documents(documents=documents, storage_context=storage_context)
+    index_2 = SummaryIndex.from_documents(documents=documents, storage_context=storage_context)
+
+    with pytest.raises(ValueError, match="indices and index_summaries must have same length!"):
+        ComposableGraph.from_indices(
+            SummaryIndex,
+            children_indices=[index_1, index_2],
+            index_summaries=["only one summary"],
+            storage_context=storage_context,
+        )
+
+    assert index_1.index_struct.summary is None
+    assert index_2.index_struct.summary is None

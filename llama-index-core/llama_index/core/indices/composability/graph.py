@@ -72,12 +72,24 @@ class ComposableGraph:
                     index.index_struct.summary for index in children_indices
                 ]
             else:
-                # set summaries for each index
+                if len(children_indices) != len(index_summaries):
+                    raise ValueError(
+                        "indices and index_summaries must have same length!"
+                    )
+                # set summaries for each index and persist updated struct in index_store
                 for index, summary in zip(children_indices, index_summaries):
                     index.index_struct.summary = summary
-
-            if len(children_indices) != len(index_summaries):
-                raise ValueError("indices and index_summaries must have same length!")
+                    index.storage_context.index_store.add_index_struct(
+                        index.index_struct
+                    )
+                    if (
+                        storage_context is not None
+                        and storage_context.index_store
+                        is not index.storage_context.index_store
+                    ):
+                        storage_context.index_store.add_index_struct(
+                            index.index_struct
+                        )
 
             # construct index nodes
             index_nodes = []
