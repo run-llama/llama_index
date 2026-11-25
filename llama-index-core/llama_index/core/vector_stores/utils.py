@@ -117,22 +117,38 @@ def build_metadata_filter_fn(
             if metadata_value is None:
                 return operator in (FilterOperator.NE, FilterOperator.NIN)
 
+            # bool is a subclass of int in Python, so ==, !=, ordering and
+            # membership checks would otherwise conflate bool metadata values
+            # with int/float filter values (e.g. False == 0, True > 0).
+            # Backends such as Chroma treat them as distinct types: equality
+            # never matches across the bool/numeric divide, inequality always
+            # does, and ordering comparisons are refused (no match).
+            bool_mismatch = isinstance(metadata_value, bool) != isinstance(value, bool)
+
             if operator == FilterOperator.EQ:
-                return metadata_value == value
+                return metadata_value == value and not bool_mismatch
             if operator == FilterOperator.NE:
-                return metadata_value != value
+                return metadata_value != value or bool_mismatch
             if operator == FilterOperator.GT:
-                return metadata_value > value
+                return not bool_mismatch and metadata_value > value
             if operator == FilterOperator.GTE:
-                return metadata_value >= value
+                return not bool_mismatch and metadata_value >= value
             if operator == FilterOperator.LT:
-                return metadata_value < value
+                return not bool_mismatch and metadata_value < value
             if operator == FilterOperator.LTE:
-                return metadata_value <= value
+                return not bool_mismatch and metadata_value <= value
             if operator == FilterOperator.IN:
-                return metadata_value in value
+                return any(
+                    isinstance(metadata_value, bool) == isinstance(item, bool)
+                    and metadata_value == item
+                    for item in value
+                )
             if operator == FilterOperator.NIN:
-                return metadata_value not in value
+                return all(
+                    isinstance(metadata_value, bool) != isinstance(item, bool)
+                    or metadata_value != item
+                    for item in value
+                )
             if operator == FilterOperator.CONTAINS:
                 return value in metadata_value
             if operator == FilterOperator.TEXT_MATCH:

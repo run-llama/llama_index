@@ -187,6 +187,96 @@ def test_text_match_insensitive_requires_string_values() -> None:
         fn("n1")
 
 
+_BOOL_METADATA_BY_ID: Dict[str, Dict[str, Any]] = {
+    "bool_false": {"stage": False},
+    "bool_true": {"stage": True},
+    "int_0": {"stage": 0},
+    "int_1": {"stage": 1},
+    "float_1": {"stage": 1.0},
+}
+
+
+def _bool_filter_fn(operator: FilterOperator, value: Any) -> Any:
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="stage", operator=operator, value=value)]
+    )
+    return build_metadata_filter_fn(_BOOL_METADATA_BY_ID.__getitem__, filters)
+
+
+def test_bool_metadata_never_matches_numeric_equality_filters() -> None:
+    # Bool is a subclass of int in Python, but filters must not conflate them:
+    # MetadataFilter values are strict ints/floats/strs, so a bool metadata value
+    # never equals a numeric filter value, matching backends such as Chroma.
+    # See https://github.com/run-llama/llama_index/issues/24452
+    fn = _bool_filter_fn(FilterOperator.EQ, 0)
+    assert not fn("bool_false")  # False == 0 must not match
+    assert not fn("bool_true")
+    assert fn("int_0")
+
+    fn = _bool_filter_fn(FilterOperator.EQ, 1)
+    assert not fn("bool_true")  # True == 1 must not match
+    assert not fn("bool_false")
+    assert fn("int_1")
+    assert fn("float_1")  # numeric 1.0 == 1 still matches
+
+
+def test_bool_metadata_always_matches_numeric_inequality_filters() -> None:
+    fn = _bool_filter_fn(FilterOperator.NE, 0)
+    assert fn("bool_false")  # False != 0 must match
+    assert fn("bool_true")
+    assert not fn("int_0")
+    assert fn("int_1")
+
+    fn = _bool_filter_fn(FilterOperator.NE, 1)
+    assert fn("bool_true")  # True != 1 must match
+    assert fn("bool_false")
+    assert not fn("int_1")
+    assert not fn("float_1")
+
+
+def test_bool_metadata_ordering_comparisons_are_refused() -> None:
+    # Ordering between bool metadata and numeric filter values never matches.
+    for operator in (
+        FilterOperator.GT,
+        FilterOperator.GTE,
+        FilterOperator.LT,
+        FilterOperator.LTE,
+    ):
+        fn = _bool_filter_fn(operator, 0)
+        assert not fn("bool_false"), operator
+        assert not fn("bool_true"), operator
+
+    # Numeric ordering keeps working as before.
+    assert _bool_filter_fn(FilterOperator.GT, 0)("int_1")
+    assert _bool_filter_fn(FilterOperator.GTE, 0)("int_0")
+    assert _bool_filter_fn(FilterOperator.LT, 1)("int_0")
+    assert _bool_filter_fn(FilterOperator.LTE, 1)("float_1")
+
+
+def test_bool_metadata_membership_filters_stay_type_strict() -> None:
+    # IN: bool metadata never matches numeric list elements
+    fn = _bool_filter_fn(FilterOperator.IN, [0])
+    assert not fn("bool_false")  # False in [0] must not match
+    assert not fn("bool_true")
+    assert fn("int_0")
+
+    fn = _bool_filter_fn(FilterOperator.IN, [1, 2])
+    assert not fn("bool_true")  # True in [1, 2] must not match
+    assert fn("int_1")
+    assert fn("float_1")
+
+    # NIN: negation of the type-aware IN semantics
+    fn = _bool_filter_fn(FilterOperator.NIN, [0])
+    assert fn("bool_false")
+    assert fn("bool_true")
+    assert not fn("int_0")
+
+    fn = _bool_filter_fn(FilterOperator.NIN, [1, 2])
+    assert fn("bool_true")
+    assert not fn("int_1")
+    assert not fn("float_1")
+
+
 def test_nested_metadata_filters_raise_error() -> None:
     inner = MetadataFilters(
         filters=[

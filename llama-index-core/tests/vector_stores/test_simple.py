@@ -26,6 +26,20 @@ _NODE_ID_WEIGHT_2_RANK_C = "7D9CD555-846C-445C-A9DD-F8924A01411D"
 _NODE_ID_WEIGHT_3_RANK_C = "452D24AB-F185-414C-A352-590B4B9EE51B"
 
 
+def _bool_probe_match_count(metadata: dict, op: FilterOperator, key: str, value) -> int:
+    """Query a single bool-metadata node and return the number of matches."""
+    simple_vector_store = SimpleVectorStore()
+    node = TextNode(text="probe", embedding=[1.0, 0.0], metadata=metadata)
+    simple_vector_store.add([node])
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key=key, operator=op, value=value)]
+    )
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0], filters=filters)
+    result = simple_vector_store.query(query)
+    assert result.ids is not None
+    return len(result.ids)
+
+
 @pytest.fixture()
 def persist_dir(tmp_path: Path):
     index = VectorStoreIndex.from_documents(
@@ -160,6 +174,49 @@ class SimpleVectorStoreTest(unittest.TestCase):
         result = simple_vector_store.query(query)
         assert result.ids is not None
         self.assertEqual(len(result.ids), 0)
+
+    def test_query_with_bool_metadata_and_int_filter_is_chroma_consistent(self) -> None:
+        # Bool metadata must not be conflated with int filter values.
+        # ChromaVectorStore treats bool and int/float as distinct types: EQ never
+        # matches across the type divide, NE always matches, and ordering
+        # comparisons are refused (no match). SimpleVectorStore must do the same.
+        # See https://github.com/run-llama/llama_index/issues/24452
+        # EQ: False == 0 and True == 1 must not match
+        self.assertEqual(
+            _bool_probe_match_count({"stage": False}, FilterOperator.EQ, "stage", 0),
+            0,
+        )
+        self.assertEqual(
+            _bool_probe_match_count({"stage": True}, FilterOperator.EQ, "stage", 1),
+            0,
+        )
+        # NE: bool metadata always differs from int filter values
+        self.assertEqual(
+            _bool_probe_match_count({"stage": False}, FilterOperator.NE, "stage", 0),
+            1,
+        )
+        self.assertEqual(
+            _bool_probe_match_count({"stage": True}, FilterOperator.NE, "stage", 0),
+            1,
+        )
+        # GT/GTE: ordering between bool metadata and int values is refused
+        self.assertEqual(
+            _bool_probe_match_count({"score": True}, FilterOperator.GT, "score", 0),
+            0,
+        )
+        self.assertEqual(
+            _bool_probe_match_count({"score": False}, FilterOperator.GTE, "score", 0),
+            0,
+        )
+        # IN/NIN: membership checks stay type-strict too
+        self.assertEqual(
+            _bool_probe_match_count({"stage": False}, FilterOperator.IN, "stage", [0]),
+            0,
+        )
+        self.assertEqual(
+            _bool_probe_match_count({"stage": True}, FilterOperator.NIN, "stage", [1]),
+            1,
+        )
 
     def test_query_with_filter_on_unknown_field_returns_no_matches(self) -> None:
         simple_vector_store = SimpleVectorStore()
