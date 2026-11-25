@@ -296,6 +296,72 @@ async def test_chat_message_asplit_non_recursive_types(
 
 
 @pytest.mark.asyncio
+async def test_chat_response_to_completion_response_does_not_mutate_message():
+    from llama_index.core.base.llms.generic_utils import (
+        astream_chat_response_to_completion_response,
+        chat_response_to_completion_response,
+        stream_chat_response_to_completion_response,
+    )
+    from llama_index.core.base.llms.types import ChatResponse
+
+    msg = ChatMessage(
+        role="assistant",
+        content="hello",
+        additional_kwargs={"msg_key": "msg_val", "shared": "from_message"},
+    )
+    chat_resp = ChatResponse(
+        message=msg,
+        additional_kwargs={"resp_key": "resp_val", "shared": "from_response"},
+    )
+    comp = chat_response_to_completion_response(chat_resp)
+    assert comp.additional_kwargs == {
+        "msg_key": "msg_val",
+        "resp_key": "resp_val",
+        "shared": "from_response",
+    }
+    assert msg.additional_kwargs == {"msg_key": "msg_val", "shared": "from_message"}
+
+    stream_msg = ChatMessage(
+        role="assistant",
+        content="hello",
+        additional_kwargs={"msg_key": "msg_val"},
+    )
+
+    def _sync_gen():
+        yield ChatResponse(
+            message=stream_msg, delta="he", additional_kwargs={"step": 1}
+        )
+        yield ChatResponse(
+            message=stream_msg, delta="llo", additional_kwargs={"step": 2}
+        )
+
+    stream_items = list(stream_chat_response_to_completion_response(_sync_gen()))
+    assert [item.additional_kwargs for item in stream_items] == [
+        {"msg_key": "msg_val", "step": 1},
+        {"msg_key": "msg_val", "step": 2},
+    ]
+    assert stream_msg.additional_kwargs == {"msg_key": "msg_val"}
+
+    async def _async_gen():
+        yield ChatResponse(
+            message=stream_msg, delta="he", additional_kwargs={"step": 1}
+        )
+        yield ChatResponse(
+            message=stream_msg, delta="llo", additional_kwargs={"step": 2}
+        )
+
+    astream_items = [
+        item
+        async for item in astream_chat_response_to_completion_response(_async_gen())
+    ]
+    assert [item.additional_kwargs for item in astream_items] == [
+        {"msg_key": "msg_val", "step": 1},
+        {"msg_key": "msg_val", "step": 2},
+    ]
+    assert stream_msg.additional_kwargs == {"msg_key": "msg_val"}
+
+
+@pytest.mark.asyncio
 async def test_chat_message_asplit_recursive_types(png_1px, mock_pdf_bytes):
     chat_message = ChatMessage(
         blocks=[
