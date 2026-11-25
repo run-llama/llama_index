@@ -66,3 +66,76 @@ def test_construction() -> None:
     index.insert_nodes(kg_extractor([]))
 
     assert index._insert_nodes_to_vector_index.call_count == 0
+
+
+def test_base_pg_retriever_add_source_text_deduplicates_and_caches() -> None:
+    import asyncio
+    from llama_index.core.indices.property_graph.sub_retrievers.base import (
+        BasePGRetriever,
+    )
+    from llama_index.core.schema import (
+        NodeRelationship,
+        NodeWithScore,
+        QueryBundle,
+        RelatedNodeInfo,
+    )
+
+    class DummyPGRetriever(BasePGRetriever):
+        def retrieve_from_graph(
+            self, query_bundle: QueryBundle
+        ) -> List[NodeWithScore]:
+            return []
+
+        async def aretrieve_from_graph(
+            self, query_bundle: QueryBundle
+        ) -> List[NodeWithScore]:
+            return []
+
+    graph_store = SimplePropertyGraphStore()
+    chunk_1 = TextNode(id_="doc-1", text="Original chunk 1 text.")
+    chunk_2 = TextNode(id_="doc-2", text="Original chunk 2 text.")
+    graph_store.upsert_llama_nodes([chunk_1, chunk_2])
+
+    retriever = DummyPGRetriever(graph_store=graph_store, include_text=True)
+
+    retrieved = [
+        NodeWithScore(
+            node=TextNode(
+                text=f"Entity{i} -> REL -> Target{i}",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(
+                        node_id="doc-1" if i < 3 else "doc-2"
+                    )
+                },
+            ),
+            score=1.0 - i * 0.1,
+        )
+        for i in range(5)
+    ]
+
+    orig_get = graph_store.get_llama_nodes
+    get_spy = MagicMock(wraps=orig_get)
+    graph_store.get_llama_nodes = get_spy  # type: ignore[method-assign]
+
+    results = retriever.add_source_text(retrieved)
+    assert get_spy.call_count == 1
+    assert get_spy.call_args.args[0] == ["doc-1", "doc-2"]
+    assert len(results) == 5
+    # Nodes sharing the same source chunk reuse the constructed TextNode instance
+    assert results[0].node is results[1].node
+    assert results[1].node is results[2].node
+    assert results[3].node is results[4].node
+    assert "Original chunk 1 text." in results[0].node.get_content()
+    assert "Entity0 -> REL -> Target0" in results[0].node.get_content()
+    assert "Entity2 -> REL -> Target2" in results[0].node.get_content()
+
+    orig_aget = graph_store.aget_llama_nodes
+    aget_spy = MagicMock(wraps=orig_aget)
+    graph_store.aget_llama_nodes = aget_spy  # type: ignore[method-assign]
+
+    async_results = asyncio.run(retriever.async_add_source_text(retrieved))
+    assert aget_spy.call_count == 1
+    assert aget_spy.call_args.args[0] == ["doc-1", "doc-2"]
+    assert async_results[0].node is async_results[1].node
+    assert async_results[3].node is async_results[4].node
+

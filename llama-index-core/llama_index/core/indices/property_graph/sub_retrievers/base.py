@@ -90,28 +90,34 @@ class BasePGRetriever(BaseRetriever):
 
             graph_node_map[ref_doc_id].append(node.node.get_content())
 
+        built_node_map: Dict[str, BaseNode] = {}
         result_nodes: List[NodeWithScore] = []
         for node_with_score in retrieved_nodes:
             mapped_node = og_node_map.get(node_with_score.node.ref_doc_id or "", None)
 
             if mapped_node:
-                graph_content = graph_node_map.get(mapped_node.node_id, [])
-                if len(graph_content) > 0:
-                    graph_content_str = "\n".join(graph_content)
-                    cur_content = mapped_node.get_content()
-                    preamble_text = (
-                        self._include_text_preamble
-                        if self._include_text_preamble
-                        else ""
-                    )
-                    new_content = (
-                        preamble_text + graph_content_str + "\n\n" + cur_content
-                    )
-                    mapped_node = TextNode(**mapped_node.dict())
-                    mapped_node.text = new_content
+                built_node = built_node_map.get(mapped_node.node_id)
+                if built_node is None:
+                    graph_content = graph_node_map.get(mapped_node.node_id, [])
+                    if len(graph_content) > 0:
+                        graph_content_str = "\n".join(graph_content)
+                        cur_content = mapped_node.get_content()
+                        preamble_text = (
+                            self._include_text_preamble
+                            if self._include_text_preamble
+                            else ""
+                        )
+                        new_content = (
+                            preamble_text + graph_content_str + "\n\n" + cur_content
+                        )
+                        built_node = TextNode(**mapped_node.dict())
+                        built_node.text = new_content
+                    else:
+                        built_node = mapped_node
+                    built_node_map[mapped_node.node_id] = built_node
                 result_nodes.append(
                     NodeWithScore(
-                        node=mapped_node,
+                        node=built_node,
                         score=node_with_score.score,
                     )
                 )
@@ -122,9 +128,12 @@ class BasePGRetriever(BaseRetriever):
 
     def add_source_text(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         """Combine retrieved nodes/triplets with their source text."""
-        og_nodes = self._graph_store.get_llama_nodes(
-            [x.node.ref_doc_id for x in nodes if x.node.ref_doc_id is not None]
+        ref_doc_ids = list(
+            dict.fromkeys(
+                x.node.ref_doc_id for x in nodes if x.node.ref_doc_id is not None
+            )
         )
+        og_nodes = self._graph_store.get_llama_nodes(ref_doc_ids)
         node_map = {node.node_id: node for node in og_nodes}
 
         return self._add_source_text(nodes, node_map)
@@ -133,9 +142,12 @@ class BasePGRetriever(BaseRetriever):
         self, nodes: List[NodeWithScore]
     ) -> List[NodeWithScore]:
         """Combine retrieved nodes/triplets with their source text."""
-        og_nodes = await self._graph_store.aget_llama_nodes(
-            [x.node.ref_doc_id for x in nodes if x.node.ref_doc_id is not None]
+        ref_doc_ids = list(
+            dict.fromkeys(
+                x.node.ref_doc_id for x in nodes if x.node.ref_doc_id is not None
+            )
         )
+        og_nodes = await self._graph_store.aget_llama_nodes(ref_doc_ids)
         og_node_map = {node.node_id: node for node in og_nodes}
 
         return self._add_source_text(nodes, og_node_map)
