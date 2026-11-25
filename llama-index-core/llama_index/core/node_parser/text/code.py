@@ -207,26 +207,28 @@ class CodeSplitter(TextSplitter):
                     new_chunks.extend(self._split_oversized_leaf(leaf_text, max_size))
             else:
                 # Calculate what adding this child would do to current chunk size
-                new_chunk_text = current_chunk + text_bytes[
-                    last_end : child.end_byte
-                ].decode("utf-8")
-                new_chunk_size = (
-                    len(new_chunk_text)
-                    if self.count_mode == "char"
-                    else len(self._tokenizer(new_chunk_text))
+                span_text = (
+                    child_text
+                    if last_end == child.start_byte
+                    else text_bytes[last_end : child.end_byte].decode("utf-8")
                 )
+                if not current_chunk and last_end == child.start_byte:
+                    new_chunk_size = child_size
+                else:
+                    new_chunk_text = current_chunk + span_text
+                    new_chunk_size = (
+                        len(new_chunk_text)
+                        if self.count_mode == "char"
+                        else len(self._tokenizer(new_chunk_text))
+                    )
 
                 if new_chunk_size > max_size:
                     # Child would make the current chunk too big, so start a new chunk
                     if len(current_chunk) > 0:
                         new_chunks.append(current_chunk)
-                    current_chunk = text_bytes[last_end : child.end_byte].decode(
-                        "utf-8"
-                    )
+                    current_chunk = span_text
                 else:
-                    current_chunk += text_bytes[last_end : child.end_byte].decode(
-                        "utf-8"
-                    )
+                    current_chunk += span_text
             last_end = child.end_byte
 
         if len(current_chunk) > 0:
@@ -259,19 +261,33 @@ class CodeSplitter(TextSplitter):
         if self.count_mode == "char":
             return [text[i : i + max_size] for i in range(0, len(text), max_size)]
 
-        # Token mode: greedily accumulate characters while staying within the
-        # token budget. This keeps the split reversible (decoding token ids is
-        # not guaranteed for an arbitrary tokenizer).
+        # Token mode: use exponential + binary search to find each chunk end index
+        # without re-tokenizing after every single character. This keeps the split
+        # reversible on character boundaries in O((L / C) * log C) tokenizer calls.
         chunks: List[str] = []
-        current = ""
-        for char in text:
-            if current and len(self._tokenizer(current + char)) > max_size:
-                chunks.append(current)
-                current = char
-            else:
-                current += char
-        if current:
-            chunks.append(current)
+        n = len(text)
+        start = 0
+        while start < n:
+            if len(self._tokenizer(text[start:])) <= max_size:
+                chunks.append(text[start:])
+                break
+
+            lo = start + 1
+            step = 1
+            while lo + step <= n and len(self._tokenizer(text[start : lo + step])) <= max_size:
+                lo += step
+                step *= 2
+
+            hi = min(lo + step, n)
+            while lo + 1 < hi:
+                mid = (lo + hi) // 2
+                if len(self._tokenizer(text[start:mid])) <= max_size:
+                    lo = mid
+                else:
+                    hi = mid
+
+            chunks.append(text[start:lo])
+            start = lo
         return chunks
 
     def split_text(self, text: str) -> List[str]:
