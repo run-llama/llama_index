@@ -67,6 +67,8 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 # multion 1.x pulls agentops 0.2.x, which hard-pins requests==2.31.0 and
 # packaging==23.2 (both below patched releases for the dev/CI lock).
 override-dependencies = ["requests>=2.33.0", "packaging>=24.2"]

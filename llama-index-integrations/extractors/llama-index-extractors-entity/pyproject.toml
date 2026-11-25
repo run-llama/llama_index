@@ -66,6 +66,8 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 # Lock-only override. span-marker 1.6+ (latest 1.8.1) requires transformers<5,
 # and every transformers 4.x release is inside HIGH advisories that are only
 # patched in 5.x. span-marker 1.5.0, the last release without that cap, doesn't
