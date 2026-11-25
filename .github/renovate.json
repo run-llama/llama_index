@@ -62,13 +62,12 @@
       "groupSlug": "uv-lock-storage"
     },
     {
-      "description": "A security fix outside a package's published range changes what users install: open it as a draft for a maintainer. In-range fixes only move uv.lock",
+      "description": "A security fix outside a package's published range changes what users install: open it as a draft for a maintainer. Matched on isLockfileUpdate alone, which Renovate sets per update when the range stays: version updates are off for pep621 here, so any other pep621 update is a vulnerability fix. In-range fixes only move uv.lock",
       "matchManagers": ["pep621"],
-      "matchJsonata": [
-        "isVulnerabilityAlert = true and isLockfileUpdate != true"
-      ],
+      "matchJsonata": ["isLockfileUpdate != true"],
       "draftPR": true,
-      "automerge": false
+      "automerge": false,
+      "matchUpdateTypes": ["major", "minor", "patch", "replacement"]
     }
   ]
 }
