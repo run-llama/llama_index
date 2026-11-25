@@ -308,9 +308,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
-        # always set to false initially
-        await ctx.store.set("formatted_input_with_state", False)
-
     async def _get_llm_response(
         self,
         ctx: Context,
@@ -447,16 +444,23 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
 
         state = await ctx.store.get("state", default=None)
-        formatted_input_with_state = await ctx.store.get(
-            "formatted_input_with_state", default=False
-        )
-        if state and not formatted_input_with_state:
-            # update last message with current state
-            for block in llm_input[-1].blocks[::-1]:
-                if isinstance(block, TextBlock):
-                    block.text = self.state_prompt.format(state=state, msg=block.text)
-                    break
-            await ctx.store.set("formatted_input_with_state", True)
+        if state:
+            # give the LLM the current state alongside the last user message.
+            # Format a copy: SimpleChatStore hands out the stored message
+            # objects themselves, so editing in place rewrites the user's
+            # message in memory (and bakes a stale state snapshot into it)
+            for i in range(len(llm_input) - 1, -1, -1):
+                if llm_input[i].role != "user":
+                    continue
+                last_user_message = llm_input[i].model_copy(deep=True)
+                for block in last_user_message.blocks[::-1]:
+                    if isinstance(block, TextBlock):
+                        block.text = self.state_prompt.format(
+                            state=state, msg=block.text
+                        )
+                        break
+                llm_input[i] = last_user_message
+                break
 
         return AgentSetup(
             input=llm_input,

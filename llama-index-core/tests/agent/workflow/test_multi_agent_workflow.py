@@ -726,3 +726,44 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_state_prompt_formatting_does_not_rewrite_memory() -> None:
+    """The state prompt must only wrap the message sent to the LLM, not the one in memory."""
+    llm_inputs: List[List[ChatMessage]] = []
+
+    def recording_generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        llm_inputs.append(list(messages))
+        return ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[],
+        llm=MockFunctionCallingLLM(response_generator=recording_generator),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+        initial_state={"counter": 0},
+        state_prompt="Current state: {state}. User message: {msg}",
+    )
+
+    handler = workflow.run(user_msg="hello there")
+    await handler
+
+    # the LLM still receives the state-formatted version
+    llm_user_texts = [m.content for m in llm_inputs[0] if m.role == MessageRole.USER]
+    assert any(
+        "Current state" in text and "hello there" in text for text in llm_user_texts
+    )
+
+    # but the message stored in memory keeps its original text
+    memory = await handler.ctx.store.get("memory")
+    stored_user_texts = [
+        m.content
+        for m in memory.chat_store.get_messages(memory.chat_store_key)
+        if m.role == MessageRole.USER
+    ]
+    assert stored_user_texts == ["hello there"]
