@@ -64,7 +64,9 @@
     {
       "description": "A security fix outside a package's published range changes what users install: open it as a draft for a maintainer. In-range fixes only move uv.lock",
       "matchManagers": ["pep621"],
-      "matchJsonata": ["isVulnerabilityAlert = true and isLockfileUpdate != true"],
+      "matchJsonata": [
+        "isVulnerabilityAlert = true and isLockfileUpdate != true"
+      ],
       "draftPR": true,
       "automerge": false
     }
