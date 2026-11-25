@@ -2,10 +2,11 @@
 
 import asyncio
 import logging
-from typing import List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.base_selector import BaseSelector
+from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.mixin import PromptMixinType
@@ -39,6 +40,7 @@ class RouterRetriever(BaseRetriever):
         llm: Optional[LLM] = None,
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
+        callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
     ) -> None:
         self._llm = llm or Settings.llm
@@ -47,7 +49,7 @@ class RouterRetriever(BaseRetriever):
         self._metadatas = [x.metadata for x in retriever_tools]
 
         super().__init__(
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             objects=objects,
             verbose=verbose,
@@ -65,6 +67,7 @@ class RouterRetriever(BaseRetriever):
         llm: Optional[LLM] = None,
         selector: Optional[BaseSelector] = None,
         select_multi: bool = False,
+        **kwargs: Any,
     ) -> "RouterRetriever":
         llm = llm or Settings.llm
         selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
@@ -73,6 +76,7 @@ class RouterRetriever(BaseRetriever):
             selector,
             retriever_tools,
             llm=llm,
+            **kwargs,
         )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -101,9 +105,10 @@ class RouterRetriever(BaseRetriever):
                 cur_results = selected_retriever.retrieve(query_bundle)
                 retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.NODES: retrieved_results.values()})
+            results = list(retrieved_results.values())
+            query_event.on_end(payload={EventPayload.NODES: results})
 
-        return list(retrieved_results.values())
+        return results
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         with self.callback_manager.event(
@@ -137,6 +142,7 @@ class RouterRetriever(BaseRetriever):
                 cur_results = await selected_retriever.aretrieve(query_bundle)
                 retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.NODES: retrieved_results.values()})
+            results = list(retrieved_results.values())
+            query_event.on_end(payload={EventPayload.NODES: results})
 
-        return list(retrieved_results.values())
+        return results
