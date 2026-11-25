@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   publish-core:
+    environment: release
     if: github.repository == 'run-llama/llama_index' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == vars.RELEASE_BRANCH_NAME))
     runs-on: ubuntu-latest
     outputs:
@@ -89,6 +90,7 @@ jobs:
           event-type: llama-index-core-release
 
   build-n-publish:
+    environment: release
     name: Build and publish 'llama-index' to PyPI
     runs-on: ubuntu-latest
     needs: publish-core
