@@ -43,6 +43,10 @@ class ToolMetadata:
                 for k, v in parameters.items()
                 if k in ["type", "properties", "required", "definitions", "$defs"]
             }
+            # pydantic omits "required" when every field is optional (or there
+            # are no fields). Some OpenAI-compatible servers (e.g. vLLM) reject
+            # tool schemas without it, so always declare it.
+            parameters.setdefault("required", [])
         return parameters
 
     @property
