@@ -1,6 +1,9 @@
+import asyncio
 from unittest.mock import Mock
+import pytest
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.chat_engine.condense_question import (
@@ -8,6 +11,10 @@ from llama_index.core.chat_engine.condense_question import (
 )
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.query_engine.retriever_query_engine import (
+    RetrieverQueryEngine,
+)
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 
 def test_condense_question_chat_engine(patch_llm_predictor) -> None:
@@ -71,3 +78,34 @@ def test_stream_chat_history_write_completes_on_early_exit() -> None:
     assert len(engine.chat_history) == 2
     assert engine.chat_history[0].role == MessageRole.USER
     assert engine.chat_history[1].role == MessageRole.ASSISTANT
+
+
+@pytest.mark.asyncio
+async def test_condense_question_concurrent_achat_and_astream_chat() -> None:
+    class _SlowAsyncRetriever(BaseRetriever):
+        def _retrieve(self, query_bundle: QueryBundle):
+            return [NodeWithScore(node=TextNode(text="context"))]
+
+        async def _aretrieve(self, query_bundle: QueryBundle):
+            await asyncio.sleep(0.02)
+            return [NodeWithScore(node=TextNode(text="context"))]
+
+    llm = MockLLM()
+    query_engine = RetrieverQueryEngine.from_args(
+        retriever=_SlowAsyncRetriever(), llm=llm, streaming=False
+    )
+    engine = CondenseQuestionChatEngine.from_defaults(
+        query_engine=query_engine, llm=llm
+    )
+
+    stream_task = asyncio.create_task(engine.astream_chat("question 1"))
+    await asyncio.sleep(0.005)
+    chat_task = asyncio.create_task(engine.achat("question 2"))
+
+    stream_resp, chat_resp = await asyncio.gather(stream_task, chat_task)
+
+    chunks = [chunk async for chunk in stream_resp.async_response_gen()]
+    assert len(chunks) > 0
+    assert isinstance(chat_resp.response, str) and len(chat_resp.response) > 0
+    assert query_engine._response_synthesizer._streaming is False
+
