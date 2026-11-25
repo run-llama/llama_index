@@ -7,7 +7,7 @@ in sequence in order to answer a given query.
 """
 
 from enum import Enum
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -124,9 +124,16 @@ class SummaryIndex(BaseIndex[IndexList]):
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
+        self._delete_nodes([node_id], **delete_kwargs)
+
+    def _delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
+        """Delete a list of nodes in a single pass."""
+        if not node_ids:
+            return
+        nodes_to_delete = set(node_ids)
         cur_node_ids = self._index_struct.nodes
         cur_nodes = self._docstore.get_nodes(cur_node_ids)
-        nodes_to_keep = [n for n in cur_nodes if n.node_id != node_id]
+        nodes_to_keep = [n for n in cur_nodes if n.node_id not in nodes_to_delete]
         self._index_struct.nodes = [n.node_id for n in nodes_to_keep]
 
     @property
