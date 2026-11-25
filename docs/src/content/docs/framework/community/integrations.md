@@ -8,6 +8,10 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 Data loaders (readers) live in the [`readers` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) of the LlamaIndex repo, one package per source. See the [data connectors guide](/python/framework/module_guides/loading/connector) for how to use them.
 
+Some readers are maintained in their own repositories and published to PyPI:
+
+- [superPDF](https://pypi.org/project/llama-index-readers-superpdf/) (`llama-index-readers-superpdf`): reads PDFs into Markdown locally, including tables, charts and scanned pages (OCR)
+
 ## Agent Tools
 
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
