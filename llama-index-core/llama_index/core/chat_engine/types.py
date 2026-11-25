@@ -296,12 +296,16 @@ class StreamingAgentChatResponse:
                         raise self.exception
 
                     try:
-                        delta = self.queue.get(block=False)
-                        self.unformatted_response += delta
-                        yield delta
-                        yielded_once = True
+                        delta = self.queue.get(timeout=0.01)
                     except Empty:
-                        time.sleep(0)
+                        continue
+
+                    if self.exception is not None:
+                        raise self.exception
+
+                    self.unformatted_response += delta
+                    yield delta
+                    yielded_once = True
             else:
                 if self.chat_stream is None:
                     raise ValueError("chat_stream is None!")
