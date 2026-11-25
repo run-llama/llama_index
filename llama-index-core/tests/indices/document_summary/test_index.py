@@ -89,3 +89,25 @@ def test_delete_nodes_deletes_valid_ids_and_skips_invalid_ones(
     index.delete_nodes(["does_not_exist_1", valid_node_id, "does_not_exist_2"])
 
     assert valid_node_id not in index.index_struct.node_id_to_summary_id
+
+
+def test_delete_nodes_batch_preserves_remaining_order_and_handles_duplicates(
+    index: DocumentSummaryIndex,
+) -> None:
+    from llama_index.core.data_structs.document_summary import IndexDocumentSummary
+    from llama_index.core.schema import TextNode
+
+    struct = IndexDocumentSummary()
+    summary = TextNode(text="summary", id_="sum_1")
+    summary.relationships = {}
+    # Set ref_doc_id via relationships
+    from llama_index.core.schema import NodeRelationship, RelatedNodeInfo
+
+    summary.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id="doc_x")
+    nodes = [TextNode(text=f"chunk {i}", id_=f"n_{i}") for i in range(5)]
+    struct.add_summary_and_nodes(summary, nodes)
+
+    struct.delete_nodes(["n_1", "n_3", "n_1"])
+    assert struct.summary_id_to_node_ids["sum_1"] == ["n_0", "n_2", "n_4"]
+    assert set(struct.node_id_to_summary_id.keys()) == {"n_0", "n_2", "n_4"}
+

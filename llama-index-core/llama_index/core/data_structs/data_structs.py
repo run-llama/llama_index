@@ -84,8 +84,11 @@ class IndexGraph(IndexStruct):
         else:
             parent_id = parent_node.node_id
             children_ids = self.node_id_to_children_ids[parent_id]
+            if not children_ids:
+                return {}
+            node_id_to_index = self.node_id_to_index
             return {
-                self.node_id_to_index[child_id]: child_id for child_id in children_ids
+                node_id_to_index[child_id]: child_id for child_id in children_ids
             }
 
     def insert_under_parent(

@@ -1,7 +1,7 @@
 """Data struct for document summary index."""
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from llama_index.core.data_structs.data_structs import IndexStruct
 from llama_index.core.data_structs.struct_type import IndexStructType
@@ -63,10 +63,21 @@ class IndexDocumentSummary(IndexStruct):
         del self.summary_id_to_node_ids[summary_id]
 
     def delete_nodes(self, node_ids: List[str]) -> None:
+        affected_summaries: Dict[str, Set[str]] = {}
         for node_id in node_ids:
-            summary_id = self.node_id_to_summary_id[node_id]
-            self.summary_id_to_node_ids[summary_id].remove(node_id)
-            del self.node_id_to_summary_id[node_id]
+            summary_id = self.node_id_to_summary_id.pop(node_id, None)
+            if summary_id is not None:
+                if summary_id not in affected_summaries:
+                    affected_summaries[summary_id] = set()
+                affected_summaries[summary_id].add(node_id)
+
+        for summary_id, removed_ids in affected_summaries.items():
+            if summary_id in self.summary_id_to_node_ids:
+                self.summary_id_to_node_ids[summary_id] = [
+                    nid
+                    for nid in self.summary_id_to_node_ids[summary_id]
+                    if nid not in removed_ids
+                ]
 
     @classmethod
     def get_type(cls) -> IndexStructType:
