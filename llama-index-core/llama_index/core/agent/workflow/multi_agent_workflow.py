@@ -24,6 +24,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_NAME,
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
+    _validate_max_iterations,
     _get_waiting_for_event_exception,
 )
 from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
@@ -292,11 +293,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.store.set(
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
             )
-        if not await ctx.store.get("max_iterations", default=None):
+        max_iterations = await ctx.store.get("max_iterations", default=None)
+        if max_iterations is None:
+            max_iterations = ev.get("max_iterations", default=None)
             max_iterations = (
-                ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
+                max_iterations if max_iterations is not None else DEFAULT_MAX_ITERATIONS
             )
+            _validate_max_iterations(max_iterations)
             await ctx.store.set("max_iterations", max_iterations)
+        else:
+            _validate_max_iterations(max_iterations)
 
         if not await ctx.store.get("early_stopping_method", default=None):
             early_stopping_method = (

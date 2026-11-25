@@ -302,6 +302,29 @@ async def test_max_iterations():
     _ = agent.run(user_msg="test", max_iterations=101)
 
 
+@pytest.mark.parametrize("max_iterations", [0, -5])
+@pytest.mark.asyncio
+async def test_non_positive_max_iterations_is_rejected_before_llm_call(max_iterations):
+    """Reject an invalid iteration budget before the first model call."""
+    llm_calls = 0
+
+    def response_generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        nonlocal llm_calls
+        llm_calls += 1
+        return ChatMessage(role=MessageRole.ASSISTANT, content="answer")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        llm=MockFunctionCallingLLM(response_generator=response_generator),
+    )
+
+    with pytest.raises(ValueError, match="max_iterations must be greater than 0"):
+        await agent.run(user_msg="test", max_iterations=max_iterations)
+
+    assert llm_calls == 0
+
+
 @pytest.mark.asyncio
 async def test_early_stopping_method_generate():
     """Test early_stopping_method='generate' produces a final response instead of raising error."""
