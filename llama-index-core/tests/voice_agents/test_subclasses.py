@@ -213,6 +213,13 @@ async def test_agent_subclassing(mock_agent: MockVoiceAgent):
         BaseVoiceAgentEvent(type_t="send")
     ]
     assert mock_agent.export_events(limit=1) == [BaseVoiceAgentEvent(type_t="send")]
+    assert mock_agent.export_events(
+        limit=1, filter=lambda events: [e for e in events if e.type_t == "text"]
+    ) == [BaseVoiceAgentEvent(type_t="text")]
+    assert mock_agent.export_events(limit=0) == []
+    exported_events = mock_agent.export_events()
+    exported_events.clear()
+    assert len(mock_agent._events) == 2
 
     def filter_messages(messages: List[ChatMessage]):
         return [message for message in messages if message.role == "assistant"]
@@ -227,5 +234,39 @@ async def test_agent_subclassing(mock_agent: MockVoiceAgent):
     assert mock_agent.export_messages(filter=filter_messages) == [
         ChatMessage(role="assistant", content="content")
     ]
+    assert mock_agent.export_messages(limit=1, filter=filter_messages) == [
+        ChatMessage(role="assistant", content="content")
+    ]
+    assert mock_agent.export_messages(limit=0) == []
+    exported_messages = mock_agent.export_messages()
+    exported_messages.clear()
+    assert len(mock_agent._messages) == 2
     await mock_agent.stop()
     assert mock_agent._is_stopped
+
+
+def test_agent_export_filter_and_limit(mock_agent: MockVoiceAgent):
+    mock_agent._events = [
+        BaseVoiceAgentEvent(type_t="send"),
+        BaseVoiceAgentEvent(type_t="text"),
+    ]
+    mock_agent._messages = [
+        ChatMessage(role="user", content="Hello world"),
+        ChatMessage(role="assistant", content="content"),
+    ]
+
+    assert mock_agent.export_events(
+        limit=1, filter=lambda events: [e for e in events if e.type_t == "text"]
+    ) == [BaseVoiceAgentEvent(type_t="text")]
+    assert mock_agent.export_events(limit=0) == []
+    exported_events = mock_agent.export_events()
+    exported_events.clear()
+    assert len(mock_agent._events) == 2
+
+    assert mock_agent.export_messages(
+        limit=1, filter=lambda msgs: [m for m in msgs if m.role == "assistant"]
+    ) == [ChatMessage(role="assistant", content="content")]
+    assert mock_agent.export_messages(limit=0) == []
+    exported_messages = mock_agent.export_messages()
+    exported_messages.clear()
+    assert len(mock_agent._messages) == 2
