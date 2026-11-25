@@ -13,8 +13,14 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface.pooling import Pooling
+from llama_index.embeddings.huggingface.utils import (
+    DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+    format_query,
+    format_text,
+)
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import ImageType
+from llama_index.core.utils import infer_torch_device
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 
@@ -180,27 +186,60 @@ class NomicHFEmbedding(HuggingFaceEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         dimensionality: int = 768,
     ):
-        super().__init__(
+        from transformers import AutoModel, AutoTokenizer
+
+        model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+        tokenizer_name = tokenizer_name or model_name
+        device = device or infer_torch_device()
+        if model is None:
+            model = AutoModel.from_pretrained(
+                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
+            )
+        if tokenizer is None:
+            tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer_name,
+                cache_dir=cache_folder,
+                trust_remote_code=trust_remote_code,
+            )
+
+        # The parent now wraps SentenceTransformer and rejects the old model and
+        # tokenizer arguments. Initialize the shared embedding fields directly;
+        # this adapter still uses the supplied Transformers model and tokenizer.
+        MultiModalEmbedding.__init__(
+            self,
             model_name=model_name,
             tokenizer_name=tokenizer_name,
             pooling=pooling,
-            max_length=max_length,
+            max_length=(
+                max_length if max_length is not None else DEFAULT_HUGGINGFACE_LENGTH
+            ),
             query_instruction=query_instruction,
             text_instruction=text_instruction,
             normalize=normalize,
-            model=model,
-            tokenizer=tokenizer,
             embed_batch_size=embed_batch_size,
             cache_folder=cache_folder,
-            trust_remote_code=trust_remote_code,
-            device=device,
             callback_manager=callback_manager,
+            dimensionality=dimensionality,
         )
-        self.dimensionality = dimensionality
+        self._model = model.to(device)
+        self._tokenizer = tokenizer
+        self._device = device
         self._model.eval()
 
-    def _embed(self, sentences: List[str]) -> List[List[float]]:
+    def _embed(
+        self, sentences: List[str], prompt_name: Optional[str] = None
+    ) -> List[List[float]]:
         """Embed sentences."""
+        if prompt_name == "query":
+            sentences = [
+                format_query(s, self.model_name, self.query_instruction)
+                for s in sentences
+            ]
+        elif prompt_name == "text":
+            sentences = [
+                format_text(s, self.model_name, self.text_instruction)
+                for s in sentences
+            ]
         encoded_input = self._tokenizer(
             sentences,
             padding=True,
@@ -223,11 +262,26 @@ class NomicHFEmbedding(HuggingFaceEmbedding):
         if self.pooling == Pooling.CLS:
             context_layer: "torch.Tensor" = model_output[0]
             embeddings = self.pooling.cls_pooling(context_layer)
-        else:
-            embeddings = self._mean_pooling(
-                token_embeddings=model_output[0],
-                attention_mask=encoded_input["attention_mask"],
+        elif self.pooling == Pooling.MEAN:
+            mask = (
+                encoded_input["attention_mask"]
+                .unsqueeze(-1)
+                .expand(model_output[0].size())
+                .float()
             )
+            embeddings = (model_output[0] * mask).sum(dim=1) / mask.sum(dim=1).clamp(
+                min=1e-9
+            )
+        else:
+            attention_mask = encoded_input["attention_mask"]
+            positions = torch.arange(
+                attention_mask.shape[1], device=attention_mask.device
+            )
+            last_indices = (attention_mask * positions).max(dim=1).values
+            embeddings = model_output[0][
+                torch.arange(attention_mask.shape[0], device=attention_mask.device),
+                last_indices,
+            ]
 
         if self.normalize:
             import torch.nn.functional as F
