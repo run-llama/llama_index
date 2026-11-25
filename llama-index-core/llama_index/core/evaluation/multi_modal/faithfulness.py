@@ -140,7 +140,6 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the response is faithful to the multi-modal contexts."""
-        del query  # Unused
         del kwargs  # Unused
         if contexts is None or response is None:
             raise ValueError("contexts and response must be provided")
@@ -175,6 +174,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
                 raise ValueError("The response is invalid")
 
         return EvaluationResult(
+            query=query,
             response=response,
             contexts=contexts,
             passing=passing,
@@ -192,7 +192,6 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
         **kwargs: Any,
     ) -> EvaluationResult:
         """Async evaluate whether the response is faithful to the multi-modal contexts."""
-        del query  # Unused
         del kwargs  # Unused
         if contexts is None or response is None:
             raise ValueError("contexts and response must be provided")
@@ -227,6 +226,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
                 raise ValueError("The response is invalid")
 
         return EvaluationResult(
+            query=query,
             response=response,
             contexts=contexts,
             passing=passing,
