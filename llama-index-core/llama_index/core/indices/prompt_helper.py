@@ -528,12 +528,12 @@ class ChatPromptHelper(BaseComponent):
         )
         messages = cast(
             list[ChatMessage],
-            [await message.atruncate(max_tokens=message_size) for message in messages],
+            [await message.atruncate(max_tokens=message_size, tokenizer=self._token_counter.tokenizer) for message in messages],
         )
         if self._strict_truncation:
             for message in messages:
                 while (
-                    message.blocks and await message.aestimate_tokens() > message_size
+                    message.blocks and await message.aestimate_tokens(tokenizer=self._token_counter.tokenizer) > message_size
                 ):
                     message.blocks.pop(-1)
             messages = [message for message in messages if message.blocks]
@@ -578,10 +578,10 @@ class ChatPromptHelper(BaseComponent):
         # Will not combine messages which have different roles/metadata
         if not messages:
             return []
-        max_chunk_size = sum([await message.aestimate_tokens() for message in messages])
+        max_chunk_size = sum([await message.aestimate_tokens(tokenizer=self._token_counter.tokenizer) for message in messages])
         combined_messages = cast(
             list[ChatMessage],
-            await ChatMessage.amerge(list(messages), chunk_size=max_chunk_size),
+            await ChatMessage.amerge(list(messages), chunk_size=max_chunk_size, tokenizer=self._token_counter.tokenizer),
         )
         chunk_size = await self._aget_available_chunk_size(
             prompt,
@@ -596,9 +596,10 @@ class ChatPromptHelper(BaseComponent):
                 [
                     split_message
                     for message in combined_messages
-                    for split_message in await message.asplit(max_tokens=chunk_size)
+                    for split_message in await message.asplit(max_tokens=chunk_size, tokenizer=self._token_counter.tokenizer)
                 ],
                 chunk_size=chunk_size,
+                tokenizer=self._token_counter.tokenizer,
             ),
         )
 
