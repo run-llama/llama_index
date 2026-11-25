@@ -81,6 +81,9 @@ class TreeSummarize(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
+        if not text_chunks:
+            return "Empty Response"
+
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
@@ -89,6 +92,9 @@ class TreeSummarize(BaseSynthesizer):
 
         if self._verbose:
             print(f"{len(text_chunks)} text chunks after repacking")
+
+        if len(text_chunks) == 0:
+            return "Empty Response"
 
         # give final response if there is only one chunk
         if len(text_chunks) == 1:
@@ -159,6 +165,9 @@ class TreeSummarize(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
+        if not text_chunks:
+            return "Empty Response"
+
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
@@ -167,6 +176,9 @@ class TreeSummarize(BaseSynthesizer):
 
         if self._verbose:
             print(f"{len(text_chunks)} text chunks after repacking")
+
+        if len(text_chunks) == 0:
+            return "Empty Response"
 
         # give final response if there is only one chunk
         if len(text_chunks) == 1:
@@ -274,6 +286,9 @@ class TreeSummarize(BaseSynthesizer):
         if self._verbose:
             print(f"{len(message_chunks)} message chunks after repacking")
 
+        if len(message_chunks) == 0:
+            return "Empty Response"
+
         if len(message_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
@@ -320,7 +335,12 @@ class TreeSummarize(BaseSynthesizer):
                     for chunk in message_chunks
                 ]
                 summary_models = await asyncio.gather(*model_tasks)
-                summaries = [summary.model_dump_json() for summary in summary_models]
+                summaries = [
+                    summary.model_dump_json()
+                    if isinstance(summary, BaseModel)
+                    else str(summary)
+                    for summary in summary_models
+                ]
 
             return await self.aget_response_from_messages(
                 query_str=query_str,
@@ -343,6 +363,9 @@ class TreeSummarize(BaseSynthesizer):
 
         if self._verbose:
             print(f"{len(message_chunks)} message chunks after repacking")
+
+        if len(message_chunks) == 0:
+            return "Empty Response"
 
         if len(message_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
@@ -393,7 +416,10 @@ class TreeSummarize(BaseSynthesizer):
                 summary_responses = run_async_tasks(tasks)
 
                 if self._output_cls is not None:
-                    summaries = [s.model_dump_json() for s in summary_responses]
+                    summaries = [
+                        s.model_dump_json() if isinstance(s, BaseModel) else str(s)
+                        for s in summary_responses
+                    ]
                 else:
                     summaries = summary_responses
             else:
@@ -416,7 +442,10 @@ class TreeSummarize(BaseSynthesizer):
                         )
                         for chunk in message_chunks
                     ]
-                    summaries = [s.model_dump_json() for s in summaries]
+                    summaries = [
+                        s.model_dump_json() if isinstance(s, BaseModel) else str(s)
+                        for s in summaries
+                    ]
 
             return self.get_response_from_messages(
                 query_str=query_str,
