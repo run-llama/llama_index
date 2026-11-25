@@ -120,6 +120,8 @@ def chunks(iterable: Iterable, size: int) -> Iterable:
 async def batch_gather(
     tasks: List[Coroutine], batch_size: int = 10, verbose: bool = False
 ) -> List[Any]:
+    if batch_size <= 0:
+        raise ValueError("batch_size must be greater than zero")
     output: List[Any] = []
     for task_chunk in chunks(tasks, batch_size):
         task_chunk = (task for task in task_chunk if task is not None)
