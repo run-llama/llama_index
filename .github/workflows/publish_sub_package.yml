@@ -29,9 +29,9 @@ jobs:
         id: changed-files
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ -n "${{ github.event.inputs.packages }}" ]; then
+            if [ -n "${GITHUB_EVENT_INPUTS_PACKAGES}" ]; then
               files=""
-              for d in ${{ github.event.inputs.packages }}; do
+              for d in ${GITHUB_EVENT_INPUTS_PACKAGES}; do
                 files="$files ${d%/}/pyproject.toml"
               done
             else
@@ -56,6 +56,8 @@ jobs:
               grep llama-index | grep pyproject | xargs)
           fi
           echo "changed_files=$(echo $files | xargs)" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_EVENT_INPUTS_PACKAGES: ${{ github.event.inputs.packages }}
 
       - name: Install uv and set the python version
         if: ${{ steps.changed-files.outputs.changed_files != '' }}
