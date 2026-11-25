@@ -52,10 +52,9 @@ class EmbeddingSingleSelector(BaseSelector):
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         query_embedding = self._embed_model.get_query_embedding(query.query_str)
-        text_embeddings = [
-            self._embed_model.get_text_embedding(choice.description)
-            for choice in choices
-        ]
+        text_embeddings = self._embed_model.get_text_embedding_batch(
+            [choice.description for choice in choices]
+        )
 
         top_similarities, top_ids = get_top_k_embeddings(
             query_embedding,
@@ -74,10 +73,9 @@ class EmbeddingSingleSelector(BaseSelector):
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         query_embedding = await self._embed_model.aget_query_embedding(query.query_str)
-        text_embeddings = [
-            await self._embed_model.aget_text_embedding(choice.description)
-            for choice in choices
-        ]
+        text_embeddings = await self._embed_model.aget_text_embedding_batch(
+            [choice.description for choice in choices]
+        )
 
         top_similarities, top_ids = get_top_k_embeddings(
             query_embedding,
