@@ -1,5 +1,6 @@
 """Test tools."""
 
+import asyncio
 import contextvars
 import json
 from typing import List, Optional
@@ -201,6 +202,116 @@ def test_tool_fn_schema() -> None:
     )
     parameter_dict = json.loads(metadata.fn_schema_str)
     assert set(parameter_dict.keys()) == {"type", "properties", "required"}
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.parametrize(
+    "converter", ["to_langchain_tool", "to_langchain_structured_tool"]
+)
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("leading", [False, True])
+@pytest.mark.asyncio
+async def test_function_tool_langchain_partial_params(
+    converter: str, asynchronous: bool, leading: bool
+) -> None:
+    def lookup(query: str, collection: str) -> str:
+        return f"{collection}: {query}"
+
+    async def async_lookup(query: str, collection: str) -> str:
+        return f"async {collection}: {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=lookup,
+        async_fn=async_lookup,
+        partial_params={"query": "question"}
+        if leading
+        else {"collection": "documents"},
+    )
+    converted = getattr(tool, converter)()
+    if converter == "to_langchain_tool":
+        query = "documents" if leading else "question"
+    else:
+        query = {"collection": "documents"} if leading else {"query": "question"}
+    if asynchronous:
+        assert await converted.ainvoke(query) == "async documents: question"
+    else:
+        assert converted.invoke(query) == "documents: question"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.parametrize(
+    "converter", ["to_langchain_tool", "to_langchain_structured_tool"]
+)
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_function_tool_langchain_partial_params_single_callable(
+    converter: str, asynchronous: bool
+) -> None:
+    def lookup(collection: str, query: str) -> str:
+        return f"{collection}: {query}"
+
+    async def async_lookup(collection: str, query: str) -> str:
+        return f"{collection}: {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=None if asynchronous else lookup,
+        async_fn=async_lookup if asynchronous else None,
+        partial_params={"collection": "documents"},
+    )
+    converted = getattr(tool, converter)()
+    query = "question" if converter == "to_langchain_tool" else {"query": "question"}
+    assert converted.invoke(query) == "documents: question"
+    assert asyncio.run(converted.ainvoke(query)) == "documents: question"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bound_parameter", ["query", "collection"])
+async def test_function_tool_langchain_different_parameter_order(
+    bound_parameter: str,
+) -> None:
+    def lookup(query: str, collection: str) -> str:
+        return f"{collection}: {query}"
+
+    async def async_lookup(collection: str, query: str) -> str:
+        return f"async {collection}: {query}"
+
+    values = {"query": "question", "collection": "documents"}
+    tool = FunctionTool.from_defaults(
+        fn=lookup,
+        async_fn=async_lookup,
+        partial_params={bound_parameter: values[bound_parameter]},
+    )
+    arguments = {key: value for key, value in values.items() if key != bound_parameter}
+    assert tool.call(**arguments).raw_output == "documents: question"
+    assert (await tool.acall(**arguments)).raw_output == "async documents: question"
+
+    converted = tool.to_langchain_tool()
+    tool_input = next(iter(arguments.values()))
+    assert converted.invoke(tool_input) == "documents: question"
+    assert await converted.ainvoke(tool_input) == "async documents: question"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.asyncio
+async def test_function_tool_langchain_partial_params_override() -> None:
+    class LookupSchema(BaseModel):
+        query: str
+        collection: str = "fallback"
+
+    def lookup(query: str, collection: str = "fallback") -> str:
+        return f"{collection}: {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=lookup,
+        fn_schema=LookupSchema,
+        partial_params={"collection": "documents"},
+    ).to_langchain_structured_tool()
+
+    assert tool.invoke({"query": "question"}) == "documents: question"
+    assert await tool.ainvoke({"query": "question"}) == "documents: question"
+    arguments = {"query": "question", "collection": "overridden"}
+    assert tool.invoke(arguments) == "overridden: question"
+    assert await tool.ainvoke(arguments) == "overridden: question"
 
 
 def test_function_tool_partial_params_schema() -> None:

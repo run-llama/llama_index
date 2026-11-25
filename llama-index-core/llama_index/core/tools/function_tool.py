@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import inspect
+from functools import partial, wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,6 +48,7 @@ def _is_context_param(param_annotation: Any) -> bool:
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
+    @wraps(fn)
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_running_loop()
         ctx = contextvars.copy_context()
@@ -58,6 +60,7 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
 def async_to_sync(func_async: AsyncCallable) -> Callable:
     """Async to sync."""
 
+    @wraps(func_async)
     def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         return asyncio_run(func_async(*args, **kwargs))  # type: ignore[arg-type]
 
@@ -410,6 +413,24 @@ class FunctionTool(AsyncBaseTool):
                 )
         return default_output
 
+    def _bind_langchain_tool_fn(self, fn: Callable[..., Any]) -> Callable[..., Any]:
+        """Bind parameters for LangChain's single-input Tool."""
+        partial_params = self.partial_params.copy()
+        partial_args: List[Any] = []
+        for param in inspect.signature(fn).parameters.values():
+            if (
+                param.kind
+                not in (
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                )
+                or param.name not in partial_params
+            ):
+                break
+            partial_args.append(partial_params.pop(param.name))
+
+        return partial(fn, *partial_args, **partial_params)
+
     def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":
         """To langchain tool."""
         from llama_index.core.bridge.langchain import Tool
@@ -418,8 +439,8 @@ class FunctionTool(AsyncBaseTool):
             langchain_tool_kwargs
         )
         return Tool.from_function(
-            func=self.fn,
-            coroutine=self.async_fn,
+            func=self._bind_langchain_tool_fn(self.fn),
+            coroutine=self._bind_langchain_tool_fn(self.async_fn),
             **langchain_tool_kwargs,
         )
 
@@ -433,8 +454,8 @@ class FunctionTool(AsyncBaseTool):
             langchain_tool_kwargs
         )
         return StructuredTool.from_function(
-            func=self.fn,
-            coroutine=self.async_fn,
+            func=partial(self.fn, **self.partial_params),
+            coroutine=partial(self.async_fn, **self.partial_params),
             **langchain_tool_kwargs,
         )
 
