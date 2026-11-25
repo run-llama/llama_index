@@ -935,3 +935,103 @@ def test_from_openai_message_without_reasoning_content() -> None:
     assert len(thinking_blocks) == 0
     assert len(result.blocks) == 1
     assert result.blocks[0].text == "Hello!"
+
+
+FULL_TOOL_ARGS = '{"path": "notes.txt", "content": "line 1\\nline 2\\n"}'
+CUT_TOOL_ARGS = FULL_TOOL_ARGS[:40]
+
+
+def _make_tool_call_stream_chunks(
+    arguments: str, finish_reason: str
+) -> list[ChatCompletionChunk]:
+    return [
+        _make_chunk(
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "write_file", "arguments": ""},
+                    }
+                ],
+            }
+        ),
+        _make_chunk(
+            {"tool_calls": [{"index": 0, "function": {"arguments": arguments}}]}
+        ),
+        _make_chunk({}, finish_reason=finish_reason),
+    ]
+
+
+def _make_tool_call_completion(arguments: str, finish_reason: str) -> ChatCompletion:
+    return ChatCompletion(
+        id="chatcmpl-tools",
+        object="chat.completion",
+        created=1700000000,
+        model="gpt-4o",
+        choices=[
+            Choice(
+                index=0,
+                finish_reason=finish_reason,
+                message=ChatCompletionMessage(
+                    role="assistant",
+                    content=None,
+                    tool_calls=[
+                        {
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {"name": "write_file", "arguments": arguments},
+                        }
+                    ],
+                ),
+            )
+        ],
+    )
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_cut_off_tool_call_is_not_returned(
+    MockSyncOpenAI: MagicMock,
+) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = iter(
+        _make_tool_call_stream_chunks(CUT_TOOL_ARGS, "length")
+    )
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+    # partial calls stay readable while the reply is still streaming
+    assert llm.get_tool_calls_from_response(responses[-2], error_on_no_tool_call=False)
+    with pytest.raises(ValueError, match="cut off"):
+        llm.get_tool_calls_from_response(responses[-1], error_on_no_tool_call=False)
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_finished_tool_call_is_returned(MockSyncOpenAI: MagicMock) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = iter(
+        _make_tool_call_stream_chunks(FULL_TOOL_ARGS, "tool_calls")
+    )
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+    tool_calls = llm.get_tool_calls_from_response(responses[-1])
+    assert tool_calls[0].tool_kwargs == {
+        "path": "notes.txt",
+        "content": "line 1\nline 2\n",
+    }
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_cut_off_tool_call_is_not_returned(MockSyncOpenAI: MagicMock) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = _make_tool_call_completion(
+        CUT_TOOL_ARGS, "length"
+    )
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response = llm.chat([ChatMessage(role="user", content="test")])
+
+    with pytest.raises(ValueError, match="cut off"):
+        llm.get_tool_calls_from_response(response)
