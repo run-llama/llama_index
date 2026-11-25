@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, Optional, Sequence
 
 from llama_index.core.base.embeddings.base import (
@@ -64,17 +65,22 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        del query, contexts, kwargs  # Unused
+        del kwargs  # Unused
 
         if response is None or reference is None:
             raise ValueError("Must specify both response and reference")
 
-        response_embedding = await self._embed_model.aget_text_embedding(response)
-        reference_embedding = await self._embed_model.aget_text_embedding(reference)
+        response_embedding, reference_embedding = await asyncio.gather(
+            self._embed_model.aget_text_embedding(response),
+            self._embed_model.aget_text_embedding(reference),
+        )
 
         similarity_score = self._similarity_fn(response_embedding, reference_embedding)
         passing = similarity_score >= self._similarity_threshold
         return EvaluationResult(
+            query=query,
+            contexts=contexts,
+            response=response,
             score=similarity_score,
             passing=passing,
             feedback=f"Similarity score: {similarity_score}",
