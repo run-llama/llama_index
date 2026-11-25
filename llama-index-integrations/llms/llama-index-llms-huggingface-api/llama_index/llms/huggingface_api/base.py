@@ -162,13 +162,13 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     def __init__(self, **kwargs: Any) -> None:
         model_name = kwargs.get("model_name") or kwargs.get("model")
         if model_name is None:
-            task = kwargs.get("task", "")
-            # NOTE: task being None or empty string leads to ValueError,
-            # which ensures model is present
-            kwargs["model_name"] = InferenceClient.get_recommended_model(task=task)
-            logger.debug(
-                f"Using Hugging Face's recommended model {kwargs['model_name']}"
-                f" given task {task}."
+            # InferenceClient.get_recommended_model was removed from
+            # huggingface_hub, so there is no recommended model to fall
+            # back to. Fail with a clear error instead of AttributeError.
+            raise ValueError(
+                "model_name is required: InferenceClient.get_recommended_model "
+                "was removed from huggingface_hub, so a model must be "
+                "passed explicitly."
             )
 
         if kwargs.get("task") is None:

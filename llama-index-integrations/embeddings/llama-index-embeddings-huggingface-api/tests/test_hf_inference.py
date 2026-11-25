@@ -27,6 +27,13 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             == HuggingFaceInferenceAPIEmbedding.__name__
         )
 
+    def test_missing_model_name_raises_value_error(self) -> None:
+        # InferenceClient.get_recommended_model was removed from
+        # huggingface_hub, so constructing without model_name must fail
+        # with a clear ValueError instead of AttributeError.
+        with pytest.raises(ValueError, match="model_name is required"):
+            HuggingFaceInferenceAPIEmbedding(task="feature-extraction")
+
     # def test_using_recommended_model(self) -> None:
     #     mock_hub = MagicMock()
     #     mock_hub.InferenceClient.get_recommended_model.return_value = (
