@@ -9,12 +9,15 @@ on:
       - main
 
 permissions:
-  contents: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
   publish-core:
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     if: github.repository == 'run-llama/llama_index' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == vars.RELEASE_BRANCH_NAME))
     runs-on: ubuntu-latest
     outputs:
@@ -69,6 +72,8 @@ jobs:
           done
 
   notify-workflows-py:
+    permissions:
+      contents: read
     name: Trigger llama-index-core bump in workflows-py
     runs-on: ubuntu-latest
     needs: publish-core
@@ -89,6 +94,9 @@ jobs:
           event-type: llama-index-core-release
 
   build-n-publish:
+    environment: release
+    permissions:
+      contents: write
     name: Build and publish 'llama-index' to PyPI
     runs-on: ubuntu-latest
     needs: publish-core
