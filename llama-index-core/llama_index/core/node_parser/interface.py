@@ -1,7 +1,7 @@
 """Node parser interface."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Sequence, Tuple
 from typing_extensions import Annotated
 
 from llama_index.core.bridge.pydantic import (
@@ -86,8 +86,9 @@ class NodeParser(TransformComponent, ABC):
     ) -> List[BaseNode]:
         # Track search position per document to handle duplicate text correctly
         # Nodes are assumed to be in document order from _parse_nodes
-        # We track the START position (not end) to allow for overlapping chunks
-        doc_search_positions: Dict[str, int] = {}
+        # We track the START position (not end) to allow for overlapping chunks,
+        # with the content found there
+        doc_search_positions: Dict[str, Tuple[int, str]] = {}
 
         for i, node in enumerate(nodes):
             parent_doc = parent_doc_map.get(node.ref_doc_id or "", None)
@@ -103,19 +104,23 @@ class NodeParser(TransformComponent, ABC):
 
                 # Get or initialize search position for this document
                 doc_id = node.ref_doc_id or ""
-                search_start = doc_search_positions.get(doc_id, 0)
+                search_start, prev_content = doc_search_positions.get(doc_id, (0, ""))
 
-                # Search for node content starting from the last found position
+                # Search for node content starting from the last found position.
+                # An overlapping node can start where the previous one started,
+                # but the same content again is a later copy of it
                 node_content = node.get_content(metadata_mode=MetadataMode.NONE)
                 start_char_idx = parent_doc.text.find(node_content, search_start)
+                if start_char_idx == search_start and node_content == prev_content:
+                    start_char_idx = parent_doc.text.find(
+                        node_content, search_start + 1
+                    )
 
                 # update start/end char idx
                 if start_char_idx >= 0 and isinstance(node, TextNode):
                     node.start_char_idx = start_char_idx
                     node.end_char_idx = start_char_idx + len(node_content)
-                    # Update search position to start from next character after this node's START
-                    # This allows overlapping chunks to be found correctly
-                    doc_search_positions[doc_id] = start_char_idx + 1
+                    doc_search_positions[doc_id] = (start_char_idx, node_content)
 
                 # update metadata
                 if self.include_metadata:

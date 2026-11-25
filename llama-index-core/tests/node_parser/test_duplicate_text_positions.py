@@ -87,3 +87,20 @@ def test_multiple_documents():
             n for n in nodes if isinstance(n, TextNode) and n.ref_doc_id == doc.doc_id
         ]
         _validate_nodes(doc_nodes, doc)
+
+
+def test_overlapping_node_that_starts_where_the_previous_one_starts():
+    """With overlap, a node can extend the previous one from the same start."""
+    doc = Document(
+        text=(
+            "theta iota. theta beta alpha \n x   \n\n\n \n\n\n "
+            "theta delta. iota. iota.   alpha gamma \n    eps, beta"
+        ),
+        doc_id="test",
+    )
+
+    parser = SentenceSplitter(chunk_size=10, chunk_overlap=5, include_metadata=False)
+    nodes = parser.get_nodes_from_documents([doc])
+    texts = [n.get_content(metadata_mode=MetadataMode.NONE) for n in nodes]
+    assert "theta delta." in texts and "theta delta. iota." in texts
+    _validate_nodes(nodes, doc)
