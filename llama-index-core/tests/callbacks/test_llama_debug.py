@@ -92,3 +92,40 @@ def test_ignore_events() -> None:
 
     # should have only captured 6 - 2 = 4 events
     assert len(handler.sequential_events) == 4
+
+
+def test_end_trace_plain_dict_and_no_defaultdict_pollution() -> None:
+    """Test end_trace with a plain dict trace_map does not raise KeyError or pollute events_pairs_by_id."""
+    handler = LlamaDebugHandler(print_trace_on_end=True)
+    handler.start_trace("query")
+    event_id = handler.on_event_start(
+        CBEventType.LLM, payload=TEST_PAYLOAD, event_id=TEST_ID
+    )
+    handler.on_event_end(CBEventType.LLM, payload=TEST_PAYLOAD, event_id=event_id)
+
+    # Passing a plain dict (where leaf event_id is not a key) must not raise KeyError,
+    # and printing the trace map must not insert 'root': [] into events_pairs_by_id.
+    handler.end_trace(trace_id="query", trace_map={"root": [event_id]})
+    assert "root" not in handler.events_pairs_by_id
+    assert list(handler.events_pairs_by_id.keys()) == [TEST_ID]
+
+    stats = handler._get_time_stats_from_event_pairs(
+        list(handler.events_pairs_by_id.values())
+    )
+    assert stats.total_count == 1
+
+
+def test_read_queries_do_not_mutate_event_pairs_by_type_and_flush_resets_trace() -> None:
+    """Test read-only queries do not insert empty keys and flush_event_logs resets trace state."""
+    handler = LlamaDebugHandler(print_trace_on_end=False)
+    assert handler.get_events(CBEventType.LLM) == []
+    assert handler.get_event_pairs(CBEventType.EMBEDDING) == []
+    assert handler.get_llm_inputs_outputs() == []
+    assert len(handler.event_pairs_by_type) == 0
+
+    handler.start_trace("trace-1")
+    handler.end_trace("trace-1", trace_map={"root": ["e1"]})
+    handler.flush_event_logs()
+    assert handler._cur_trace_id is None
+    assert len(handler._trace_map) == 0
+

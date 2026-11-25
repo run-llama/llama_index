@@ -105,7 +105,7 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
     def get_events(self, event_type: Optional[CBEventType] = None) -> List[CBEvent]:
         """Get all events for a specific event type."""
         if event_type is not None:
-            return self._event_pairs_by_type[event_type]
+            return list(self._event_pairs_by_type.get(event_type, []))
 
         return self._sequential_events
 
@@ -124,19 +124,20 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
         self, event_pairs: List[List[CBEvent]]
     ) -> EventStats:
         """Calculate time-based stats for a set of event pairs."""
-        if not event_pairs:
+        valid_pairs = [pair for pair in event_pairs if pair]
+        if not valid_pairs:
             return EventStats(total_secs=0.0, average_secs=0.0, total_count=0)
 
         total_secs = 0.0
-        for event_pair in event_pairs:
+        for event_pair in valid_pairs:
             start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
             end_time = datetime.strptime(event_pair[-1].time, TIMESTAMP_FORMAT)
             total_secs += (end_time - start_time).total_seconds()
 
         return EventStats(
             total_secs=total_secs,
-            average_secs=total_secs / len(event_pairs),
-            total_count=len(event_pairs),
+            average_secs=total_secs / len(valid_pairs),
+            total_count=len(valid_pairs),
         )
 
     def get_event_pairs(
@@ -144,13 +145,16 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
     ) -> List[List[CBEvent]]:
         """Pair events by ID, either all events or a specific type."""
         if event_type is not None:
-            return self._get_event_pairs(self._event_pairs_by_type[event_type])
+            events = self._event_pairs_by_type.get(event_type, [])
+            return self._get_event_pairs(events)
 
         return self._get_event_pairs(self._sequential_events)
 
     def get_llm_inputs_outputs(self) -> List[List[CBEvent]]:
         """Get the exact LLM inputs and outputs."""
-        return self._get_event_pairs(self._event_pairs_by_type[CBEventType.LLM])
+        return self._get_event_pairs(
+            self._event_pairs_by_type.get(CBEventType.LLM, [])
+        )
 
     def get_event_time_info(
         self, event_type: Optional[CBEventType] = None
@@ -163,6 +167,8 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
         self._event_pairs_by_type = defaultdict(list)
         self._event_pairs_by_id = defaultdict(list)
         self._sequential_events = []
+        self._trace_map = defaultdict(list)
+        self._cur_trace_id = None
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Launch a trace."""
@@ -181,7 +187,7 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
 
     def _print_trace_map(self, cur_event_id: str, level: int = 0) -> None:
         """Recursively print trace map to terminal for debugging."""
-        event_pair = self._event_pairs_by_id[cur_event_id]
+        event_pair = self._event_pairs_by_id.get(cur_event_id)
         if event_pair:
             time_stats = self._get_time_stats_from_event_pairs([event_pair])
             indent = " " * level * 2
@@ -189,7 +195,7 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
                 f"{indent}|_{event_pair[0].event_type} -> {time_stats.total_secs} seconds",
             )
 
-        child_event_ids = self._trace_map[cur_event_id]
+        child_event_ids = self._trace_map.get(cur_event_id, [])
         for child_event_id in child_event_ids:
             self._print_trace_map(child_event_id, level=level + 1)
 
