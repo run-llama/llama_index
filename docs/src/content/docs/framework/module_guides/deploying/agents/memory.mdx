@@ -82,7 +82,7 @@ By default, the `Memory` class will store the last X messages that fit into a to
 
 - `token_limit` (default: 30000): The maximum number of short-term and long-term tokens to store.
 - `chat_history_token_ratio` (default: 0.7): The ratio of tokens in the short-term chat history to the total token limit. If the chat history exceeds this ratio, the oldest messages will be flushed into long-term memory (if long-term memory is enabled).
-- `token_flush_size` (default: 3000): The number of tokens to flush into long-term memory when the chat history exceeds the token limit.
+- `token_flush_size` (default: 3000, or 25% of the chat history budget in `Memory.from_defaults()` if that is smaller): The number of tokens to flush into long-term memory when the chat history exceeds its budget (`token_limit * chat_history_token_ratio`).
 
 ```python
 memory = Memory.from_defaults(

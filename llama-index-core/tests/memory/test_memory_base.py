@@ -337,3 +337,51 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("token_limit", [3644, 4400, 7936])
+async def test_default_flush_keeps_most_of_chat_history(token_limit: int) -> None:
+    """A default flush must not empty the queue when token_limit is small."""
+    memory = Memory.from_defaults(token_limit=token_limit, tokenizer_fn=str.split)
+    budget = token_limit * memory.chat_history_token_ratio
+    content = "x " * int(budget / 50)
+
+    tokens_after_eviction = []
+    previous_tokens = 0
+    for i in range(150):
+        role = "user" if i % 2 == 0 else "assistant"
+        await memory.aput(ChatMessage(role=role, content=content))
+        tokens = sum(memory._estimate_token_count(m) for m in await memory.aget())
+        if tokens <= previous_tokens:
+            tokens_after_eviction.append(tokens)
+        previous_tokens = tokens
+
+    assert tokens_after_eviction
+    assert min(tokens_after_eviction) >= budget * 0.6
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [
+        ({}, 3000),
+        ({"token_limit": 127744}, 3000),
+        ({"token_limit": 3644}, 637),
+        ({"token_limit": 30000, "chat_history_token_ratio": 0.1}, 750),
+        ({"token_limit": 1}, 1),
+    ],
+)
+def test_from_defaults_default_flush_size(kwargs: dict, expected: int) -> None:
+    assert Memory.from_defaults(**kwargs).token_flush_size == expected
+
+
+@pytest.mark.parametrize("token_flush_size", [1, 637, 2000, 3644])
+def test_from_defaults_keeps_valid_flush_size(token_flush_size: int) -> None:
+    memory = Memory.from_defaults(token_limit=3644, token_flush_size=token_flush_size)
+    assert memory.token_flush_size == token_flush_size
+
+
+@pytest.mark.parametrize("token_flush_size", [0, -5, 3645, 9999])
+def test_from_defaults_replaces_invalid_flush_size(token_flush_size: int) -> None:
+    memory = Memory.from_defaults(token_limit=3644, token_flush_size=token_flush_size)
+    assert memory.token_flush_size == 637

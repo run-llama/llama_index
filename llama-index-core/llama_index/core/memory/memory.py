@@ -48,6 +48,7 @@ T = TypeVar("T", str, List[ContentBlock], List[ChatMessage])
 
 DEFAULT_TOKEN_LIMIT = 30000
 DEFAULT_FLUSH_SIZE = int(DEFAULT_TOKEN_LIMIT * 0.1)
+DEFAULT_TOKEN_FLUSH_RATIO = 0.25
 DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
     """
 <memory>
@@ -294,7 +295,7 @@ class Memory(BaseMemory):
         memory_blocks: Optional[List[BaseMemoryBlock[Any]]] = None,
         tokenizer_fn: Optional[Callable[[str], List]] = None,
         chat_history_token_ratio: float = 0.7,
-        token_flush_size: int = DEFAULT_FLUSH_SIZE,
+        token_flush_size: Optional[int] = None,
         memory_blocks_template: RichPromptTemplate = DEFAULT_MEMORY_BLOCKS_TEMPLATE,
         insert_method: InsertMethod = InsertMethod.SYSTEM,
         image_token_size_estimate: int = 256,
@@ -322,8 +323,13 @@ class Memory(BaseMemory):
         if chat_history is not None:
             asyncio_run(sql_store.set_messages(session_id, chat_history))
 
-        if token_flush_size > token_limit:
-            token_flush_size = int(token_limit * 0.7)
+        if token_flush_size is None or not 1 <= token_flush_size <= token_limit:
+            # Scale the default flush target with the chat history budget.
+            chat_history_budget = token_limit * chat_history_token_ratio
+            token_flush_size = min(
+                DEFAULT_FLUSH_SIZE,
+                max(1, int(chat_history_budget * DEFAULT_TOKEN_FLUSH_RATIO)),
+            )
 
         return cls(
             token_limit=token_limit,
