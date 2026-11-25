@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source repo (llama_index)
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Fetch the base commit so git diff works for incremental example conversion
       - name: Fetch base commit for diff
@@ -31,14 +31,14 @@ jobs:
         run: git fetch --depth=1 origin ${{ github.event.before }}
 
       - name: Checkout docs repo (developer hub)
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: run-llama/developers
           token: ${{ secrets.DEVELOPER_HUB_TOKEN }}
           path: developer-hub
 
       - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
       - name: Set up Python
         run: uv python install
