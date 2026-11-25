@@ -5,6 +5,8 @@ from typing import Optional, Type, Union
 from unittest import mock
 import os
 import time
+import sys
+import types
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -18,11 +20,27 @@ from llama_index.core.utils import (
     get_color_mapping,
     get_retry_on_exceptions_with_backoff_decorator,
     get_tokenizer,
+    get_transformer_tokenizer_fn,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
     truncate_text,
 )
+
+
+@pytest.mark.parametrize("revision", [None, "abc123"])
+def test_transformer_tokenizer_revision(monkeypatch, revision) -> None:
+    tokenizer = mock.Mock()
+    loader = mock.Mock(return_value=tokenizer)
+    transformers = types.ModuleType("transformers")
+    transformers.AutoTokenizer = mock.Mock(from_pretrained=loader)
+    monkeypatch.setitem(sys.modules, "transformers", transformers)
+
+    tokenize = get_transformer_tokenizer_fn("org/model", revision=revision)
+
+    expected_kwargs = {"revision": revision} if revision is not None else {}
+    loader.assert_called_once_with("org/model", **expected_kwargs)
+    assert tokenize is tokenizer.tokenize
 
 
 def test_tokenizer() -> None:

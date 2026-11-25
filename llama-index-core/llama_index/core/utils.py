@@ -416,11 +416,15 @@ def count_tokens(text: str) -> int:
     return len(tokens)
 
 
-def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
+def get_transformer_tokenizer_fn(
+    model_name: str, revision: Optional[str] = None
+) -> Callable[[str], List[str]]:
     """
     Args:
         model_name(str): the model name of the tokenizer.
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
+        revision(str, optional): Hugging Face revision to load. Use a commit hash
+            to pin the tokenizer to immutable model files.
 
     """
     try:
@@ -429,7 +433,8 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
         raise ValueError(
             "`transformers` package not found, please run `pip install transformers`"
         )
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    kwargs = {"revision": revision} if revision is not None else {}
+    tokenizer = AutoTokenizer.from_pretrained(model_name, **kwargs)
     return tokenizer.tokenize
 
 
