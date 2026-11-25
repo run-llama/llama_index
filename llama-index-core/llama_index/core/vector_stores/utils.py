@@ -121,14 +121,22 @@ def build_metadata_filter_fn(
                 return metadata_value == value
             if operator == FilterOperator.NE:
                 return metadata_value != value
-            if operator == FilterOperator.GT:
-                return metadata_value > value
-            if operator == FilterOperator.GTE:
-                return metadata_value >= value
-            if operator == FilterOperator.LT:
-                return metadata_value < value
-            if operator == FilterOperator.LTE:
-                return metadata_value <= value
+            if operator in (
+                FilterOperator.GT,
+                FilterOperator.GTE,
+                FilterOperator.LT,
+                FilterOperator.LTE,
+            ):
+                try:
+                    if operator == FilterOperator.GT:
+                        return metadata_value > value
+                    if operator == FilterOperator.GTE:
+                        return metadata_value >= value
+                    if operator == FilterOperator.LT:
+                        return metadata_value < value
+                    return metadata_value <= value
+                except TypeError:
+                    return False
             if operator == FilterOperator.IN:
                 return metadata_value in value
             if operator == FilterOperator.NIN:
