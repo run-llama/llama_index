@@ -1,10 +1,23 @@
-from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Sequence, Union
-from unittest.mock import patch
+from typing import (
+    Any,
+    AsyncGenerator,
+    Coroutine,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.agent.workflow.workflow_events import AgentStream
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
     LLMMetadata,
@@ -13,6 +26,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import FunctionTool, get_function_tool
 from llama_index.core.tools.types import BaseTool
+from llama_index.core.workflow import Context
 from pydantic import BaseModel, Field
 
 
@@ -98,6 +112,89 @@ class MockFunctionCallingLLMWithoutToolRequired(MockFunctionCallingLLM):
         return {"messages": []}
 
 
+class MockStreamingFunctionCallingLLM(MockFunctionCallingLLM):
+    """Mock LLM that streams cumulative responses and records validation calls."""
+
+    def __init__(
+        self,
+        tool_selection: List[ToolSelection],
+        stream_responses: List[ChatResponse],
+    ):
+        super().__init__(tool_selection)
+        self._stream_responses = stream_responses
+        self._validated: List[ChatResponse] = []
+        # the provider stream is held here (as a client/transport would be), so
+        # it is not finalized merely because the wrapper drops its reference
+        self._upstream: Any = None
+        self._upstream_closed = False
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        def gen() -> ChatResponseGen:
+            try:
+                yield from self._stream_responses
+            finally:
+                self._upstream_closed = True
+
+        self._upstream = gen()
+        return self._upstream
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        async def gen() -> ChatResponseAsyncGen:
+            try:
+                for response in self._stream_responses:
+                    yield response
+            finally:
+                self._upstream_closed = True
+
+        self._upstream = gen()
+        return self._upstream
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: Sequence["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        self._validated.append(response)
+        # mimic in-place normalization such as force_single_tool_call
+        response.message.additional_kwargs["validated"] = True
+        return response
+
+
+class MockStreamingToolCallLLM(MockStreamingFunctionCallingLLM):
+    """
+    Mock LLM whose tool calls live on the streamed message, and whose validation
+    drops all but the first tool call when parallel calls are disallowed
+    (mimicking force_single_tool_call).
+    """
+
+    def get_tool_calls_from_response(
+        self,
+        response: ChatResponse,
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        return list(response.message.additional_kwargs.get("tool_calls", []))
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: Sequence["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        self._validated.append(response)
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if not allow_parallel_tool_calls and len(tool_calls) > 1:
+            response.message.additional_kwargs["tool_calls"] = tool_calls[:1]
+        return response
+
+
 class Person(BaseModel):
     name: str = Field(description="Person name")
 
@@ -152,6 +249,230 @@ async def test_apredict_and_call_throws_if_error_on_tool(
     llm = MockFunctionCallingLLM([person_tool_selection])
     with pytest.raises(ValueError):
         await llm.apredict_and_call(tools=[person_tool], error_on_tool_error=True)
+
+
+@pytest.fixture()
+def stream_responses() -> List[ChatResponse]:
+    # streaming responses are cumulative: each chunk carries the full message
+    # so far plus the new delta
+    return [
+        ChatResponse(message=ChatMessage(role="assistant", content="foo"), delta="foo"),
+        ChatResponse(
+            message=ChatMessage(role="assistant", content="foobar"), delta="bar"
+        ),
+    ]
+
+
+def test_stream_chat_with_tools_validates_final_response(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that the final streamed response gets validated once the stream is exhausted."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    chunks = list(llm.stream_chat_with_tools(tools=[person_tool]))
+
+    assert chunks == stream_responses
+    assert llm._validated == [stream_responses[-1]]
+    # in-place changes made by validation are visible on the final response
+    assert chunks[-1].message.additional_kwargs.get("validated") is True
+    # intermediate chunks are passed through untouched
+    assert "validated" not in chunks[0].message.additional_kwargs
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_with_tools_validates_final_response(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that the async streaming path validates the final response."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    response_gen = await llm.astream_chat_with_tools(tools=[person_tool])
+    chunks = [chunk async for chunk in response_gen]
+
+    assert chunks == stream_responses
+    assert llm._validated == [stream_responses[-1]]
+    assert chunks[-1].message.additional_kwargs.get("validated") is True
+
+
+def test_stream_chat_with_tools_partial_consumption_skips_validation(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that validation only runs when the stream is fully consumed."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    response_gen = llm.stream_chat_with_tools(tools=[person_tool])
+    next(response_gen)
+    response_gen.close()
+
+    assert llm._validated == []
+
+
+def test_stream_chat_with_tools_early_close_closes_upstream(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that closing the stream early also closes the provider stream."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    response_gen = llm.stream_chat_with_tools(tools=[person_tool])
+    assert next(response_gen) is stream_responses[0]
+    assert not llm._upstream_closed
+    response_gen.close()
+
+    assert llm._upstream_closed
+    assert llm._validated == []
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_with_tools_early_close_closes_upstream(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that aclose() on the stream also closes the provider stream."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    response_gen = await llm.astream_chat_with_tools(tools=[person_tool])
+    assert await response_gen.__anext__() is stream_responses[0]
+    assert not llm._upstream_closed
+    await response_gen.aclose()
+
+    assert llm._upstream_closed
+    assert llm._validated == []
+
+
+def test_stream_chat_with_tools_early_close_plain_iterator(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that early close works when the provider stream has no close()."""
+
+    class PlainIteratorLLM(MockStreamingFunctionCallingLLM):
+        def stream_chat(  # type: ignore[override]
+            self, messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> Iterator[ChatResponse]:
+            return iter(self._stream_responses)
+
+    llm = PlainIteratorLLM([person_tool_selection], stream_responses)
+
+    response_gen = llm.stream_chat_with_tools(tools=[person_tool])
+    assert next(response_gen) is stream_responses[0]
+    response_gen.close()
+
+    assert llm._validated == []
+
+
+def test_stream_chat_with_tools_empty_stream(
+    person_tool: FunctionTool, person_tool_selection: ToolSelection
+) -> None:
+    """Test that an empty stream neither errors nor validates."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], [])
+
+    assert list(llm.stream_chat_with_tools(tools=[person_tool])) == []
+    assert llm._validated == []
+
+
+def test_stream_chat_with_tools_validation_error_raised_before_final_response(
+    person_tool: FunctionTool,
+    person_tool_selection: ToolSelection,
+    stream_responses: List[ChatResponse],
+) -> None:
+    """Test that a raising validator surfaces before the final response is yielded."""
+    llm = MockStreamingFunctionCallingLLM([person_tool_selection], stream_responses)
+
+    with patch.object(
+        llm,
+        "_validate_chat_with_tools_response",
+        side_effect=ValueError("invalid tool call"),
+    ):
+        response_gen = llm.stream_chat_with_tools(tools=[person_tool])
+        chunks = [next(response_gen)]
+        with pytest.raises(ValueError, match="invalid tool call"):
+            next(response_gen)
+
+    # only intermediate responses escape; the unvalidated final one never does
+    assert chunks == stream_responses[:-1]
+
+
+@pytest.fixture()
+def parallel_tool_call_stream_responses(
+    person_tool: FunctionTool,
+) -> List[ChatResponse]:
+    # the final cumulative response carries two tool calls, the intermediate
+    # one only the first
+    first = ToolSelection(
+        tool_id="call_1", tool_name=person_tool.metadata.name, tool_kwargs={}
+    )
+    second = ToolSelection(
+        tool_id="call_2", tool_name=person_tool.metadata.name, tool_kwargs={}
+    )
+    return [
+        ChatResponse(
+            message=ChatMessage(
+                role="assistant", additional_kwargs={"tool_calls": [first]}
+            ),
+            delta="",
+        ),
+        ChatResponse(
+            message=ChatMessage(
+                role="assistant", additional_kwargs={"tool_calls": [first, second]}
+            ),
+            delta="",
+        ),
+    ]
+
+
+def test_stream_chat_with_tools_yields_validated_final_response(
+    person_tool: FunctionTool,
+    parallel_tool_call_stream_responses: List[ChatResponse],
+) -> None:
+    """Test that consumers see the validated tool calls when the final response is yielded."""
+    llm = MockStreamingToolCallLLM([], parallel_tool_call_stream_responses)
+
+    # snapshot tool calls at yield time, like FunctionAgent does when it
+    # publishes AgentStream events
+    seen = []
+    for chunk in llm.stream_chat_with_tools(
+        tools=[person_tool], allow_parallel_tool_calls=False
+    ):
+        seen.append([t.tool_id for t in llm.get_tool_calls_from_response(chunk)])
+        final = chunk
+
+    assert seen == [["call_1"], ["call_1"]]
+    assert [t.tool_id for t in llm.get_tool_calls_from_response(final)] == ["call_1"]
+
+
+@pytest.mark.asyncio
+async def test_function_agent_stream_matches_validated_tool_calls(
+    person_tool: FunctionTool,
+    parallel_tool_call_stream_responses: List[ChatResponse],
+) -> None:
+    """Test that the last AgentStream event agrees with the tool calls take_step executes."""
+    llm = MockStreamingToolCallLLM([], parallel_tool_call_stream_responses)
+    agent = FunctionAgent(
+        llm=llm, tools=[person_tool], streaming=True, allow_parallel_tool_calls=False
+    )
+
+    ctx = AsyncMock(spec=Context)
+    stream_events = []
+    ctx.write_event_to_stream.side_effect = stream_events.append
+
+    last_chat_response = await agent._get_streaming_response(
+        ctx, [ChatMessage(role="user", content="test")], [person_tool]
+    )
+
+    agent_streams = [e for e in stream_events if isinstance(e, AgentStream)]
+    executed = llm.get_tool_calls_from_response(last_chat_response)
+    assert [t.tool_id for t in executed] == ["call_1"]
+    assert [t.tool_id for t in agent_streams[-1].tool_calls] == ["call_1"]
 
 
 def test_tool_required_compatibility_without_support(
