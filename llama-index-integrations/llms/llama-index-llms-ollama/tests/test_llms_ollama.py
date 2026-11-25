@@ -2,7 +2,7 @@ import os
 
 import pytest
 from ollama import Client
-from typing import Annotated
+from typing import Annotated, Any, AsyncIterator
 
 from llama_index.core.base.llms.types import ThinkingBlock, TextBlock, ToolCallBlock
 from llama_index.core.base.llms.base import BaseLLM
@@ -46,6 +46,36 @@ def generate_song(
 
 
 tool = FunctionTool.from_defaults(fn=generate_song)
+
+
+class StreamClient:
+    def __init__(self, chunks: list[dict[str, Any]]) -> None:
+        self.chunks = chunks
+
+    def chat(self, **_: Any) -> list[dict[str, Any]]:
+        return self.chunks
+
+
+class AsyncStreamClient:
+    def __init__(self, chunks: list[dict[str, Any]]) -> None:
+        self.chunks = chunks
+
+    async def chat(self, **_: Any) -> AsyncIterator[dict[str, Any]]:
+        async def gen() -> AsyncIterator[dict[str, Any]]:
+            for chunk in self.chunks:
+                yield chunk
+
+        return gen()
+
+
+def thinking_chunk(content: str | None, thinking: str | None) -> dict[str, Any]:
+    return {
+        "message": {
+            "role": "assistant",
+            "content": content,
+            "thinking": thinking,
+        }
+    }
 
 
 def test_embedding_class() -> None:
@@ -130,6 +160,54 @@ async def test_ollama_async_stream_chat() -> None:
         assert r is not None
         assert r.delta is not None
         assert str(r).strip() != ""
+
+
+def test_stream_chat_preserves_thinking_only_chunks() -> None:
+    llm = Ollama(
+        model="deepseek-r1",
+        context_window=8192,
+        client=StreamClient(
+            [
+                thinking_chunk(None, "thinking step"),
+                thinking_chunk("answer", None),
+            ]
+        ),  # type: ignore[arg-type]
+    )
+
+    chunks = list(llm.stream_chat([ChatMessage(role="user", content="Hello!")]))
+
+    assert chunks[0].delta == ""
+    assert chunks[0].additional_kwargs["thinking_delta"] == "thinking step"
+    assert any(
+        isinstance(block, ThinkingBlock) and block.content == "thinking step"
+        for block in chunks[0].message.blocks
+    )
+    assert chunks[-1].message.content == "answer"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_preserves_thinking_only_chunks() -> None:
+    llm = Ollama(
+        model="deepseek-r1",
+        context_window=8192,
+        async_client=AsyncStreamClient(
+            [
+                thinking_chunk(None, "thinking step"),
+                thinking_chunk("answer", None),
+            ]
+        ),  # type: ignore[arg-type]
+    )
+
+    response = await llm.astream_chat([ChatMessage(role="user", content="Hello!")])
+    chunks = [chunk async for chunk in response]
+
+    assert chunks[0].delta == ""
+    assert chunks[0].additional_kwargs["thinking_delta"] == "thinking step"
+    assert any(
+        isinstance(block, ThinkingBlock) and block.content == "thinking step"
+        for block in chunks[0].message.blocks
+    )
+    assert chunks[-1].message.content == "answer"
 
 
 @pytest.mark.skipif(
