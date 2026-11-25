@@ -2,7 +2,7 @@
 
 import uuid
 
-from typing import Any, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.objects.base_node_mapping import (
     DEFAULT_PERSIST_DIR,
@@ -10,7 +10,9 @@ from llama_index.core.objects.base_node_mapping import (
     BaseObjectNodeMapping,
 )
 from llama_index.core.schema import BaseNode, TextNode
-from llama_index.core.utilities.sql_wrapper import SQLDatabase
+
+if TYPE_CHECKING:
+    from llama_index.core.utilities.sql_wrapper import SQLDatabase
 
 
 class SQLTableSchema(BaseModel):
@@ -23,7 +25,7 @@ class SQLTableSchema(BaseModel):
 class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     """SQL Table node mapping."""
 
-    def __init__(self, sql_database: SQLDatabase) -> None:
+    def __init__(self, sql_database: "SQLDatabase") -> None:
         self._sql_database = sql_database
 
     @classmethod
@@ -31,7 +33,7 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         cls,
         objs: Sequence[SQLTableSchema],
         *args: Any,
-        sql_database: Optional[SQLDatabase] = None,
+        sql_database: Optional["SQLDatabase"] = None,
         **kwargs: Any,
     ) -> "BaseObjectNodeMapping":
         """Initialize node mapping."""

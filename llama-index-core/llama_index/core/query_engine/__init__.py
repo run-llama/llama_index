@@ -1,11 +1,7 @@
-from llama_index.core.base.base_query_engine import BaseQueryEngine
+import importlib
+from typing import Any
 
-# SQL
-from llama_index.core.indices.struct_store.sql_query import (
-    NLSQLTableQueryEngine,
-    PGVectorSQLQueryEngine,
-    SQLTableRetrieverQueryEngine,
-)
+from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.query_engine.citation_query_engine import CitationQueryEngine
 from llama_index.core.query_engine.cogniswitch_query_engine import (
     CogniswitchQueryEngine,
@@ -42,10 +38,6 @@ from llama_index.core.query_engine.router_query_engine import (
     RetrieverRouterQueryEngine,
     RouterQueryEngine,
     ToolRetrieverRouterQueryEngine,
-)
-from llama_index.core.query_engine.sql_join_query_engine import SQLJoinQueryEngine
-from llama_index.core.query_engine.sql_vector_query_engine import (
-    SQLAutoVectorQueryEngine,
 )
 from llama_index.core.query_engine.sub_question_query_engine import (
     SubQuestionAnswerPair,
@@ -85,3 +77,22 @@ __all__ = [
     "NLSQLTableQueryEngine",
     "PGVectorSQLQueryEngine",
 ]
+
+
+# SQL support imports SQLAlchemy, which is slow to load, so these names are
+# resolved on first access (PEP 562) instead of at package import time.
+_LAZY_IMPORTS = {
+    "NLSQLTableQueryEngine": "llama_index.core.indices.struct_store.sql_query",
+    "PGVectorSQLQueryEngine": "llama_index.core.indices.struct_store.sql_query",
+    "SQLTableRetrieverQueryEngine": "llama_index.core.indices.struct_store.sql_query",
+    "SQLJoinQueryEngine": "llama_index.core.query_engine.sql_join_query_engine",
+    "SQLAutoVectorQueryEngine": "llama_index.core.query_engine.sql_vector_query_engine",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_IMPORTS:
+        value = getattr(importlib.import_module(_LAZY_IMPORTS[name]), name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

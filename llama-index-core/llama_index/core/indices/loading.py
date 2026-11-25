@@ -3,7 +3,6 @@ from typing import Any, List, Optional, Sequence
 
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.composability.graph import ComposableGraph
-from llama_index.core.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
 from llama_index.core.storage.storage_context import StorageContext
 
 logger = logging.getLogger(__name__)
@@ -74,6 +73,9 @@ def load_indices_from_storage(
             if index_struct is None:
                 raise ValueError(f"Failed to load index with ID {index_id}")
             index_structs.append(index_struct)
+
+    # Imported here: the registry includes the SQL index, which pulls in SQLAlchemy.
+    from llama_index.core.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
 
     indices = []
     for index_struct in index_structs:
