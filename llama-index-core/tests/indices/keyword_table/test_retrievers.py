@@ -1,6 +1,7 @@
 from typing import List
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
+from llama_index.core.data_structs.data_structs import KeywordTable
 from llama_index.core.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
@@ -28,6 +29,10 @@ def test_retrieve(
     retriever = table.as_retriever(
         retriever_mode="simple", embed_model=mock_embed_model
     )
-    nodes = retriever.retrieve(QueryBundle("Hello"))
+    with patch.object(
+        KeywordTable, "keywords", new_callable=PropertyMock
+    ) as mock_keywords:
+        nodes = retriever.retrieve(QueryBundle("Hello"))
+        mock_keywords.assert_not_called()
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "Hello world."
