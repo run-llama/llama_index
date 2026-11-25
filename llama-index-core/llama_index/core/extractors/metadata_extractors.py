@@ -111,9 +111,17 @@ class TitleExtractor(BaseExtractor):
         return "TitleExtractor"
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        nodes_by_doc_id = self.separate_nodes_by_ref_id(nodes)
+        filtered_nodes = self.filter_nodes(nodes)
+        nodes_by_doc_id = self.separate_nodes_by_ref_id(filtered_nodes)
         titles_by_doc_id = await self.extract_titles(nodes_by_doc_id)
-        return [{"document_title": titles_by_doc_id[node.ref_doc_id]} for node in nodes]
+        return [
+            (
+                {}
+                if self.is_text_node_only and not isinstance(node, TextNode)
+                else {"document_title": titles_by_doc_id[self._get_node_group_key(node)]}
+            )
+            for node in nodes
+        ]
 
     def filter_nodes(self, nodes: Sequence[BaseNode]) -> List[BaseNode]:
         filtered_nodes: List[BaseNode] = []
@@ -123,11 +131,15 @@ class TitleExtractor(BaseExtractor):
             filtered_nodes.append(node)
         return filtered_nodes
 
+    @staticmethod
+    def _get_node_group_key(node: BaseNode) -> str:
+        return node.ref_doc_id if node.ref_doc_id is not None else node.node_id
+
     def separate_nodes_by_ref_id(self, nodes: Sequence[BaseNode]) -> Dict:
         separated_items: Dict[Optional[str], List[BaseNode]] = {}
 
         for node in nodes:
-            key = node.ref_doc_id
+            key = self._get_node_group_key(node)
             if key not in separated_items:
                 separated_items[key] = []
 
@@ -155,6 +167,7 @@ class TitleExtractor(BaseExtractor):
         list_dict_titles: List[Dict] = await run_jobs(
             jobs=jobs,
             show_progress=self.show_progress,
+            workers=self.num_workers,
         )
         for d in list_dict_titles:
             for key, value in d.items():
@@ -162,13 +175,22 @@ class TitleExtractor(BaseExtractor):
         return final_dict
 
     async def get_title_candidates(self, nodes: List[BaseNode]) -> List[str]:
-        return [
-            await self.llm.apredict(
+        jobs = [
+            self.llm.apredict(
                 PromptTemplate(template=self.node_template),
-                context_str=cast(TextNode, node).text,
+                context_str=(
+                    cast(TextNode, node).text
+                    if isinstance(node, TextNode)
+                    else node.get_content(metadata_mode=self.metadata_mode)
+                ),
             )
             for node in nodes
         ]
+        return await run_jobs(
+            jobs=jobs,
+            show_progress=False,
+            workers=self.num_workers,
+        )
 
 
 DEFAULT_KEYWORD_EXTRACT_TEMPLATE = """\
