@@ -84,6 +84,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
                 self._evaluator,
                 self._llm,
                 self.max_retries - 1,
+                callback_manager=self.callback_manager,
             )
             return new_query_engine.query(query_bundle)
 
