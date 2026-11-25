@@ -1545,11 +1545,12 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-opengauss"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
-    { name = "llama-index-vector-stores-postgres" },
+    { name = "llama-index-vector-stores-postgres", version = "0.9.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "llama-index-vector-stores-postgres", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "opengauss-sqlalchemy" },
 ]
 
@@ -1579,7 +1580,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-vector-stores-postgres", specifier = ">=0.6.0,<0.7.0" },
+    { name = "llama-index-vector-stores-postgres", specifier = ">=0.6.0,<0.11.0" },
     { name = "opengauss-sqlalchemy", specifier = ">=2.4.0" },
 ]
 
@@ -1608,8 +1609,11 @@ dev = [
 
 [[package]]
 name = "llama-index-vector-stores-postgres"
-version = "0.6.8"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.11'",
+]
 dependencies = [
     { name = "asyncpg" },
     { name = "llama-index-core" },
@@ -1617,9 +1621,29 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/48/2a/ea0c2f6c8d60afef20c1b8bad9e5dd376ce23768bedb67a7511ae29d3c58/llama_index_vector_stores_postgres-0.6.8.tar.gz", hash = "sha256:0306d9c6fe0294960d81e5f853275c3997006fef1451cdf8bbf04d1d41927a22", size = 11660, upload-time = "2025-09-16T03:35:19.095Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/e9/4dd22c8de37652bb856eafd0cb1f29f2354aa163cba96ed6a534d1f1e830/llama_index_vector_stores_postgres-0.9.0.tar.gz", hash = "sha256:893cfabb2017c4a7f78d8093545ed55e8bb91d1a98f71cabf196bc9e7031805d", size = 14522, upload-time = "2026-08-31T16:13:18.742Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/fe/d1b5434f6357dd97948e2c4867ee01a50f9489d41b0f3e1034fafecaf052/llama_index_vector_stores_postgres-0.6.8-py3-none-any.whl", hash = "sha256:52bf10ee47b511d7bf351d5b02f59a9ca4771f0ac78e819a591aa159664fd80a", size = 11336, upload-time = "2025-09-16T03:35:17.905Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/69/2d4c5cae0ffb30a28a15f27896a09a04415cccf91cc2e7d9f9f165a26fa8/llama_index_vector_stores_postgres-0.9.0-py3-none-any.whl", hash = "sha256:c3212fa25a1d85f6bd9688ead5d484e70e002a905e3b27e4dd039e0ea9a0b2f4", size = 14415, upload-time = "2026-08-31T16:13:17.94Z" },
+]
+
+[[package]]
+name = "llama-index-vector-stores-postgres"
+version = "0.10.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
+]
+dependencies = [
+    { name = "asyncpg" },
+    { name = "llama-index-core" },
+    { name = "pgvector" },
+    { name = "psycopg2-binary" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/de/1e6b71e80a0500b9177ebf353f55d8a5f94749bac8eea4d39a4e89c11ca0/llama_index_vector_stores_postgres-0.10.0.tar.gz", hash = "sha256:e2f3402c80d0d843b89ec3fd6fac8c13bd3a1ecc9f872037678ce0af8db684e2", size = 14523, upload-time = "2026-11-14T02:39:01.099Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/65/a3e94ee6fa4d78cf7c70f08d8ecd228b045b83b5a1bcb2ebfb814fc35122/llama_index_vector_stores_postgres-0.10.0-py3-none-any.whl", hash = "sha256:7d038e9ca26f8766b6c9dfd0318fe8075c9aa7e9d9ae3f306d7cbae0c62580d4", size = 14426, upload-time = "2026-11-14T02:39:00.211Z" },
 ]
 
 [[package]]

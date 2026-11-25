@@ -1851,15 +1851,15 @@ wheels = [
 
 [[package]]
 name = "llama-index-graph-stores-neo4j"
-version = "0.5.2"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-core" },
     { name = "neo4j" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/dd/aee97f7e7bd573696e3def6e761f48fdc86cfb91d6b7a06b314df5463dd7/llama_index_graph_stores_neo4j-0.5.2.tar.gz", hash = "sha256:4cf3d9c8a0fab055ffaac1d24e289d4fa89d5e75b579d4afd596ce5e8a5ade52", size = 17216, upload-time = "2026-03-01T01:12:18.308Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d2/62/02d56571a9716d5eeb24de2837b2131fdc0493acf1234549f22f6047e9aa/llama_index_graph_stores_neo4j-0.9.0.tar.gz", hash = "sha256:57a4435bc05a7567efc0e6b3e5ce3f788ba45e59b83b748ea8cb372080669cb5", size = 17378, upload-time = "2026-11-14T02:10:05.6Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/03/e3cc1659955f12cf6e7950d6b67e78372eac9ec517629e26365a89eaf53c/llama_index_graph_stores_neo4j-0.5.2-py3-none-any.whl", hash = "sha256:565692af5182af7714519ff3f8095bbe2f9f90c190b14246317aa315d409b177", size = 18357, upload-time = "2026-03-01T01:12:17.228Z" },
+    { url = "https://files.pythonhosted.org/packages/04/1b/9b43af34639f88c716a7fe39eae87bdfdb3df6a6a20ce5827a12a97dbdd1/llama_index_graph_stores_neo4j-0.9.0-py3-none-any.whl", hash = "sha256:95d4e783d0bf6c0282286d2ad6545c6146e5bbec07566c910885c0a91c5d4e75", size = 18590, upload-time = "2026-11-14T02:10:04.622Z" },
 ]
 
 [[package]]
@@ -1877,7 +1877,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-neo4j"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1910,7 +1910,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-graph-stores-neo4j", specifier = ">=0.5.0,<0.6" },
+    { name = "llama-index-graph-stores-neo4j", specifier = ">=0.5.0,<0.10.0" },
 ]
 
 [package.metadata.requires-dev]
