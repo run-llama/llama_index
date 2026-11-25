@@ -67,14 +67,14 @@ class HitRate(BaseRetrievalMetric):
         ):
             raise ValueError("Retrieved ids and expected ids must be provided")
 
+        expected_set = set(expected_ids)
         if self.use_granular_hit_rate:
             # Granular HitRate calculation: Calculate all hits and divide by the number of expected docs
-            expected_set = set(expected_ids)
             hits = sum(1 for doc_id in retrieved_ids if doc_id in expected_set)
             score = hits / len(expected_ids) if expected_ids else 0.0
         else:
             # Default HitRate calculation: Check if there is a single hit
-            is_hit = any(id in expected_ids for id in retrieved_ids)
+            is_hit = any(id in expected_set for id in retrieved_ids)
             score = 1.0 if is_hit else 0.0
 
         return RetrievalMetricResult(score=score)
@@ -134,9 +134,9 @@ class MRR(BaseRetrievalMetric):
         ):
             raise ValueError("Retrieved ids and expected ids must be provided")
 
+        expected_set = set(expected_ids)
         if self.use_granular_mrr:
             # Granular MRR calculation: All relevant retrieved docs have their reciprocal ranks summed and averaged
-            expected_set = set(expected_ids)
             reciprocal_rank_sum = 0.0
             relevant_docs_count = 0
             for index, doc_id in enumerate(retrieved_ids):
@@ -151,7 +151,7 @@ class MRR(BaseRetrievalMetric):
         else:
             # Default MRR calculation: Reciprocal rank of the first relevant document retrieved
             for i, id in enumerate(retrieved_ids):
-                if id in expected_ids:
+                if id in expected_set:
                     return RetrievalMetricResult(score=1.0 / (i + 1))
             mrr_score = 0.0
 

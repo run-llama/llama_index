@@ -245,3 +245,30 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         ndcg = NDCG()
         ndcg.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+
+def test_default_hit_rate_and_mrr_use_set_lookup():
+    class CountingList(list):
+        def __init__(self, items):
+            super().__init__(items)
+            self.iter_count = 0
+
+        def __iter__(self):
+            self.iter_count += 1
+            return super().__iter__()
+
+        def __contains__(self, item):
+            self.iter_count += 1
+            return super().__contains__(item)
+
+    expected = CountingList([f"exp_{i}" for i in range(50)])
+    retrieved = [f"ret_{i}" for i in range(20)] + ["exp_49"]
+
+    hr_res = HitRate().compute(expected_ids=expected, retrieved_ids=retrieved)
+    assert hr_res.score == 1.0
+    assert expected.iter_count == 1
+
+    expected_mrr = CountingList([f"exp_{i}" for i in range(50)])
+    mrr_res = MRR().compute(expected_ids=expected_mrr, retrieved_ids=retrieved)
+    assert mrr_res.score == pytest.approx(1.0 / 21)
+    assert expected_mrr.iter_count == 1
