@@ -1957,7 +1957,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=10.2.0" },
     { name = "pytesseract", specifier = ">=0.3.10,<0.4" },
     { name = "retrying", specifier = ">=1.3.4,<2" },
-    { name = "svglib", specifier = ">=1.5,<1.6" },
+    { name = "svglib", specifier = ">=1.5,<2.4" },
     { name = "xlrd", specifier = ">=2.0.1,<3" },
 ]
 
@@ -3990,15 +3990,19 @@ wheels = [
 
 [[package]]
 name = "svglib"
-version = "1.5.1"
+version = "2.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cssselect2" },
     { name = "lxml" },
+    { name = "pillow" },
     { name = "reportlab" },
     { name = "tinycss2" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/5b/53ca0fd447f73423c7dc59d34e523530ef434481a3d18808ff7537ad33ec/svglib-1.5.1.tar.gz", hash = "sha256:3ae765d3a9409ee60c0fb4d24c2deb6a80617aa927054f5bcd7fc98f0695e587", size = 913900, upload-time = "2023-01-07T14:11:52.99Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/2f/1113a6f6bd9c97031d550468827a180b73912d7486bbef68b4a97e58cc44/svglib-2.3.1.tar.gz", hash = "sha256:c0a57bacb5f53b1a0db2321fe37d350c45195cbee16d84741fb97ae8dcd0a702", size = 1377499, upload-time = "2026-10-22T12:33:40.09Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/8d/9a396af1aa1be317f73ce3100b41a8ec6e79c3f02c5f9731563f5b18fd5e/svglib-2.3.1-py3-none-any.whl", hash = "sha256:d3dcfd855c937f01187e85161c38e4e4942c334e8fde0736a3b7c37bd8d079ae", size = 50837, upload-time = "2026-10-22T12:33:38.316Z" },
+]
 
 [[package]]
 name = "tenacity"
