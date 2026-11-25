@@ -154,3 +154,35 @@ class TestAccumulate:
             "image",
             "text",
         ]
+
+    @pytest.mark.asyncio
+    async def test_direct_get_response_and_from_messages_across_multimodal_flag(
+        self,
+    ) -> None:
+        from llama_index.core.base.llms.types import ChatMessage, TextBlock
+
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        msg_chunks = [ChatMessage(blocks=[TextBlock(text="msg chunk")])]
+        txt_chunks = ["text chunk"]
+
+        # Default (multimodal=False) should still handle get_response_from_messages
+        synth_default = Accumulate(llm=llm, multimodal=False)
+        assert synth_default._make_prompt_kwargs("chunk") == {"context_str": "chunk"}
+        assert synth_default._make_prompt_kwargs(msg_chunks[0]) == {
+            "context_messages": [msg_chunks[0]]
+        }
+        res_sync = synth_default.get_response_from_messages("test", msg_chunks)
+        res_async = await synth_default.aget_response_from_messages("test", msg_chunks)
+        assert str(res_sync).startswith("Response 1: ")
+        assert str(res_async).startswith("Response 1: ")
+
+        # multimodal=True should still handle get_response with string chunks
+        synth_mm = Accumulate(llm=llm, multimodal=True)
+        res_txt_sync = synth_mm.get_response("test", txt_chunks)
+        res_txt_async = await synth_mm.aget_response("test", txt_chunks)
+        assert str(res_txt_sync).startswith("Response 1: ")
+        assert str(res_txt_async).startswith("Response 1: ")
+
+        # Empty chunks should return "Empty Response"
+        assert synth_default.get_response("test", []) == "Empty Response"
+        assert synth_default.get_response_from_messages("test", []) == "Empty Response"
