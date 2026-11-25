@@ -3,6 +3,7 @@ from typing import Any, Optional, Sequence
 from llama_index.core.base.response.schema import NodeWithScore, Response
 from llama_index.core.evaluation import BaseEvaluator
 from llama_index.core.evaluation.base import EvaluationResult
+from llama_index.core.evaluation.eval_utils import default_parser
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import TextNode
 
@@ -62,3 +63,14 @@ def test_evaluator_basic() -> None:
     )
 
     assert eval_result_0 == eval_result_1
+
+
+def test_default_parser_single_line_and_leading_newlines() -> None:
+    assert default_parser("4.0") == (4.0, "")
+    assert default_parser("\n\n4.5\n\nDetailed reasoning.") == (
+        4.5,
+        "Detailed reasoning.",
+    )
+    assert default_parser("   ") == (None, "No response")
+    assert default_parser("not-a-number\nExplanation") == (None, "Explanation")
+    assert default_parser("4.0 Good answer") == (None, "4.0 Good answer")
