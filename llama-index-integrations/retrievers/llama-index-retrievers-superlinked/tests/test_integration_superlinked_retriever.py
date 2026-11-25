@@ -92,7 +92,7 @@ def test_k_limit_and_metadata_subset() -> None:
     assert all(isinstance(n.score, float) for n in nodes)
 
 
-def test_error_returns_empty_list() -> None:
+def test_error_propagates() -> None:
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -101,5 +101,5 @@ def test_error_returns_empty_list() -> None:
 
     retriever.sl_client.query = Mock(side_effect=Exception("boom"))
 
-    nodes = retriever.retrieve("q")
-    assert nodes == []
+    with pytest.raises(Exception, match="boom"):
+        retriever.retrieve("q")
