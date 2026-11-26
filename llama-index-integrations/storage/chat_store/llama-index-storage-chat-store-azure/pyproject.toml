@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-azure"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index storage-chat-store azure integration"
 authors = [{name = "Fran Aguilera", email = "falven2000@hotmail.com"}]
 requires-python = ">=3.10,<4.0"
