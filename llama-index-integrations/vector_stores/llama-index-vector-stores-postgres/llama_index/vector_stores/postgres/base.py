@@ -738,18 +738,48 @@ class PGVectorStore(BasePydanticVectorStore):
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
-                return text(
-                    f"(metadata_->>'{filter_.key}')::float "
-                    f"{self._to_postgres_operator(filter_.operator)} "
-                    f"{float(filter_.value)}"
-                )
+                numeric_value = float(filter_.value)
             except ValueError:
                 # If not a number, then treat it as a string
-                return text(
-                    f"metadata_->>'{filter_.key}' "
-                    f"{self._to_postgres_operator(filter_.operator)} "
-                    f"'{filter_.value}'"
+                return self._build_string_filter_clause(filter_)
+            # A string value (e.g. "1") parses as a float but is a string:
+            # compare it as a string, not as a number (#24511).
+            if isinstance(filter_.value, str):
+                return self._build_string_filter_clause(filter_)
+            # NaN never equals or orders against anything (#24511):
+            # SimpleVectorStore returns 0 rows for every comparison except
+            # NE, which matches all rows (nan != everything, itself included).
+            if numeric_value != numeric_value:
+                return (
+                    text("TRUE")
+                    if filter_.operator == FilterOperator.NE
+                    else text("FALSE")
                 )
+            # Only match when the stored JSON value is a number (#24511):
+            # without the guard, EQ(1) falsely matched a stored string "1"
+            # via the text cast. Infinity cannot be interpolated bare
+            # ("inf" is not a column); use a quoted float literal.
+            if numeric_value in (float("inf"), float("-inf")):
+                literal = "'Infinity'" if numeric_value > 0 else "'-Infinity'"
+            else:
+                literal = str(numeric_value)
+            return text(
+                f"CASE WHEN jsonb_typeof(metadata_::jsonb->'{filter_.key}') = 'number' "
+                f"THEN (metadata_->>'{filter_.key}')::float "
+                f"{self._to_postgres_operator(filter_.operator)} {literal} "
+                f"ELSE NULL END"
+            )
+
+    def _build_string_filter_clause(self, filter_: MetadataFilter) -> Any:
+        # Only match when the stored JSON value is a string (#24511):
+        # without the guard, EQ("1") falsely matched a stored number 1
+        # via text comparison.
+        return text(
+            f"CASE WHEN jsonb_typeof(metadata_::jsonb->'{filter_.key}') = 'string' "
+            f"THEN metadata_->>'{filter_.key}' "
+            f"{self._to_postgres_operator(filter_.operator)} "
+            f"'{filter_.value}' ELSE NULL END"
+        )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
