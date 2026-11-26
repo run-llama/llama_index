@@ -98,6 +98,26 @@ def test_create_schema_from_function_with_field_annotated() -> None:
     assert instance.x == 5  # type: ignore
 
 
+def test_create_schema_from_function_preserves_annotated_field_constraints() -> None:
+    """Regression for #24142: Annotated[..., Field(...)] constraints must survive."""
+
+    def tmp_function(
+        order_id: Annotated[str, Field(pattern=r"^ORD-[0-9]{6}$")],
+        count: Annotated[int, Field(ge=1, le=10)] = 1,
+    ) -> str:
+        return order_id
+
+    schema = create_schema_from_function("TestSchema", tmp_function).model_json_schema()
+
+    # Required param: the pattern constraint is kept.
+    assert schema["properties"]["order_id"]["pattern"] == r"^ORD-[0-9]{6}$"
+    # Param with a plain default alongside Annotated[..., Field(...)]: bounds kept.
+    assert schema["properties"]["count"]["minimum"] == 1
+    assert schema["properties"]["count"]["maximum"] == 10
+    assert schema["properties"]["count"]["default"] == 1
+    assert schema["required"] == ["order_id"]
+
+
 def test_create_schema_skips_variadic_args_kwargs() -> None:
     def fn(q: str, *args: int, **kwargs: int) -> None:
         pass

@@ -59,6 +59,7 @@ def create_schema_from_function(
         param_default = params[param_name].default
         description = None
         json_schema_extra: dict[str, Any] = {}
+        annotated_field_info: Optional[FieldInfo] = None
 
         if get_origin(param_type) is typing.Annotated:
             args = get_args(param_type)
@@ -67,6 +68,10 @@ def create_schema_from_function(
             if isinstance(args[1], str):
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
+                # Keep the whole FieldInfo so declared constraints (pattern, ge,
+                # le, min_length, ...) survive; otherwise only description and
+                # json_schema_extra would be carried over below.
+                annotated_field_info = args[1]
                 description = args[1].description
                 if args[1].json_schema_extra and isinstance(
                     args[1].json_schema_extra, dict
@@ -89,10 +94,23 @@ def create_schema_from_function(
 
         if param_default is params[param_name].empty:
             # Required field
-            fields[param_name] = (
-                param_type,
-                FieldInfo(description=description, json_schema_extra=json_schema_extra),
-            )
+            if annotated_field_info is not None:
+                # Merge onto the annotated FieldInfo so its constraints are kept.
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo.merge_field_infos(
+                        annotated_field_info,
+                        description=description,
+                        json_schema_extra=json_schema_extra,
+                    ),
+                )
+            else:
+                fields[param_name] = (
+                    param_type,
+                    FieldInfo(
+                        description=description, json_schema_extra=json_schema_extra
+                    ),
+                )
         elif isinstance(param_default, FieldInfo):
             # Field with pydantic.Field as default value
             if param_default.description is None and description is not None:
@@ -104,6 +122,18 @@ def create_schema_from_function(
                     param_default, description=description
                 )
             fields[param_name] = (param_type, param_default)
+        elif annotated_field_info is not None:
+            # Plain default value alongside Annotated[..., Field(...)]: merge onto
+            # the annotated FieldInfo so its constraints are kept.
+            fields[param_name] = (
+                param_type,
+                FieldInfo.merge_field_infos(
+                    annotated_field_info,
+                    default=param_default,
+                    description=description,
+                    json_schema_extra=json_schema_extra,
+                ),
+            )
         else:
             fields[param_name] = (
                 param_type,
