@@ -695,11 +695,14 @@ class PGVectorStore(BasePydanticVectorStore):
             # This code will correctly format the IN clause whether there is one element or multiple elements in the list:
             filter_value = ", ".join(f"'{e}'" for e in filter_.value)
 
-            return text(
+            clause = (
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
             )
+            if filter_.operator == FilterOperator.NIN:
+                return text(f"(metadata_->>'{filter_.key}' IS NULL OR {clause})")
+            return text(clause)
         elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
             # Expects a text array stored in the metadata, and a list of values to compare
             # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
@@ -738,18 +741,21 @@ class PGVectorStore(BasePydanticVectorStore):
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
-                return text(
+                clause = (
                     f"(metadata_->>'{filter_.key}')::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"{float(filter_.value)}"
                 )
             except ValueError:
                 # If not a number, then treat it as a string
-                return text(
+                clause = (
                     f"metadata_->>'{filter_.key}' "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"'{filter_.value}'"
                 )
+            if filter_.operator == FilterOperator.NE:
+                return text(f"(metadata_->>'{filter_.key}' IS NULL OR {clause})")
+            return text(clause)
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
@@ -760,6 +766,9 @@ class PGVectorStore(BasePydanticVectorStore):
         sqlalchemy_conditions = {
             "or": sqlalchemy.sql.or_,
             "and": sqlalchemy.sql.and_,
+            "not": lambda *clauses: sqlalchemy.sql.not_(
+                sqlalchemy.sql.func.coalesce(sqlalchemy.sql.or_(*clauses), False)
+            ),
         }
 
         if filters.condition not in sqlalchemy_conditions:
