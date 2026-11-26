@@ -1,6 +1,7 @@
 """Correctness evaluation."""
 
 import asyncio
+import math
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
@@ -143,6 +144,30 @@ class CorrectnessEvaluator(BaseEvaluator):
 
         # Use the parser function
         score, reasoning = self.parser_function(eval_response)
+
+        if self.parser_function is default_parser and score is not None:
+            # The default template instructs the judge to score between 1
+            # and 5. A parsed score outside that contract (or a non-finite
+            # one) is a broken evaluation, not a genuine result. Callers
+            # who supply their own parser function define their own
+            # contract and are not checked here.
+            if not math.isfinite(score):
+                invalid_reason = f"Score {score} is not a finite number"
+            elif score < 1 or score > 5:
+                invalid_reason = f"Score {score} is outside the valid 1-5 range"
+            else:
+                invalid_reason = None
+
+            if invalid_reason is not None:
+                return EvaluationResult(
+                    query=query,
+                    response=response,
+                    passing=False,
+                    score=score,
+                    feedback=reasoning,
+                    invalid_result=True,
+                    invalid_reason=invalid_reason,
+                )
 
         return EvaluationResult(
             query=query,
