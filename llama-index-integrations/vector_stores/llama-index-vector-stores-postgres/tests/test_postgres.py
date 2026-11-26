@@ -3220,3 +3220,115 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
     assert "e1" not in result.ids
     assert "v1" in result.ids
     assert "v2" in result.ids
+
+
+# ================== add() / async_add() Overwrite & Deduplication Tests ==================
+
+
+def _create_mock_pg_store_for_add():
+    from sqlalchemy.orm import declarative_base
+
+    Base = declarative_base()
+
+    class DummyTable(Base):
+        __tablename__ = "dummy_data"
+        id = Column(Integer, primary_key=True)
+        node_id = Column(String)
+        text = Column(String)
+
+    mock_store = MagicMock(spec=PGVectorStore)
+    mock_store._table_class = DummyTable
+    mock_store._initialize = MagicMock()
+    mock_store._node_to_table_row = MagicMock(
+        side_effect=lambda n: {"node_id": n.node_id, "text": n.text, "metadata": n.metadata}
+    )
+
+    sync_session = MagicMock()
+    sync_session.__enter__.return_value = sync_session
+    sync_session.__exit__.return_value = False
+    sync_session.begin.return_value.__enter__.return_value = None
+    sync_session.begin.return_value.__exit__.return_value = False
+    mock_store._session = MagicMock(return_value=sync_session)
+
+    async_session = MagicMock()
+    async_session.__aenter__ = AsyncMock(return_value=async_session)
+    async_session.__aexit__ = AsyncMock(return_value=False)
+    async_session.begin.return_value.__enter__.return_value = None
+    async_session.begin.return_value.__exit__.return_value = False
+    async_session.execute = AsyncMock()
+    async_session.commit = AsyncMock()
+    mock_store._async_session = MagicMock(return_value=async_session)
+
+    return mock_store, sync_session, async_session
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_deletes_existing_rows_and_deduplicates_batch(use_async: bool) -> None:
+    """
+    Re-adding nodes with an existing node_id should delete prior rows for those
+    node_ids before inserting, and duplicate node_ids within the same batch
+    should keep the last occurrence so stale metadata does not persist (#24514).
+    """
+    mock_store, sync_session, async_session = _create_mock_pg_store_for_add()
+
+    n1_old = TextNode(
+        id_="shared-id",
+        text="secret-v1",
+        embedding=[1.0, 0.0],
+        metadata={"tenant": "alice"},
+    )
+    n1_new = TextNode(
+        id_="shared-id",
+        text="secret-v2",
+        embedding=[1.0, 0.0],
+        metadata={"tenant": "bob"},
+    )
+    n2 = TextNode(
+        id_="other-id",
+        text="public",
+        embedding=[0.0, 1.0],
+        metadata={"tenant": "bob"},
+    )
+
+    batch = [n1_old, n2, n1_new]
+    if use_async:
+        returned_ids = await PGVectorStore.async_add(mock_store, batch)
+        session = async_session
+    else:
+        returned_ids = PGVectorStore.add(mock_store, batch)
+        session = sync_session
+
+    assert returned_ids == ["shared-id", "other-id", "shared-id"]
+    session.execute.assert_called_once()
+    delete_stmt = session.execute.call_args[0][0]
+    compiled_sql = str(delete_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "DELETE FROM dummy_data" in compiled_sql
+    assert "'shared-id'" in compiled_sql
+    assert "'other-id'" in compiled_sql
+
+    added_items = [call.args[0] for call in session.add.call_args_list]
+    assert len(added_items) == 2
+    by_id = {item["node_id"]: item for item in added_items}
+    assert by_id["shared-id"]["metadata"] == {"tenant": "bob"}
+    assert by_id["shared-id"]["text"] == "secret-v2"
+    assert by_id["other-id"]["metadata"] == {"tenant": "bob"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_empty_nodes_skips_delete_and_insert(use_async: bool) -> None:
+    """Calling add()/async_add() with an empty list should not execute DELETE or INSERT."""
+    mock_store, sync_session, async_session = _create_mock_pg_store_for_add()
+
+    if use_async:
+        returned_ids = await PGVectorStore.async_add(mock_store, [])
+        session = async_session
+    else:
+        returned_ids = PGVectorStore.add(mock_store, [])
+        session = sync_session
+
+    assert returned_ids == []
+    session.execute.assert_not_called()
+    session.add.assert_not_called()
+

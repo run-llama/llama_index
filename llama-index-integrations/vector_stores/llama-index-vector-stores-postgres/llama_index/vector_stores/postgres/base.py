@@ -633,24 +633,46 @@ class PGVectorStore(BasePydanticVectorStore):
         )
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        from sqlalchemy import delete
+
         self._initialize()
-        ids = []
+        ids: List[str] = []
+        deduped_nodes: Dict[str, BaseNode] = {}
+        for node in nodes:
+            ids.append(node.node_id)
+            deduped_nodes[node.node_id] = node
+
         with self._session() as session, session.begin():
-            for node in nodes:
-                ids.append(node.node_id)
-                item = self._node_to_table_row(node)
-                session.add(item)
+            if deduped_nodes:
+                stmt = delete(self._table_class).where(
+                    self._table_class.node_id.in_(list(deduped_nodes.keys()))
+                )
+                session.execute(stmt)
+                for node in deduped_nodes.values():
+                    item = self._node_to_table_row(node)
+                    session.add(item)
             session.commit()
         return ids
 
     async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+        from sqlalchemy import delete
+
         self._initialize()
-        ids = []
+        ids: List[str] = []
+        deduped_nodes: Dict[str, BaseNode] = {}
+        for node in nodes:
+            ids.append(node.node_id)
+            deduped_nodes[node.node_id] = node
+
         async with self._async_session() as session, session.begin():
-            for node in nodes:
-                ids.append(node.node_id)
-                item = self._node_to_table_row(node)
-                session.add(item)
+            if deduped_nodes:
+                stmt = delete(self._table_class).where(
+                    self._table_class.node_id.in_(list(deduped_nodes.keys()))
+                )
+                await session.execute(stmt)
+                for node in deduped_nodes.values():
+                    item = self._node_to_table_row(node)
+                    session.add(item)
             await session.commit()
         return ids
 
