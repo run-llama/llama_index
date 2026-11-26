@@ -282,11 +282,14 @@ class CodeActAgent(BaseWorkflowAgent):
             tool_descriptions=tool_descriptions
         )
 
-        # Add or overwrite system message
+        # Merge code-act system prompt with any existing system message
+        # (which may contain memory block content injected by Memory.aget).
         has_system = False
         for i, msg in enumerate(current_llm_input):
             if msg.role.value == "system":
-                current_llm_input[i] = ChatMessage(role="system", content=system_prompt)
+                existing_content = msg.content or ""
+                merged = system_prompt + "\n\n" + existing_content if existing_content else system_prompt
+                current_llm_input[i] = ChatMessage(role="system", content=merged)
                 has_system = True
                 break
 
