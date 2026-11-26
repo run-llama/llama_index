@@ -175,12 +175,8 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         from llama_index.core.query_engine.retriever_query_engine import (
             RetrieverQueryEngine,
         )
-        from llama_index.core.response_synthesizers import BaseSynthesizer
 
-        if isinstance(self._query_engine, RetrieverQueryEngine) and isinstance(
-            getattr(self._query_engine, "_response_synthesizer", None),
-            BaseSynthesizer,
-        ):
+        if isinstance(self._query_engine, RetrieverQueryEngine):
             query_engine = copy.copy(self._query_engine)
             query_engine._response_synthesizer = copy.copy(
                 self._query_engine._response_synthesizer
