@@ -13,6 +13,7 @@ from llama_index.core.graph_stores.types import (
     DEFAULT_PERSIST_FNAME,
     GraphStore,
 )
+from llama_index.core.utils import concat_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,10 @@ class SimpleGraphStore(GraphStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleGraphStore":
         """Load from persist dir."""
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        if fs is not None:
+            persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
+        else:
+            persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @property
