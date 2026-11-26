@@ -1,7 +1,3 @@
-Here's a README for the `Desearch` integration, modeled after the example you provided:
-
----
-
 # LlamaIndex Tools Integration: Desearch
 
 This tool connects to Desearch to enable your agent to perform searches across various platforms like web, Twitter, and more.
@@ -17,9 +13,11 @@ Here's an example usage of the `DesearchToolSpec`.
 To get started, you will need a [Desearch API key](https://console.desearch.ai/api-keys)
 
 ```python
-# %pip install llama-index llama-index-core desearch-py
+# %pip install llama-index llama-index-core llama-index-tools-desearch
 
-from llama_index_desearch.tools import DesearchToolSpec
+import os
+
+from llama_index.tools.desearch import DesearchToolSpec
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
@@ -41,7 +39,3 @@ print(await agent.run("Can you find the latest news on quantum computing?"))
 - **web_search_tool**: Perform a basic web search using the Desearch API.
 
 This loader is designed to be used as a way to load data as a Tool in an Agent.
-
----
-
-You can copy and paste this into your README file. Let me know if you need any more modifications!

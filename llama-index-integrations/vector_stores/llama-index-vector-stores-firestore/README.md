@@ -15,7 +15,7 @@ pip install llama-index-vector-stores-firestore
 Minimal example:
 
 ```python
-from llama_index_vector_stores_firestore import FirestoreVectorStore
+from llama_index.vector_stores.firestore import FirestoreVectorStore
 
 store = FirestoreVectorStore(
     collection_name=COLLECTION_NAME,
