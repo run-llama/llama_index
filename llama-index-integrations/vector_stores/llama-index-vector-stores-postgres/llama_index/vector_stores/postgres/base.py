@@ -38,8 +38,9 @@ from llama_index.core.vector_stores.utils import (
 )
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
+_DELETE_BATCH_SIZE = 1000
 
-from sqlalchemy import text, select
+from sqlalchemy import delete, text, select
 from sqlalchemy.sql.selectable import Select
 
 PGType = Literal[
@@ -632,12 +633,34 @@ class PGVectorStore(BasePydanticVectorStore):
             ),
         )
 
+    @staticmethod
+    def _deduplicate_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
+        """Keep the last node per node_id so duplicate batch entries overwrite."""
+        # Deleting before inserting avoids duplicate rows even without a UNIQUE
+        # constraint on node_id; keeping only the final entry per node_id matches
+        # SimpleVectorStore's last-write-wins behavior.
+        deduped: Dict[str, BaseNode] = {}
+        for node in nodes:
+            deduped[node.node_id] = node
+        return list(deduped.values())
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         self._initialize()
-        ids = []
+        if not nodes:
+            return []
+
+        ids = [node.node_id for node in nodes]
+        deduped_nodes = self._deduplicate_nodes(nodes)
+        unique_ids = [node.node_id for node in deduped_nodes]
+
         with self._session() as session, session.begin():
-            for node in nodes:
-                ids.append(node.node_id)
+            for start in range(0, len(unique_ids), _DELETE_BATCH_SIZE):
+                batch_ids = unique_ids[start : start + _DELETE_BATCH_SIZE]
+                stmt = delete(self._table_class).where(
+                    self._table_class.node_id.in_(batch_ids)
+                )
+                session.execute(stmt)
+            for node in deduped_nodes:
                 item = self._node_to_table_row(node)
                 session.add(item)
             session.commit()
@@ -645,10 +668,21 @@ class PGVectorStore(BasePydanticVectorStore):
 
     async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         self._initialize()
-        ids = []
+        if not nodes:
+            return []
+
+        ids = [node.node_id for node in nodes]
+        deduped_nodes = self._deduplicate_nodes(nodes)
+        unique_ids = [node.node_id for node in deduped_nodes]
+
         async with self._async_session() as session, session.begin():
-            for node in nodes:
-                ids.append(node.node_id)
+            for start in range(0, len(unique_ids), _DELETE_BATCH_SIZE):
+                batch_ids = unique_ids[start : start + _DELETE_BATCH_SIZE]
+                stmt = delete(self._table_class).where(
+                    self._table_class.node_id.in_(batch_ids)
+                )
+                await session.execute(stmt)
+            for node in deduped_nodes:
                 item = self._node_to_table_row(node)
                 session.add(item)
             await session.commit()

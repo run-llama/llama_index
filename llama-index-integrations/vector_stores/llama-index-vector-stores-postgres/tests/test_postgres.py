@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Generator, List, Union, Optional
+from typing import Any, Dict, Generator, List, Set, Tuple, Union, Optional
 from unittest.mock import MagicMock, AsyncMock
 
 import pytest
@@ -3220,3 +3220,289 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
     assert "e1" not in result.ids
     assert "v1" in result.ids
     assert "v2" in result.ids
+
+
+# ================== Add / Upsert Semantics Tests ==================
+class _FakeSessionTransaction:
+    def __init__(self, session: Any) -> None:
+        self._session = session
+
+    def __enter__(self) -> "_FakeSessionTransaction":
+        self._session.begin_transaction()
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        if exc_type is not None:
+            self._session.rollback()
+
+    async def __aenter__(self) -> "_FakeSessionTransaction":
+        self._session.begin_transaction()
+        return self
+
+    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        if exc_type is not None:
+            self._session.rollback()
+
+
+class _FakeSyncSession:
+    def __init__(self, state: Dict[str, Any]) -> None:
+        self._state = state
+        self._staged_deletes: Set[str] = set()
+        self._staged_adds: List[Any] = []
+
+    def __enter__(self) -> "_FakeSyncSession":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        pass
+
+    def begin(self) -> _FakeSessionTransaction:
+        return _FakeSessionTransaction(self)
+
+    def begin_transaction(self) -> None:
+        self._staged_deletes = set()
+        self._staged_adds = []
+
+    def rollback(self) -> None:
+        self._staged_deletes = set()
+        self._staged_adds = []
+
+    def execute(self, stmt: Any) -> None:
+        from sqlalchemy.dialects import postgresql
+        from sqlalchemy.sql.dml import Delete
+
+        assert isinstance(stmt, Delete)
+        compiled = stmt.compile(dialect=postgresql.dialect())
+        deleted_ids: List[str] = []
+        for val in compiled.params.values():
+            if isinstance(val, (list, tuple, set)):
+                deleted_ids.extend(val)
+            else:
+                deleted_ids.append(val)
+        self._state["delete_batches"].append(list(deleted_ids))
+        self._staged_deletes.update(deleted_ids)
+
+    def add(self, item: Any) -> None:
+        self._staged_adds.append(item)
+
+    def commit(self) -> None:
+        rows = [
+            row
+            for row in self._state["rows"]
+            if row.node_id not in self._staged_deletes
+        ]
+        rows.extend(self._staged_adds)
+        self._state["rows"] = rows
+        self._staged_deletes = set()
+        self._staged_adds = []
+
+
+class _FakeAsyncSession(_FakeSyncSession):
+    async def __aenter__(self) -> "_FakeAsyncSession":
+        return self
+
+    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        pass
+
+    async def execute(self, stmt: Any) -> None:  # type: ignore[override]
+        super().execute(stmt)
+
+    async def commit(self) -> None:  # type: ignore[override]
+        super().commit()
+
+
+def _create_stateful_pg_store() -> Tuple[PGVectorStore, Dict[str, Any]]:
+    store = PGVectorStore(table_name="test_upsert", embed_dim=4, perform_setup=False)
+    state: Dict[str, Any] = {"rows": [], "delete_batches": []}
+    store._is_initialized = True
+    store._session = lambda: _FakeSyncSession(state)  # type: ignore[assignment]
+    store._async_session = lambda: _FakeAsyncSession(state)  # type: ignore[assignment]
+    return store, state
+
+
+async def _call_add(
+    store: PGVectorStore, nodes: List[BaseNode], use_async: bool
+) -> List[str]:
+    if use_async:
+        return await store.async_add(nodes)
+    return store.add(nodes)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_overwrites_existing_node_id(use_async: bool) -> None:
+    """Re-adding a node with the same id_ should replace the previous row."""
+    store, state = _create_stateful_pg_store()
+    n1 = TextNode(
+        id_="dup-id",
+        text="old text",
+        embedding=[1.0, 0.0, 0.0, 0.0],
+        metadata={"tenant": "alice"},
+    )
+    n2 = TextNode(
+        id_="dup-id",
+        text="new text",
+        embedding=[0.0, 1.0, 0.0, 0.0],
+        metadata={"tenant": "bob"},
+    )
+
+    assert await _call_add(store, [n1], use_async) == ["dup-id"]
+    assert await _call_add(store, [n2], use_async) == ["dup-id"]
+
+    assert len(state["rows"]) == 1
+    assert state["rows"][0].node_id == "dup-id"
+    assert state["rows"][0].text == "new text"
+    assert state["rows"][0].metadata_["tenant"] == "bob"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_deduplicates_duplicate_node_ids_in_single_batch(
+    use_async: bool,
+) -> None:
+    """Duplicate node IDs within the same batch should keep only the last node."""
+    store, state = _create_stateful_pg_store()
+    n1 = TextNode(
+        id_="same-id",
+        text="first",
+        embedding=[1.0, 0.0, 0.0, 0.0],
+        metadata={"tenant": "alice"},
+    )
+    n2 = TextNode(
+        id_="same-id",
+        text="second",
+        embedding=[0.0, 1.0, 0.0, 0.0],
+        metadata={"tenant": "bob"},
+    )
+
+    ids = await _call_add(store, [n1, n2], use_async)
+
+    assert ids == ["same-id", "same-id"]
+    assert len(state["rows"]) == 1
+    assert state["rows"][0].text == "second"
+    assert state["rows"][0].metadata_["tenant"] == "bob"
+    assert state["delete_batches"] == [["same-id"]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_empty_nodes_is_noop(use_async: bool) -> None:
+    """Adding an empty list should return [] without issuing a DELETE."""
+    store, state = _create_stateful_pg_store()
+
+    assert await _call_add(store, [], use_async) == []
+    assert state["rows"] == []
+    assert state["delete_batches"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_chunks_deletes_by_batch_size(
+    use_async: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Existing node deletions should be chunked by _DELETE_BATCH_SIZE."""
+    import llama_index.vector_stores.postgres.base as pg_base
+
+    monkeypatch.setattr(pg_base, "_DELETE_BATCH_SIZE", 2)
+    store, state = _create_stateful_pg_store()
+    nodes = [
+        TextNode(id_=f"id-{i}", text=f"text-{i}", embedding=[1.0, 0.0, 0.0, 0.0])
+        for i in range(5)
+    ]
+
+    ids = await _call_add(store, nodes, use_async)
+
+    assert ids == ["id-0", "id-1", "id-2", "id-3", "id-4"]
+    assert state["delete_batches"] == [["id-0", "id-1"], ["id-2", "id-3"], ["id-4"]]
+    assert [r.node_id for r in state["rows"]] == [
+        "id-0",
+        "id-1",
+        "id-2",
+        "id-3",
+        "id-4",
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_preserves_existing_row_on_insert_failure(
+    use_async: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Transaction rollback should preserve existing rows if inserting replacement fails."""
+    store, state = _create_stateful_pg_store()
+    original = TextNode(
+        id_="dup-id",
+        text="original",
+        embedding=[1.0, 0.0, 0.0, 0.0],
+        metadata={"tenant": "alice"},
+    )
+    await _call_add(store, [original], use_async)
+
+    def _boom(_node: BaseNode) -> Any:
+        raise RuntimeError("serialization failure")
+
+    monkeypatch.setattr(store, "_node_to_table_row", _boom)
+    replacement = TextNode(
+        id_="dup-id",
+        text="replacement",
+        embedding=[0.0, 1.0, 0.0, 0.0],
+        metadata={"tenant": "bob"},
+    )
+    with pytest.raises(RuntimeError, match="serialization failure"):
+        await _call_add(store, [replacement], use_async)
+
+    assert len(state["rows"]) == 1
+    assert state["rows"][0].text == "original"
+    assert state["rows"][0].metadata_["tenant"] == "alice"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_readd_same_node_id_replaces_stale_metadata(
+    pg: PGVectorStore, use_async: bool
+) -> None:
+    """Live Postgres check: re-adding a node replaces prior rows and metadata."""
+    nid = "upsert-test-node"
+    n1 = TextNode(
+        id_=nid,
+        text="secret",
+        embedding=_get_sample_vector(1.0),
+        metadata={"tenant": "alice"},
+    )
+    n2 = TextNode(
+        id_=nid,
+        text="secret",
+        embedding=_get_sample_vector(1.0),
+        metadata={"tenant": "bob"},
+    )
+    await _call_add(pg, [n1], use_async)
+    await _call_add(pg, [n2], use_async)
+
+    alice_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(key="tenant", value="alice", operator=FilterOperator.EQ)
+        ]
+    )
+    bob_filter = MetadataFilters(
+        filters=[MetadataFilter(key="tenant", value="bob", operator=FilterOperator.EQ)]
+    )
+    q_alice = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=10,
+        filters=alice_filter,
+    )
+    q_bob = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=10,
+        filters=bob_filter,
+    )
+    if use_async:
+        alice_res = await pg.aquery(q_alice)
+        bob_res = await pg.aquery(q_bob)
+    else:
+        alice_res = pg.query(q_alice)
+        bob_res = pg.query(q_bob)
+
+    assert len(alice_res.nodes or []) == 0
+    assert len(bob_res.nodes or []) == 1
