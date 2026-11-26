@@ -737,9 +737,16 @@ class PGVectorStore(BasePydanticVectorStore):
         else:
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
+            # Guard the cast with jsonb_typeof: a stored boolean/string value
+            # would make the unconditional ::float raise
+            # InvalidTextRepresentation and abort the whole query (#24499).
+            # Non-numeric stored values yield NULL, so they never satisfy a
+            # numeric comparison instead of crashing the query.
             try:
                 return text(
-                    f"(metadata_->>'{filter_.key}')::float "
+                    f"(CASE WHEN jsonb_typeof(metadata_::jsonb->'{filter_.key}')"
+                    f" = 'number' THEN (metadata_->>'{filter_.key}')::float "
+                    f"ELSE NULL END) "
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"{float(filter_.value)}"
                 )

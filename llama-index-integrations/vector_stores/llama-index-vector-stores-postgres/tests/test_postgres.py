@@ -637,6 +637,80 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_query_with_numeric_filter_on_mixed_type_metadata(
+    pg_fixture: PGVectorStore, use_async: bool
+) -> None:
+    """
+    Regression test for #24499: a numeric metadata filter must not crash
+    when other rows store a boolean or a string under the same key.
+    """
+    nodes = [
+        TextNode(
+            text="doc bool",
+            id_="bool-node",
+            metadata={"stage": False, "score": "hello"},
+            embedding=_get_sample_vector(0.0),
+        ),
+        TextNode(
+            text="doc num",
+            id_="num-node",
+            metadata={"stage": 1},
+            embedding=_get_sample_vector(1.0),
+        ),
+        TextNode(
+            text="doc zero",
+            id_="zero-node",
+            metadata={"stage": 0},
+            embedding=_get_sample_vector(2.0),
+        ),
+    ]
+    if use_async:
+        await pg_fixture.async_add(nodes)
+    else:
+        pg_fixture.add(nodes)
+
+    async def _run_query(filters: MetadataFilters) -> VectorStoreQueryResult:
+        q = VectorStoreQuery(
+            query_embedding=_get_sample_vector(0.5),
+            similarity_top_k=10,
+            filters=filters,
+        )
+        if use_async:
+            return await pg_fixture.aquery(q)
+        return pg_fixture.query(q)
+
+    # EQ 0 matches only the numeric zero row; the boolean row must not
+    # raise InvalidTextRepresentation.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="stage", value=0, operator=FilterOperator.EQ)]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["zero-node"]
+
+    # NE 0 matches only the numeric non-zero row.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="stage", value=0, operator=FilterOperator.NE)]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["num-node"]
+
+    # LT 0 over a string-valued key matches nothing and must not crash.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="score", value=0, operator=FilterOperator.LT)]
+        )
+    )
+    assert not res.nodes
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
