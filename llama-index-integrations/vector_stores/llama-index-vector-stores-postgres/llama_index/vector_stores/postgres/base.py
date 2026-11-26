@@ -738,10 +738,38 @@ class PGVectorStore(BasePydanticVectorStore):
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
+                numeric_value = float(filter_.value)
+                # Integers at or beyond 2**53 lose precision as float64 (#24504):
+                # distinct 64-bit IDs (e.g. 2**53 and 2**53 + 1) round to the
+                # same double, so EQ falsely matches both and GT at the
+                # boundary misses. Compare them exactly as JSON numbers /
+                # bigints instead.
+                if (
+                    isinstance(filter_.value, int)
+                    and not isinstance(filter_.value, bool)
+                    and abs(filter_.value) >= 2**53
+                ):
+                    operator = self._to_postgres_operator(filter_.operator)
+                    if filter_.operator in (FilterOperator.EQ, FilterOperator.NE):
+                        # jsonb numeric equality is exact and type-strict: a
+                        # stored string does not equal the number.
+                        return text(
+                            f"metadata_::jsonb->'{filter_.key}' "
+                            f"{operator} "
+                            f"'{filter_.value}'::jsonb"
+                        )
+                    return text(
+                        f"CASE WHEN jsonb_typeof(metadata_::jsonb->'{filter_.key}') = 'number' "
+                        f"AND (metadata_->>'{filter_.key}') ~ '^-?[0-9]+$' "
+                        f"THEN (metadata_->>'{filter_.key}')::bigint {operator} {filter_.value} "
+                        f"WHEN jsonb_typeof(metadata_::jsonb->'{filter_.key}') = 'number' "
+                        f"THEN (metadata_->>'{filter_.key}')::float {operator} {numeric_value} "
+                        f"ELSE NULL END"
+                    )
                 return text(
                     f"(metadata_->>'{filter_.key}')::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
-                    f"{float(filter_.value)}"
+                    f"{numeric_value}"
                 )
             except ValueError:
                 # If not a number, then treat it as a string

@@ -637,6 +637,86 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_query_with_big_int_filter_exact(
+    pg_fixture: PGVectorStore, use_async: bool
+) -> None:
+    """
+    Regression test for #24504.
+
+    Integers beyond 2**53 lose precision as float64: 2**53 and 2**53 + 1
+    round to the same double, so EQ for one falsely matched both rows.
+    """
+    big1 = 2**53
+    big2 = 2**53 + 1
+    nodes = [
+        TextNode(
+            text="doc big1",
+            id_="big1-node",
+            metadata={"id": big1},
+            embedding=_get_sample_vector(0.0),
+        ),
+        TextNode(
+            text="doc big2",
+            id_="big2-node",
+            metadata={"id": big2},
+            embedding=_get_sample_vector(1.0),
+        ),
+        TextNode(
+            text="doc string id",
+            id_="string-node",
+            metadata={"id": str(big2)},
+            embedding=_get_sample_vector(2.0),
+        ),
+    ]
+    if use_async:
+        await pg_fixture.async_add(nodes)
+    else:
+        pg_fixture.add(nodes)
+
+    async def _run_query(filters: MetadataFilters) -> VectorStoreQueryResult:
+        q = VectorStoreQuery(
+            query_embedding=_get_sample_vector(0.5),
+            similarity_top_k=10,
+            filters=filters,
+        )
+        if use_async:
+            return await pg_fixture.aquery(q)
+        return pg_fixture.query(q)
+
+    # EQ matches exactly one row: 2**53 + 1 is not 2**53, and the stored
+    # string "9007199254740993" is not the number.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="id", value=big2, operator=FilterOperator.EQ)]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["big2-node"]
+
+    # NE excludes only the exact match (the stored string differs in type,
+    # so it is not equal to the number either).
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="id", value=big2, operator=FilterOperator.NE)]
+        )
+    )
+    assert res.nodes
+    assert sorted(n.node_id for n in res.nodes) == ["big1-node", "string-node"]
+
+    # GT distinguishes the two adjacent integers.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="id", value=big1, operator=FilterOperator.GT)]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["big2-node"]
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
