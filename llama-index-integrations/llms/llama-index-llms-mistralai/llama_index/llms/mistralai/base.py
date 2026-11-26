@@ -439,7 +439,7 @@ class MistralAI(FunctionCallingLLM):
                 response_txt if not self.show_thinking else response_txt_think_show
             )
         else:
-            response_txt = response.choices[0].message.content
+            response_txt = response.choices[0].message.content or ""
 
         blocks.append(TextBlock(text=response_txt))
         tool_calls = response.choices[0].message.tool_calls
@@ -586,7 +586,7 @@ class MistralAI(FunctionCallingLLM):
                 response_txt if not self.show_thinking else response_txt_think_show
             )
         else:
-            response_txt = response.choices[0].message.content
+            response_txt = response.choices[0].message.content or ""
 
         blocks.append(TextBlock(text=response_txt))
 
