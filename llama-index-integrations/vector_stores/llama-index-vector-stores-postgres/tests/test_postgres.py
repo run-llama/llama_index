@@ -729,6 +729,34 @@ async def test_query_with_text_match_escapes_like_wildcards(
     assert [n.node_id for n in res.nodes] == ["percent-node"]
 
 
+def test_text_match_filter_value_is_bound_not_interpolated() -> None:
+    """
+    No-database unit test for the #24507 review follow-up.
+
+    TEXT_MATCH / TEXT_MATCH_INSENSITIVE must bind the LIKE pattern as a
+    parameter: a value containing a quote ("O'Reilly") or an injection
+    attempt ("x%' OR '1'='1") must never appear in the compiled SQL text.
+    """
+    from sqlalchemy.dialects import postgresql
+
+    store = PGVectorStore.__new__(PGVectorStore)
+    for operator in (FilterOperator.TEXT_MATCH, FilterOperator.TEXT_MATCH_INSENSITIVE):
+        for value in ("O'Reilly", "x%' OR '1'='1", "a_b", "100%"):
+            clause = store._build_filter_clause(
+                MetadataFilter(key="tag", value=value, operator=operator)
+            )
+            compiled = clause.compile(dialect=postgresql.dialect())
+            sql_text = str(compiled)
+            # The raw value must not appear anywhere in the SQL text.
+            assert value not in sql_text, sql_text
+            # Exactly one bound parameter carries the escaped pattern.
+            escaped = (
+                value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            )
+            assert list(compiled.params.values()) == [f"%{escaped}%"], compiled.params
+            assert "ESCAPE" in sql_text, sql_text
+
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
