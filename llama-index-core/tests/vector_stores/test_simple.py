@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 
 import pytest
 
@@ -485,3 +485,90 @@ def test_from_namespaced_persist_dir(persist_dir: str) -> None:
         persist_dir=persist_dir
     )
     assert vector_store is not None
+
+
+def _count_filter_matches(
+    metadata: Dict[str, Any], operator: FilterOperator, value: Any
+) -> int:
+    simple_vector_store = SimpleVectorStore()
+    simple_vector_store.add(
+        [TextNode(text="probe", id_="probe", embedding=[1.0, 0.0], metadata=metadata)]
+    )
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="field", operator=operator, value=value)]
+    )
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0], filters=filters, similarity_top_k=10
+    )
+    result = simple_vector_store.query(query)
+    assert result.ids is not None
+    return len(result.ids)
+
+
+@pytest.mark.parametrize(
+    "operator",
+    [FilterOperator.LT, FilterOperator.LTE, FilterOperator.GT, FilterOperator.GTE],
+)
+def test_range_filter_skips_non_comparable_metadata(operator: FilterOperator) -> None:
+    # A string value cannot be ordered against a number, so the node should
+    # simply not match instead of raising a TypeError.
+    assert _count_filter_matches({"field": "hello"}, operator, 0) == 0
+
+
+def test_range_filter_skips_non_comparable_node_and_keeps_others() -> None:
+    simple_vector_store = SimpleVectorStore()
+    simple_vector_store.add(
+        [
+            TextNode(text="a", id_="a", embedding=[1.0, 0.0], metadata={"s": "x"}),
+            TextNode(text="b", id_="b", embedding=[1.0, 0.0], metadata={"s": 5}),
+        ]
+    )
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="s", operator=FilterOperator.GT, value=1)]
+    )
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0], filters=filters, similarity_top_k=10
+    )
+    result = simple_vector_store.query(query)
+    assert result.ids == ["b"]
+
+
+@pytest.mark.parametrize(
+    ("metadata_value", "operator", "value", "expected"),
+    [
+        (False, FilterOperator.EQ, 0, 0),
+        (True, FilterOperator.EQ, 1, 0),
+        (False, FilterOperator.NE, 0, 1),
+        (True, FilterOperator.NE, 1, 1),
+        (True, FilterOperator.GT, 0, 0),
+        (True, FilterOperator.GTE, 1, 0),
+        (False, FilterOperator.LT, 1, 0),
+        (False, FilterOperator.LTE, 0, 0),
+        (True, FilterOperator.IN, [1], 0),
+        (False, FilterOperator.IN, [0, 2], 0),
+        (True, FilterOperator.NIN, [1], 1),
+        (False, FilterOperator.NIN, [0], 1),
+    ],
+)
+def test_filters_do_not_conflate_bool_and_number(
+    metadata_value: bool, operator: FilterOperator, value: Any, expected: int
+) -> None:
+    assert _count_filter_matches({"field": metadata_value}, operator, value) == expected
+
+
+@pytest.mark.parametrize(
+    ("metadata_value", "operator", "value", "expected"),
+    [
+        (1, FilterOperator.EQ, 1.0, 1),
+        (2, FilterOperator.GT, 1.5, 1),
+        (2.0, FilterOperator.LTE, 2, 1),
+        (1, FilterOperator.IN, [1.0, 3], 1),
+        (1, FilterOperator.NIN, [2, 3], 1),
+        ("b", FilterOperator.GT, "a", 1),
+        ("hello", FilterOperator.NE, 0, 1),
+    ],
+)
+def test_filters_keep_compatible_type_comparisons(
+    metadata_value: Any, operator: FilterOperator, value: Any, expected: int
+) -> None:
+    assert _count_filter_matches({"field": metadata_value}, operator, value) == expected

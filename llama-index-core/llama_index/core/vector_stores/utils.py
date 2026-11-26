@@ -1,4 +1,5 @@
 import json
+import operator as py_operator
 from typing import Any, Dict, Optional, Tuple, Callable, Mapping
 
 from llama_index.core.schema import (
@@ -98,6 +99,44 @@ def metadata_dict_to_node(metadata: dict, text: Optional[str] = None) -> BaseNod
     return node
 
 
+def _is_bool_number_mismatch(metadata_value: Any, value: Any) -> bool:
+    """
+    Return True when exactly one side is a bool and the other is a number.
+
+    ``bool`` subclasses ``int`` in Python, so ``False == 0`` and ``True > 0``
+    hold. Metadata filters treat booleans and numbers as distinct types.
+    """
+    return isinstance(metadata_value, bool) != isinstance(value, bool) and (
+        isinstance(metadata_value, (int, float)) and isinstance(value, (int, float))
+    )
+
+
+def _filter_values_equal(metadata_value: Any, value: Any) -> bool:
+    """Equality that does not treat booleans as numbers."""
+    if _is_bool_number_mismatch(metadata_value, value):
+        return False
+    return metadata_value == value
+
+
+def _filter_value_in(metadata_value: Any, values: Any) -> bool:
+    """Membership check that does not treat booleans as numbers."""
+    if isinstance(values, (list, tuple, set)):
+        return any(_filter_values_equal(metadata_value, v) for v in values)
+    return metadata_value in values
+
+
+def _filter_values_compare(
+    compare_fn: Callable[[Any, Any], bool], metadata_value: Any, value: Any
+) -> bool:
+    """Ordering comparison that treats non-comparable values as non-matching."""
+    if _is_bool_number_mismatch(metadata_value, value):
+        return False
+    try:
+        return compare_fn(metadata_value, value)
+    except TypeError:
+        return False
+
+
 def build_metadata_filter_fn(
     metadata_lookup_fn: Callable[[str], Mapping[str, Any]],
     metadata_filters: Optional[MetadataFilters] = None,
@@ -118,21 +157,21 @@ def build_metadata_filter_fn(
                 return operator in (FilterOperator.NE, FilterOperator.NIN)
 
             if operator == FilterOperator.EQ:
-                return metadata_value == value
+                return _filter_values_equal(metadata_value, value)
             if operator == FilterOperator.NE:
-                return metadata_value != value
+                return not _filter_values_equal(metadata_value, value)
             if operator == FilterOperator.GT:
-                return metadata_value > value
+                return _filter_values_compare(py_operator.gt, metadata_value, value)
             if operator == FilterOperator.GTE:
-                return metadata_value >= value
+                return _filter_values_compare(py_operator.ge, metadata_value, value)
             if operator == FilterOperator.LT:
-                return metadata_value < value
+                return _filter_values_compare(py_operator.lt, metadata_value, value)
             if operator == FilterOperator.LTE:
-                return metadata_value <= value
+                return _filter_values_compare(py_operator.le, metadata_value, value)
             if operator == FilterOperator.IN:
-                return metadata_value in value
+                return _filter_value_in(metadata_value, value)
             if operator == FilterOperator.NIN:
-                return metadata_value not in value
+                return not _filter_value_in(metadata_value, value)
             if operator == FilterOperator.CONTAINS:
                 return value in metadata_value
             if operator == FilterOperator.TEXT_MATCH:
