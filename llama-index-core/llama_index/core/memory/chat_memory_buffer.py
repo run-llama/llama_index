@@ -144,6 +144,10 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
                 self._token_count_for_messages(cur_messages) + initial_token_count
             )
 
+        if message_count == 1 and chat_history[-1].role == MessageRole.TOOL:
+            # A tool response cannot be replayed without its assistant tool call.
+            return []
+
         # catch one message longer than token limit, return the most recent message
         # this allows the LLM to raise an error about the message being too long,
         # rather than having a silent/less obvious failure mode
