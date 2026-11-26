@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.7.1]
+
+### Bug Fixes
+
+- **`_read_block` pagination**: the next page of a block's children is now requested from the same block with the `start_cursor` query parameter. The `next_cursor` value was previously used as a block ID in the URL, which requested that block's own children instead, so pages and blocks with more than 100 children were silently truncated.
+- **Table rows**: `table_row` blocks are now read (cell text joined with ` | `). Their text is in `cells`, not `rich_text`, so tables were dropped.
+- **Mentions and equations**: rich text is read from `plain_text`, so page, user and date mentions and inline equations are no longer skipped.
+
 ## [0.1.9] - 2024-07-02
 
 ### Bug Fixes
