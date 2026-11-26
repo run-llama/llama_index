@@ -8,6 +8,14 @@ from llama_index.core.node_parser.text.utils import truncate_text
 from llama_index.core.schema import Document, MetadataMode, TextNode
 
 
+def test_from_defaults_with_custom_tokenizer() -> None:
+    text_splitter = TokenTextSplitter.from_defaults(
+        chunk_size=2, chunk_overlap=0, tokenizer=list
+    )
+
+    assert text_splitter.split_text("abcd") == ["ab", "cd"]
+
+
 def test_split_token() -> None:
     """Test split normal token."""
     token = "foo bar"
