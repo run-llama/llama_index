@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import logging
 from typing import Any, List, Optional, Type
 
@@ -170,6 +171,20 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 raw_output=response,
             )
 
+    def _get_query_engine(self, streaming: bool) -> BaseQueryEngine:
+        from llama_index.core.query_engine.retriever_query_engine import (
+            RetrieverQueryEngine,
+        )
+
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            query_engine = copy.copy(self._query_engine)
+            query_engine._response_synthesizer = copy.copy(
+                self._query_engine._response_synthesizer
+            )
+            query_engine._response_synthesizer._streaming = streaming
+            return query_engine
+        return self._query_engine
+
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -184,24 +199,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         if self._verbose:
             print(log_str)
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.core.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
-
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = False
-
         # Query with standalone question
-        try:
-            query_response = self._query_engine.query(condensed_question)
-        finally:
-            # NOTE: reset streaming flag
-            if isinstance(self._query_engine, RetrieverQueryEngine):
-                self._query_engine._response_synthesizer._streaming = is_streaming
+        query_engine = self._get_query_engine(streaming=False)
+        query_response = query_engine.query(condensed_question)
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
@@ -229,24 +229,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         if self._verbose:
             print(log_str)
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.core.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
-
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = True
-
         # Query with standalone question
-        try:
-            query_response = self._query_engine.query(condensed_question)
-        finally:
-            # NOTE: reset streaming flag
-            if isinstance(self._query_engine, RetrieverQueryEngine):
-                self._query_engine._response_synthesizer._streaming = is_streaming
+        query_engine = self._get_query_engine(streaming=True)
+        query_response = query_engine.query(condensed_question)
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
@@ -287,24 +272,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         if self._verbose:
             print(log_str)
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.core.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
-
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = False
-
         # Query with standalone question
-        try:
-            query_response = await self._query_engine.aquery(condensed_question)
-        finally:
-            # NOTE: reset streaming flag
-            if isinstance(self._query_engine, RetrieverQueryEngine):
-                self._query_engine._response_synthesizer._streaming = is_streaming
+        query_engine = self._get_query_engine(streaming=False)
+        query_response = await query_engine.aquery(condensed_question)
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
@@ -332,24 +302,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         if self._verbose:
             print(log_str)
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.core.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
-
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = True
-
         # Query with standalone question
-        try:
-            query_response = await self._query_engine.aquery(condensed_question)
-        finally:
-            # NOTE: reset streaming flag
-            if isinstance(self._query_engine, RetrieverQueryEngine):
-                self._query_engine._response_synthesizer._streaming = is_streaming
+        query_engine = self._get_query_engine(streaming=True)
+        query_response = await query_engine.aquery(condensed_question)
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
