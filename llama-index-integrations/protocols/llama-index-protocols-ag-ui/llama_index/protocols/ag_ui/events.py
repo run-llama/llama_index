@@ -20,6 +20,8 @@ from ag_ui.core.events import (
     RunErrorEvent,
     StepStartedEvent,
     StepFinishedEvent,
+    ActivitySnapshotEvent,
+    ActivityDeltaEvent,
 )
 
 from llama_index.core.workflow import Event
@@ -95,3 +97,11 @@ class StepStartedWorkflowEvent(StepStartedEvent, Event):
 
 class StepFinishedWorkflowEvent(StepFinishedEvent, Event):
     type: EventType = EventType.STEP_FINISHED
+
+
+class ActivitySnapshotWorkflowEvent(ActivitySnapshotEvent, Event):
+    type: EventType = EventType.ACTIVITY_SNAPSHOT
+
+
+class ActivityDeltaWorkflowEvent(ActivityDeltaEvent, Event):
+    type: EventType = EventType.ACTIVITY_DELTA
