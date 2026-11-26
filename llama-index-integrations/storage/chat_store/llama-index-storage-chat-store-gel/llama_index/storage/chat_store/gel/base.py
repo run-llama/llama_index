@@ -1,5 +1,6 @@
 from typing import Optional
 import logging
+import re
 import textwrap
 from jinja2 import Template
 
@@ -52,13 +53,21 @@ def format_query(text: str) -> str:
     return textwrap.dedent(text.strip())
 
 
+# A Gel object type name, optionally module-qualified (e.g. ``ChatRecord`` or
+# ``my_module::ChatRecord``). It is interpolated into queries, so only allow
+# plain identifiers.
+_RECORD_TYPE_PATTERN = re.compile(
+    r"^[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)*$"
+)
+
+
 SET_MESSAGES_QUERY = format_query(
     """
-    insert Record {
+    insert {{ record_type }} {
         key := <str>$key,
         value := <array<json>>$value
     } unless conflict on .key else (
-        update Record set {
+        update {{ record_type }} set {
             value := <array<json>>$value
         }
     )
@@ -68,18 +77,18 @@ SET_MESSAGES_QUERY = format_query(
 GET_MESSAGES_QUERY = format_query(
     """
     with
-        record := (select Record filter .key = <str>$key),
+        record := (select {{ record_type }} filter .key = <str>$key),
     select record.value;
     """
 )
 
 ADD_MESSAGE_QUERY = format_query(
     """
-    insert Record {
+    insert {{ record_type }} {
         key := <str>$key,
         value := <array<json>>$value
     } unless conflict on .key else (
-        update Record set {
+        update {{ record_type }} set {
             value := .value ++ <array<json>>$value
         }
     )
@@ -88,7 +97,7 @@ ADD_MESSAGE_QUERY = format_query(
 
 DELETE_MESSAGES_QUERY = format_query(
     """
-    delete Record filter .key = <str>$key
+    delete {{ record_type }} filter .key = <str>$key
     """
 )
 
@@ -96,11 +105,11 @@ DELETE_MESSAGE_QUERY = format_query(
     """
     with
         idx := <int64>$idx,
-        value := (select Record filter .key = <str>$key).value,
+        value := (select {{ record_type }} filter .key = <str>$key).value,
         idx_item := value[idx],
         new_value := value[:idx] ++ value[idx+1:],
         updated_record := (
-            update Record
+            update {{ record_type }}
             filter .key = <str>$key
             set {
                 value := new_value
@@ -113,11 +122,11 @@ DELETE_MESSAGE_QUERY = format_query(
 DELETE_LAST_MESSAGE_QUERY = format_query(
     """
     with
-        value := (select Record filter .key = <str>$key).value,
+        value := (select {{ record_type }} filter .key = <str>$key).value,
         last_item := value[len(value) - 1],
         new_value := value[:len(value) - 1],
         updated_record := (
-            update Record
+            update {{ record_type }}
             filter .key = <str>$key
             set {
                 value := new_value
@@ -129,7 +138,7 @@ DELETE_LAST_MESSAGE_QUERY = format_query(
 
 GET_KEYS_QUERY = format_query(
     """
-    select Record.key;
+    select {{ record_type }}.key;
     """
 )
 
@@ -144,6 +153,7 @@ class GelChatStore(BaseChatStore):
     record_type: str
     _sync_client: Optional[gel.Client] = PrivateAttr()
     _async_client: Optional[gel.AsyncIOClient] = PrivateAttr()
+    _queries: dict[str, str] = PrivateAttr()
 
     def __init__(
         self,
@@ -156,10 +166,24 @@ class GelChatStore(BaseChatStore):
             record_type: The name of the record type in Gel schema.
 
         """
+        if not _RECORD_TYPE_PATTERN.match(record_type):
+            raise ValueError(f"Invalid Gel record type name: {record_type!r}")
         super().__init__(record_type=record_type)
 
         self._sync_client = None
         self._async_client = None
+        self._queries = {
+            name: Template(query).render(record_type=record_type)
+            for name, query in (
+                ("set_messages", SET_MESSAGES_QUERY),
+                ("get_messages", GET_MESSAGES_QUERY),
+                ("add_message", ADD_MESSAGE_QUERY),
+                ("delete_messages", DELETE_MESSAGES_QUERY),
+                ("delete_message", DELETE_MESSAGE_QUERY),
+                ("delete_last_message", DELETE_LAST_MESSAGE_QUERY),
+                ("get_keys", GET_KEYS_QUERY),
+            )
+        }
 
     def get_sync_client(self):
         """Get or initialize a synchronous Gel client."""
@@ -223,7 +247,7 @@ class GelChatStore(BaseChatStore):
         """Set messages for a key."""
         client = self.get_sync_client()
         client.query(
-            SET_MESSAGES_QUERY,
+            self._queries["set_messages"],
             key=key,
             value=[message.model_dump_json() for message in messages],
         )
@@ -232,7 +256,7 @@ class GelChatStore(BaseChatStore):
         """Async version of Get messages for a key."""
         client = await self.get_async_client()
         await client.query(
-            SET_MESSAGES_QUERY,
+            self._queries["set_messages"],
             key=key,
             value=[message.model_dump_json() for message in messages],
         )
@@ -240,67 +264,73 @@ class GelChatStore(BaseChatStore):
     def get_messages(self, key: str) -> list[ChatMessage]:
         """Get messages for a key."""
         client = self.get_sync_client()
-        result = client.query_single(GET_MESSAGES_QUERY, key=key) or []
+        result = client.query_single(self._queries["get_messages"], key=key) or []
         return [ChatMessage.model_validate_json(message) for message in result]
 
     async def aget_messages(self, key: str) -> list[ChatMessage]:
         """Async version of Get messages for a key."""
         client = await self.get_async_client()
-        result = await client.query_single(GET_MESSAGES_QUERY, key=key) or []
+        result = await client.query_single(self._queries["get_messages"], key=key) or []
         return [ChatMessage.model_validate_json(message) for message in result]
 
     def add_message(self, key: str, message: ChatMessage) -> None:
         """Add a message for a key."""
         client = self.get_sync_client()
-        client.query(ADD_MESSAGE_QUERY, key=key, value=[message.model_dump_json()])
+        client.query(
+            self._queries["add_message"], key=key, value=[message.model_dump_json()]
+        )
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
         """Async version of Add a message for a key."""
         client = await self.get_async_client()
         await client.query(
-            ADD_MESSAGE_QUERY, key=key, value=[message.model_dump_json()]
+            self._queries["add_message"], key=key, value=[message.model_dump_json()]
         )
 
     def delete_messages(self, key: str) -> Optional[list[ChatMessage]]:
         """Delete messages for a key."""
         client = self.get_sync_client()
-        client.query(DELETE_MESSAGES_QUERY, key=key)
+        client.query(self._queries["delete_messages"], key=key)
 
     async def adelete_messages(self, key: str) -> Optional[list[ChatMessage]]:
         """Async version of Delete messages for a key."""
         client = await self.get_async_client()
-        await client.query(DELETE_MESSAGES_QUERY, key=key)
+        await client.query(self._queries["delete_messages"], key=key)
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
         client = self.get_sync_client()
-        result = client.query_single(DELETE_MESSAGE_QUERY, key=key, idx=idx)
+        result = client.query_single(self._queries["delete_message"], key=key, idx=idx)
         return ChatMessage.model_validate_json(result) if result else None
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
         client = await self.get_async_client()
-        result = await client.query_single(DELETE_MESSAGE_QUERY, key=key, idx=idx)
+        result = await client.query_single(
+            self._queries["delete_message"], key=key, idx=idx
+        )
         return ChatMessage.model_validate_json(result) if result else None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
         client = self.get_sync_client()
-        result = client.query_single(DELETE_LAST_MESSAGE_QUERY, key=key)
+        result = client.query_single(self._queries["delete_last_message"], key=key)
         return ChatMessage.model_validate_json(result) if result else None
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Async version of Delete last message for a key."""
         client = await self.get_async_client()
-        result = await client.query_single(DELETE_LAST_MESSAGE_QUERY, key=key)
+        result = await client.query_single(
+            self._queries["delete_last_message"], key=key
+        )
         return ChatMessage.model_validate_json(result) if result else None
 
     def get_keys(self) -> list[str]:
         """Get all keys."""
         client = self.get_sync_client()
-        return client.query(GET_KEYS_QUERY)
+        return client.query(self._queries["get_keys"])
 
     async def aget_keys(self) -> list[str]:
         """Async version of Get all keys."""
         client = await self.get_async_client()
-        return await client.query(GET_KEYS_QUERY)
+        return await client.query(self._queries["get_keys"])
