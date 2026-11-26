@@ -254,6 +254,84 @@ def test_embedding_batch_calls_acquire_per_batch() -> None:
     assert mock_limiter.acquire.call_count == 3
 
 
+def test_embedding_cached_batch_limits_only_misses() -> None:
+    from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+    from llama_index.core.storage.kvstore import SimpleKVStore
+
+    cache = SimpleKVStore()
+    cached_embedding = [0.25, 0.25]
+    cache.put("cached", {"cached-id": cached_embedding}, collection="embeddings")
+    limiter = MagicMock()
+    embed = MockEmbedding(
+        embed_dim=2,
+        embed_batch_size=2,
+        embeddings_cache=cache,
+        rate_limiter=limiter,
+    )
+    texts = ["cached", "cached", "cached", "new-1", "new-2"]
+    expected = [cached_embedding] * 3 + [[0.5, 0.5]] * 2
+
+    assert embed.get_text_embedding_batch(texts) == expected
+    assert limiter.acquire.call_count == 2
+
+    limiter.acquire.reset_mock()
+    assert embed.get_text_embedding_batch(texts) == expected
+    limiter.acquire.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("num_workers", [None, 2])
+async def test_embedding_cached_async_batch_limits_only_misses(num_workers) -> None:
+    from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+    from llama_index.core.storage.kvstore import SimpleKVStore
+
+    cache = SimpleKVStore()
+    cached_embedding = [0.25, 0.25]
+    cache.put("cached", {"cached-id": cached_embedding}, collection="embeddings")
+    limiter = MagicMock()
+    limiter.async_acquire = AsyncMock()
+    embed = MockEmbedding(
+        embed_dim=2,
+        embed_batch_size=2,
+        num_workers=num_workers,
+        embeddings_cache=cache,
+        rate_limiter=limiter,
+    )
+    # One all-hit batch, one mixed batch and one all-miss batch.
+    texts = ["cached", "cached", "cached", "new-1", "new-2"]
+    expected = [cached_embedding] * 3 + [[0.5, 0.5]] * 2
+
+    assert await embed.aget_text_embedding_batch(texts) == expected
+    assert limiter.async_acquire.await_count == 2
+    limiter.acquire.assert_not_called()
+
+    limiter.async_acquire.reset_mock()
+    assert await embed.aget_text_embedding_batch(texts) == expected
+    limiter.async_acquire.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_embedding_cached_batch_honors_limiter_failure(use_async) -> None:
+    from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+    from llama_index.core.storage.kvstore import SimpleKVStore
+
+    cache = SimpleKVStore()
+    limiter = MagicMock()
+    limiter.acquire.side_effect = RuntimeError("request budget exhausted")
+    limiter.async_acquire = AsyncMock(
+        side_effect=RuntimeError("request budget exhausted")
+    )
+    embed = MockEmbedding(embed_dim=2, embeddings_cache=cache, rate_limiter=limiter)
+
+    with pytest.raises(RuntimeError, match="request budget exhausted"):
+        if use_async:
+            await embed.aget_text_embedding_batch(["uncached"])
+        else:
+            embed.get_text_embedding_batch(["uncached"])
+    assert cache.get("uncached", collection="embeddings") is None
+
+
 def test_embedding_without_rate_limiter_works() -> None:
     from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
