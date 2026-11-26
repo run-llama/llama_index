@@ -228,3 +228,49 @@ async def test_async_delete_last_message(sqlite_chat_store: SQLiteChatStore):
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+def test_set_messages_replaces_existing(sqlite_chat_store: SQLiteChatStore):
+    key = "test_set_replace_key"
+    sqlite_chat_store.set_messages(
+        key,
+        [
+            ChatMessage(role="user", content="hello"),
+            ChatMessage(role="assistant", content="hi"),
+        ],
+    )
+    sqlite_chat_store.set_messages(key, [ChatMessage(role="user", content="new start")])
+
+    assert [m.content for m in sqlite_chat_store.get_messages(key)] == ["new start"]
+
+    sqlite_chat_store.set_messages(key, [])
+    assert sqlite_chat_store.get_messages(key) == []
+
+
+@pytest.mark.skipif(
+    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
+)
+@pytest.mark.asyncio
+async def test_async_set_messages_replaces_existing(
+    sqlite_chat_store: SQLiteChatStore,
+):
+    key = "test_async_set_replace_key"
+    await sqlite_chat_store.aset_messages(
+        key,
+        [
+            ChatMessage(role="user", content="hello"),
+            ChatMessage(role="assistant", content="hi"),
+        ],
+    )
+    await sqlite_chat_store.aset_messages(
+        key, [ChatMessage(role="user", content="new start")]
+    )
+
+    messages = await sqlite_chat_store.aget_messages(key)
+    assert [m.content for m in messages] == ["new start"]
+
+    await sqlite_chat_store.aset_messages(key, [])
+    assert await sqlite_chat_store.aget_messages(key) == []
