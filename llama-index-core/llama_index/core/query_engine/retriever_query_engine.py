@@ -114,6 +114,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
         """
         llm = llm or Settings.llm
 
+        callback_manager = callback_manager or Settings.callback_manager
+
         response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=llm,
             text_qa_template=text_qa_template,
@@ -123,14 +125,13 @@ class RetrieverQueryEngine(BaseQueryEngine):
             chat_content_qa_template=chat_content_qa_template,
             chat_content_refine_template=chat_content_refine_template,
             response_mode=response_mode,
+            callback_manager=callback_manager,
             output_cls=output_cls,
             use_async=use_async,
             streaming=streaming,
             verbose=verbose,
             multimodal=multimodal,
         )
-
-        callback_manager = callback_manager or Settings.callback_manager
 
         return cls(
             retriever=retriever,
