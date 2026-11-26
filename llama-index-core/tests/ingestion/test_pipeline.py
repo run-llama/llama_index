@@ -259,7 +259,7 @@ def test_pipeline_dedup_duplicates_only() -> None:
 
 def test_pipeline_dedup_within_single_batch() -> None:
     """
-    `_handle_duplicates` should deduplicate nodes that share a hash
+    `_plan_duplicates` should deduplicate nodes that share a hash
     within a single ingestion run, not just against the docstore.
 
     Documents with identical text and metadata produce identical
@@ -298,9 +298,10 @@ def _nodes_sharing_ref_doc(ref_doc_id: str, count: int) -> list[BaseNode]:
 def test_pipeline_upserts_keep_all_nodes_per_doc() -> None:
     """
     Regression test: with the UPSERTS strategy, every node belonging to the
-    same source document must be ingested. `_handle_upserts` previously keyed a
-    dict by `ref_doc_id` and overwrote earlier nodes, so only the last chunk of
-    each document survived and the rest were silently dropped.
+    same source document must be ingested. `_plan_upserts` (formerly
+    `_handle_upserts`) previously keyed a dict by `ref_doc_id` and overwrote
+    earlier nodes, so only the last chunk of each document survived and the
+    rest were silently dropped.
     """
     nodes = _nodes_sharing_ref_doc("source-doc", 5)
     pipeline = IngestionPipeline(
