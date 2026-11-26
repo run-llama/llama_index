@@ -705,6 +705,62 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+@pytest.mark.parametrize(
+    ("operator", "value", "expected_ids"),
+    [
+        # A stored 1.0 matches IN([1]) like it matches EQ(1) (#24505)
+        (FilterOperator.IN, [1], ["num_float", "num_text"]),
+        (FilterOperator.IN, [1, 2], ["num_float", "num_int", "num_text"]),
+        # Text lists keep comparing as text
+        (FilterOperator.IN, ["1"], ["num_text"]),
+        # NIN([1]) excludes the stored 1.0 too; the missing key stays excluded
+        (FilterOperator.NIN, [1], ["num_int", "num_word"]),
+    ],
+)
+async def test_add_to_db_and_query_with_metadata_filters_with_numeric_in_operator(
+    pg_fixture: PGVectorStore,
+    use_async: bool,
+    operator: FilterOperator,
+    value: List[Any],
+    expected_ids: List[str],
+) -> None:
+    nodes = [
+        TextNode(
+            id_=node_id,
+            text=node_id,
+            metadata=metadata,
+            embedding=_get_sample_vector(1.0),
+        )
+        for node_id, metadata in [
+            ("num_float", {"num": 1.0}),
+            ("num_int", {"num": 2}),
+            ("num_text", {"num": "1"}),
+            # A non-numeric value must not reach the float cast
+            ("num_word", {"num": "abc"}),
+            ("num_missing", {"other": 1}),
+        ]
+    ]
+    if use_async:
+        await pg_fixture.async_add(nodes)
+    else:
+        pg_fixture.add(nodes)
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="num", value=value, operator=operator)]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0), similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+    assert sorted(node.node_id for node in res.nodes) == expected_ids
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_any_operator(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:

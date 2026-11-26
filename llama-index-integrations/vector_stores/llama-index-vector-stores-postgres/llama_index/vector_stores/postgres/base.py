@@ -694,12 +694,31 @@ class PGVectorStore(BasePydanticVectorStore):
             # In Python, to create a tuple with a single element, you need to include a comma after the element
             # This code will correctly format the IN clause whether there is one element or multiple elements in the list:
             filter_value = ", ".join(f"'{e}'" for e in filter_.value)
-
-            return text(
+            text_clause = (
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
             )
+
+            # The text comparison alone misses numbers that print differently
+            # (a stored 1.0 is '1.0', not '1'), while EQ/NE compare as float.
+            # For numeric lists, also compare numerically, casting only values
+            # that are JSON numbers so other types never reach the cast.
+            if filter_.value and all(
+                isinstance(e, (int, float)) and not isinstance(e, bool)
+                for e in filter_.value
+            ):
+                numbers = ", ".join(str(float(e)) for e in filter_.value)
+                numeric_match = (
+                    f"COALESCE(CASE WHEN jsonb_typeof(metadata_::jsonb->'{filter_.key}') "
+                    f"= 'number' THEN (metadata_->>'{filter_.key}')::float "
+                    f"IN ({numbers}) END, false)"
+                )
+                if filter_.operator == FilterOperator.IN:
+                    return text(f"({text_clause} OR {numeric_match})")
+                return text(f"({text_clause} AND NOT {numeric_match})")
+
+            return text(text_clause)
         elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
             # Expects a text array stored in the metadata, and a list of values to compare
             # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
