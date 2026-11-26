@@ -42,6 +42,21 @@ def _make_nodes(n: int = 2) -> List[TextNode]:
 # ---------------------------------------------------------------------------
 
 
+def test_from_dict_does_not_mutate_input():
+    data = {
+        "class_name": "MetadataExtractor",
+        "max_retries": 1,
+        "raise_on_error": False,
+    }
+    original_data = data.copy()
+
+    extractor = _AlwaysFailExtractor.from_dict(data, retry_backoff=0.25)
+
+    assert data == original_data
+    assert extractor.max_retries == 1
+    assert extractor.retry_backoff == 0.25
+
+
 @pytest.mark.asyncio
 async def test_default_raises_on_error():
     """With max_retries=0 and raise_on_error=True, errors propagate."""
