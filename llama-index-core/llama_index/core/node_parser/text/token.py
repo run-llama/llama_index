@@ -114,6 +114,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     def class_name(cls) -> str:
         return "TokenTextSplitter"
 
+    def _get_metadata_length(self, metadata_str: str) -> int:
+        return len(self._tokenizer(metadata_str))
+
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text into chunks, reserving space required for metadata str."""
         metadata_len = len(self._tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN

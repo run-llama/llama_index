@@ -267,13 +267,18 @@ class MetadataAwareTextSplitter(TextSplitter):
         ]
         return [item for sublist in nested_texts for item in sublist]
 
+    def _get_metadata_length(self, metadata_str: str) -> int:
+        return len(metadata_str)
+
     def _get_metadata_str(self, node: BaseNode) -> str:
         """Helper function to get the proper metadata str for splitting."""
         embed_metadata_str = node.get_metadata_str(mode=MetadataMode.EMBED)
         llm_metadata_str = node.get_metadata_str(mode=MetadataMode.LLM)
 
-        # use the longest metadata str for splitting
-        if len(embed_metadata_str) > len(llm_metadata_str):
+        # Compare metadata in the same units used for splitting.
+        if self._get_metadata_length(embed_metadata_str) > self._get_metadata_length(
+            llm_metadata_str
+        ):
             metadata_str = embed_metadata_str
         else:
             metadata_str = llm_metadata_str
