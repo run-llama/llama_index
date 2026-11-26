@@ -1,8 +1,16 @@
-from typing import Callable
+import pickle
+import threading
+from typing import Any, Callable
 
 import pytest
 from llama_index.core.schema import BaseComponent
 from pydantic.fields import PrivateAttr
+
+
+class _PickleTestComponent(BaseComponent):
+    fn: Any = None
+    name: str = "ok"
+    _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
 
 @pytest.fixture()
@@ -50,6 +58,23 @@ def test__getstate__():
         "__pydantic_fields_set__": set(),
         "__pydantic_private__": {"_text": "test private attr"},
     }
+    assert callable(mc._unpickable)
+    assert callable(mc._fn)
+
+
+def test_pickle_preserves_unpickleable_attributes_on_live_instance():
+    mc = _PickleTestComponent(fn=lambda x: x * 2)
+    original_lock = mc._lock
+    payload = pickle.dumps(mc)
+    restored = pickle.loads(payload)
+
+    assert restored.name == "ok"
+    assert restored.fn is None
+    assert mc.fn(3) == 6
+    assert mc._lock is original_lock
+    # Repeated pickling should continue working without corrupting the live instance.
+    assert pickle.loads(pickle.dumps(mc)).name == "ok"
+    assert mc.fn(4) == 8
 
 
 def test__setstate__():

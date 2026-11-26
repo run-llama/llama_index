@@ -122,33 +122,30 @@ class BaseComponent(BaseModel):
         return self.model_dump(**kwargs)
 
     def __getstate__(self) -> Dict[str, Any]:
-        state = super().__getstate__()
+        state = dict(super().__getstate__())
 
-        # remove attributes that are not pickleable -- kind of dangerous
-        keys_to_remove = []
-        for key, val in state["__dict__"].items():
-            try:
-                pickle.dumps(val)
-            except Exception:
-                keys_to_remove.append(key)
-
-        for key in keys_to_remove:
-            logging.warning(f"Removing unpickleable attribute {key}")
-            del state["__dict__"][key]
-
-        # remove private attributes if they aren't pickleable -- kind of dangerous
-        keys_to_remove = []
-        private_attrs = state.get("__pydantic_private__", None)
-        if private_attrs:
-            for key, val in state["__pydantic_private__"].items():
+        # Copy attribute dicts so removing unpickleable entries does not mutate self.
+        dict_state = state.get("__dict__")
+        if dict_state is not None:
+            dict_copy = dict(dict_state)
+            for key, val in list(dict_copy.items()):
                 try:
                     pickle.dumps(val)
                 except Exception:
-                    keys_to_remove.append(key)
+                    logging.warning(f"Removing unpickleable attribute {key}")
+                    del dict_copy[key]
+            state["__dict__"] = dict_copy
 
-            for key in keys_to_remove:
-                logging.warning(f"Removing unpickleable private attribute {key}")
-                del state["__pydantic_private__"][key]
+        private_attrs = state.get("__pydantic_private__")
+        if private_attrs is not None:
+            private_copy = dict(private_attrs)
+            for key, val in list(private_copy.items()):
+                try:
+                    pickle.dumps(val)
+                except Exception:
+                    logging.warning(f"Removing unpickleable private attribute {key}")
+                    del private_copy[key]
+            state["__pydantic_private__"] = private_copy
 
         return state
 
