@@ -527,6 +527,32 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         metadata_value = ConstantExpression(value)
 
+        if value_type in (INTEGER, FLOAT) and operator in li_filter_to_py_operator:
+            # Comparing a JSON column with an integer or float literal makes
+            # DuckDB cast the stored value to the literal's type: an int filter
+            # turns 9.4 into 9, a float filter rounds to the literal's scale
+            # (9.24 -> 9.2), and a stored value outside that scale raises
+            # ConversionException. Comparing as DOUBLE keeps the stored
+            # precision, and a missing key stays NULL instead of failing.
+            metadata_value = metadata_value.cast("DOUBLE")
+
+        if value_type in (INTEGER, FLOAT) and operator in (
+            FilterOperator.IN,
+            FilterOperator.NIN,
+        ):
+            # list_contains does not compare the JSON value numerically either, so
+            # a stored 9.4 is not found in [9.4, 9.24]. Compare stored numbers as
+            # DOUBLE; other JSON types become NULL so they never match.
+            is_number = FunctionExpression(
+                "list_contains",
+                ConstantExpression(["UBIGINT", "BIGINT", "DOUBLE"]),
+                metadata_type_expression,
+            )
+            metadata_column = CaseExpression(
+                condition=is_number, value=metadata_column.cast("DOUBLE")
+            ).otherwise(ConstantExpression(None))
+            metadata_value = metadata_value.cast("DOUBLE[]")
+
         return self._build_filter_expression(metadata_column, metadata_value, operator)
 
     def _build_filter_expression(
