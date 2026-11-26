@@ -1864,10 +1864,12 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-intercom"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
+    { name = "beautifulsoup4" },
     { name = "llama-index-core" },
+    { name = "requests" },
 ]
 
 [package.dev-dependencies]
@@ -1893,7 +1895,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "llama-index-core", specifier = ">=0.13.0,<0.15" }]
+requires-dist = [
+    { name = "beautifulsoup4", specifier = ">=4.12.3,<5" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
+    { name = "requests", specifier = ">=2.31.0,<3" },
+]
 
 [package.metadata.requires-dev]
 dev = [

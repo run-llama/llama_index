@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-intercom"
-version = "0.7.0"
+version = "0.7.1"
 description = "llama-index readers intercom integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.11,<4.0"
@@ -38,7 +38,11 @@ keywords = [
     "intercom",
     "knowledge base",
 ]
-dependencies = ["llama-index-core>=0.13.0,<0.15"]
+dependencies = [
+    "beautifulsoup4>=4.12.3,<5",
+    "requests>=2.31.0,<3",
+    "llama-index-core>=0.13.0,<0.15",
+]
 
 [tool.codespell]
 check-filenames = true
