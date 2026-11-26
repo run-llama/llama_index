@@ -24,6 +24,7 @@ Use LlamaIndex Workflows to build agentic systems:
 - [CodeAct Agent from Scratch](/python/examples/agent/from_scratch_code_act_agent) - Build a CodeAct agent from scratch
 - [Basic RAG](/python/examples/workflow/rag) - Simple RAG workflow implementation
 - [Advanced Text-to-SQL](/python/examples/workflow/advanced_text_to_sql) - Use LlamaIndex to generate SQL queries and execute them
+- [Physics and bounds validation](/python/examples/workflow/physics_bounds_validation) - Reject physically impossible tool outputs between workflow steps, without an LLM
 
 You might also be interested in the [general introduction to agentic workflows](/python/llamaagents/workflows).
 
