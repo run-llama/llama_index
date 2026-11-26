@@ -26,6 +26,8 @@ class IPYNBReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
         if file.name.endswith(".ipynb"):
             try:
                 import nbconvert
