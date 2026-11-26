@@ -637,6 +637,114 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_query_with_type_strict_eq_filters(
+    pg_fixture: PGVectorStore, use_async: bool
+) -> None:
+    """
+    Regression test for #24511.
+
+    EQ filters must not conflate types the way the text cast did: EQ(1)
+    must not match a stored string "1", EQ("1") must not match a stored
+    number 1, and EQ(float("nan")) must not raise UndefinedColumn.
+    """
+    nodes = [
+        TextNode(
+            text="doc str one",
+            id_="str-node",
+            metadata={"v": "1"},
+            embedding=_get_sample_vector(0.0),
+        ),
+        TextNode(
+            text="doc int one",
+            id_="int-node",
+            metadata={"v": 1},
+            embedding=_get_sample_vector(1.0),
+        ),
+        TextNode(
+            text="doc float one",
+            id_="float-node",
+            metadata={"v": 1.0},
+            embedding=_get_sample_vector(2.0),
+        ),
+        TextNode(
+            text="doc float five",
+            id_="five-node",
+            metadata={"v": 5.0},
+            embedding=_get_sample_vector(3.0),
+        ),
+    ]
+    if use_async:
+        await pg_fixture.async_add(nodes)
+    else:
+        pg_fixture.add(nodes)
+
+    async def _run_query(filters: MetadataFilters) -> VectorStoreQueryResult:
+        q = VectorStoreQuery(
+            query_embedding=_get_sample_vector(0.5),
+            similarity_top_k=10,
+            filters=filters,
+        )
+        if use_async:
+            return await pg_fixture.aquery(q)
+        return pg_fixture.query(q)
+
+    # EQ(1) matches stored numbers only, not the string "1".
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="v", value=1, operator=FilterOperator.EQ)]
+        )
+    )
+    assert res.nodes
+    assert sorted(n.node_id for n in res.nodes) == ["float-node", "int-node"]
+
+    # EQ("1") matches the stored string only, not the numbers.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="v", value="1", operator=FilterOperator.EQ)]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["str-node"]
+
+    # EQ("5") does not match a stored float 5.0.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[MetadataFilter(key="v", value="5", operator=FilterOperator.EQ)]
+        )
+    )
+    assert not res.nodes
+
+    # EQ(nan) matches nothing and does not raise.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[
+                MetadataFilter(key="v", value=float("nan"), operator=FilterOperator.EQ)
+            ]
+        )
+    )
+    assert not res.nodes
+
+    # NE(nan) matches every row (nan != everything, itself included).
+    res = await _run_query(
+        MetadataFilters(
+            filters=[
+                MetadataFilter(key="v", value=float("nan"), operator=FilterOperator.NE)
+            ]
+        )
+    )
+    assert res.nodes
+    assert sorted(n.node_id for n in res.nodes) == [
+        "five-node",
+        "float-node",
+        "int-node",
+        "str-node",
+    ]
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
