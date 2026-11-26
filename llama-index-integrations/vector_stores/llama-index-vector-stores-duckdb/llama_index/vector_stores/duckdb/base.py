@@ -311,9 +311,17 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @override
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:  # noqa: ARG002
         """Query the vector store for top k most similar nodes."""
-        filter_expression = self._build_metadata_filter_expressions(
-            metadata_filters=query.filters
+        filter_expression = self._build_node_id_metadata_filter_expression(
+            # as_retriever() uses an empty list when the vector store keeps text.
+            node_ids=query.node_ids or None,
+            filters=query.filters,
         )
+
+        if query.doc_ids:
+            doc_id_expression = self._build_metadata_filter_expression(
+                "ref_doc_id", query.doc_ids, FilterOperator.IN
+            )
+            filter_expression = filter_expression.__and__(doc_id_expression)
 
         inner_query = self.table.select(
             StarExpression(),
