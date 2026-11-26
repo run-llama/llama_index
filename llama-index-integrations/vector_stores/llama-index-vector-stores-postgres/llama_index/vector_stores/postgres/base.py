@@ -723,10 +723,19 @@ class PGVectorStore(BasePydanticVectorStore):
             or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
         ):
             # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
+            # Escape LIKE wildcards so the value is matched literally (#24500):
+            # an unescaped '_'/'%' would match unrelated rows (e.g. "a_b"
+            # would also match "aXb").
+            escaped_value = (
+                str(filter_.value)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+            )
             return text(
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
-                f"'%{filter_.value}%'"
+                f"'%{escaped_value}%' ESCAPE '\\'"
             )
         elif filter_.operator == FilterOperator.IS_EMPTY:
             # Where the operator is is_empty, we need to check if the metadata is null

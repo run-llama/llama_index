@@ -637,6 +637,102 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_query_with_text_match_escapes_like_wildcards(
+    pg_fixture: PGVectorStore, use_async: bool
+) -> None:
+    """
+    Regression test for #24500.
+
+    TEXT_MATCH / TEXT_MATCH_INSENSITIVE must match the value literally:
+    LIKE wildcards in the value ("_", "%") must not match unrelated rows.
+    """
+    nodes = [
+        TextNode(
+            text="doc underscore",
+            id_="underscore-node",
+            metadata={"tag": "a_b"},
+            embedding=_get_sample_vector(0.0),
+        ),
+        TextNode(
+            text="doc lookalike",
+            id_="lookalike-node",
+            metadata={"tag": "aXb"},
+            embedding=_get_sample_vector(1.0),
+        ),
+        TextNode(
+            text="doc percent",
+            id_="percent-node",
+            metadata={"tag": "100%"},
+            embedding=_get_sample_vector(2.0),
+        ),
+        TextNode(
+            text="doc percent lookalike",
+            id_="percent-lookalike-node",
+            metadata={"tag": "100X"},
+            embedding=_get_sample_vector(3.0),
+        ),
+    ]
+    if use_async:
+        await pg_fixture.async_add(nodes)
+    else:
+        pg_fixture.add(nodes)
+
+    async def _run_query(filters: MetadataFilters) -> VectorStoreQueryResult:
+        q = VectorStoreQuery(
+            query_embedding=_get_sample_vector(0.5),
+            similarity_top_k=10,
+            filters=filters,
+        )
+        if use_async:
+            return await pg_fixture.aquery(q)
+        return pg_fixture.query(q)
+
+    # "_" is literal: "a_b" matches only the underscore row, not "aXb".
+    res = await _run_query(
+        MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="tag", value="a_b", operator=FilterOperator.TEXT_MATCH
+                )
+            ]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["underscore-node"]
+
+    # Case-insensitive variant still escapes wildcards.
+    res = await _run_query(
+        MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="tag",
+                    value="A_B",
+                    operator=FilterOperator.TEXT_MATCH_INSENSITIVE,
+                )
+            ]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["underscore-node"]
+
+    # "%" is literal: "100%" matches only the percent row, not "100X".
+    res = await _run_query(
+        MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="tag", value="100%", operator=FilterOperator.TEXT_MATCH
+                )
+            ]
+        )
+    )
+    assert res.nodes
+    assert [n.node_id for n in res.nodes] == ["percent-node"]
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
