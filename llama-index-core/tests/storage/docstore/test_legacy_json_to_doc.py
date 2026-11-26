@@ -32,6 +32,33 @@ def test_legacy_json_to_doc_preserves_doc_id(node_cls, doc_id, extra):
     assert node.id_ == doc_id
 
 
+@pytest.mark.parametrize(
+    ("node_cls", "extra"),
+    [
+        (Document, None),
+        (TextNode, None),
+        (ImageNode, {"image": None}),
+        (IndexNode, {"index_id": "index-abc"}),
+    ],
+)
+def test_legacy_json_to_doc_null_relationships(node_cls, extra):
+    """Legacy payloads with an explicit null "relationships" must still deserialize."""
+    doc_dict = _make_legacy_dict(node_cls, "doc-null-rel", extra=extra)
+    doc_dict[DATA_KEY]["relationships"] = None
+    node = legacy_json_to_doc(doc_dict)
+    assert node.id_ == "doc-null-rel"
+    assert node.relationships == {}
+
+
+def test_legacy_json_to_doc_missing_relationships():
+    """Legacy payloads without the relationships key still deserialize."""
+    doc_dict = _make_legacy_dict(TextNode, "doc-missing-rel")
+    del doc_dict[DATA_KEY]["relationships"]
+    node = legacy_json_to_doc(doc_dict)
+    assert node.id_ == "doc-missing-rel"
+    assert node.relationships == {}
+
+
 def test_legacy_json_to_doc_unknown_type_raises():
     doc_dict = {
         TYPE_KEY: "not-a-real-node-type",
