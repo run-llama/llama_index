@@ -7,6 +7,10 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 
+[options]
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer-span = "P3D"
+
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.7.1"
@@ -1957,7 +1961,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=10.2.0" },
     { name = "pytesseract", specifier = ">=0.3.10,<0.4" },
     { name = "retrying", specifier = ">=1.3.4,<2" },
-    { name = "svglib", specifier = ">=1.5,<1.6" },
+    { name = "svglib", specifier = ">=2.3,<2.4" },
     { name = "xlrd", specifier = ">=2.0.1,<3" },
 ]
 
@@ -3990,15 +3994,19 @@ wheels = [
 
 [[package]]
 name = "svglib"
-version = "1.5.1"
+version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cssselect2" },
     { name = "lxml" },
+    { name = "pillow" },
     { name = "reportlab" },
     { name = "tinycss2" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/5b/53ca0fd447f73423c7dc59d34e523530ef434481a3d18808ff7537ad33ec/svglib-1.5.1.tar.gz", hash = "sha256:3ae765d3a9409ee60c0fb4d24c2deb6a80617aa927054f5bcd7fc98f0695e587", size = 913900, upload-time = "2023-01-07T14:11:52.99Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/7b/5cbe610ecd8a4c0659beafccc9a98a639bcc2dfd330c828dcab0217f58e6/svglib-2.3.3.tar.gz", hash = "sha256:1aef52f3dc651416119b55716e673995d2c9f90c86a07df0b2bcf6de26c7e0ff", size = 1383367, upload-time = "2026-11-04T09:50:27.555Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/c7/8ec2bb055cd0f6419bcbf8ba3521931927283afd41c4c09e512a1a59a0d1/svglib-2.3.3-py3-none-any.whl", hash = "sha256:329f75c7805a7a5585a381f2ae130cb7ca3e512d545b16471b51ac205c9223df", size = 51574, upload-time = "2026-11-04T09:50:25.945Z" },
+]
 
 [[package]]
 name = "tenacity"
