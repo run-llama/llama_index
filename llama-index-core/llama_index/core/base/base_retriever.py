@@ -21,6 +21,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
@@ -156,6 +157,11 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         self, query_bundle: QueryBundle, nodes: List[NodeWithScore]
     ) -> List[NodeWithScore]:
         retrieved_nodes: List[NodeWithScore] = []
+        jobs = []
+
+        async def _identity(n: NodeWithScore) -> List[NodeWithScore]:
+            return [n]
+
         for n in nodes:
             node = n.node
             score = n.score or 1.0
@@ -167,16 +173,20 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
                             f"Retrieval entering {node.index_id}: {obj.__class__.__name__}\n",
                             color="llama_turquoise",
                         )
-                    # TODO: Add concurrent execution via `run_jobs()` ?
-                    retrieved_nodes.extend(
-                        await self._aretrieve_from_object(
+                    jobs.append(
+                        self._aretrieve_from_object(
                             obj, query_bundle=query_bundle, score=score
                         )
                     )
                 else:
-                    retrieved_nodes.append(n)
+                    jobs.append(_identity(n))
             else:
-                retrieved_nodes.append(n)
+                jobs.append(_identity(n))
+
+        if jobs:
+            job_results = await run_jobs(jobs)
+            for results in job_results:
+                retrieved_nodes.extend(results)
 
         # remove any duplicates based on node_id
         seen = set()
