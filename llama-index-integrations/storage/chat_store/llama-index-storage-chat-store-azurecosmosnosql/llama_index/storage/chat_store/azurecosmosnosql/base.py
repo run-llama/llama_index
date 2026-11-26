@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from azure.cosmos import CosmosClient, DatabaseProxy, ContainerProxy
+from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import BaseChatStore
 
@@ -159,11 +160,13 @@ class AzureCosmosNoSqlChatStore(BaseChatStore):
 
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
-        response = self._container.read_item(key)
-        if response is not None:
-            message_history = response["messages"]
-        else:
-            message_history = []
+        # Items are stored as {"id": key, ...}, so the key is also the
+        # partition key value (the container is partitioned on "/id").
+        try:
+            response = self._container.read_item(item=key, partition_key=key)
+        except CosmosResourceNotFoundError:
+            return []
+        message_history = response["messages"]
         return [_dict_to_message(message) for message in message_history]
 
     def add_message(self, key: str, message: ChatMessage) -> None:
@@ -171,7 +174,7 @@ class AzureCosmosNoSqlChatStore(BaseChatStore):
         current_messages = _messages_to_dict(self.get_messages(key))
         current_messages.append(_message_to_dict(message))
 
-        self._container.create_item(
+        self._container.upsert_item(
             body={
                 "id": key,
                 "messages": current_messages,
@@ -181,7 +184,10 @@ class AzureCosmosNoSqlChatStore(BaseChatStore):
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Delete messages for a key."""
         messages_to_delete = self.get_messages(key)
-        self._container.delete_item(key)
+        try:
+            self._container.delete_item(item=key, partition_key=key)
+        except CosmosResourceNotFoundError:
+            pass
         return messages_to_delete
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
