@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 
@@ -15,6 +16,72 @@ from llama_index.core.vector_stores.types import (
 def test_class():
     names_of_base_classes = [b.__name__ for b in BM25Retriever.__mro__]
     assert BaseRetriever.__name__ in names_of_base_classes
+
+
+def test_query_uses_configured_stopwords():
+    nodes = [
+        Document(id_="animal", text="chien chat"),
+        Document(id_="goal", text="but victoire"),
+    ]
+    retriever = BM25Retriever.from_defaults(
+        nodes=nodes, language="fr", similarity_top_k=1
+    )
+
+    result = retriever.retrieve("but")[0]
+
+    assert result.node_id == "goal"
+    assert result.score is not None
+    assert result.score > 0
+
+
+def test_persist_preserves_query_language(tmp_path):
+    retriever = BM25Retriever.from_defaults(
+        nodes=[Document(text="but victoire")],
+        language="fr",
+        similarity_top_k=1,
+    )
+    before = retriever.retrieve("but")[0]
+    retriever.persist(str(tmp_path))
+
+    loaded = BM25Retriever.from_persist_dir(str(tmp_path))
+    after = loaded.retrieve("but")[0]
+
+    assert before.score is not None
+    assert before.score > 0
+    assert after.node_id == before.node_id
+    assert after.score == before.score
+
+
+def test_query_uses_default_english_stopwords():
+    retriever = BM25Retriever.from_defaults(
+        nodes=[Document(text="goal victory")], similarity_top_k=1
+    )
+
+    goal_score = retriever.retrieve("goal")[0].score
+
+    assert goal_score is not None
+    assert goal_score > 0
+    assert retriever.retrieve("but")[0].score == 0
+    assert retriever.retrieve("but goal")[0].score == goal_score
+
+
+def test_load_without_persisted_language(tmp_path):
+    retriever = BM25Retriever.from_defaults(
+        nodes=[Document(text="goal victory")], similarity_top_k=1
+    )
+    before = retriever.retrieve("goal")[0]
+    retriever.persist(str(tmp_path))
+    config_path = tmp_path / "retriever.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config.pop("language")
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    loaded = BM25Retriever.from_persist_dir(str(tmp_path))
+    after = loaded.retrieve("goal")[0]
+
+    assert after.node_id == before.node_id
+    assert after.score == before.score
+    assert loaded.retrieve("but")[0].score == 0
 
 
 def test_scores():
