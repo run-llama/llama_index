@@ -323,25 +323,25 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             raise ValueError("embeddings_cache must be defined")
 
         embeddings: List[Optional[Embedding]] = [None for i in range(len(texts))]
-        # Tuples of (index, text) to be able to keep same order of embeddings
-        non_cached_texts: List[Tuple[int, str]] = []
+        # Keep every position while embedding each missing text only once.
+        non_cached_texts: Dict[str, List[int]] = {}
         for i, txt in enumerate(texts):
             cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
             if cached_emb is not None:
                 cached_key = next(iter(cached_emb.keys()))
                 embeddings[i] = cached_emb[cached_key]
             else:
-                non_cached_texts.append((i, txt))
+                non_cached_texts.setdefault(txt, []).append(i)
         if len(non_cached_texts) > 0:
-            text_embeddings = self._get_text_embeddings(
-                [x[1] for x in non_cached_texts]
-            )
+            missing_texts = list(non_cached_texts)
+            text_embeddings = self._get_text_embeddings(missing_texts)
             for j, text_embedding in enumerate(text_embeddings):
-                orig_i = non_cached_texts[j][0]
-                embeddings[orig_i] = text_embedding
+                text = missing_texts[j]
+                for orig_i in non_cached_texts[text]:
+                    embeddings[orig_i] = text_embedding
 
                 self.embeddings_cache.put(
-                    key=texts[orig_i],
+                    key=text,
                     val={str(uuid.uuid4()): text_embedding},
                     collection="embeddings",
                 )
@@ -355,8 +355,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             raise ValueError("embeddings_cache must be defined")
 
         embeddings: List[Optional[Embedding]] = [None for i in range(len(texts))]
-        # Tuples of (index, text) to be able to keep same order of embeddings
-        non_cached_texts: List[Tuple[int, str]] = []
+        # Keep every position while embedding each missing text only once.
+        non_cached_texts: Dict[str, List[int]] = {}
         for i, txt in enumerate(texts):
             cached_emb = await self.embeddings_cache.aget(
                 key=txt, collection="embeddings"
@@ -365,17 +365,17 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 cached_key = next(iter(cached_emb.keys()))
                 embeddings[i] = cached_emb[cached_key]
             else:
-                non_cached_texts.append((i, txt))
+                non_cached_texts.setdefault(txt, []).append(i)
 
         if len(non_cached_texts) > 0:
-            text_embeddings = await self._aget_text_embeddings(
-                [x[1] for x in non_cached_texts]
-            )
+            missing_texts = list(non_cached_texts)
+            text_embeddings = await self._aget_text_embeddings(missing_texts)
             for j, text_embedding in enumerate(text_embeddings):
-                orig_i = non_cached_texts[j][0]
-                embeddings[orig_i] = text_embedding
+                text = missing_texts[j]
+                for orig_i in non_cached_texts[text]:
+                    embeddings[orig_i] = text_embedding
                 await self.embeddings_cache.aput(
-                    key=texts[orig_i],
+                    key=text,
                     val={str(uuid.uuid4()): text_embedding},
                     collection="embeddings",
                 )
