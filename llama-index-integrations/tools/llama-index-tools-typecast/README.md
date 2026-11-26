@@ -37,7 +37,7 @@ This tool is designed to be used as a Tool in an Agent.
 - **Emotion Control**: Adjust emotional expression (happy, sad, angry, normal, whisper, etc.) with intensity control
 - **Audio Customization**: Control volume, pitch, tempo, and output format (WAV/MP3)
 - **Reproducible Results**: Use seed parameter for consistent audio generation
-- **Voice Discovery**: List and search available voices by model, gender, age, or use case (V2 API)
+- **Voice Discovery**: List and search available voices by model, gender, age, or use case (V3 API)
 
 ## Advanced Usage
 
@@ -57,12 +57,12 @@ result = speech_tool.text_to_speech(
 )
 ```
 
-### Getting Voice Details (V2 API)
+### Getting Voice Details (V3 API)
 
 ```python
 # Get specific voice information
 voice = speech_tool.get_voice("tc_62a8975e695ad26f7fb514d1")
-print(f"Voice: {voice['voice_name']}")
+print(f"Voice: {voice['voice_name']['eng']}")
 print(f"Gender: {voice['gender']}, Age: {voice['age']}")
 print(f"Use cases: {voice['use_cases']}")
 
@@ -71,7 +71,7 @@ for model in voice["models"]:
     print(f"Model {model['version']}: emotions = {model['emotions']}")
 ```
 
-### Filtering Voices (V2 API)
+### Filtering Voices (V3 API)
 
 ```python
 # Filter by model, gender, age, and use case
@@ -80,5 +80,5 @@ voices = speech_tool.get_voices(
 )
 
 for voice in voices:
-    print(f"{voice['voice_name']} ({voice['voice_id']})")
+    print(f"{voice['voice_name']['eng']} ({voice['voice_id']})")
 ```
