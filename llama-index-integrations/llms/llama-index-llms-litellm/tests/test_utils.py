@@ -19,6 +19,7 @@ import json
 from unittest.mock import MagicMock
 import base64
 import io
+import pytest
 
 
 def test_model_context_size():
@@ -341,7 +342,39 @@ def test_update_tool_calls_partial_arguments():
     assert result[0]["function"]["arguments"] == '{"key":'
 
 
-def test_update_tool_calls_multiple_parallel():
+@pytest.mark.parametrize("repeat_id", [False, True])
+def test_update_tool_calls_repeated_id_is_not_appended(repeat_id):
+    """Tool call IDs are stable identifiers, not streamed text fragments."""
+    tool_calls = [
+        {
+            "id": "call_123",
+            "type": "function",
+            "index": 0,
+            "function": {"name": "test_function", "arguments": "{"},
+        }
+    ]
+
+    delta = ChatCompletionDeltaToolCall(
+        index=0, id="call_123", function={"arguments": '"key":'}
+    )
+
+    result = update_tool_calls(tool_calls, [delta])
+    assert result[0]["id"] == "call_123"
+
+    delta = ChatCompletionDeltaToolCall(
+        index=0,
+        id="call_123" if repeat_id else None,
+        function={"arguments": "1}"},
+    )
+    result = update_tool_calls(result, [delta])
+    assert len(result) == 1
+    assert result[0]["id"] == "call_123"
+    assert result[0]["function"]["name"] == "test_function"
+    assert result[0]["function"]["arguments"] == '{"key":1}'
+
+
+@pytest.mark.parametrize("repeat_id", [False, True])
+def test_update_tool_calls_multiple_parallel(repeat_id):
     """Test handling multiple parallel tool calls."""
     tool_calls = [
         {
@@ -359,12 +392,22 @@ def test_update_tool_calls_multiple_parallel():
     ]
 
     deltas = [
-        ChatCompletionDeltaToolCall(index=0, function={"arguments": '"a":1}'}),
-        ChatCompletionDeltaToolCall(index=1, function={"arguments": '"b":2}'}),
+        ChatCompletionDeltaToolCall(
+            index=1,
+            id="call_2" if repeat_id else None,
+            function={"arguments": '"b":2}'},
+        ),
+        ChatCompletionDeltaToolCall(
+            index=0,
+            id="call_1" if repeat_id else None,
+            function={"arguments": '"a":1}'},
+        ),
     ]
 
     result = update_tool_calls(tool_calls, deltas)
     assert len(result) == 2
+    assert result[0]["id"] == "call_1"
+    assert result[1]["id"] == "call_2"
     assert result[0]["function"]["arguments"] == '{"a":1}'
     assert result[1]["function"]["arguments"] == '{"b":2}'
 
