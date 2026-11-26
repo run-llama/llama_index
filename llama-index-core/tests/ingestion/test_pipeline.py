@@ -317,6 +317,50 @@ def test_pipeline_upserts_keep_all_nodes_per_doc() -> None:
     )
 
 
+def test_pipeline_upserts_and_delete_removes_doc_sharing_content_hash() -> None:
+    """
+    Regression test: UPSERTS_AND_DELETE enumerated the stored documents through
+    `get_all_document_hashes()`, which is keyed by hash. Two documents with the
+    same content collapsed to a single entry there, so removing one of them from
+    the source left it behind in the docstore and vector store.
+    """
+    doc_a = Document(text="same text", doc_id="doc_A")
+    doc_b = Document(text="same text", doc_id="doc_B")
+    assert doc_a.hash == doc_b.hash
+    pipeline = IngestionPipeline(
+        transformations=[],
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    )
+
+    pipeline.run(documents=[doc_a, doc_b])
+    assert set(pipeline.docstore.docs.keys()) == {"doc_A", "doc_B"}
+
+    pipeline.run(documents=[doc_b])
+    assert set(pipeline.docstore.docs.keys()) == {"doc_B"}
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_upserts_and_delete_removes_doc_sharing_content_hash() -> (
+    None
+):
+    doc_a = Document(text="same text", doc_id="doc_A")
+    doc_b = Document(text="same text", doc_id="doc_B")
+    pipeline = IngestionPipeline(
+        transformations=[],
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    )
+
+    await pipeline.arun(documents=[doc_a, doc_b])
+    assert set(pipeline.docstore.docs.keys()) == {"doc_A", "doc_B"}
+
+    await pipeline.arun(documents=[doc_b])
+    assert set(pipeline.docstore.docs.keys()) == {"doc_B"}
+
+
 @pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
 def test_pipeline_parallel_cache_populated() -> None:
     num_workers = 2
