@@ -63,5 +63,6 @@ Store and retrieve vector embeddings:
 - [Redis](/python/examples/vector_stores/redisindexdemo) - Redis vector database
 - [Milvus](/python/examples/vector_stores/milvusindexdemo) - Milvus vector database
 - [Azure AI Search](/python/examples/vector_stores/azureaisearchindexdemo) - Azure AI Search vector database
+- [Supabase](/python/framework/integrations/vector_stores/supabasevectorindexdemo) - Supabase Vector Store
 
 You might also be interested in the [general introduction to vector stores and retrieval](/python/framework/understanding/rag).
