@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 
 from llama_index.core.base.llms.types import (
@@ -7,7 +9,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     VideoBlock,
 )
-from llama_index.core.memory.memory import Memory
+from llama_index.core.memory.memory import DEFAULT_TOKEN_LIMIT, Memory
 from llama_index.core.storage.chat_store.sql import MessageStatus
 
 
@@ -28,6 +30,23 @@ async def test_initialization(memory):
     assert memory.token_limit == 1000
     assert memory.token_flush_size == 700
     assert memory.session_id == "test_user"
+
+
+def test_defaults_are_applied() -> None:
+    """The declared token_limit default must not be rejected by validation."""
+    memory = Memory()
+    assert memory.token_limit == DEFAULT_TOKEN_LIMIT
+    assert memory.token_flush_size == int(DEFAULT_TOKEN_LIMIT * 0.1)
+
+    validated = Memory.model_validate({"memory_blocks": []})
+    assert validated.token_limit == DEFAULT_TOKEN_LIMIT
+
+
+@pytest.mark.parametrize("token_limit", [None, 0, -1])
+def test_invalid_token_limit_raises(token_limit: Optional[int]) -> None:
+    """An explicitly invalid token_limit reports a validation error."""
+    with pytest.raises(ValueError, match="Token limit must be set and greater than 0."):
+        Memory(token_limit=token_limit)
 
 
 @pytest.mark.asyncio
