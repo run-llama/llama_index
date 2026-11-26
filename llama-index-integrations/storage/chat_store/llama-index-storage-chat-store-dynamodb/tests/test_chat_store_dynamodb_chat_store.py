@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from moto import mock_aws
 import boto3
@@ -192,3 +194,120 @@ def test_no_ttl_when_disabled(chat_store):
 
     # Verify TTL attribute does not exist
     assert "TTL" not in item
+
+
+class _AsyncTable:
+    """Async facade over a (moto-backed) sync boto3 table."""
+
+    def __init__(self, table):
+        self._table = table
+
+    async def put_item(self, **kwargs):
+        return self._table.put_item(**kwargs)
+
+    async def get_item(self, **kwargs):
+        return self._table.get_item(**kwargs)
+
+    async def delete_item(self, **kwargs):
+        return self._table.delete_item(**kwargs)
+
+    async def scan(self, **kwargs):
+        return self._table.scan(**kwargs)
+
+
+@pytest.fixture()
+def fake_aioboto3(dynamo_db, monkeypatch):
+    """
+    Replace ``aioboto3.Session`` with a fake whose resources are backed by moto.
+
+    ``init_async_table`` itself runs unmodified, and the kwargs it passes to
+    the session and the resource are recorded.
+    """
+    import aioboto3
+
+    calls = {"session": [], "resource": []}
+
+    class FakeResource:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        async def Table(self, name):
+            return _AsyncTable(dynamo_db.Table(name))
+
+    class FakeSession:
+        def __init__(self, **kwargs):
+            calls["session"].append(kwargs)
+
+        def resource(self, service_name, **kwargs):
+            calls["resource"].append({"service_name": service_name, **kwargs})
+            return FakeResource()
+
+    monkeypatch.setattr(aioboto3, "Session", FakeSession)
+    return calls
+
+
+def test_async_methods(chat_store, fake_aioboto3):
+    async def run():
+        await chat_store.aset_messages(
+            "S", [ChatMessage(content="Hello"), ChatMessage(content="World")]
+        )
+        await chat_store.async_add_message("S", ChatMessage(content="Added"))
+        messages = await chat_store.aget_messages("S")
+        assert [m.content for m in messages] == ["Hello", "World", "Added"]
+
+        deleted = await chat_store.adelete_message("S", 1)
+        assert deleted.content == "World"
+
+        last = await chat_store.adelete_last_message("S")
+        assert isinstance(last, ChatMessage)
+        assert last.content == "Added"
+
+        await chat_store.aset_messages("Other", [])
+        assert sorted(await chat_store.aget_keys()) == ["Other", "S"]
+
+        deleted_all = await chat_store.adelete_messages("S")
+        assert [m.content for m in deleted_all] == ["Hello"]
+        assert await chat_store.aget_messages("S") == []
+
+    asyncio.run(run())
+
+    # The async table is created once and then reused.
+    assert len(fake_aioboto3["session"]) == 1
+    # Async and sync paths see the same data.
+    assert chat_store.get_keys() == ["Other"]
+
+
+def test_async_session_uses_same_settings_as_sync(dynamo_db, fake_aioboto3):
+    dynamo_db.create_table(
+        TableName="TestTable",
+        KeySchema=[{"AttributeName": "SessionId", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "SessionId", "AttributeType": "S"}],
+        ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
+    )
+    chat_store = DynamoDBChatStore(
+        table_name="TestTable",
+        region_name="us-east-1",
+        aws_access_key_id="key-id",
+        aws_secret_access_key="secret",
+        aws_session_token="token",
+        max_retries=3,
+        timeout=5.0,
+    )
+
+    asyncio.run(chat_store.aget_messages("S"))
+
+    session_kwargs = fake_aioboto3["session"][0]
+    assert session_kwargs["region_name"] == "us-east-1"
+    assert session_kwargs["aws_access_key_id"] == "key-id"
+    assert session_kwargs["aws_secret_access_key"] == "secret"
+    assert session_kwargs["aws_session_token"] == "token"
+    assert "botocore_session" not in session_kwargs
+
+    config = fake_aioboto3["resource"][0]["config"]
+    assert config is not None
+    assert config.retries == {"max_attempts": 3, "mode": "standard"}
+    assert config.connect_timeout == 5.0
+    assert config.read_timeout == 5.0

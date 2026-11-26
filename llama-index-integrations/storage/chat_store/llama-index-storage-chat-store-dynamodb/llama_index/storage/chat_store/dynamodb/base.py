@@ -111,7 +111,9 @@ class DynamoDBChatStore(BaseChatStore):
     _client: ServiceResource = PrivateAttr()
     _table: Any = PrivateAttr()
     _aclient: ServiceResource = PrivateAttr()
-    _atable: Any = PrivateAttr()
+    _atable: Any = PrivateAttr(default=None)
+    _async_session_kwargs: Dict[str, Any] = PrivateAttr(default_factory=dict)
+    _botocore_config: Any = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -184,20 +186,28 @@ class DynamoDBChatStore(BaseChatStore):
         self._client = session.resource("dynamodb", config=config, **resource_kwargs)
         self._table = self._client.Table(table_name)
 
+        # The async table must talk to the same account/region with the same
+        # retry/timeout settings as the sync table. A botocore session can't be
+        # reused by aioboto3, so it is the only sync-only option left out.
+        self._async_session_kwargs = {
+            k: v for k, v in session_kwargs.items() if k != "botocore_session"
+        }
+        self._botocore_config = config
+
     async def init_async_table(self):
         """Initialize asynchronous table."""
         if self._atable is None:
             try:
                 import aioboto3
 
-                async_session = aioboto3.Session(**self.session_kwargs)
+                async_session = aioboto3.Session(**self._async_session_kwargs)
             except ImportError:
                 raise ImportError(
                     "aioboto3 package not found, install with 'pip install aioboto3'"
                 )
 
             async with async_session.resource(
-                "dynamodb", config=self.botocore_config, **self.resource_kwargs
+                "dynamodb", config=self._botocore_config, **self.resource_kwargs
             ) as dynamodb:
                 self._atable = await dynamodb.Table(self.table_name)
 
@@ -227,7 +237,7 @@ class DynamoDBChatStore(BaseChatStore):
         self._table.put_item(Item=item)
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        self.init_async_table()
+        await self.init_async_table()
 
         item = {self.primary_key: key, "History": _messages_to_dict(messages)}
 
@@ -258,7 +268,7 @@ class DynamoDBChatStore(BaseChatStore):
         return [_dict_to_message(message) for message in message_history]
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
-        self.init_async_table()
+        await self.init_async_table()
         response = await self._atable.get_item(Key={self.primary_key: key})
 
         if response and "Item" in response:
@@ -293,7 +303,7 @@ class DynamoDBChatStore(BaseChatStore):
         self._table.put_item(Item=item)
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
-        self.init_async_table()
+        await self.init_async_table()
         current_messages = _messages_to_dict(await self.aget_messages(key))
         current_messages.append(_message_to_dict(message))
 
@@ -322,7 +332,7 @@ class DynamoDBChatStore(BaseChatStore):
         return messages_to_delete
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        self.init_async_table()
+        await self.init_async_table()
         messages_to_delete = await self.aget_messages(key)
         await self._atable.delete_item(Key={self.primary_key: key})
         return messages_to_delete
@@ -353,7 +363,7 @@ class DynamoDBChatStore(BaseChatStore):
             return None
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        self.init_async_table()
+        await self.init_async_table()
         current_messages = await self.aget_messages(key)
         try:
             message_to_delete = current_messages[idx]
@@ -381,7 +391,7 @@ class DynamoDBChatStore(BaseChatStore):
         return self.delete_message(key, -1)
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
-        return self.adelete_message(key, -1)
+        return await self.adelete_message(key, -1)
 
     def get_keys(self) -> List[str]:
         """
@@ -402,7 +412,7 @@ class DynamoDBChatStore(BaseChatStore):
         return keys
 
     async def aget_keys(self) -> List[str]:
-        self.init_async_table()
+        await self.init_async_table()
         response = await self._atable.scan(ProjectionExpression=self.primary_key)
         keys = [item[self.primary_key] for item in response["Items"]]
         while "LastEvaluatedKey" in response:
