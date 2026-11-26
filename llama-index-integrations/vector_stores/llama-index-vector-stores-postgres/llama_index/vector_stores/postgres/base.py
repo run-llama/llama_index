@@ -690,13 +690,18 @@ class PGVectorStore(BasePydanticVectorStore):
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
-
-            # In Python, to create a tuple with a single element, you need to include a comma after the element
-            # This code will correctly format the IN clause whether there is one element or multiple elements in the list:
-            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
+            filter_values = list(filter_.value)
+            try:
+                numeric_filter_values = [float(value) for value in filter_values]
+            except (TypeError, ValueError):
+                filter_column = f"metadata_->>'{filter_.key}'"
+                filter_value = ", ".join(f"'{value}'" for value in filter_values)
+            else:
+                filter_column = f"(metadata_->>'{filter_.key}')::float"
+                filter_value = ", ".join(str(value) for value in numeric_filter_values)
 
             return text(
-                f"metadata_->>'{filter_.key}' "
+                f"{filter_column} "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
             )
