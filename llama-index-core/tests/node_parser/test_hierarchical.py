@@ -67,3 +67,25 @@ def test_get_deeper_nodes_with_no_root_nodes(nodes: list) -> None:
 def test_get_deeper_nodes_with_negative_depth(nodes: list) -> None:
     with pytest.raises(ValueError, match="Depth cannot be*"):
         get_deeper_nodes(nodes, -1)
+
+
+@pytest.mark.asyncio
+async def test_async_parsing_matches_sync(nodes: list) -> None:
+    from llama_index.core.ingestion import IngestionPipeline
+
+    node_parser = HierarchicalNodeParser.from_defaults(
+        chunk_sizes=[512, 128, 64],
+        chunk_overlap=10,
+    )
+    documents = [Document.example()]
+    expected = [node.get_content() for node in nodes]
+
+    for parsed in (
+        await node_parser.aget_nodes_from_documents(documents),
+        await node_parser.acall(documents),
+        await IngestionPipeline(transformations=[node_parser]).arun(
+            documents=documents
+        ),
+    ):
+        assert [node.get_content() for node in parsed] == expected
+        assert len(get_leaf_nodes(parsed)) == GRAND_CHILDREN_NODES_LEN
