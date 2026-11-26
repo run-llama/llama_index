@@ -62,13 +62,20 @@
       "groupSlug": "uv-lock-storage"
     },
     {
-      "description": "A security fix outside a package's published range changes what users install: open it as a draft for a maintainer. In-range fixes only move uv.lock",
-      "matchManagers": ["pep621"],
-      "matchJsonata": [
-        "isVulnerabilityAlert = true and isLockfileUpdate != true"
+      "description": "llama-index-postprocessor-rankllm-rerank cannot resolve at all: it requires transformers>=5.10.0 and rank-llm>=0.25.7, and every rank-llm release requires transformers<4.56 (uv lock, 2026-11-25). Its lock failure blocked the whole other-integrations lockfile group (#24484). Off until the package's requirements are fixed",
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": [
+        "llama-index-integrations/postprocessor/llama-index-postprocessor-rankllm-rerank/**"
       ],
+      "enabled": false
+    },
+    {
+      "description": "A security fix outside a package's published range changes what users install: open it as a draft for a maintainer. Matched on isLockfileUpdate alone, which Renovate sets per update when the range stays: version updates are off for pep621 here, so any other pep621 update is a vulnerability fix. In-range fixes only move uv.lock",
+      "matchManagers": ["pep621"],
+      "matchJsonata": ["isLockfileUpdate != true"],
       "draftPR": true,
-      "automerge": false
+      "automerge": false,
+      "matchUpdateTypes": ["major", "minor", "patch", "replacement"]
     }
   ]
 }
