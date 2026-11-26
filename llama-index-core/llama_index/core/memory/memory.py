@@ -710,9 +710,16 @@ class Memory(BaseMemory):
                 messages_to_flush = []
                 flushed_tokens = 0
 
-                # Remove oldest messages (from end of reversed list) until reaching flush size
+                # Stop once the queue is back under the limit: a flush trims
+                # the history, it does not empty it. `_manage_queue` runs after
+                # every `put`, so the queue is normally only a message or two
+                # over budget; evicting a full `token_flush_size` batch in that
+                # case discarded nearly the whole conversation (24 -> 2),
+                # which is the small-context `Memory.from_defaults()`
+                # behaviour reported in #24117.
+                flush_target = min(self.token_flush_size, tokens_to_remove)
                 while (
-                    flushed_tokens < self.token_flush_size
+                    flushed_tokens < flush_target
                     and reversed_queue
                     and len(reversed_queue) > 1
                 ):

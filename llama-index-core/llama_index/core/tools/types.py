@@ -20,6 +20,20 @@ class DefaultToolFnSchema(BaseModel):
     input: str
 
 
+def _declare_required(schema: dict) -> None:
+    """
+    Ensure an object schema always declares "required".
+
+    pydantic omits "required" when a model has no fields at all, or when every
+    field has a default. The OpenAI function-calling spec defines
+    "required" as a (possibly empty) list, and strict OpenAI-compatible
+    servers (vLLM among them) reject a tool schema without it, so a
+    zero-argument tool could take down the whole request (see #18928).
+    """
+    if schema.get("type") == "object" and "required" not in schema:
+        schema["required"] = []
+
+
 @dataclass
 class ToolMetadata:
     description: str
@@ -43,6 +57,14 @@ class ToolMetadata:
                 for k, v in parameters.items()
                 if k in ["type", "properties", "required", "definitions", "$defs"]
             }
+            _declare_required(parameters)
+            # Nested models are inlined under "$defs"/"definitions"; a nested
+            # model whose fields are all optional has the same missing
+            # "required" problem, and strict servers validate those too.
+            for defs_key in ("$defs", "definitions"):
+                for nested in (parameters.get(defs_key) or {}).values():
+                    if isinstance(nested, dict):
+                        _declare_required(nested)
         return parameters
 
     @property
