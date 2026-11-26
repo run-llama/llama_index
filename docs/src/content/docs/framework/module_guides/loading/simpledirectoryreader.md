@@ -189,3 +189,7 @@ print(documents)
 ```
 
 A full example notebook can be found [here](https://github.com/run-llama/llama_index/blob/main/docs/examples/data_connectors/simple_directory_reader_remote_fs.ipynb).
+
+## Vietnamese PDFs
+
+`.pdf` files are read with `PDFReader`, which extracts text using pypdf. For Vietnamese, keep that reader so tone marks are preserved, and word-segment the text before chunking. See [Vietnamese PDF ingestion](/python/framework/module_guides/loading/vietnamese).

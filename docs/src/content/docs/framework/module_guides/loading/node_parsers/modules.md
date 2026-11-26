@@ -119,6 +119,8 @@ nodes = parser.get_nodes_from_documents(documents)
 
 The `SentenceSplitter` attempts to split text while respecting the boundaries of sentences.
 
+Vietnamese words are often several syllables separated by spaces. Word-segment the document text before this splitter runs so those words stay in one piece. See [Vietnamese PDF ingestion](/python/framework/module_guides/loading/vietnamese).
+
 ```python
 from llama_index.core.node_parser import SentenceSplitter
 

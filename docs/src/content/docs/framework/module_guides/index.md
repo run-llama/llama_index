@@ -23,6 +23,7 @@ Welcome to the LlamaIndex component guides! This section provides detailed docum
 - [Introduction to Loading](/python/framework/module_guides/loading) - Overview of data loading capabilities
 - [Documents and Nodes](/python/framework/module_guides/loading/documents_and_nodes) - Core data structures
 - [SimpleDirectoryReader](/python/framework/module_guides/loading/simpledirectoryreader) - Easy document loading
+- [Vietnamese PDF ingestion](/python/framework/module_guides/loading/vietnamese) - Segment words before chunking, and extract tone marks with pypdf
 - [Data Connectors](/python/framework/module_guides/loading/connector) - Connect to external data sources
 - [Node Parsers / Text Splitters](/python/framework/module_guides/loading/node_parsers) - Split documents into chunks
 - [Ingestion Pipeline](/python/framework/module_guides/loading/ingestion_pipeline) - End-to-end document processing
