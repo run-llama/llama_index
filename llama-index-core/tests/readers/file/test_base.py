@@ -130,6 +130,29 @@ async def test_SimpleDirectoryReader_aload_resource(data_path):
     assert isinstance(res[0], Document)
 
 
+def test_SimpleDirectoryReader_load_resource_with_overrides(tmp_path):
+    path = tmp_path / "example.txt"
+    path.write_text("café", encoding="latin-1")
+    r = SimpleDirectoryReader(input_dir=tmp_path)
+
+    (doc,) = r.load_resource(str(path), filename_as_id=True, encoding="latin-1")
+
+    assert doc.id_ == str(path)
+    assert doc.text == "café"
+
+
+@pytest.mark.asyncio
+async def test_SimpleDirectoryReader_aload_resource_with_overrides(tmp_path):
+    path = tmp_path / "example.txt"
+    path.write_text("café", encoding="latin-1")
+    r = SimpleDirectoryReader(input_dir=tmp_path)
+
+    (doc,) = await r.aload_resource(str(path), filename_as_id=True, encoding="latin-1")
+
+    assert doc.id_ == str(path)
+    assert doc.text == "café"
+
+
 def test_SimpleDirectoryReader_read_file_content(data_path):
     r = SimpleDirectoryReader(input_dir=data_path)
     content = r.read_file_content(data_path / "file_0.md")

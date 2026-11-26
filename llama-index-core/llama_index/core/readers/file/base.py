@@ -498,13 +498,13 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
     def load_resource(
         self, resource_id: str, *args: Any, **kwargs: Any
     ) -> list[Document]:
-        file_metadata = kwargs.get("file_metadata", self.file_metadata)
-        file_extractor = kwargs.get("file_extractor", self.file_extractor)
-        filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
-        encoding = kwargs.get("encoding", self.encoding)
-        errors = kwargs.get("errors", self.errors)
-        raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
-        fs = kwargs.get("fs", self.fs)
+        file_metadata = kwargs.pop("file_metadata", self.file_metadata)
+        file_extractor = kwargs.pop("file_extractor", self.file_extractor)
+        filename_as_id = kwargs.pop("filename_as_id", self.filename_as_id)
+        encoding = kwargs.pop("encoding", self.encoding)
+        errors = kwargs.pop("errors", self.errors)
+        raise_on_error = kwargs.pop("raise_on_error", self.raise_on_error)
+        fs = kwargs.pop("fs", self.fs)
 
         _Path = Path if is_default_fs(fs) else PurePosixPath
 
@@ -523,13 +523,13 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
     async def aload_resource(
         self, resource_id: str, *args: Any, **kwargs: Any
     ) -> list[Document]:
-        file_metadata = kwargs.get("file_metadata", self.file_metadata)
-        file_extractor = kwargs.get("file_extractor", self.file_extractor)
-        filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
-        encoding = kwargs.get("encoding", self.encoding)
-        errors = kwargs.get("errors", self.errors)
-        raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
-        fs = kwargs.get("fs", self.fs)
+        file_metadata = kwargs.pop("file_metadata", self.file_metadata)
+        file_extractor = kwargs.pop("file_extractor", self.file_extractor)
+        filename_as_id = kwargs.pop("filename_as_id", self.filename_as_id)
+        encoding = kwargs.pop("encoding", self.encoding)
+        errors = kwargs.pop("errors", self.errors)
+        raise_on_error = kwargs.pop("raise_on_error", self.raise_on_error)
+        fs = kwargs.pop("fs", self.fs)
         _Path = Path if is_default_fs(fs) else PurePosixPath
 
         return await SimpleDirectoryReader.aload_file(
