@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai"
-version = "0.9.0"
+version = "0.10.0"
 description = "llama-index llms openai integration"
 authors = [{name = "llama-index"}]
 requires-python = ">=3.11,<4.0"
@@ -54,6 +54,7 @@ import_path = "llama_index.llms.openai"
 
 [tool.llamahub.class_authors]
 OpenAI = "llama-index"
+OpenAIBatchProcessor = "llama-index"
 OpenAIResponses = "llama-index"
 
 [tool.mypy]

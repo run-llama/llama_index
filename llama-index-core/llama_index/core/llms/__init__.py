@@ -18,6 +18,14 @@ from llama_index.core.base.llms.types import (
     CitableBlock,
     CitationBlock,
 )
+from llama_index.core.llms.batch import (
+    BaseBatchProcessor,
+    BatchJobHandle,
+    BatchJobResult,
+    BatchJobStatus,
+    BatchRequestItem,
+    BatchResultItem,
+)
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import (
@@ -27,6 +35,12 @@ from llama_index.core.llms.mock import (
 )
 
 __all__ = [
+    "BaseBatchProcessor",
+    "BatchJobHandle",
+    "BatchJobResult",
+    "BatchJobStatus",
+    "BatchRequestItem",
+    "BatchResultItem",
     "CustomLLM",
     "LLM",
     "ChatMessage",
