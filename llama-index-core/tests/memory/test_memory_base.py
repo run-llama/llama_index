@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from llama_index.core.base.llms.types import (
@@ -7,8 +9,12 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     VideoBlock,
 )
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.memory.memory import Memory
-from llama_index.core.storage.chat_store.sql import MessageStatus
+from llama_index.core.storage.chat_store.sql import (
+    SQLAlchemyChatStore,
+    MessageStatus,
+)
 
 
 @pytest.fixture()
@@ -337,3 +343,63 @@ async def test_manage_queue_only_tool_message_remaining():
         assert cur_messages[0].role == "user", (
             f"First message must be 'user', got '{cur_messages[0].role}'"
         )
+
+
+class _ParkedWriteChatStore(SQLAlchemyChatStore):
+    """Chat store that parks the first `add_messages` call until it is released."""
+
+    _entered: asyncio.Event = PrivateAttr()
+    _release: asyncio.Event = PrivateAttr()
+    _park_next: bool = PrivateAttr(default=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._entered = asyncio.Event()
+        self._release = asyncio.Event()
+        self._park_next = True
+
+    async def add_messages(self, key, messages, status=MessageStatus.ACTIVE):
+        if self._park_next:
+            self._park_next = False
+            self._entered.set()
+            await self._release.wait()
+        return await super().add_messages(key, messages, status=status)
+
+
+@pytest.mark.asyncio
+async def test_reset_discards_write_it_overlaps_with():
+    """A write already in flight must not bring back history that reset cleared."""
+    store = _ParkedWriteChatStore(
+        table_name="race_messages",
+        async_database_uri="sqlite+aiosqlite:///:memory:",
+    )
+    memory = Memory(
+        token_limit=1000,
+        memory_blocks=[],
+        sql_store=store,
+        session_id="race",
+        tokenizer_fn=list,
+    )
+
+    write = asyncio.create_task(
+        memory.aput_messages([ChatMessage(role="user", content="stale-context")])
+    )
+    await asyncio.wait_for(store._entered.wait(), timeout=5)
+
+    reset = asyncio.create_task(memory.areset())
+
+    # Give the reset time to run: unfenced it reaches the store immediately,
+    # fenced it waits for the parked write to finish.
+    for _ in range(50):
+        if reset.done():
+            break
+        await asyncio.sleep(0.01)
+
+    store._release.set()
+    await asyncio.gather(write, reset)
+
+    assert await memory.aget_all() == []
+
+    # The lock must be released again, so later writes still land.
+    await memory.aput_messages([ChatMessage(role="user", content="new-context")])
+    assert [m.content for m in await memory.aget_all()] == ["new-context"]
