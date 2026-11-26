@@ -1946,14 +1946,14 @@ wheels = [
 
 [[package]]
 name = "llama-index-indices-managed-vectara"
-version = "0.5.1"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/55/03/255b520909f12093eb02af8061037b155123c7d53bb2b2de3bba401eca20/llama_index_indices_managed_vectara-0.5.1.tar.gz", hash = "sha256:c8d9ae95917db8f4081ffd5835d3bdf736d11ebce1816a6fe64e28a10e07ad2c", size = 17880, upload-time = "2025-09-08T20:34:06.447Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/dd/e6bdfb890296fdf5646f9e353787d59e475d93244477659a4ad37425e86e/llama_index_indices_managed_vectara-0.8.0.tar.gz", hash = "sha256:132d785ab599695a26d22312eb0b1c17fb2abd0b6671be50c14933e5b2777a88", size = 17866, upload-time = "2026-11-14T02:10:42.277Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/a0/bf404c7dc7ee560b6befe4d3f478eeedafdedf1c7efc5ebd5fd6a86c5949/llama_index_indices_managed_vectara-0.5.1-py3-none-any.whl", hash = "sha256:c26af6cc328b61b04eb0d86918e44415c29b1a168055123cdd8d92e3d2983c5a", size = 19576, upload-time = "2025-09-08T20:34:05.696Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/92/f2211a8b46efd06e1d749b6f48f23b66cb21bdfca97e1cd5feb17a73fde5/llama_index_indices_managed_vectara-0.8.0-py3-none-any.whl", hash = "sha256:b1668757c899506136dafa5de676adc3cbad260a81a01be1150c62785f4870d5", size = 19573, upload-time = "2026-11-14T02:10:41.358Z" },
 ]
 
 [[package]]
@@ -1984,7 +1984,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-vectara-query"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2017,7 +2017,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-indices-managed-vectara", specifier = ">=0.5.0,<0.6" },
+    { name = "llama-index-indices-managed-vectara", specifier = ">=0.5.0,<0.9.0" },
 ]
 
 [package.metadata.requires-dev]
