@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [WebRouter](https://github.com/yogev-nimble/llama-index-tools-webrouter) (`llama-index-tools-webrouter`): web search and page extraction with no API key, routed across several providers with fallback
 
 ## LlamaPacks -- Code Templates
 
