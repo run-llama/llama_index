@@ -703,6 +703,72 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("operator", "expected_ids"),
+    [
+        (FilterOperator.IN, set()),
+        (FilterOperator.NIN, {"aaa", "bbb", "ccc", "ddd"}),
+    ],
+)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_query_with_empty_membership_filter(
+    pg: PGVectorStore,
+    node_embeddings: List[TextNode],
+    operator: FilterOperator,
+    expected_ids: set[str],
+    use_async: bool,
+) -> None:
+    pg.add(node_embeddings)
+    query = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=10,
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="test_key", value=[], operator=operator)]
+        ),
+    )
+
+    try:
+        result = await pg.aquery(query) if use_async else pg.query(query)
+    finally:
+        await pg.close()
+
+    assert set(result.ids or []) == expected_ids
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_empty_nin_respects_empty_node_ids(
+    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    pg.add(node_embeddings)
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="test_key", value=[], operator=FilterOperator.NIN)]
+    )
+
+    try:
+        if use_async:
+            matched = await pg.aget_nodes(node_ids=[], filters=filters)
+            await pg.adelete_nodes(node_ids=[], filters=filters)
+            remaining = await pg.aget_nodes(filters=filters)
+        else:
+            matched = pg.get_nodes(node_ids=[], filters=filters)
+            pg.delete_nodes(node_ids=[], filters=filters)
+            remaining = pg.get_nodes(filters=filters)
+    finally:
+        await pg.close()
+
+    assert (
+        [node.node_id for node in matched],
+        {node.node_id for node in remaining},
+    ) == (
+        [],
+        {node.node_id for node in node_embeddings},
+    )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_any_operator(

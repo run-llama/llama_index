@@ -39,7 +39,7 @@ from llama_index.core.vector_stores.utils import (
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 
-from sqlalchemy import text, select
+from sqlalchemy import false, select, text, true
 from sqlalchemy.sql.selectable import Select
 
 PGType = Literal[
@@ -689,6 +689,9 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            if filter_.value == []:
+                return false() if filter_.operator == FilterOperator.IN else true()
+
             # Expects a single value in the metadata, and a list to compare
 
             # In Python, to create a tuple with a single element, you need to include a comma after the element
@@ -1512,7 +1515,7 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             stmt = delete(self._table_class)
 
-            if node_ids:
+            if node_ids is not None:
                 stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
             if filters:
@@ -1544,7 +1547,7 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session, async_session.begin():
             stmt = delete(self._table_class)
 
-            if node_ids:
+            if node_ids is not None:
                 stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
             if filters:
@@ -1594,7 +1597,7 @@ class PGVectorStore(BasePydanticVectorStore):
             self._table_class.embedding,
         )
 
-        if node_ids:
+        if node_ids is not None:
             stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
         if filters:
@@ -1649,7 +1652,7 @@ class PGVectorStore(BasePydanticVectorStore):
             self._table_class.embedding,
         )
 
-        if node_ids:
+        if node_ids is not None:
             stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
         if filters:
