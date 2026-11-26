@@ -115,3 +115,39 @@ def test_persistence(hnswlib_store: HnswlibVectorStore, tmp_path):
         hnswlib_store.client.get_current_count()
         == store_from_path.client.get_current_count()
     )
+
+
+@pytest.mark.parametrize("node_count", [0, 1, 3])
+@pytest.mark.parametrize("top_k", [0, 1, 2, 5])
+def test_query_limits_results_to_index_size(node_count: int, top_k: int) -> None:
+    store = HnswlibVectorStore.from_params("l2", 2, 10)
+    embeddings = [[1.0, 0.0], [0.0, 1.0], [-1.0, 0.0]]
+    if node_count:
+        store.add(
+            [
+                TextNode(text=f"node {i}", embedding=embedding)
+                for i, embedding in enumerate(embeddings[:node_count])
+            ]
+        )
+
+    result = store.query(
+        VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=top_k)
+    )
+
+    assert result.ids == ["0", "1", "2"][:node_count][:top_k]
+    assert result.similarities == [0.0, 2.0, 4.0][:node_count][:top_k]
+
+
+def test_query_more_results_than_nodes_after_reload(tmp_path) -> None:
+    store = HnswlibVectorStore.from_params("l2", 2, 10)
+    store.add([TextNode(text="only node", embedding=[1.0, 0.0])])
+    persist_path = str(tmp_path / "hnswlib.index")
+    store.persist(persist_path)
+    restored = HnswlibVectorStore.from_persist_path(persist_path)
+
+    result = restored.query(
+        VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=3)
+    )
+
+    assert result.ids == ["0"]
+    assert result.similarities == [0.0]
