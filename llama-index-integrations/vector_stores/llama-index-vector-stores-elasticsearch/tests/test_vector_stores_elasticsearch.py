@@ -4,8 +4,15 @@ import os
 import re
 import uuid
 from typing import AsyncGenerator, List, Generator
+from unittest.mock import MagicMock, patch
 
-from elasticsearch import AsyncElasticsearch, ConnectionError
+from elasticsearch import AsyncElasticsearch, ConnectionError, Elasticsearch
+from elasticsearch.helpers.vectorstore import (
+    AsyncDenseVectorStrategy,
+    AsyncBM25Strategy,
+    AsyncSparseVectorStrategy,
+    VectorStore,
+)
 
 import pandas as pd
 import pytest
@@ -219,6 +226,95 @@ def test_mode_must_match_retrieval_strategy() -> None:
     retrieval_strategy = AsyncDenseVectorStrategy(hybrid=False)
     with pytest.raises(ValueError):
         _mode_must_match_retrieval_strategy(mode, retrieval_strategy)
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for sync/async client split (no ES server required)
+# ---------------------------------------------------------------------------
+
+
+def test_sync_store_created_when_async_client_provided() -> None:
+    """When an AsyncElasticsearch client is passed, _store (sync) should be a VectorStore."""
+    mock_async_client = MagicMock(spec=AsyncElasticsearch)
+    mock_sync_client = MagicMock(spec=Elasticsearch)
+
+    with patch(
+        "llama_index.vector_stores.elasticsearch.base.get_sync_elasticsearch_client",
+        return_value=mock_sync_client,
+    ):
+        store = ElasticsearchStore(
+            index_name="test",
+            es_client=mock_async_client,
+        )
+
+    assert isinstance(store._store, VectorStore)
+    assert isinstance(store._async_store.__class__.__name__, str)  # AsyncVectorStore
+
+
+def test_accepts_explicit_async_client() -> None:
+    """When es_async_client is passed, it is stored on the Pydantic field."""
+    mock_sync_client = MagicMock(spec=Elasticsearch)
+    explicit_async_client = MagicMock(spec=AsyncElasticsearch)
+
+    with patch(
+        "llama_index.vector_stores.elasticsearch.base.get_sync_elasticsearch_client",
+        return_value=mock_sync_client,
+    ):
+        store = ElasticsearchStore(
+            index_name="test",
+            es_client=mock_sync_client,
+            es_async_client=explicit_async_client,
+        )
+
+    # The explicit async client should be stored in the Pydantic field
+    assert store.es_async_client is explicit_async_client
+    # The sync VectorStore should be backed by the sync client
+    assert isinstance(store._store, VectorStore)
+
+
+def test_no_nest_asyncio_applied() -> None:
+    """nest_asyncio should NOT be imported or applied by ElasticsearchStore."""
+    mock_async_client = MagicMock(spec=AsyncElasticsearch)
+    mock_sync_client = MagicMock(spec=Elasticsearch)
+
+    with patch(
+        "llama_index.vector_stores.elasticsearch.base.get_sync_elasticsearch_client",
+        return_value=mock_sync_client,
+    ), patch("nest_asyncio.apply") as mock_apply:
+        # ElasticsearchStore no longer calls nest_asyncio.apply()
+        try:
+            ElasticsearchStore(
+                index_name="test",
+                es_client=mock_async_client,
+            )
+        except Exception:
+            pass
+        mock_apply.assert_not_called()
+
+
+def test_sync_client_path_no_run_until_complete() -> None:
+    """Sync methods on ElasticsearchStore must NOT call asyncio.get_event_loop().run_until_complete."""
+    import asyncio
+
+    mock_sync_client = MagicMock(spec=Elasticsearch)
+    mock_async_client = MagicMock(spec=AsyncElasticsearch)
+
+    with patch(
+        "llama_index.vector_stores.elasticsearch.base.get_sync_elasticsearch_client",
+        return_value=mock_sync_client,
+    ):
+        store = ElasticsearchStore(
+            index_name="test",
+            es_client=mock_async_client,
+        )
+
+    # Patch run_until_complete to verify it is not called
+    with patch.object(asyncio.BaseEventLoop, "run_until_complete") as mock_run:
+        # Calling close() (sync) should use the sync store directly
+        store._store.close = MagicMock()
+        store.close()
+        store._store.close.assert_called_once()
+        mock_run.assert_not_called()
 
 
 @pytest.fixture()

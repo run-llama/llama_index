@@ -5,6 +5,10 @@ from elasticsearch.helpers.vectorstore import (
     AsyncSparseVectorStrategy,
     AsyncDenseVectorStrategy,
     AsyncRetrievalStrategy,
+    BM25Strategy,
+    DenseVectorStrategy,
+    RetrievalStrategy,
+    SparseVectorStrategy,
 )
 
 __all__ = [
@@ -12,5 +16,9 @@ __all__ = [
     "AsyncDenseVectorStrategy",
     "AsyncRetrievalStrategy",
     "AsyncSparseVectorStrategy",
+    "BM25Strategy",
+    "DenseVectorStrategy",
     "ElasticsearchStore",
+    "RetrievalStrategy",
+    "SparseVectorStrategy",
 ]
