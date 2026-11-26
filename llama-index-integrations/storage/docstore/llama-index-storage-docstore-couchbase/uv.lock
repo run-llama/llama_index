@@ -1898,7 +1898,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-docstore-couchbase"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1931,7 +1931,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-kvstore-couchbase", specifier = ">=0.3.0,<0.4" },
+    { name = "llama-index-kvstore-couchbase", specifier = ">=0.3.0,<0.7" },
     { name = "reo-census", specifier = ">=0.1.2" },
 ]
 
