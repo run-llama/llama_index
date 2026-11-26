@@ -11,6 +11,26 @@ def test_class_inheritance():
     assert BaseToolSpec.__name__ in names_of_base_classes
 
 
+@patch("llama_index.tools.typecast.base.Typecast")
+@patch("builtins.open", new_callable=mock_open)
+def test_remove_silence(mock_file, mock_typecast):
+    tool = TypecastToolSpec(api_key="test-key")
+    mock_typecast.return_value.text_to_speech.return_value.audio_data = b"audio"
+    for value in (None, 0, 300, 1000):
+        tool.text_to_speech("Hello", "voice1", "out.wav", remove_silence_ms=value)
+        request = mock_typecast.return_value.text_to_speech.call_args.args[0]
+        output = request.model_dump(exclude_none=True)["output"]
+        if value is None:
+            assert "remove_silence_ms" not in output
+        else:
+            assert output["remove_silence_ms"] == value
+    for value in (-1, 1001, 0.5, True, "0"):
+        mock_typecast.return_value.text_to_speech.reset_mock()
+        with pytest.raises(ValueError):
+            tool.text_to_speech("Hello", "voice1", "out.wav", remove_silence_ms=value)
+        mock_typecast.return_value.text_to_speech.assert_not_called()
+
+
 def test_spec_functions():
     """Test that required functions are defined"""
     assert "get_voices" in TypecastToolSpec.spec_functions
