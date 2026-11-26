@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 import logging
 import re
 import uuid
@@ -35,6 +36,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     ImageBlock,
     TextBlock,
+    ToolCallBlock,
     VideoBlock,
 )
 from llama_index.core.tools import BaseTool, FunctionTool
@@ -354,6 +356,15 @@ def llama_index_message_to_ag_ui_message(
         raise ValueError(f"Unknown message role: {message.role}")
 
 
+def _parse_tool_arguments(arguments: str) -> Union[dict, str]:
+    """Tool-call arguments as a dict, or the raw string if they aren't a JSON object."""
+    try:
+        parsed = json.loads(arguments or "{}")
+    except json.JSONDecodeError:
+        return arguments
+    return parsed if isinstance(parsed, dict) else arguments
+
+
 def ag_ui_message_to_llama_index_message(message: Message) -> ChatMessage:
     if isinstance(message, SystemMessage):
         return ChatMessage(
@@ -372,44 +383,44 @@ def ag_ui_message_to_llama_index_message(message: Message) -> ChatMessage:
             additional_kwargs=kwargs,
         )
     elif isinstance(message, AssistantMessage):
-        # TODO: llama-index-core needs to support tool calls on messages in a more official way
-        # For now, we'll just convert the tool call into an assistant message
-        # This is a bit of an opinionated hack for now to support the ag-ui tool calls
-        tool_calls = message.tool_calls
         content = message.content or ""
-        if tool_calls:
-            tool_calls_str = "\n".join(
-                [
-                    f"<tool_call><name>{tool_call.function.name}</name><arguments>{tool_call.function.arguments}</arguments></tool_call>"
-                    for tool_call in tool_calls
-                ]
+        if not message.tool_calls:
+            return ChatMessage(
+                role="assistant",
+                content=content,
+                additional_kwargs={"id": message.id, "ag_ui_tool_calls": None},
             )
-            content = f"{content}\n\n{tool_calls_str}".strip()
-            ag_ui_tool_calls = [
-                {
-                    "id": tool_call.id,
-                    "name": tool_call.function.name,
-                    "arguments": tool_call.function.arguments,
-                }
-                for tool_call in tool_calls
-            ]
-        else:
-            ag_ui_tool_calls = None
-
+        # Tool calls become ToolCallBlocks, which the LLM integrations send as
+        # native tool calls. As text, models copy the format and stop making
+        # real tool calls. `ag_ui_tool_calls` keeps the exact AG-UI calls (ids,
+        # argument strings) for the reverse conversion.
+        blocks: List[ContentBlock] = [TextBlock(text=content)] if content else []
+        blocks.extend(
+            ToolCallBlock(
+                tool_call_id=tool_call.id,
+                tool_name=tool_call.function.name,
+                tool_kwargs=_parse_tool_arguments(tool_call.function.arguments),
+            )
+            for tool_call in message.tool_calls
+        )
         return ChatMessage(
             role="assistant",
-            content=content,
+            blocks=blocks,
             additional_kwargs={
                 "id": message.id,
-                "ag_ui_tool_calls": ag_ui_tool_calls,
+                "ag_ui_tool_calls": [
+                    {
+                        "id": tool_call.id,
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    }
+                    for tool_call in message.tool_calls
+                ],
             },
         )
     elif isinstance(message, ToolMessage):
-        # TODO: llama-index-core needs to support tool calls on messages in a more official way
-        # tool call results into a user message
-        # This is a bit of an opinionated hack for now to support the ag-ui tool calls
         return ChatMessage(
-            role="user",
+            role="tool",
             content=_tool_content_to_text(message.content),
             additional_kwargs={"id": message.id, "tool_call_id": message.tool_call_id},
         )
