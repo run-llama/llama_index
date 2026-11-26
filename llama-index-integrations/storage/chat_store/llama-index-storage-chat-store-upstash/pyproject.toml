@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-upstash"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index storage-chat-store upstash integration"
 authors = [{name = "Fahreddin Özcan", email = "fahreddin@upstash.com"}]
 requires-python = ">=3.10,<4.0"

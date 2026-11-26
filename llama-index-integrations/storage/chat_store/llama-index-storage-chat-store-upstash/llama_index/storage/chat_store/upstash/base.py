@@ -99,7 +99,7 @@ class UpstashChatStore(BaseChatStore):
         if self.ttl:
             self._sync_redis_client.expire(key, self.ttl)
 
-    async def async_set_messages(self, key: str, messages: List[ChatMessage]) -> None:
+    async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """
         Set messages for a key.
 
@@ -132,7 +132,7 @@ class UpstashChatStore(BaseChatStore):
 
         return [ChatMessage.parse_raw(item) for item in items]
 
-    async def async_get_messages(self, key: str) -> List[ChatMessage]:
+    async def aget_messages(self, key: str) -> List[ChatMessage]:
         """
         Get messages for a key.
 
@@ -205,7 +205,7 @@ class UpstashChatStore(BaseChatStore):
         self._sync_redis_client.delete(key)
         return None
 
-    async def async_delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
+    async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """
         Delete messages for a key.
 
@@ -243,13 +243,13 @@ class UpstashChatStore(BaseChatStore):
             if self.ttl:
                 self._sync_redis_client.expire(key, self.ttl)
 
-            return deleted_message
+            return ChatMessage.parse_raw(deleted_message)
 
         except Exception as e:
             logger.error(f"Error deleting message at index {idx} from {key}: {e}")
             return None
 
-    async def async_delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
+    async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """
         Delete a message from a key.
 
@@ -273,7 +273,7 @@ class UpstashChatStore(BaseChatStore):
             if self.ttl:
                 await self._async_redis_client.expire(key, self.ttl)
 
-            return deleted_message
+            return ChatMessage.parse_raw(deleted_message)
 
         except Exception as e:
             logger.error(f"Error deleting message at index {idx} from {key}: {e}")
@@ -293,7 +293,7 @@ class UpstashChatStore(BaseChatStore):
         deleted_message = self._sync_redis_client.rpop(key)
         return ChatMessage.parse_raw(deleted_message) if deleted_message else None
 
-    async def async_delete_last_message(self, key: str) -> Optional[ChatMessage]:
+    async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """
         Delete the last message from a key.
 
@@ -320,7 +320,7 @@ class UpstashChatStore(BaseChatStore):
         keys = self._sync_redis_client.keys("*")
         return keys if isinstance(keys, list) else [keys]
 
-    async def async_get_keys(self) -> List[str]:
+    async def aget_keys(self) -> List[str]:
         """
         Get all keys.
 
@@ -370,11 +370,21 @@ class UpstashChatStore(BaseChatStore):
             List[ChatMessage]: The updated list of messages.
 
         """
-        current_list = await self.async_get_messages(key)
+        current_list = await self.aget_messages(key)
         current_list.insert(idx, message)
 
-        await self.async_delete_messages(key)
+        await self.adelete_messages(key)
 
-        await self.async_set_messages(key, current_list)
+        await self.aset_messages(key, current_list)
 
         return current_list
+
+    # Backwards-compatible aliases for the previous, non-standard async method
+    # names. ``BaseChatStore`` (and therefore chat memory) calls the
+    # ``a``-prefixed methods above.
+    async_set_messages = aset_messages
+    async_get_messages = aget_messages
+    async_delete_messages = adelete_messages
+    async_delete_message = adelete_message
+    async_delete_last_message = adelete_last_message
+    async_get_keys = aget_keys
