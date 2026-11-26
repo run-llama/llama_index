@@ -1,8 +1,12 @@
+import pytest
+
 from llama_index.core.agent.react.output_parser import (
+    ReActOutputParser,
     extract_final_response,
     extract_tool_use,
     parse_action_reasoning_step,
 )
+from llama_index.core.agent.react.types import ResponseReasoningStep
 
 
 def test_parse_action_reasoning_step() -> None:
@@ -206,3 +210,33 @@ Answer: Answer contains Legislative Action: here is the legislative action conte
         answer
         == "Answer contains Legislative Action: here is the legislative action content."
     )
+
+
+def test_extract_final_response_no_thought() -> None:
+    mock_input_text = """\
+I worked it out.
+Answer: 42
+"""
+    thought, answer = extract_final_response(mock_input_text)
+    assert thought == "I worked it out."
+    assert answer == "42"
+
+
+def test_extract_final_response_answer_only() -> None:
+    mock_input_text = "Answer: 42\nMore details."
+    thought, answer = extract_final_response(mock_input_text)
+    assert thought == ""
+    assert answer == "42\nMore details."
+
+
+def test_react_output_parser_parse_no_thought_answer() -> None:
+    parser = ReActOutputParser()
+    step = parser.parse("I worked it out.\nAnswer: 42")
+    assert isinstance(step, ResponseReasoningStep)
+    assert step.thought == "I worked it out."
+    assert step.response == "42"
+
+
+def test_extract_final_response_missing_answer_raises() -> None:
+    with pytest.raises(ValueError, match="Could not extract final answer"):
+        extract_final_response("Thought: no answer provided")
