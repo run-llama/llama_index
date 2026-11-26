@@ -482,7 +482,8 @@ class MistralAI(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
+            tool_blocks: List[ToolCallBlock] = []
+            thinking = ""
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -491,7 +492,7 @@ class MistralAI(FunctionCallingLLM):
                 if delta.tool_calls:
                     for tool_call in delta.tool_calls:
                         if isinstance(tool_call, self._models.ToolCall):
-                            blocks.append(
+                            tool_blocks.append(
                                 ToolCallBlock(
                                     tool_call_id=tool_call.id,
                                     tool_name=tool_call.function.name,
@@ -504,31 +505,35 @@ class MistralAI(FunctionCallingLLM):
                 if isinstance(content_delta, str):
                     content_delta_str = content_delta
                 else:
-                    for chunk in content_delta:
-                        if isinstance(chunk, self._models.TextChunk):
-                            content_delta_str += chunk.text + "\n"
-                        elif isinstance(chunk, self._models.ThinkChunk):
-                            for c in chunk.thinking:
+                    for part in content_delta:
+                        if isinstance(part, self._models.TextChunk):
+                            content_delta_str += part.text + "\n"
+                        elif isinstance(part, self._models.ThinkChunk):
+                            for c in part.thinking:
                                 if isinstance(c, self._models.TextChunk):
                                     content_delta_str += c.text + "\n"
                         else:
                             continue
 
                 content += content_delta_str
+                blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
 
                 # decide whether to include thinking in deltas/responses
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
 
                     if thinking_txt:
-                        blocks.append(ThinkingBlock(content=thinking_txt))
+                        thinking = thinking_txt
 
                     content = response_txt if not self.show_thinking else content
 
                     # If thinking hasn't ended, don't include it in the delta
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
+                if thinking:
+                    blocks.append(ThinkingBlock(content=thinking))
                 blocks.append(TextBlock(text=content))
+                blocks.extend(tool_blocks)
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -641,7 +646,8 @@ class MistralAI(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
-            blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+            tool_blocks: List[ToolCallBlock] = []
+            thinking = ""
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -649,7 +655,7 @@ class MistralAI(FunctionCallingLLM):
                 if delta.tool_calls:
                     for tool_call in delta.tool_calls:
                         if isinstance(tool_call, self._models.ToolCall):
-                            blocks.append(
+                            tool_blocks.append(
                                 ToolCallBlock(
                                     tool_call_id=tool_call.id,
                                     tool_name=tool_call.function.name,
@@ -662,23 +668,24 @@ class MistralAI(FunctionCallingLLM):
                 if isinstance(content_delta, str):
                     content_delta_str = content_delta
                 else:
-                    for chunk in content_delta:
-                        if isinstance(chunk, self._models.TextChunk):
-                            content_delta_str += chunk.text + "\n"
-                        elif isinstance(chunk, self._models.ThinkChunk):
-                            for c in chunk.thinking:
+                    for part in content_delta:
+                        if isinstance(part, self._models.TextChunk):
+                            content_delta_str += part.text + "\n"
+                        elif isinstance(part, self._models.ThinkChunk):
+                            for c in part.thinking:
                                 if isinstance(c, self._models.TextChunk):
                                     content_delta_str += c.text + "\n"
                         else:
                             continue
 
                 content += content_delta_str
+                blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
 
                 # decide whether to include thinking in deltas/responses
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
                     if thinking_txt:
-                        blocks.append(ThinkingBlock(content=thinking_txt))
+                        thinking = thinking_txt
 
                     content = response_txt if not self.show_thinking else content
 
@@ -686,7 +693,10 @@ class MistralAI(FunctionCallingLLM):
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
 
+                if thinking:
+                    blocks.append(ThinkingBlock(content=thinking))
                 blocks.append(TextBlock(text=content))
+                blocks.extend(tool_blocks)
 
                 yield ChatResponse(
                     message=ChatMessage(
