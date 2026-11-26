@@ -45,7 +45,7 @@ DEFAULT_TERM_STR = (
     "Make a list of terms and definitions that are defined in the context, "
     "with one pair on each line. "
     "If a term is missing it's definition, use your best judgment. "
-    "Write each line as as follows:\nTerm: <term> Definition: <definition>"
+    "Write each line as follows:\nTerm: <term> Definition: <definition>"
 )
 
 st.title("🦙 Llama Index Term Extractor 🦙")
