@@ -321,7 +321,7 @@ class DocugamiReader(BaseReader):
                 else:
                     raise Exception(
                         f"Failed to download {artifact_url}/content "
-                        + "(status: {response.status_code})"
+                        + f"(status: {response.status_code})"
                     )
 
         return per_file_metadata
