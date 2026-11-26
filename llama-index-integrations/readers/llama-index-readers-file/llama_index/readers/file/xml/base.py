@@ -5,6 +5,7 @@ import defusedxml.ElementTree as ET  # safe XML parsing
 import xml.etree.ElementTree as _XmlET  # for type annotations only
 from pathlib import Path
 from typing import Dict, List, Optional
+from fsspec import AbstractFileSystem
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -84,6 +85,7 @@ class XMLReader(BaseReader):
         self,
         file: Path,
         extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """
         Load data from the input file.
@@ -91,13 +93,18 @@ class XMLReader(BaseReader):
         Args:
             file (Path): Path to the input file.
             extra_info (Optional[Dict]): Additional information. Default is None.
+            fs (Optional[AbstractFileSystem]): Filesystem to read from. Defaults
+                to the local filesystem.
 
         Returns:
             List[Document]: List of documents.
 
         """
-        if not isinstance(file, Path):
-            file = Path(file)
-
-        tree = ET.parse(file)
+        if fs is not None:
+            with fs.open(file, "rb") as xml_file:
+                tree = ET.parse(xml_file)
+        else:
+            if not isinstance(file, Path):
+                file = Path(file)
+            tree = ET.parse(file)
         return self._parse_xmlelt_to_document(tree.getroot(), extra_info)
