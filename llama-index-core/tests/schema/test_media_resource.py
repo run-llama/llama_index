@@ -34,6 +34,11 @@ def test_mimetype_from_path():
     assert m.mimetype == "image/jpeg"
 
 
+def test_mimetype_from_path_uppercase_extension():
+    m = MediaResource(path=Path("IMG_0001.JPG"), mimetype=None)
+    assert m.mimetype == "image/jpeg"
+
+
 def test_mimetype_prioritizes_data():
     png_1px = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
     m = MediaResource(

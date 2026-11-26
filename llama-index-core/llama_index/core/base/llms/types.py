@@ -345,7 +345,7 @@ class ImageBlock(BaseContentBlock):
             if not self.image_mimetype:
                 path = self.path or self.url
                 if path:
-                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    suffix = Path(str(path)).suffix.replace(".", "").lower() or None
                     mimetype = filetype.get_type(ext=suffix)
                     if not mimetype or not mimetype.mime:
                         mimetype = self.mimetype_from_inline_url(str(path))
@@ -460,7 +460,7 @@ class AudioBlock(BaseContentBlock):
             if not self.format:
                 path = self.path or self.url
                 if path:
-                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    suffix = Path(str(path)).suffix.replace(".", "").lower() or None
                     mimetype = filetype.get_type(ext=suffix)
                     if not mimetype or not mimetype.mime:
                         mimetype = self.mimetype_from_inline_url(str(path))
@@ -589,7 +589,7 @@ class VideoBlock(BaseContentBlock):
             if not self.video_mimetype:
                 path = self.path or self.url
                 if path:
-                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    suffix = Path(str(path)).suffix.replace(".", "").lower() or None
                     mimetype = filetype.get_type(ext=suffix)
                     if not mimetype or not mimetype.mime:
                         mimetype = self.mimetype_from_inline_url(str(path))
@@ -754,7 +754,7 @@ class DocumentBlock(BaseContentBlock):
         if not path:
             return None
 
-        return Path(str(path)).suffix.replace(".", "")
+        return Path(str(path)).suffix.replace(".", "").lower()
 
     def _guess_mimetype(self) -> str | None:
         if self.document_mimetype:

@@ -588,7 +588,7 @@ class MediaResource(BaseModel):
         # guess from path
         rpath: str | None = info.data["path"]
         if rpath:
-            extension = Path(rpath).suffix.replace(".", "")
+            extension = Path(rpath).suffix.replace(".", "").lower()
             if ftype := filetype.get_type(ext=extension):
                 return ftype.mime
 
@@ -879,7 +879,7 @@ class ImageNode(TextNode):
         mimetype = kwargs.get("image_mimetype")
         if not mimetype and kwargs.get("image_path") is not None:
             # guess mimetype from image_path
-            extension = Path(kwargs["image_path"]).suffix.replace(".", "")
+            extension = Path(kwargs["image_path"]).suffix.replace(".", "").lower()
             if ftype := filetype.get_type(ext=extension):
                 kwargs["image_mimetype"] = ftype.mime
 
