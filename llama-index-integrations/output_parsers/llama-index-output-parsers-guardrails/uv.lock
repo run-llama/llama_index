@@ -1993,17 +1993,18 @@ wheels = [
 
 [[package]]
 name = "guardrails-ai"
-version = "0.6.8"
+version = "0.10.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "diff-match-patch" },
     { name = "faker" },
-    { name = "guardrails-api-client" },
+    { name = "guardrails-ai-types" },
     { name = "guardrails-hub-types" },
     { name = "jsonref" },
     { name = "jsonschema", extra = ["format-nongpl"] },
-    { name = "langchain-core" },
+    { name = "langchain-core", version = "1.7.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "langchain-core", version = "1.8.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "litellm" },
     { name = "lxml" },
     { name = "openai" },
@@ -2024,25 +2025,21 @@ dependencies = [
     { name = "typer" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/11/1e4dd17c1bf6079b0db018d5ff3771684284fa10acfbae10be8ed3cc390f/guardrails_ai-0.6.8.tar.gz", hash = "sha256:b2f78af1abaec27e6ca831675cc70a3a6b94eda1017bd66e7b5ee8e3cf005127", size = 170479, upload-time = "2025-11-24T17:31:02.291Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/5f/ef55b4cb6ebf37770ec3d043f8d9077b802a1688fc2219079f1b959f52e0/guardrails_ai-0.10.2.tar.gz", hash = "sha256:f9d4e45a186966019eb700a4a630185900cf8ef3f55bda581a7fb9892ad6ee15", size = 167931, upload-time = "2026-06-04T19:37:08.353Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/55/dfe1a6ec817cff40d31e27b83e33ceb051fd37c445e97ebd182ef5b3681c/guardrails_ai-0.6.8-py3-none-any.whl", hash = "sha256:bebe8fdbfb03e4af951239a2041fb17a6b612e3da89a2d3cd80c71249d4a74ac", size = 235899, upload-time = "2025-11-24T17:31:00.628Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/42/80e1cf332d7dca53643eb815aad3815e64b2986c69e332934ec593c14a93/guardrails_ai-0.10.2-py3-none-any.whl", hash = "sha256:4fd1628926150e919f581c950fdba466f7f0aee7c1d0bf95aa6cc3303d4aa968", size = 235292, upload-time = "2026-06-04T19:37:06.738Z" },
 ]
 
 [[package]]
-name = "guardrails-api-client"
-version = "0.4.0"
+name = "guardrails-ai-types"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "lazy-imports" },
     { name = "pydantic" },
-    { name = "python-dateutil" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/15/43/99c9dad97e8cfca2e17e1eeefa654c8d6099108ac2b540bae762b75d14db/guardrails_api_client-0.4.0.tar.gz", hash = "sha256:05f636bdc332fd3304007f564bca92b43ce9beb531ea3606d2cbdcbe97ab2c6f", size = 57727, upload-time = "2025-09-19T18:47:20.434Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/b5/aa41b36e4859424c3bc98a9e81e22bb7e0f159ff19bbd5bed91aa9b36a85/guardrails_ai_types-0.5.0.tar.gz", hash = "sha256:de872718c09c7560ee4b79190f6b10f994983c1c90df1b774c8a4df422fe835f", size = 17164, upload-time = "2026-07-10T17:23:57.206Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/5c/d9fc258f5b2b9294ff7312d7b29c0395cb26167effccdb8c34cf7f96dcdb/guardrails_api_client-0.4.0-py3-none-any.whl", hash = "sha256:3c936a1afb3373828c63a4f1cd17b876621a0e25dc334706bf63c041e03f1a90", size = 110200, upload-time = "2025-09-19T18:47:19.084Z" },
+    { url = "https://files.pythonhosted.org/packages/66/6e/57318a696733245914392b04677fbac429fa0f8b95f159223abcbe6b909e/guardrails_ai_types-0.5.0-py3-none-any.whl", hash = "sha256:cc7db51bbe5b5ee0bdb4c50be98522940774f16f3b979c53bf849f004e2c8574", size = 15045, upload-time = "2026-07-10T17:23:55.906Z" },
 ]
 
 [[package]]
@@ -3064,22 +3061,70 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.76"
+version = "1.7.7"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.11'",
+]
 dependencies = [
-    { name = "jsonpatch", version = "1.46", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "jsonpatch", version = "1.48", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "langsmith", version = "0.14.17", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "langsmith", version = "0.16.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "certifi" },
+    { name = "httpx" },
+    { name = "jsonpatch", version = "1.46", source = { registry = "https://pypi.org/simple" } },
+    { name = "langchain-protocol" },
+    { name = "langsmith", version = "0.14.17", source = { registry = "https://pypi.org/simple" } },
     { name = "packaging" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "tenacity" },
     { name = "typing-extensions" },
+    { name = "uuid-utils" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/4d/5e2ea7754ee0a1f524c412801c6ba9ad49318ecb58b0d524903c3d9efe0a/langchain_core-0.3.76.tar.gz", hash = "sha256:71136a122dd1abae2c289c5809d035cf12b5f2bb682d8a4c1078cd94feae7419", size = 573568, upload-time = "2025-09-10T14:49:39.863Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/95/c40e914f5b518c135c826e041e76db28179e884ba9ed8649dfd9eca6637b/langchain_core-1.7.7.tar.gz", hash = "sha256:acc4205b5617f36cc0495ee77af7b3eedf8714941c7c14a40220be52770d4536", size = 1041952, upload-time = "2026-11-10T04:08:10.069Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/b5/501c0ffcb09c734457ceaa86bc7b1dd37b6a261147bd653add03b838aacb/langchain_core-0.3.76-py3-none-any.whl", hash = "sha256:46e0eb48c7ac532432d51f8ca1ece1804c82afe9ae3dcf027b867edadf82b3ec", size = 447508, upload-time = "2025-09-10T14:49:38.179Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/f3/7a5831e2820239848e64cc0571adb3c0eba7010364fe3c2043cf630e4691/langchain_core-1.7.7-py3-none-any.whl", hash = "sha256:d69535f817e9ea949dabc85079dccc28b0cde04a579ec5c2273be2f7b09b859c", size = 580684, upload-time = "2026-11-10T04:08:08.278Z" },
+]
+
+[[package]]
+name = "langchain-core"
+version = "1.8.4"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15'",
+    "python_full_version == '3.14.*'",
+    "python_full_version == '3.13.*'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12'",
+    "python_full_version >= '3.11' and python_full_version < '3.11.5'",
+]
+dependencies = [
+    { name = "certifi" },
+    { name = "httpx" },
+    { name = "jsonpatch", version = "1.48", source = { registry = "https://pypi.org/simple" } },
+    { name = "langchain-protocol" },
+    { name = "langsmith", version = "0.16.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "tenacity" },
+    { name = "typing-extensions" },
+    { name = "uuid-utils" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/75/ba/281e953ec491deda5c9ef8633b47647c41836c6b6fe1395e9d99567dbb44/langchain_core-1.8.4.tar.gz", hash = "sha256:af8976d6df0b3338dc7c830ebf1c505c0fc05a0e3eb564f4901ed7546a418ab6", size = 1025230, upload-time = "2026-11-19T22:35:43.367Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/6d/35b048329e70492ca0d7561431627ac3b7da1a2dedc99870ca188902529c/langchain_core-1.8.4-py3-none-any.whl", hash = "sha256:5755dee8f8b0c709cd22436dea3689c74a3f6e9dc4251590797dcd66bcd1ef67", size = 591065, upload-time = "2026-11-19T22:35:41.819Z" },
+]
+
+[[package]]
+name = "langchain-protocol"
+version = "0.0.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a2/5c/94ffa0c0b9445ac284bf7c0aebf2fa3a32bdf27c20aaf2f061746375b670/langchain_protocol-0.0.22.tar.gz", hash = "sha256:61267bc9f478c9df35ccdafd9fdf556b2698435232d59def54b3809bb02585bb", size = 6508, upload-time = "2026-11-19T15:47:56.068Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/0a/e96b6ca3b5a7d91af31fd82aee42e65beb6bbe884587e27df5460feee486/langchain_protocol-0.0.22-py3-none-any.whl", hash = "sha256:d264998a507b735320c15a7b366051cbf41e21f771bea1b03a911f2c58af02e7", size = 7579, upload-time = "2026-11-19T15:47:55.109Z" },
 ]
 
 [[package]]
@@ -3160,15 +3205,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d9/23/d2c8308466a6831043ac3518e480c2e1a06b21a13e0a8f6542ab29cf592a/lazy_importer-0.1.0.tar.gz", hash = "sha256:b2e296716ce015c0cd80e57b940e52727c5b934b34b8656d5ce06bdd0ee5fbdd", size = 84008, upload-time = "2026-10-20T00:36:58.369Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/28/7ded071d0975dcc6d5d106ffbf7b3ca420f7caa3b8a235fa604b6e37032a/lazy_importer-0.1.0-py3-none-any.whl", hash = "sha256:bd93fab7bef18e842eea02b839410954d37889140dc64ca4d9680aec6880c739", size = 12580, upload-time = "2026-10-20T00:36:57.176Z" },
-]
-
-[[package]]
-name = "lazy-imports"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/25/67/04432aae0c1e2729bff14e1841f4a3fb63a9e354318e66622251487760c3/lazy_imports-1.2.0.tar.gz", hash = "sha256:3c546b3c1e7c4bf62a07f897f6179d9feda6118e71ef6ecc47a339cab3d2e2d9", size = 24470, upload-time = "2025-12-28T13:51:51.218Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/62/60ed24fa8707f10c1c5aef94791252b820be3dd6bdfc6e2fcdb08bc8912f/lazy_imports-1.2.0-py3-none-any.whl", hash = "sha256:97134d6552e2ba16f1a278e316f05313ab73b360e848e40d593d08a5c2406fdf", size = 18681, upload-time = "2025-12-28T13:51:49.802Z" },
 ]
 
 [[package]]
@@ -3337,7 +3373,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "guardrails-ai", specifier = ">=0.6.8,<0.7" },
+    { name = "guardrails-ai", specifier = ">=0.10.2,<0.11" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
