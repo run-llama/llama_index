@@ -66,7 +66,6 @@ __all__ = [
     "RecursiveRetriever",
     "AutoMergingRetriever",
     "RouterRetriever",
-    "BM25Retriever",
     "QueryFusionRetriever",
     # property graph
     "BasePGRetriever",

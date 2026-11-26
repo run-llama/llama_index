@@ -99,7 +99,6 @@
   "EvaluationResult": "llama_index.core.evaluation",
   "FaithfulnessEvaluator": "llama_index.core.evaluation",
   "RelevancyEvaluator": "llama_index.core.evaluation",
-  "RelevanceEvaluator": "llama_index.core.evaluation",
   "DatasetGenerator": "llama_index.core.evaluation",
   "QueryResponseDataset": "llama_index.core.evaluation",
   "GuidelineEvaluator": "llama_index.core.evaluation",

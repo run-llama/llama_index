@@ -48,7 +48,6 @@ __all__ = [
     "EvaluationResult",
     "FaithfulnessEvaluator",
     "RelevancyEvaluator",
-    "RelevanceEvaluator",
     "DatasetGenerator",
     "QueryResponseDataset",
     "GuidelineEvaluator",
