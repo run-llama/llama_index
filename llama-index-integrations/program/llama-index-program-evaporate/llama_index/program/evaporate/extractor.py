@@ -153,7 +153,6 @@ _SANDBOX_ALLOWED_IMPORTS = {
     "statistics",
     "textwrap",
     "unicodedata",
-    "operator",
 }
 
 
@@ -187,6 +186,16 @@ def _validate_generated_code(code: str) -> None:
                 f"Generated code accesses a dunder attribute '{node.attr}' "
                 f"which is not allowed in the sandbox"
             )
+        # A dunder reached through a string is still a dunder: str.format
+        # field paths and operator.attrgetter both take the attribute name as
+        # text, so they never produce an ast.Attribute node to inspect.
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if "__" in node.value:
+                raise RuntimeError(
+                    f"Generated code contains the string literal "
+                    f"'{node.value}', which can address a dunder attribute "
+                    f"without an attribute access node"
+                )
 
 
 def _restricted_import(

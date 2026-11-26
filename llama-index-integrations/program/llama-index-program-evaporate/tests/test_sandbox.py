@@ -145,3 +145,43 @@ def test_sandbox_basic_builtins_available():
 
     exec("z = sorted([3, 1, 2])", sandbox)
     assert sandbox["z"] == [1, 2, 3]
+
+
+# ---------------------------------------------------------------------------
+# String addressed dunder access
+#
+# The checks above only see a dunder when it appears as a Name or an Attribute
+# node. Any API that takes the attribute name as text reaches the same objects
+# without producing either node, so the escapes below passed validation and
+# reached real builtins before the string constant check was added and
+# `operator` was dropped from the import allowlist.
+# ---------------------------------------------------------------------------
+
+
+def test_validate_rejects_operator_import():
+    """operator.attrgetter is string driven attribute access."""
+    code = "import operator\nf = operator.attrgetter('x')\n"
+    with pytest.raises(RuntimeError, match="imports 'operator'"):
+        _validate_generated_code(code)
+
+
+def test_validate_rejects_attrgetter_dunder_path():
+    """attrgetter with a dunder path must not pass validation."""
+    code = (
+        "def get_name_field(text: str):\n"
+        "    import operator\n"
+        '    subs = operator.attrgetter("__class__.__base__.__subclasses__")(())()\n'
+        "    return subs\n"
+    )
+    with pytest.raises(RuntimeError):
+        _validate_generated_code(code)
+
+
+def test_validate_rejects_str_format_dunder_path():
+    """str.format field paths reach attributes without an Attribute node."""
+    code = (
+        "def get_name_field(text: str):\n"
+        '    return "{0.__class__.__base__}".format(())\n'
+    )
+    with pytest.raises(RuntimeError):
+        _validate_generated_code(code)
