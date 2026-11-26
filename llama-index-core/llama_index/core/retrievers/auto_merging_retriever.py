@@ -128,22 +128,42 @@ class AutoMergingRetriever(BaseRetriever):
         self, nodes: List[NodeWithScore]
     ) -> Tuple[List[NodeWithScore], bool]:
         """Fill in nodes."""
+        existing_ids = {node.node.node_id for node in nodes}
+        added_ids: set[str] = set()
+        nodes_by_prev_id: Dict[str, List[NodeWithScore]] = defaultdict(list)
+        for candidate in nodes:
+            prev_info = cast(BaseNode, candidate.node).prev_node
+            if prev_info is not None:
+                nodes_by_prev_id[prev_info.node_id].append(candidate)
+
         new_nodes = []
         is_changed = False
-        for idx, node in enumerate(nodes):
+        for node in nodes:
             new_nodes.append(node)
-            if idx >= len(nodes) - 1:
-                continue
 
             cur_node = cast(BaseNode, node.node)
-            # if there's a node in the middle, add that to the queue
+            next_info = cur_node.next_node
             if (
-                cur_node.next_node is not None
-                and cur_node.next_node == nodes[idx + 1].node.prev_node
+                next_info is None
+                or next_info.node_id in existing_ids
+                or next_info.node_id in added_ids
             ):
+                continue
+
+            right_node = next(
+                (
+                    candidate
+                    for candidate in nodes_by_prev_id.get(next_info.node_id, ())
+                    if next_info == cast(BaseNode, candidate.node).prev_node
+                ),
+                None,
+            )
+            # if there's a node in the middle, add that to the queue
+            if right_node is not None:
                 is_changed = True
+                added_ids.add(next_info.node_id)
                 next_node = self._storage_context.docstore.get_document(
-                    cur_node.next_node.node_id
+                    next_info.node_id
                 )
                 next_node = cast(BaseNode, next_node)
 
@@ -151,7 +171,7 @@ class AutoMergingRetriever(BaseRetriever):
                     next_node.get_content(metadata_mode=MetadataMode.NONE), 100
                 )
                 info_str = (
-                    f"> Filling in node. Node id: {cur_node.next_node.node_id}"
+                    f"> Filling in node. Node id: {next_info.node_id}"
                     f"> Node text: {next_node_text}\n"
                 )
                 logger.info(info_str)
@@ -159,7 +179,9 @@ class AutoMergingRetriever(BaseRetriever):
                     print(info_str)
 
                 # set score to be average of current node and next node
-                avg_score = (node.get_score() + nodes[idx + 1].get_score()) / 2
+                avg_score = (
+                    (node.get_score() or 0.0) + (right_node.get_score() or 0.0)
+                ) / 2
                 new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
         return new_nodes, is_changed
 
