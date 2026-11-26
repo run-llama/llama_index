@@ -245,8 +245,10 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         existing_nodes = self.property_graph_store.get_llama_nodes(
             [node.id_ for node in nodes]
         )
-        existing_node_hashes = {node.hash for node in existing_nodes}
-        nodes = [node for node in nodes if node.hash not in existing_node_hashes]
+        existing_node_hashes = {node.id_: node.hash for node in existing_nodes}
+        nodes = [
+            node for node in nodes if node.hash != existing_node_hashes.get(node.id_)
+        ]
 
         # embed nodes (if needed)
         if self._embed_kg_nodes:
