@@ -215,3 +215,50 @@ async def test_code_act_agent_workflow_integration():
     # Verify we got an AgentOutput
     assert isinstance(result, AgentOutput)
     assert result.response.content == "The answer is 4."
+
+
+@pytest.mark.asyncio
+async def test_code_act_agent_keeps_memory_blocks_in_system_prompt(
+    mock_llm, mock_code_execute_fn, monkeypatch
+):
+    """
+    Memory puts the memory blocks in the leading system message; the code act
+    prompt has to go alongside them, not on top of them.
+    """
+    recorded = []
+
+    async def _gen():
+        yield ChatResponse(
+            message=ChatMessage(role="assistant", content="Delivery is 7 USD."),
+            delta="Delivery is 7 USD.",
+        )
+
+    async def astream_chat(self, messages, **kwargs):
+        recorded.append(list(messages))
+        return _gen()
+
+    monkeypatch.setattr(type(mock_llm), "astream_chat", astream_chat)
+
+    agent = CodeActAgent(code_execute_fn=mock_code_execute_fn, llm=mock_llm)
+    ctx = SimpleAgentContext()
+
+    await agent.take_step(
+        ctx=ctx,
+        llm_input=[
+            ChatMessage(
+                role="system",
+                content="<memory>\n<delivery_policy>\nDelivery is 7 USD per order.\n</delivery_policy>\n</memory>",
+            ),
+            ChatMessage(role="user", content="How much is delivery?"),
+        ],
+        tools=[],
+        memory=AsyncMock(spec=BaseMemory),
+    )
+
+    sent = recorded[0]
+    system_msgs = [m for m in sent if m.role.value == "system"]
+    assert len(system_msgs) == 1
+    content = system_msgs[0].content or ""
+    assert "Delivery is 7 USD per order." in content
+    assert content.index("write and execute") < content.index("Delivery is 7 USD")
+    assert sent[-1].content == "How much is delivery?"
