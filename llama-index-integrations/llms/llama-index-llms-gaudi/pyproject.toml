@@ -41,7 +41,7 @@ dependencies = [
     "llama-index-llms-huggingface>=0.7.0,<0.8",
     "optimum[habana]>=1.21.2",
     "optimum-habana>=1.21.0",
-    "transformers[torch]>=4.37.0,<5",
+    "transformers[torch]>=5.10.1,<6",
 ]
 
 [tool.codespell]
