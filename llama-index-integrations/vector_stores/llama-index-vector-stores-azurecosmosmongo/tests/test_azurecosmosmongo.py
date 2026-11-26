@@ -14,6 +14,8 @@ try:
     INDEX_NAME = "llamaindex-test-index"
     NAMESPACE = "llamaindex_test_db.llamaindex_test_collection"
     CONNECTION_STRING = os.environ.get("AZURE_COSMOSDB_MONGODB_URI")
+    if CONNECTION_STRING is None:
+        raise RuntimeError("AZURE_COSMOSDB_MONGODB_URI is not configured")
     DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
     test_client = MongoClient(CONNECTION_STRING)  # type: ignore
     collection = test_client[DB_NAME][COLLECTION_NAME]

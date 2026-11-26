@@ -26,8 +26,8 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-azurecosmosmongovcore"
-version = "1.4.0"
-description = "llama-index storage-chat-store azure cosmosdb mongo vcore integration"
+version = "1.4.1"
+description = "LlamaIndex chat store integration for Azure DocumentDB"
 authors = [{name = "Aayush Kataria", email = "aayushkataria3011@gmail.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
