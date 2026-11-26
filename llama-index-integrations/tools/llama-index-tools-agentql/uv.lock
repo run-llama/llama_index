@@ -7,6 +7,10 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 
+[options]
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer-span = "P3D"
+
 [[package]]
 name = "agentql"
 version = "1.19.0"
@@ -1954,7 +1958,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.24"
+version = "0.14.26"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1987,9 +1991,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/7a/e54d5ea405b51c1b7e1ed078036f698bcbeefc82128d5c48b7cb6d997ce6/llama_index_core-0.14.24.tar.gz", hash = "sha256:4b2eb3af98eecf3579707ef018be0346bd851be2c7660102d88fab0457b95b61", size = 11590565, upload-time = "2026-08-19T18:47:21.401Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/d4/801f69588809d74d351e563c24b0c5c3c693d5736937181d973a1e18646e/llama_index_core-0.14.26.tar.gz", hash = "sha256:dba58bc3fdb4e0a9fb52f8c53123d5a2576b3a8a991b65cd6d19796295f0bcd9", size = 11591489, upload-time = "2026-11-13T22:37:39.586Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/f8/8a2aec65cba9459b24cce9bc188392014f70c2af0dc43c4cc668c685912e/llama_index_core-0.14.24-py3-none-any.whl", hash = "sha256:a12f39b8a777cc526bf400d929016cd244372af61c5e98f6f4186f51a0b9288c", size = 11927515, upload-time = "2026-08-19T18:47:18.772Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/57/3f6fa6e404d6be4b1c21fbe362ca0250200618295b928be1f4325eb0b0fa/llama_index_core-0.14.26-py3-none-any.whl", hash = "sha256:6a7189009644ac3fb11c209d3767d35dfb5eea0c874c7a09778ff5c3839694cc", size = 11928370, upload-time = "2026-11-13T22:37:36.634Z" },
 ]
 
 [[package]]
