@@ -55,6 +55,38 @@ def get_elasticsearch_client(
     return async_es_client
 
 
+def get_sync_elasticsearch_client(
+    url: Optional[str] = None,
+    cloud_id: Optional[str] = None,
+    api_key: Optional[str] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+) -> Elasticsearch:
+    """Return a synchronous Elasticsearch client."""
+    if url and cloud_id:
+        raise ValueError(
+            "Both es_url and cloud_id are defined. Please provide only one."
+        )
+
+    connection_params: Dict[str, Any] = {}
+
+    if url:
+        connection_params["hosts"] = [url]
+    elif cloud_id:
+        connection_params["cloud_id"] = cloud_id
+    else:
+        raise ValueError("Please provide either elasticsearch_url or cloud_id.")
+
+    if api_key:
+        connection_params["api_key"] = api_key
+    elif username and password:
+        connection_params["basic_auth"] = (username, password)
+
+    return Elasticsearch(
+        **connection_params, headers={"user-agent": get_user_agent()}
+    )
+
+
 def convert_es_hit_to_node(
     hit: Dict[str, Any], text_field: str = "content"
 ) -> BaseNode:
