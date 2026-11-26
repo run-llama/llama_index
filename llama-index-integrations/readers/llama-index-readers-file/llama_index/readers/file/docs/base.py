@@ -237,13 +237,17 @@ class HWPReader(BaseReader):
             rec_type = header & 0x3FF
             (header >> 10) & 0x3FF
             rec_len = (header >> 20) & 0xFFF
+            payload_start = i + 4
+            if rec_len == 0xFFF:
+                rec_len = struct.unpack_from("<I", unpacked_data, payload_start)[0]
+                payload_start += 4
 
             if rec_type in self.HWP_TEXT_TAGS:
-                rec_data = unpacked_data[i + 4 : i + 4 + rec_len]
+                rec_data = unpacked_data[payload_start : payload_start + rec_len]
                 text += rec_data.decode("utf-16")
                 text += "\n"
 
-            i += 4 + rec_len
+            i = payload_start + rec_len
 
         return text
 
