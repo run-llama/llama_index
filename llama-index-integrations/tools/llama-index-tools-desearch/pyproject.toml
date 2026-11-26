@@ -27,7 +27,7 @@ dev = [
 [project]
 authors = [{name = "Desearch", email = "support@desearch.com"}]
 dependencies = [
-    "desearch-py>=1.0.0",
+    "desearch-py>=1.2.0,<2",
     "llama-index-core>=0.13.0,<0.15",
     "openai",
 ]
