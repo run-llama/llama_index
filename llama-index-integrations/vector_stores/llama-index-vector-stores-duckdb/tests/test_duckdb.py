@@ -131,6 +131,112 @@ def memory_store():
     return DuckDBVectorStore(embed_dim=3)
 
 
+@pytest.mark.parametrize("persistent", [False, True])
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("operation", ["get", "query", "delete"])
+@pytest.mark.parametrize("operator", [FilterOperator.IN, FilterOperator.NIN])
+async def test_empty_membership_filter(
+    tmp_path,
+    persistent: bool,
+    use_async: bool,
+    operation: str,
+    operator: FilterOperator,
+) -> None:
+    database = str(tmp_path / "membership.duckdb") if persistent else ":memory:"
+    with duckdb.connect(database) as client:
+        store = DuckDBVectorStore(client=client, embed_dim=3)
+        nodes = [
+            TextNode(
+                id_="record",
+                text="A stored record",
+                embedding=[1.0, 0.0, 0.0],
+                metadata={"category": "selected"},
+            ),
+            TextNode(
+                id_="number",
+                text="A numeric value",
+                embedding=[0.0, 1.0, 0.0],
+                metadata={"category": 7},
+            ),
+            TextNode(
+                id_="null",
+                text="An explicit null",
+                embedding=[0.0, 0.0, 1.0],
+                metadata={"category": None},
+            ),
+            TextNode(
+                id_="missing",
+                text="A missing field",
+                embedding=[0.5, 0.5, 0.5],
+            ),
+        ]
+        for node in nodes:
+            store.add([node])
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="category", value=[], operator=operator)]
+        )
+        all_ids = {"record", "number", "null", "missing"}
+        expected = set() if operator == FilterOperator.IN else all_ids
+        if operation == "get":
+            nodes = (
+                await store.aget_nodes(filters=filters)
+                if use_async
+                else store.get_nodes(filters=filters)
+            )
+            assert {node.node_id for node in nodes} == expected
+        elif operation == "query":
+            query = VectorStoreQuery(
+                query_embedding=[1.0, 0.0, 0.0], similarity_top_k=4, filters=filters
+            )
+            result = await store.aquery(query) if use_async else store.query(query)
+            assert set(result.ids) == expected
+        else:
+            if use_async:
+                await store.adelete_nodes(filters=filters)
+            else:
+                store.delete_nodes(filters=filters)
+            assert {node.node_id for node in store.get_nodes()} == all_ids - expected
+
+
+@pytest.mark.parametrize(
+    ("operator", "condition", "expected"),
+    [
+        (FilterOperator.IN, FilterCondition.AND, set()),
+        (FilterOperator.IN, FilterCondition.OR, {"selected"}),
+        (FilterOperator.IN, FilterCondition.NOT, {"selected", "other"}),
+        (FilterOperator.NIN, FilterCondition.AND, {"selected"}),
+        (FilterOperator.NIN, FilterCondition.OR, {"selected", "other"}),
+        (FilterOperator.NIN, FilterCondition.NOT, {"other"}),
+    ],
+)
+def test_empty_membership_filter_combinations(operator, condition, expected) -> None:
+    with duckdb.connect(":memory:") as client:
+        store = DuckDBVectorStore(client=client, embed_dim=3)
+        store.add(
+            [
+                TextNode(
+                    id_=category,
+                    text=category,
+                    embedding=[1.0, 0.0, 0.0],
+                    metadata={"category": category},
+                )
+                for category in ("selected", "other")
+            ]
+        )
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilters(
+                    filters=[
+                        MetadataFilter(key="category", value=[], operator=operator)
+                    ]
+                ),
+                MetadataFilter(key="category", value="selected"),
+            ],
+            condition=condition,
+        )
+        assert {node.node_id for node in store.get_nodes(filters=filters)} == expected
+
+
 def disk_store():
     if os.path.exists("./storage/persisted.duckdb"):
         os.remove("./storage/persisted.duckdb")
