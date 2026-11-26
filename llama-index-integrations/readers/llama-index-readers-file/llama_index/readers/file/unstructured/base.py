@@ -71,7 +71,7 @@ class UnstructuredReader(BaseReader):
     @classmethod
     def from_api(cls, api_key: str, url: str = None):
         """Set the server url and api key."""
-        return cls(api_key, url)
+        return cls(api_key=api_key, url=url)
 
     def load_data(
         self,
