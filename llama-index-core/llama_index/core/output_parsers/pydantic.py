@@ -48,7 +48,7 @@ class PydanticOutputParser(BaseOutputParser, Generic[Model]):
         """Format string."""
         schema_dict = self._output_cls.model_json_schema()
         for key in self._excluded_schema_keys_from_format:
-            del schema_dict[key]
+            schema_dict.pop(key, None)
 
         schema_str = json.dumps(schema_dict, ensure_ascii=False)
         output_str = self._pydantic_format_tmpl.format(schema=schema_str)
