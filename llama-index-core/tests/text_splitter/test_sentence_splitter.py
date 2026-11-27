@@ -57,6 +57,22 @@ def test_chinese_text(chinese_text: str) -> None:
     assert len(chunks) == 2
 
 
+def test_chinese_clause_separators() -> None:
+    # Regression test for #23902: the clause-level regex must recognize the
+    # fullwidth comma, ideographic comma and fullwidth semicolon so that long
+    # Chinese sentences split at clause boundaries instead of mid-word.
+    tokenizer = tiktoken.get_encoding("cl100k_base")
+    splitter = SentenceSplitter(
+        chunk_size=10, chunk_overlap=0, tokenizer=tokenizer.encode
+    )
+    text = "今天天气很好，我们去公园散步，然后回家吃饭。"
+    assert splitter.split_text(text) == [
+        "今天天气很好，",
+        "我们去公园散步，",
+        "然后回家吃饭。",
+    ]
+
+
 def test_contiguous_text(contiguous_text: str) -> None:
     splitter = SentenceSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
