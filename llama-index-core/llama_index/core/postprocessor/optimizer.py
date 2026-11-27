@@ -104,6 +104,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         if query_bundle is None:
             return nodes
 
+        optimized_nodes = []
         for node_idx in range(len(nodes)):
             text = nodes[node_idx].node.get_content(metadata_mode=MetadataMode.LLM)
 
@@ -162,6 +163,8 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                         f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
                     )
 
-            nodes[node_idx].node.set_content(" ".join(top_sentences))
+            optimized_node = nodes[node_idx].model_copy(deep=True)
+            optimized_node.node.set_content(" ".join(top_sentences))
+            optimized_nodes.append(optimized_node)
 
-        return nodes
+        return optimized_nodes

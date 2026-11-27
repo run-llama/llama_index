@@ -3,6 +3,12 @@
 from typing import Any, List
 from unittest.mock import patch
 
+import pytest
+
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.llms import MockLLM
+from llama_index.core.query_engine import RetrieverQueryEngine
+
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
@@ -143,3 +149,111 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
         [NodeWithScore(node=orig_node)], query
     )[0]
     assert optimized_node.node.get_content() == "world foo bar"
+
+
+class CapitalEmbedding(MockEmbedding):
+    def _get_text_embedding(self, text: str) -> List[float]:
+        return [float("France" in text), float("Japan" in text)]
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+        return self._get_text_embedding(query)
+
+
+def test_optimizer_preserves_source_for_later_queries() -> None:
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=CapitalEmbedding(embed_dim=2),
+        tokenizer_fn=str.splitlines,
+        threshold_cutoff=0.5,
+        context_before=0,
+        context_after=0,
+    )
+    source = TextNode(
+        id_="capitals",
+        text="Paris is in France.\nTokyo is in Japan.",
+    )
+    nodes = [NodeWithScore(node=source, score=0.8)]
+    first = optimizer.postprocess_nodes(nodes, query_str="France")
+    assert first[0].text == "Paris is in France."
+    assert source.text == "Paris is in France.\nTokyo is in Japan."
+
+    second = optimizer.postprocess_nodes(nodes, query_str="Japan")
+    assert second[0].text == "Tokyo is in Japan."
+    assert first[0].text == "Paris is in France."
+    assert second[0].node_id == "capitals"
+    assert second[0].score == 0.8
+
+
+class CachedCapitalRetriever(BaseRetriever):
+    def __init__(self, nodes: List[NodeWithScore], reuse_wrappers: bool) -> None:
+        super().__init__()
+        self.nodes = nodes
+        self.reuse_wrappers = reuse_wrappers
+
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        if self.reuse_wrappers:
+            return self.nodes
+        return [NodeWithScore(node=n.node, score=n.score) for n in self.nodes]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("reuse_wrappers", [False, True])
+async def test_optimizer_preserves_cached_query_results(
+    use_async: bool, reuse_wrappers: bool
+) -> None:
+    source = TextNode(
+        id_="capitals",
+        text="Paris is in France.\nTokyo is in Japan.",
+        metadata={"source": "atlas"},
+        excluded_llm_metadata_keys=["source"],
+    )
+    cached = [NodeWithScore(node=source, score=0.8)]
+    retriever = CachedCapitalRetriever(cached, reuse_wrappers=reuse_wrappers)
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=CapitalEmbedding(embed_dim=2),
+        tokenizer_fn=str.splitlines,
+        threshold_cutoff=0.5,
+        context_before=0,
+        context_after=0,
+    )
+    engine = RetrieverQueryEngine.from_args(
+        retriever=retriever,
+        llm=MockLLM(),
+        response_mode="no_text",
+        node_postprocessors=[optimizer],
+    )
+    if use_async:
+        first = await engine.aquery("France")
+        second = await engine.aquery("Japan")
+    else:
+        first = engine.query("France")
+        second = engine.query("Japan")
+
+    assert first.source_nodes[0].text == "Paris is in France."
+    assert second.source_nodes[0].text == "Tokyo is in Japan."
+    assert source.text == "Paris is in France.\nTokyo is in Japan."
+    assert cached[0].score == 0.8
+    assert second.source_nodes[0].node_id == "capitals"
+    assert second.source_nodes[0].metadata == {"source": "atlas"}
+    assert second.source_nodes[0].score == 0.8
+
+
+def test_optimizer_failure_does_not_shorten_previous_nodes() -> None:
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=CapitalEmbedding(embed_dim=2),
+        tokenizer_fn=str.splitlines,
+        threshold_cutoff=0.5,
+        context_before=0,
+        context_after=0,
+    )
+    source = TextNode(text="Paris is in France.\nTokyo is in Japan.")
+    nodes = [
+        NodeWithScore(node=source),
+        NodeWithScore(node=TextNode(text="Tokyo is in Japan.")),
+    ]
+    with pytest.raises(ValueError, match="Optimizer returned zero sentences"):
+        optimizer.postprocess_nodes(nodes, query_str="France")
+    assert source.text == "Paris is in France.\nTokyo is in Japan."
+
+    assert optimizer.postprocess_nodes(nodes) is nodes
+    assert optimizer.postprocess_nodes([], query_str="France") == []
