@@ -8,7 +8,7 @@ class OxylabsAmazonSearchReader(OxylabsBaseReader):
     """
     Get data from the Amazon Search page.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/amazon/search
+    https://developers.oxylabs.io/api-targets/e-commerce/amazon/search
     """
 
     top_level_header: str = "Search Results"
