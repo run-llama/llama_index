@@ -5,8 +5,10 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 """
 
+import asyncio
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
+from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.vector_store import VectorStoreIndex
@@ -138,13 +140,16 @@ class OnDemandLoaderTool(AsyncBaseTool):
 
         return query_str, docs
 
+    def _build_query_engine(self, docs: List[Document]) -> BaseQueryEngine:
+        index = self._index_cls.from_documents(docs, **self._index_kwargs)
+        # TODO: add query kwargs
+        return index.as_query_engine()
+
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
         query_str, docs = self._parse_args(*args, **kwargs)
 
-        index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        # TODO: add query kwargs
-        query_engine = index.as_query_engine()
+        query_engine = self._build_query_engine(docs)
         response = query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
@@ -155,11 +160,9 @@ class OnDemandLoaderTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
-        query_str, docs = self._parse_args(*args, **kwargs)
+        query_str, docs = await asyncio.to_thread(self._parse_args, *args, **kwargs)
 
-        index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        # TODO: add query kwargs
-        query_engine = index.as_query_engine()
+        query_engine = await asyncio.to_thread(self._build_query_engine, docs)
         response = await query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),
