@@ -127,46 +127,69 @@ class AutoMergingRetriever(BaseRetriever):
     def _fill_in_nodes(
         self, nodes: List[NodeWithScore]
     ) -> Tuple[List[NodeWithScore], bool]:
-        """Fill in nodes."""
+        """
+        Fill in nodes.
+
+        Insert the single node that sits between two retrieved neighbours when it is
+        missing from the results: node ``i`` points to it with its NEXT relationship
+        and node ``i+1`` points back to it with its PREVIOUS relationship.
+
+        The two references are compared by node id rather than by equality. Node
+        parsers build the NEXT and PREVIOUS references at different points of
+        processing, so the two snapshots can differ in ``metadata``/``hash`` for the
+        same node (for example when the source ``Document`` carries metadata).
+        Comparing the whole ``RelatedNodeInfo`` then never matches and the gap is
+        silently not filled for real-world documents.
+        """
         new_nodes = []
         is_changed = False
+        # A node already returned by the retriever must not be inserted a second time
+        # just because it also sits in a gap; compare by id and keep the original hit.
+        existing_node_ids = {node.node.node_id for node in nodes}
         for idx, node in enumerate(nodes):
             new_nodes.append(node)
             if idx >= len(nodes) - 1:
                 continue
 
             cur_node = cast(BaseNode, node.node)
-            # if there's a node in the middle, add that to the queue
-            if (
-                cur_node.next_node is not None
-                and cur_node.next_node == nodes[idx + 1].node.prev_node
-            ):
-                is_changed = True
-                next_node = self._storage_context.docstore.get_document(
-                    cur_node.next_node.node_id
-                )
-                next_node = cast(BaseNode, next_node)
+            next_node_info = cur_node.next_node
+            prev_node_info = nodes[idx + 1].node.prev_node
+            # if there's exactly one node in the middle, add that to the queue
+            if next_node_info is None or prev_node_info is None:
+                continue
+            if next_node_info.node_id != prev_node_info.node_id:
+                continue
 
-                next_node_text = truncate_text(
-                    next_node.get_content(metadata_mode=MetadataMode.NONE), 100
-                )
-                info_str = (
-                    f"> Filling in node. Node id: {cur_node.next_node.node_id}"
-                    f"> Node text: {next_node_text}\n"
-                )
-                logger.info(info_str)
-                if self._verbose:
-                    print(info_str)
+            next_node = self._storage_context.docstore.get_document(
+                next_node_info.node_id
+            )
+            next_node = cast(BaseNode, next_node)
+            if next_node.node_id in existing_node_ids:
+                continue
 
-                # set score to be average of current node and next node
-                avg_score = (node.get_score() + nodes[idx + 1].get_score()) / 2
-                new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
+            existing_node_ids.add(next_node.node_id)
+            is_changed = True
+
+            next_node_text = truncate_text(
+                next_node.get_content(metadata_mode=MetadataMode.NONE), 100
+            )
+            info_str = (
+                f"> Filling in node. Node id: {next_node.node_id}\n"
+                f"> Node text: {next_node_text}\n"
+            )
+            logger.info(info_str)
+            if self._verbose:
+                print(info_str)
+
+            # set score to be average of current node and next node
+            avg_score = (node.get_score() + nodes[idx + 1].get_score()) / 2
+            new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
         return new_nodes, is_changed
 
     def _try_merging(
         self, nodes: List[NodeWithScore]
     ) -> Tuple[List[NodeWithScore], bool]:
-        """Try different ways to merge nodes."""
+        """Try different ways of merging nodes."""
         # first try filling in nodes
         nodes, is_changed_0 = self._fill_in_nodes(nodes)
         # then try merging nodes
@@ -175,7 +198,7 @@ class AutoMergingRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """
-        Retrieve nodes given query.
+        Retrieve nodes given a query.
 
         Implemented by the user.
 
