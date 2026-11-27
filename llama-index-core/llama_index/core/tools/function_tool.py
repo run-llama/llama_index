@@ -449,6 +449,9 @@ class FunctionTool(AsyncBaseTool):
             - param_docs: Only for params in fn_params with non-conflicting descriptions.
             - unknown_params: Params found in docstring but not in fn_params (ignored in final output).
 
+        When a parameter is documented more than once with different descriptions,
+        the first supported style parsed below takes precedence.
+
         """
         raw_param_docs: dict[str, str] = {}
         unknown_params = set()
@@ -466,11 +469,88 @@ class FunctionTool(AsyncBaseTool):
         for match in re.finditer(r":param (\w+): (.+)", docstring):
             try_add_param(match.group(1), match.group(2))
 
-        # Google style
-        for match in re.finditer(
-            r"^\s*(\w+)\s*\(.*?\):\s*(.+)$", docstring, re.MULTILINE
-        ):
-            try_add_param(match.group(1), match.group(2))
+        lines = inspect.cleandoc(docstring).splitlines()
+
+        def parse_section(
+            section_lines: List[str],
+            param_pattern: re.Pattern[str],
+            *,
+            parent_indent: Optional[int] = None,
+            stop_at_underlined_heading: bool = False,
+        ) -> None:
+            current_name: Optional[str] = None
+            current_desc: List[str] = []
+            entry_indent: Optional[int] = None
+
+            for line_index, section_line in enumerate(section_lines):
+                if not section_line.strip():
+                    continue
+
+                indent = len(section_line) - len(section_line.lstrip())
+                if parent_indent is not None and indent <= parent_indent:
+                    break
+                if (
+                    stop_at_underlined_heading
+                    and line_index + 1 < len(section_lines)
+                    and re.fullmatch(r"-{3,}", section_lines[line_index + 1].strip())
+                ):
+                    break
+
+                param_match = param_pattern.match(section_line.strip())
+                if param_match and (entry_indent is None or indent == entry_indent):
+                    if current_name is not None and current_desc:
+                        try_add_param(current_name, "\n".join(current_desc))
+                    current_name = param_match.group(1)
+                    initial_desc = param_match.groupdict().get("desc")
+                    current_desc = [initial_desc] if initial_desc else []
+                    entry_indent = indent
+                elif (
+                    current_name is not None
+                    and entry_indent is not None
+                    and indent > entry_indent
+                ):
+                    current_desc.append(section_line.strip())
+                else:
+                    break
+
+            if current_name is not None and current_desc:
+                try_add_param(current_name, "\n".join(current_desc))
+
+        # Google style. Restrict entries and their continuations to an Args section
+        # so parameter-shaped lines under Returns or Examples are not consumed.
+        google_header = re.compile(
+            r"^(?:Args|Arguments|Keyword Args|Keyword Arguments):\s*$"
+        )
+        google_param = re.compile(r"^(\w+)(?:\s*\([^)]*\))?\s*:\s*(?P<desc>.*)$")
+        for header_index, line in enumerate(lines):
+            # After cleandoc, only top-level sections describe this callable;
+            # indented sections may be literals for another callable in Examples.
+            if line != line.lstrip() or not google_header.match(line.strip()):
+                continue
+            parse_section(
+                lines[header_index + 1 :],
+                google_param,
+                parent_indent=len(line) - len(line.lstrip()),
+            )
+
+        # NumPy style. A Parameters heading must be followed by its underline;
+        # the next underlined section terminates parameter continuation parsing.
+        numpy_param = re.compile(r"^(\w+)\s*:\s*.+$")
+        for header_index, line in enumerate(lines[:-1]):
+            underline = lines[header_index + 1]
+            if (
+                line != line.lstrip()
+                or underline != underline.lstrip()
+                or line.strip() != "Parameters"
+                or not re.fullmatch(r"-{3,}", underline.strip())
+            ):
+                continue
+
+            parse_section(
+                lines[header_index + 2 :],
+                numpy_param,
+                stop_at_underlined_heading=True,
+            )
 
         # Javadoc style
         for match in re.finditer(r"@param (\w+)\s+(.+)", docstring):
