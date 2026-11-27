@@ -75,7 +75,13 @@ class AsyncDBChatStore(BaseModel):
 
     @abstractmethod
     async def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Delete a specific message by ID and return it (async)."""
+        """
+        Delete a specific message by positional index and return it (async).
+
+        ``idx`` is the 0-based position of the message in the conversation
+        history for ``key`` (the same ordering ``get_messages`` returns),
+        not the database row id.
+        """
 
     @abstractmethod
     async def delete_messages(
