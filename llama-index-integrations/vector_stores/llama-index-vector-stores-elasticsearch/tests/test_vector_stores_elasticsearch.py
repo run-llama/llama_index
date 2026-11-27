@@ -4,6 +4,7 @@ import os
 import re
 import uuid
 from typing import AsyncGenerator, List, Generator
+from unittest.mock import AsyncMock
 
 from elasticsearch import AsyncElasticsearch, ConnectionError
 
@@ -590,6 +591,41 @@ def test_metadata_filter_to_es_filter() -> None:
             ]
         }
     }
+
+
+def _mocked_es_store() -> ElasticsearchStore:
+    es_store = ElasticsearchStore(
+        index_name="test_index",
+        es_client=AsyncElasticsearch("http://localhost:9200"),
+        retrieval_strategy=AsyncDenseVectorStrategy(),
+    )
+    es_store._store.search = AsyncMock(return_value=[])
+    return es_store
+
+
+def _filtered_query() -> VectorStoreQuery:
+    return VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=1,
+        filters=MetadataFilters(filters=[ExactMatchFilter(key="k1", value="v1")]),
+    )
+
+
+def test_query_forwards_metadata_keyword_suffix() -> None:
+    es_store = _mocked_es_store()
+    es_store.query(_filtered_query(), metadata_keyword_suffix="")
+
+    search_filter = es_store._store.search.call_args.kwargs["filter"]
+    assert search_filter == [{"term": {"metadata.k1": {"value": "v1"}}}]
+
+
+@pytest.mark.asyncio
+async def test_aquery_forwards_metadata_keyword_suffix() -> None:
+    es_store = _mocked_es_store()
+    await es_store.aquery(_filtered_query(), metadata_keyword_suffix="")
+
+    search_filter = es_store._store.search.call_args.kwargs["filter"]
+    assert search_filter == [{"term": {"metadata.k1": {"value": "v1"}}}]
 
 
 @pytest.mark.asyncio
