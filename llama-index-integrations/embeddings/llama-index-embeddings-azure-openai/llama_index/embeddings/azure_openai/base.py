@@ -185,6 +185,8 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_deployment": self.azure_deployment,
             "base_url": self.api_base,
             "api_version": self.api_version,
+            "max_retries": self.max_retries,
+            "timeout": self.timeout,
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
         }
