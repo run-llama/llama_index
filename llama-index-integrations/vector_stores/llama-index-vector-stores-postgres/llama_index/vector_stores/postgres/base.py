@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 from typing import (
     Any,
@@ -738,10 +739,17 @@ class PGVectorStore(BasePydanticVectorStore):
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
+                num_value = float(filter_.value)
+                if math.isnan(num_value):
+                    sql_value = "'NaN'::float"
+                elif math.isinf(num_value):
+                    sql_value = "'-Infinity'::float" if num_value < 0 else "'Infinity'::float"
+                else:
+                    sql_value = f"{num_value}"
                 return text(
                     f"(metadata_->>'{filter_.key}')::float "
                     f"{self._to_postgres_operator(filter_.operator)} "
-                    f"{float(filter_.value)}"
+                    f"{sql_value}"
                 )
             except ValueError:
                 # If not a number, then treat it as a string
