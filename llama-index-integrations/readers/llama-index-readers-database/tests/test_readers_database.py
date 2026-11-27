@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 import pytest
@@ -142,3 +143,30 @@ async def test_aload_data_async(sqlite_engine):
     assert len(docs) == 2
     assert docs[0].text_resource and docs[0].text_resource.text
     assert docs[0].text_resource.text.startswith("id: 1")
+
+
+def test_lazy_load_data_document_id_non_string_falls_back_to_uuid(sqlite_engine):
+    """
+    A document_id callable returning a non-string (e.g. an int primary key)
+    falls back to an auto-generated UUID instead of crashing the load.
+    """
+    reader = DatabaseReader(engine=sqlite_engine)
+    docs = list(
+        reader.lazy_load_data("SELECT * FROM items", document_id=lambda row: row["id"])
+    )
+    assert len(docs) == 2
+    for doc in docs:
+        assert isinstance(doc.id_, str)
+        assert doc.id_ not in ("1", "2")
+        uuid.UUID(doc.id_)
+
+
+def test_lazy_load_data_document_id_string_is_used(sqlite_engine):
+    reader = DatabaseReader(engine=sqlite_engine)
+    docs = list(
+        reader.lazy_load_data(
+            "SELECT * FROM items ORDER BY id",
+            document_id=lambda row: f"item-{row['id']}",
+        )
+    )
+    assert [doc.id_ for doc in docs] == ["item-1", "item-2"]
