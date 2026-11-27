@@ -20,3 +20,14 @@ def test_client_header_initialization():
         http_options = kwargs["http_options"]
         headers = http_options["headers"]
         assert headers["x-goog-api-client"].startswith("llamaindex/")
+
+
+def test_default_model_is_not_deprecated_preview():
+    """The default model should be Google's named replacement for the deprecated native-audio preview."""
+    agent = GeminiLiveVoiceAgent(api_key="test-key")
+    assert agent.model == "gemini-3.8-live"
+
+
+def test_explicit_model_is_kept():
+    agent = GeminiLiveVoiceAgent(api_key="test-key", model="my-custom-model")
+    assert agent.model == "my-custom-model"
