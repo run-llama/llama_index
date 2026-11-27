@@ -6,6 +6,7 @@ from typing import Any, List, cast
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
+from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
@@ -202,6 +203,30 @@ def test_delete_ref_doc_nodes_removed_from_docstore(
     for node_id in ref_doc_info_2.node_ids:
         node = index.docstore.get_node(node_id, raise_error=False)
         assert node is not None
+
+
+def test_delete_ref_doc_with_docstore_shared_by_another_index(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """A shared docstore can hold nodes of the same ref doc from other indexes."""
+    documents = [
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    storage_context = StorageContext.from_defaults()
+    SummaryIndex.from_documents(documents, storage_context=storage_context)
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context, embed_model=mock_embed_model
+    )
+    assert len(index.index_struct.nodes_dict) == 2
+
+    index.delete_ref_doc("test_id_1", delete_from_docstore=True)
+
+    assert len(index.index_struct.nodes_dict) == 1
+    assert len(storage_context.vector_store.data.embedding_dict) == 1
+    assert storage_context.docstore.get_ref_doc_info("test_id_1") is None
+    nodes = index.as_retriever(similarity_top_k=5).retrieve("test")
+    assert [n.node.ref_doc_id for n in nodes] == ["test_id_2"]
 
 
 def test_simple_async(

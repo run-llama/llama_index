@@ -413,7 +413,10 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
-                    self._index_struct.delete(node_id)
+                    # the docstore can be shared with other indexes, so the
+                    # ref doc may have nodes that are not part of this index
+                    if node_id in self._index_struct.nodes_dict:
+                        self._index_struct.delete(node_id)
 
     def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
@@ -436,7 +439,10 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
-                    self._index_struct.delete(node_id)
+                    # the docstore can be shared with other indexes, so the
+                    # ref doc may have nodes that are not part of this index
+                    if node_id in self._index_struct.nodes_dict:
+                        self._index_struct.delete(node_id)
 
     async def _adelete_from_docstore(self, ref_doc_id: str) -> None:
         """Delete from docstore only if needed."""
