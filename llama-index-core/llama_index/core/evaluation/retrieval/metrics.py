@@ -69,8 +69,15 @@ class HitRate(BaseRetrievalMetric):
 
         if self.use_granular_hit_rate:
             # Granular HitRate calculation: Calculate all hits and divide by the number of expected docs
+            # Deduplicate retrieved_ids to avoid double-counting the same document
+            seen = set()
+            deduped_retrieved = []
+            for doc_id in retrieved_ids:
+                if doc_id not in seen:
+                    seen.add(doc_id)
+                    deduped_retrieved.append(doc_id)
             expected_set = set(expected_ids)
-            hits = sum(1 for doc_id in retrieved_ids if doc_id in expected_set)
+            hits = sum(1 for doc_id in deduped_retrieved if doc_id in expected_set)
             score = hits / len(expected_ids) if expected_ids else 0.0
         else:
             # Default HitRate calculation: Check if there is a single hit
@@ -136,10 +143,17 @@ class MRR(BaseRetrievalMetric):
 
         if self.use_granular_mrr:
             # Granular MRR calculation: All relevant retrieved docs have their reciprocal ranks summed and averaged
+            # Deduplicate retrieved_ids to avoid double-counting the same document
+            seen = set()
+            deduped_retrieved = []
+            for doc_id in retrieved_ids:
+                if doc_id not in seen:
+                    seen.add(doc_id)
+                    deduped_retrieved.append(doc_id)
             expected_set = set(expected_ids)
             reciprocal_rank_sum = 0.0
             relevant_docs_count = 0
-            for index, doc_id in enumerate(retrieved_ids):
+            for index, doc_id in enumerate(deduped_retrieved):
                 if doc_id in expected_set:
                     relevant_docs_count += 1
                     reciprocal_rank_sum += 1.0 / (index + 1)
@@ -323,8 +337,16 @@ class AveragePrecision(BaseRetrievalMetric):
 
         expected_set = set(expected_ids)
 
+        # Deduplicate retrieved_ids to avoid double-counting the same document
+        seen = set()
+        deduped_retrieved = []
+        for doc_id in retrieved_ids:
+            if doc_id not in seen:
+                seen.add(doc_id)
+                deduped_retrieved.append(doc_id)
+
         relevant_count, total_precision = 0, 0.0
-        for i, retrieved_id in enumerate(retrieved_ids, start=1):
+        for i, retrieved_id in enumerate(deduped_retrieved, start=1):
             if retrieved_id in expected_set:
                 relevant_count += 1
                 total_precision += relevant_count / i
@@ -413,9 +435,17 @@ class NDCG(BaseRetrievalMetric):
         mode = self.mode
         expected_set = set(expected_ids)
 
+        # Deduplicate retrieved_ids to avoid double-counting the same document
+        seen = set()
+        deduped_retrieved = []
+        for docid in retrieved_ids:
+            if docid not in seen:
+                seen.add(docid)
+                deduped_retrieved.append(docid)
+
         dcg = sum(
             discounted_gain(rel=docid in expected_set, i=i, mode=mode)
-            for i, docid in enumerate(retrieved_ids, start=1)
+            for i, docid in enumerate(deduped_retrieved, start=1)
         )
 
         idcg = sum(
