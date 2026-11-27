@@ -202,3 +202,52 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+def test_header_splits_with_up_to_three_leading_spaces() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Root
+intro
+
+  ## Child
+body
+
+### Leaf
+end
+"""
+            )
+        ]
+    )
+    # CommonMark §4.2 permits up to three leading spaces before an ATX heading.
+    assert len(splits) == 3
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[0].text == "# Root\nintro"
+    assert splits[1].metadata == {"header_path": "/Root/"}
+    assert splits[1].text == "## Child\nbody"
+    assert splits[2].metadata == {"header_path": "/Root/Child/"}
+    assert splits[2].text == "### Leaf\nend"
+
+
+def test_header_splits_with_four_leading_spaces_is_not_a_heading() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Root
+intro
+
+    ## Not a heading
+body
+"""
+            )
+        ]
+    )
+    # Four spaces are code indentation in CommonMark, not a heading.
+    assert len(splits) == 1
+    assert splits[0].metadata == {"header_path": "/"}
+    assert "Not a heading" in splits[0].text
