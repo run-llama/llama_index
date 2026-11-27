@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 from typing import (
     Any,
@@ -228,6 +229,17 @@ def get_data_model(
         )
 
     return model
+
+
+def _postgres_float_literal(value: float) -> str:
+    """Render a float so Postgres does not treat it as an identifier."""
+    if math.isnan(value):
+        return "'NaN'::float"
+    if math.isinf(value):
+        if value < 0:
+            return "'-Infinity'::float"
+        return "'Infinity'::float"
+    return str(value)
 
 
 class PGVectorStore(BasePydanticVectorStore):
@@ -738,11 +750,7 @@ class PGVectorStore(BasePydanticVectorStore):
             # Check if value is a number. If so, cast the metadata value to a float
             # This is necessary because the metadata is stored as a string
             try:
-                return text(
-                    f"(metadata_->>'{filter_.key}')::float "
-                    f"{self._to_postgres_operator(filter_.operator)} "
-                    f"{float(filter_.value)}"
-                )
+                numeric_value = float(filter_.value)
             except ValueError:
                 # If not a number, then treat it as a string
                 return text(
@@ -750,6 +758,11 @@ class PGVectorStore(BasePydanticVectorStore):
                     f"{self._to_postgres_operator(filter_.operator)} "
                     f"'{filter_.value}'"
                 )
+            return text(
+                f"(metadata_->>'{filter_.key}')::float "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"{_postgres_float_literal(numeric_value)}"
+            )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
