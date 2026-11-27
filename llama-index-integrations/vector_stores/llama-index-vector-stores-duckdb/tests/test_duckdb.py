@@ -390,6 +390,61 @@ class TestStore:
         assert len(nodes) == 1
         assert any(n.node_id == "empty-node" for n in nodes)
 
+    def test_filter_is_empty_on_empty_string(
+        self, vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+    ):
+        vector_store.clear()
+        # A node with an empty string and a node with a value for the same key
+        empty_string_node = TextNode(
+            text="empty string test",
+            id_="empty-string-node",
+            relationships={},
+            metadata={"empty_field": ""},
+            embedding=[0.1, 0.2, 0.3],
+        )
+        non_empty_node = TextNode(
+            text="non-empty test",
+            id_="non-empty-node",
+            relationships={},
+            metadata={"empty_field": "value"},
+            embedding=[0.3, 0.2, 0.1],
+        )
+        vector_store.add([empty_string_node, non_empty_node])
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="empty_field", value=None, operator=FilterOperator.IS_EMPTY
+                )
+            ]
+        )
+
+        nodes = vector_store.get_nodes(filters=filters)
+        assert [node.node_id for node in nodes] == ["empty-string-node"]
+
+        res = vector_store.query(
+            VectorStoreQuery(
+                query_embedding=[0.1, 0.2, 0.3],
+                similarity_top_k=2,
+                filters=filters,
+            )
+        )
+        assert res.nodes is not None
+        assert [node.node_id for node in res.nodes] == ["empty-string-node"]
+
+        # the filter keeps composing with the other conditions
+        or_filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="empty_field", value=None, operator=FilterOperator.IS_EMPTY
+                ),
+                MetadataFilter(
+                    key="empty_field", value="value", operator=FilterOperator.EQ
+                ),
+            ],
+            condition=FilterCondition.OR,
+        )
+        assert len(vector_store.get_nodes(filters=or_filters)) == 2
+
     def test_filter_and_condition(
         self, vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
     ):
