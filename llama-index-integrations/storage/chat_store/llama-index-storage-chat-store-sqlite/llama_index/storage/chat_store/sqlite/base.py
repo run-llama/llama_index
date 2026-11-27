@@ -294,49 +294,57 @@ class SQLiteChatStore(BaseChatStore):
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
+        if idx < 0:
+            return None
+
         with self._session() as session:
-            # First, retrieve message
             result = session.execute(
-                select(self._table_class.value).where(
-                    self._table_class.key == key, self._table_class.id == idx
-                )
-            ).scalar_one_or_none()
+                select(self._table_class.id, self._table_class.value)
+                .where(self._table_class.key == key)
+                .order_by(self._table_class.id)
+                .offset(idx)
+                .limit(1)
+            ).first()
 
             if result is None:
                 return None
 
             session.execute(
                 delete(self._table_class).where(
-                    self._table_class.key == key, self._table_class.id == idx
+                    self._table_class.key == key, self._table_class.id == result.id
                 )
             )
             session.commit()
 
-            return ChatMessage.model_validate(result)
+            return ChatMessage.model_validate(result.value)
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
+        if idx < 0:
+            return None
+
         async with self._async_session() as session:
-            # First, retrieve message
             result = (
                 await session.execute(
-                    select(self._table_class.value).where(
-                        self._table_class.key == key, self._table_class.id == idx
-                    )
+                    select(self._table_class.id, self._table_class.value)
+                    .where(self._table_class.key == key)
+                    .order_by(self._table_class.id)
+                    .offset(idx)
+                    .limit(1)
                 )
-            ).scalar_one_or_none()
+            ).first()
 
             if result is None:
                 return None
 
             await session.execute(
                 delete(self._table_class).where(
-                    self._table_class.key == key, self._table_class.id == idx
+                    self._table_class.key == key, self._table_class.id == result.id
                 )
             )
             await session.commit()
 
-            return ChatMessage.model_validate(result)
+            return ChatMessage.model_validate(result.value)
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
