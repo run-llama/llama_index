@@ -4,6 +4,7 @@ import pytest
 
 from llama_index.core.base.response.schema import Response
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.llms.mock import MockLLM
 from llama_index.core.question_gen.types import SubQuestion
 from llama_index.core.query_engine.sub_question_query_engine import (
     SubQuestionQueryEngine,
@@ -104,3 +105,21 @@ async def test_partial_failure_aquery():
     tools[0].query_engine.aquery.assert_awaited_once()
     tools[1].query_engine.aquery.assert_awaited_once()
     assert len(synth.asynthesize.call_args.kwargs["nodes"]) == 1
+
+
+@pytest.mark.parametrize("construct_with_defaults", [False, True])
+def test_duplicate_tool_names_are_rejected(construct_with_defaults: bool) -> None:
+    tools = [_make_tool("shared"), _make_tool("shared")]
+    question_gen = MagicMock()
+    synth = MagicMock()
+    kwargs = {
+        "question_gen": question_gen,
+        "response_synthesizer": synth,
+        "query_engine_tools": tools,
+    }
+
+    with pytest.raises(ValueError, match="shared"):
+        if construct_with_defaults:
+            SubQuestionQueryEngine.from_defaults(llm=MockLLM(), **kwargs)
+        else:
+            SubQuestionQueryEngine(**kwargs)
