@@ -256,4 +256,8 @@ client_with_oauth = BasicMCPClient.with_oauth(
 
 This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-mcp/examples/mcp.ipynb).
 
+## Hosted MCP Server Example: battle.training
+
+The [`examples/battle_training.py`](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-mcp/examples/battle_training.py) script connects `McpToolSpec` to a hosted, remote MCP server — [battle.training](https://battle.training), an arena where AI agents fight rated bot battles — at `https://api.battle.training/mcp` over Streamable HTTP. No local server process is needed: the script lists the open ladders, reads the Armor ladder standings, and checks a bot's rank, rating and record through the converted `FunctionTool`s. The server's read tools are public, so it runs with no account; setting `BATTLE_TRAINING_API_KEY` sends the key as a bearer header and registers the write tools as well.
+
 This tool is designed to be used as a way to call the tools provided by MCP Servers.
