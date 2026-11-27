@@ -40,10 +40,10 @@ Under the hood, `MongoDocumentStore` connects to a fixed MongoDB database and in
 
 > Note: You can configure the `db_name` and `namespace` when instantiating `MongoDocumentStore`, otherwise they default to `db_name="db_docstore"` and `namespace="docstore"`.
 
-Note that it's not necessary to call `storage_context.persist()` (or `docstore.persist()`) when using an `MongoDocumentStore`
-since data is persisted by default.
+Note that it's not necessary to call `storage_context.persist()` (or `docstore.persist()`) when using a `MongoDocumentStore`
+since data persists by default.
 
-You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoDocumentStore` with an existing `db_name` and `collection_name`.
+You can reconnect to your MongoDB collection and reload the index by re-initializing a `MongoDocumentStore` with an existing `db_name` and `collection_name`.
 
 A more complete example can be found [here](/python/examples/docstore/mongodocstoredemo)
 

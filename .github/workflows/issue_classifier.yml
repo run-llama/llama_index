@@ -8,20 +8,25 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           app-id: ${{ secrets.CI_BOT_APP_ID }}
           private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
 
+      # Inlined from run-llama/issue-classifier v0.2.0 (archived): its composite action used
+      # oven-sh/setup-bun@v2 by tag and ran the npm package unpinned, with our API key and token.
+      - name: Install bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
       - name: Classify Issues as Good First Issues
-        uses: run-llama/issue-classifier@v0.2.0
-        with:
-          llama-cloud-api-key: ${{ secrets.LLAMA_CLOUD_API_KEY }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          repository-owner: "run-llama"
-          repository-name: "llama_index"
+        env:
+          LLAMA_CLOUD_API_KEY: ${{ secrets.LLAMA_CLOUD_API_KEY }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPOSITORY_OWNER: "run-llama"
+          REPOSITORY_NAME: "llama_index"
+        run: bunx @llamaindex/issue-classifier@0.1.0

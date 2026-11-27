@@ -4,16 +4,16 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
-    "pytest==9.0.3",
-    "pytest-asyncio>=0.23.0,<0.24",
+    "pylint==4.0.9",
+    "pytest",
+    "pytest-asyncio",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "respx>=0.21.1,<0.22",
@@ -31,10 +31,10 @@ test_integration = [
 
 [project]
 name = "llama-index-embeddings-isaacus"
-version = "0.2.0"
+version = "0.4.0"
 description = "llama-index embeddings isaacus integration"
 authors = [{name = "Isaacus", email = "hello@isaacus.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
@@ -72,6 +72,8 @@ markers = [
 ]
 
 [tool.uv]
+# 3-day supply-chain hold, as in the root pyproject (this table stops uv inheriting it).
+exclude-newer = "3 days"
 default-groups = [
     "dev",
 ]

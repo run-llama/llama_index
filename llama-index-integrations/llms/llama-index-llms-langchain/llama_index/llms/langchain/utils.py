@@ -95,7 +95,7 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
 
     is_chat_model_ = is_chat_model(llm)
 
-    if isinstance(llm, LC.OpenAI):
+    if LC.OpenAI is not None and isinstance(llm, LC.OpenAI):
         try:
             from llama_index.llms.openai.utils import openai_modelname_to_contextsize
         except ImportError:
@@ -109,7 +109,7 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             is_chat_model=is_chat_model_,
             model_name=llm.model_name,
         )
-    elif isinstance(llm, LC.ChatAnyscale):
+    elif LC.ChatAnyscale is not None and isinstance(llm, LC.ChatAnyscale):
         try:
             from llama_index.llms.anyscale.utils import (
                 anyscale_modelname_to_contextsize,
@@ -125,7 +125,7 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             is_chat_model=is_chat_model_,
             model_name=llm.model_name,
         )
-    elif isinstance(llm, LC.ChatFireworks):
+    elif LC.ChatFireworks is not None and isinstance(llm, LC.ChatFireworks):
         try:
             from llama_index.llms.fireworks.utils import (
                 fireworks_modelname_to_contextsize,
@@ -141,7 +141,7 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             is_chat_model=is_chat_model_,
             model_name=llm.model_name,
         )
-    elif isinstance(llm, LC.ChatOpenAI):
+    elif LC.ChatOpenAI is not None and isinstance(llm, LC.ChatOpenAI):
         try:
             from llama_index.llms.openai.utils import openai_modelname_to_contextsize
         except ImportError:
@@ -155,7 +155,7 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             is_chat_model=is_chat_model_,
             model_name=llm.model_name,
         )
-    elif isinstance(llm, LC.Cohere):
+    elif LC.Cohere is not None and isinstance(llm, LC.Cohere):
         # June 2023: Cohere's supported max input size for Generation models is 2048
         # Reference: <https://docs.cohere.com/docs/tokens>
         return LLMMetadata(
@@ -164,7 +164,7 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             is_chat_model=is_chat_model_,
             model_name=llm.model,
         )
-    elif isinstance(llm, LC.AI21):
+    elif LC.AI21 is not None and isinstance(llm, LC.AI21):
         # June 2023:
         #   AI21's supported max input size for
         #   J2 models is 8K (8192 tokens to be exact)

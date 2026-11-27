@@ -114,6 +114,21 @@ def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
         assert "reasoning" not in kwargs
 
 
+@pytest.mark.parametrize(
+    "model", ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol"]
+)
+def test_get_model_kwargs_excludes_temperature_for_gpt_6(model):
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model=model, api_key="fake-api-key")
+
+    kwargs = llm._get_model_kwargs()
+
+    assert kwargs["model"] == model
+    assert "temperature" not in kwargs
+    assert "top_p" not in kwargs
+
+
 def test_get_model_kwargs_with_tools_none(default_responses_llm):
     """Test model kwargs generation when tools is explicitly None.
 
@@ -292,7 +307,13 @@ def test_process_response_event_with_text_annotation():
         content_index=0,
         annotation_index=0,
         type="response.output_text.annotation.added",
-        annotation={"type": "test_annotation", "value": 42},
+        annotation={
+            "type": "url_citation",
+            "start_index": 0,
+            "end_index": 5,
+            "title": "Example",
+            "url": "https://example.com",
+        },
         sequence_number=1,
     )
 
@@ -307,9 +328,13 @@ def test_process_response_event_with_text_annotation():
     # The annotation should be added to additional_kwargs["annotations"]
     _, _, updated_additional_kwargs, _, _, _ = result
     assert "annotations" in updated_additional_kwargs
-    assert updated_additional_kwargs["annotations"] == [
-        {"type": "test_annotation", "value": 42}
-    ]
+    assert len(updated_additional_kwargs["annotations"]) == 1
+    stored = updated_additional_kwargs["annotations"][0]
+    # openai<3 types this field as bare ``object`` and leaves the dict alone;
+    # openai>=3 parses it into a discriminated annotation model.
+    stored = stored if isinstance(stored, dict) else stored.model_dump()
+    assert stored["type"] == "url_citation"
+    assert stored["url"] == "https://example.com"
 
 
 def test_get_tool_calls_from_response():

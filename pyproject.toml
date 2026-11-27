@@ -4,17 +4,17 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=23.7.0,<=26.5.1",
+    "black[jupyter]>=23.7.0,<=26.10.1",
     "codespell[toml]>=v2.2.6",
     "ipykernel>=6.29.5,<7",
     "mypy==1.11.0",
     "openai",
     "pandas",
     "pre-commit==3.2.0",
-    "pylint==2.15.10",
-    "pytest-asyncio>=0.23.7",
+    "pylint==4.0.9",
+    "pytest-asyncio",
     "pytest-mock>=3.14.0",
-    "pytest>=8.2.1",
+    "pytest",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -39,9 +39,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "llama-index-core>=0.14.23,<0.15.0",
-    "llama-index-embeddings-openai>=0.6.0,<0.7",
-    "llama-index-llms-openai>=0.7.0,<0.8",
+    "llama-index-core>=0.14.26,<0.15.0",
+    "llama-index-embeddings-openai>=0.6.0,<0.9",
+    "llama-index-llms-openai>=0.7.0,<0.10",
     "nltk>=3.9.3",
 ]
 description = "Interface between LLMs and your data"
@@ -65,8 +65,8 @@ maintainers = [
 ]
 name = "llama-index"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
-version = "0.14.23"
+requires-python = ">=3.11,<4.0"
+version = "0.14.26"
 
 [project.urls]
 Documentation = "https://docs.llamaindex.ai/en/stable/"
@@ -212,6 +212,9 @@ spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
 
 [tool.uv]
+# Supply-chain hold: uv locks only releases at least 3 days old. Every package
+# without its own [tool.uv] table inherits this one; the ones with a table set it too.
+exclude-newer = "3 days"
 default-groups = [
     "dev",
 ]

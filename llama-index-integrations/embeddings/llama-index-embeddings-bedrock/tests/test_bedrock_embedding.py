@@ -59,6 +59,35 @@ def test_get_provider_invalid_format():
     with pytest.raises(ValueError, match="Unexpected number of parts in model_name"):
         embedding._get_provider()
 
+
+def test_empty_payload_rejected_before_aws_call():
+    """
+    Reject an empty texts list locally instead of hitting AWS.
+
+    Bedrock answers an empty ``texts`` payload with a misleading
+    ``ValidationException: Invalid parameter combination`` (#22382).
+    """
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name="cohere.embed-english-v3", client=bedrock_client
+    )
+
+    with pytest.raises(ValueError, match="at least one text"):
+        embedding._get_embedding([], "text")
+
+    with pytest.raises(ValueError, match="at least one text"):
+        embedding._get_request_body("cohere", [], "text")
+
+
+def test_non_empty_payload_still_builds_request_body():
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name="cohere.embed-english-v3", client=bedrock_client
+    )
+
+    body = embedding._get_request_body("cohere", ["hello", "world"], "text")
+    assert '"hello"' in body and '"world"' in body
+
     embedding = BedrockEmbedding(
         model_name="too.many.parts.in.name", client=bedrock_client
     )
