@@ -15,7 +15,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -25,7 +25,7 @@ jobs:
           sudo apt-get install -y portaudio19-dev
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -34,17 +34,19 @@ jobs:
         shell: bash
         working-directory: llama-dev
         run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          git fetch origin ${GITHUB_EVENT_PULL_REQUEST_BASE_REF}:${GITHUB_EVENT_PULL_REQUEST_BASE_REF}
           uv run -- llama-dev \
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }} \
+            --base-ref ${GITHUB_EVENT_PULL_REQUEST_BASE_REF} \
             --clean
+        env:
+          GITHUB_EVENT_PULL_REQUEST_BASE_REF: ${{ github.event.pull_request.base.ref }}
 
   test-core-py314:
     runs-on: ubuntu-latest-unit-tester
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -54,7 +56,7 @@ jobs:
           sudo apt-get install -y portaudio19-dev
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.14"
           enable-cache: true
@@ -63,9 +65,11 @@ jobs:
         shell: bash
         working-directory: llama-dev
         run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          git fetch origin ${GITHUB_EVENT_PULL_REQUEST_BASE_REF}:${GITHUB_EVENT_PULL_REQUEST_BASE_REF}
           uv run -- llama-dev \
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
             --cov \
             llama-index-core
+        env:
+          GITHUB_EVENT_PULL_REQUEST_BASE_REF: ${{ github.event.pull_request.base.ref }}

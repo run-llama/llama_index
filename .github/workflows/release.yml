@@ -9,22 +9,25 @@ on:
       - main
 
 permissions:
-  contents: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
   publish-core:
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     if: github.repository == 'run-llama/llama_index' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == vars.RELEASE_BRANCH_NAME))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.build-publish-core.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install uv and set python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.11"
 
@@ -41,7 +44,7 @@ jobs:
           uv run python -c "from llama_index.core.utils import get_tokenizer; print(get_tokenizer('gpt-5-mini'))"
 
       - name: Generate build provenance attestations
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         id: attest
         with:
           subject-path: "llama-index-core/llama_index/core/_static/**/*"
@@ -69,36 +72,41 @@ jobs:
           done
 
   notify-workflows-py:
+    permissions:
+      contents: read
     name: Trigger llama-index-core bump in workflows-py
     runs-on: ubuntu-latest
     needs: publish-core
     steps:
       - name: Generate GitHub App Token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           app-id: ${{ secrets.CI_BOT_APP_ID }}
           private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
           owner: run-llama
 
       - name: Trigger repository_dispatch
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: run-llama/workflows-py
           event-type: llama-index-core-release
 
   build-n-publish:
+    environment: release
+    permissions:
+      contents: write
     name: Build and publish 'llama-index' to PyPI
     runs-on: ubuntu-latest
     needs: publish-core
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install uv and set python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.11"
 
@@ -120,7 +128,7 @@ jobs:
           uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
 
       - name: Generate Release Notes
-        uses: CSchoel/release-notes-from-changelog@v1
+        uses: CSchoel/release-notes-from-changelog@3594292798d8d7eaed04d0a436a5fa2b22e448c7 # v1.3.0
         with:
           version: "$(date +'%Y-%m-%d')"
           begin-pattern: "/^## \\[$(date +'%Y-%m-%d')\\]/"

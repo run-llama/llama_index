@@ -1,0 +1,74 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Self-hosted Renovate (run-llama/platform, renovate-org.yml, its own multi-pass llama_index job) keeps this repo's GitHub Actions pins current and its uv.lock files patched, and nothing else. Actions are pinned to commit SHAs and the repo refuses unpinned ones, so Renovate moves those pins forward (INF-459). uv.lock files: lockfile maintenance on every run, grouped by area, so security fixes in transitive dependencies land without anyone bumping a package (2026-11-25). Every uv lock here holds releases back 3 days (exclude-newer in the root pyproject and in each package with its own [tool.uv] table). No version-range changes: published requirements move by hand, except a security fix that no in-range version provides, which opens as a draft. Questions: #infra.",
+  "enabledManagers": ["github-actions", "pep621"],
+  "packageRules": [
+    {
+      "description": "Python dependencies get no version updates: their ranges are this library's published requirements",
+      "matchManagers": ["pep621"],
+      "enabled": false
+    },
+    {
+      "description": "uv.lock maintenance on every run: a full relock within the existing ranges, held 3 days by exclude-newer. Lockfiles are dev-only (never published), so a refresh merges once checks pass and it is approved. Rebased only on conflict: a group relocks up to ~150 packages, so it is not redone each time main moves",
+      "matchManagers": ["pep621"],
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "enabled": true,
+      "schedule": ["at any time"],
+      "minimumReleaseAge": null,
+      "rebaseWhen": "conflicted",
+      "groupName": "uv.lock maintenance: core and tooling",
+      "groupSlug": "uv-lock-core"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/**"],
+      "groupName": "uv.lock maintenance: other integrations",
+      "groupSlug": "uv-lock-integrations-other"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/readers/**"],
+      "groupName": "uv.lock maintenance: readers",
+      "groupSlug": "uv-lock-readers"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/llms/**"],
+      "groupName": "uv.lock maintenance: llms",
+      "groupSlug": "uv-lock-llms"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/vector_stores/**"],
+      "groupName": "uv.lock maintenance: vector stores",
+      "groupSlug": "uv-lock-vector-stores"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/tools/**"],
+      "groupName": "uv.lock maintenance: tools",
+      "groupSlug": "uv-lock-tools"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/embeddings/**"],
+      "groupName": "uv.lock maintenance: embeddings",
+      "groupSlug": "uv-lock-embeddings"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchFileNames": ["llama-index-integrations/storage/**"],
+      "groupName": "uv.lock maintenance: storage",
+      "groupSlug": "uv-lock-storage"
+    },
+    {
+      "description": "A security fix outside a package's published range changes what users install: open it as a draft for a maintainer. In-range fixes only move uv.lock",
+      "matchManagers": ["pep621"],
+      "matchJsonata": [
+        "isVulnerabilityAlert = true and isLockfileUpdate != true"
+      ],
+      "draftPR": true,
+      "automerge": false
+    }
+  ]
+}

@@ -18,10 +18,11 @@ env:
 
 jobs:
   publish_subpackage_if_needed:
+    environment: release
     if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -29,9 +30,9 @@ jobs:
         id: changed-files
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ -n "${{ github.event.inputs.packages }}" ]; then
+            if [ -n "${GITHUB_EVENT_INPUTS_PACKAGES}" ]; then
               files=""
-              for d in ${{ github.event.inputs.packages }}; do
+              for d in ${GITHUB_EVENT_INPUTS_PACKAGES}; do
                 files="$files ${d%/}/pyproject.toml"
               done
             else
@@ -56,10 +57,12 @@ jobs:
               grep llama-index | grep pyproject | xargs)
           fi
           echo "changed_files=$(echo $files | xargs)" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_EVENT_INPUTS_PACKAGES: ${{ github.event.inputs.packages }}
 
       - name: Install uv and set the python version
         if: ${{ steps.changed-files.outputs.changed_files != '' }}
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
