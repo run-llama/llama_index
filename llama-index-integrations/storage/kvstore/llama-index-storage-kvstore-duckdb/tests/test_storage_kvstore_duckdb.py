@@ -126,6 +126,18 @@ class TestStore:
 
         assert kv_store.get(key) is None
 
+    def test_delete_reports_whether_key_existed(self, kv_store: DuckDBKVStore):
+        key = "id_1"
+        value = {"name": "John Doe", "text": "Hello, world!"}
+
+        _ = kv_store.put(key, value)
+
+        # the key existed, so the deletion is reported back to the caller
+        assert kv_store.delete(key) is True
+        # deleting it again removes nothing and must not claim otherwise:
+        # KVDocumentStore.delete_document relies on that to raise for missing keys
+        assert kv_store.delete(key) is False
+
     def test_delete_collection(self, kv_store: DuckDBKVStore):
         key = "id_1"
         value = {"name": "John Doe", "text": "Hello, world!"}
