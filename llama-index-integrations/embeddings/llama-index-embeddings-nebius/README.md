@@ -1,8 +1,8 @@
-# LlamaIndex Embeddings Integration: [Nebius AI Studio](https://studio.nebius.ai/)
+# LlamaIndex Embeddings Integration: [Nebius Token Factory](https://tokenfactory.nebius.com/)
 
 ## Overview
 
-Integrate with Nebius AI Studio API, which provides access to open-source state-of-the-art text embeddings models.
+Integrate with the OpenAI-compatible Embeddings API in Nebius Token Factory, which provides access to open-source text embedding models.
 
 ## Installation
 
@@ -24,7 +24,7 @@ NEBIUS_API_KEY=your_api_key
 ```python
 from llama_index.embeddings.nebius import NebiusEmbedding
 
-embed_model = NebiusEmbedding(model_name="BAAI/bge-en-icl")
+embed_model = NebiusEmbedding(model_name="Qwen/Qwen3-Embedding-8B")
 ```
 
 #### Without environmental variables
@@ -33,9 +33,14 @@ embed_model = NebiusEmbedding(model_name="BAAI/bge-en-icl")
 from llama_index.embeddings.nebius import NebiusEmbedding
 
 embed_model = NebiusEmbedding(
-    api_key="your_api_key", model_name="BAAI/bge-en-icl"
+    api_key="your_api_key", model_name="Qwen/Qwen3-Embedding-8B"
 )
 ```
+
+The integration defaults to `https://api.tokenfactory.nebius.com/v1`. You can
+set `api_base` explicitly to target a Dedicated Endpoint or another compatible
+deployment. See the [Token Factory model list](https://docs.tokenfactory.nebius.com/models)
+for currently available model IDs.
 
 ### Launching
 
