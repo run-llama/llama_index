@@ -219,7 +219,7 @@ class OracleReader(BaseReader):
                 self.tablename = self.params.get("tablename")
                 self.colname = self.params.get("colname")
             else:
-                raise Exception("Missing loader parameters")
+                raise ValueError("Missing loader parameters")
 
             oracledb.defaults.fetch_lobs = False
 
@@ -234,7 +234,7 @@ class OracleReader(BaseReader):
             if self.dir:
                 skip_count = 0
                 if not (os.path.exists(self.dir) and os.path.isdir(self.dir)):
-                    raise Exception("Directory does not exist or invalid.")
+                    raise FileNotFoundError("Directory does not exist or invalid.")
                 else:
                     for file_name in os.listdir(self.dir):
                         file_path = os.path.join(self.dir, file_name)
@@ -252,7 +252,7 @@ class OracleReader(BaseReader):
             if self.tablename:
                 try:
                     if self.owner is None or self.colname is None:
-                        raise Exception("Missing owner or column name")
+                        raise ValueError("Missing owner or column name")
 
                     cursor = self.conn.cursor()
                     self.mdata_cols = self.params.get("mdata_cols")
