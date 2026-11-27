@@ -57,3 +57,28 @@ def test_call_tool_supports_positional_only_function_tool() -> None:
     output = call_tool(tool, {"query": "LlamaIndex"})
 
     assert output.raw_output == "LlamaIndex"
+
+class AsyncLookup:
+    async def __call__(self, query: str) -> str:
+        return f"found: {query}"
+
+
+def test_function_tool_supports_async_callable_instance() -> None:
+    tool = FunctionTool.from_defaults(
+        fn=AsyncLookup(), name="lookup", description="Look up a ticket."
+    )
+
+    output = tool.call(query="ticket-42")
+
+    assert output.raw_output == "found: ticket-42"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_acall_supports_async_callable_instance() -> None:
+    tool = FunctionTool.from_defaults(
+        fn=AsyncLookup(), name="lookup", description="Look up a ticket."
+    )
+
+    output = await tool.acall(query="ticket-42")
+
+    assert output.raw_output == "found: ticket-42"
