@@ -21,7 +21,7 @@ class PythonFileToolSpec(BaseToolSpec):
         """
         functions = ""
         for node in ast.walk(self.tree):
-            if isinstance(node, ast.FunctionDef):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if external and node.name.startswith("_"):
                     continue
                 functions += f"""
@@ -30,7 +30,7 @@ arguments: {ast.dump(node.args)}
                     """
         return functions
 
-    def get_function(self, name: str) -> str:
+    def get_function(self, name: str) -> Optional[str]:
         """
         Use this function to get the name and arguments of a single function definition in the python file.
 
@@ -39,7 +39,7 @@ arguments: {ast.dump(node.args)}
 
         """
         for node in ast.walk(self.tree):
-            if isinstance(node, ast.FunctionDef):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if node.name == name:
                     return f"""
 name: {node.name}
@@ -58,5 +58,8 @@ docstring: {ast.get_docstring(node)}
         """
         functions = ""
         for name in names:
-            functions += self.get_function(name) + "\n"
+            definition = self.get_function(name)
+            if definition is None:
+                continue
+            functions += definition + "\n"
         return functions
