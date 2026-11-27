@@ -198,7 +198,11 @@ class TimescaleVectorStore(BasePydanticVectorStore):
                     text=row[client.SEARCH_RESULT_CONTENTS_IDX],
                     metadata=row[client.SEARCH_RESULT_METADATA_IDX],
                 )
-            similarities.append(row[client.SEARCH_RESULT_DISTANCE_IDX])
+            # The clients use the default cosine distance (0 = identical,
+            # 2 = opposite), so convert it to a higher-is-better similarity.
+            # Without a query embedding the client returns -1.0 (no distance).
+            distance = row[client.SEARCH_RESULT_DISTANCE_IDX]
+            similarities.append(1.0 - distance if distance >= 0 else distance)
             ids.append(row[client.SEARCH_RESULT_ID_IDX])
             nodes.append(node)
 
