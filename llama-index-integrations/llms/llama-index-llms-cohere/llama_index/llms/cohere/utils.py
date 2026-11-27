@@ -256,12 +256,13 @@ async def acompletion_with_retry(
         is_stream = kwargs.pop("stream", False)
         if chat:
             if is_stream:
-                return await aclient.chat_stream(**kwargs)
+                # chat_stream is an async generator, it must not be awaited
+                return aclient.chat_stream(**kwargs)
             else:
                 return await aclient.chat(**kwargs)
         else:
             if is_stream:
-                return await aclient.generate_stream(**kwargs)
+                return aclient.generate_stream(**kwargs)
             else:
                 return await aclient.generate(**kwargs)
 

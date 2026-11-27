@@ -1,9 +1,16 @@
+import asyncio
 import os
 from typing import Sequence, Optional, List
 from unittest import mock
 
 import pytest
-from cohere import ChatbotMessage, UserMessage, NonStreamedChatResponse, ToolCall
+from cohere import (
+    ChatbotMessage,
+    ChatTextGenerationEvent,
+    NonStreamedChatResponse,
+    ToolCall,
+    UserMessage,
+)
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatResponse, ChatMessage, MessageRole
@@ -202,3 +209,30 @@ def test_invoke_tool_calls() -> None:
         "a": 3,
         "b": 4,
     }
+
+
+def test_astream_chat_uses_async_client() -> None:
+    llm = Cohere(api_key="dummy")
+
+    def sync_chat_stream(**kwargs):
+        return iter([ChatTextGenerationEvent(text="sync")])
+
+    async def async_chat_stream(**kwargs):
+        for text in ["Hello", " world"]:
+            yield ChatTextGenerationEvent(text=text)
+
+    async def run() -> List[ChatResponse]:
+        gen = await llm.astream_chat([ChatMessage(role="user", content="Hi")])
+        return [r async for r in gen]
+
+    with (
+        mock.patch.object(llm._client, "chat_stream", side_effect=sync_chat_stream),
+        mock.patch.object(
+            llm._aclient, "chat_stream", side_effect=async_chat_stream
+        ) as achat_stream,
+    ):
+        responses = asyncio.run(run())
+
+    achat_stream.assert_called_once()
+    assert [r.delta for r in responses] == ["Hello", " world"]
+    assert responses[-1].message.content == "Hello world"

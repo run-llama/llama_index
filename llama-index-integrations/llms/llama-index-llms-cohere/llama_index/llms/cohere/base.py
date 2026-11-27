@@ -512,8 +512,11 @@ class Cohere(FunctionCallingLLM):
 
         chat_request = self.get_cohere_chat_request(messages, **all_kwargs)
 
-        response = completion_with_retry(
-            client=self._client, max_retries=self.max_retries, chat=True, **chat_request
+        response = await acompletion_with_retry(
+            aclient=self._aclient,
+            max_retries=self.max_retries,
+            chat=True,
+            **chat_request,
         )
 
         async def gen() -> ChatResponseAsyncGen:
