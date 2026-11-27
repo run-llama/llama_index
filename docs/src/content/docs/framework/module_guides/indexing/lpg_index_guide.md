@@ -380,6 +380,7 @@ Currently, supported graph stores for property graphs include:
 | NebulaPropertyGraphStore   | ❌        | ❌                       | ❌    | Server                |
 | TiDBPropertyGraphStore     | ❌        | ✅                       | ❌    | Server                |
 | FalkorDBPropertyGraphStore | ❌        | ✅                       | ❌    | Server                |
+| RushDBPropertyGraphStore   | ❌        | ✅                       | ❌    | Server                |
 
 ### Saving to/from disk
 
