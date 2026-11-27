@@ -237,19 +237,23 @@ class ArtifactEditorToolSpec(BaseToolSpec):
                         (arg for arg in args if arg is not type(None)), field_type
                     )
 
-                # Handle List types
+                # Handle List types. The remaining path parts address the list
+                # items, so validation continues against the item type. Without
+                # this, fields of models stored in a list are reported as
+                # invalid fields of the model that owns the list.
                 if hasattr(field_type, "__origin__") and field_type.__origin__ in (
                     list,
                     List,
                 ):
-                    # For list types, the next part should be an index or '-'
-                    if i + 1 < len(path_parts) and (
-                        isinstance(path_parts[i + 1], int) or path_parts[i + 1] == "-"
-                    ):
+                    item_types = [
+                        arg
+                        for arg in getattr(field_type, "__args__", ())
+                        if arg is not type(None)
+                    ]
+                    if not item_types:
+                        # Untyped list (e.g. a bare ``list``): nothing to check
                         continue
-                    # If we're at the end of the path and it's a list, that's valid too
-                    elif i + 1 == len(path_parts):
-                        continue
+                    field_type = item_types[0]
 
                 # If it's a BaseModel subclass, use it for next iteration
                 if isinstance(field_type, type) and issubclass(field_type, BaseModel):
