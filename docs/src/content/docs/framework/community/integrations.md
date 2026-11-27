@@ -13,6 +13,7 @@ Data loaders (readers) live in the [`readers` directory](https://github.com/run-
 Agent tools and tool specs live in the [`tools` directory](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools) of the LlamaIndex repo. See the [tools guide](/python/framework/module_guides/deploying/agents/tools) for how to use them.
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Screwtape.ai](https://github.com/screwtapeai/pay-safely): tools that check whether a seller is safe to pay before an agent pays, and return a signed receipt.
 
 ## LlamaPacks -- Code Templates
 
