@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
@@ -115,6 +116,17 @@ def test_get_nodes() -> None:
     g.upsert_llama_nodes([n1, n2])
 
     assert g.get_llama_nodes(["n1", "n2"]) == [n1, n2]
+
+
+def test_persist_creates_missing_parent_directories(tmp_path: Path) -> None:
+    graph_store = SimplePropertyGraphStore()
+    node = EntityNode(name="example")
+    graph_store.upsert_nodes([node])
+    persist_path = str(tmp_path / "snapshots" / "first" / "graph.json")
+
+    graph_store.persist(persist_path)
+
+    assert SimplePropertyGraphStore.from_persist_path(persist_path).get() == [node]
 
 
 def test_persist_utf8_round_trip() -> None:
