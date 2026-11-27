@@ -88,7 +88,7 @@ def test_delete_specific_message(sqlite_chat_store: SQLiteChatStore):
     key = "test_delete_message_key"
     sqlite_chat_store.set_messages(key, messages)
 
-    sqlite_chat_store.delete_message(key, 2)
+    sqlite_chat_store.delete_message(key, 1)
     retrieved_messages = sqlite_chat_store.get_messages(key)
     assert len(retrieved_messages) == 1
     assert retrieved_messages[0].content == "Keep me"
@@ -184,7 +184,7 @@ async def test_async_delete_specific_message(sqlite_chat_store: SQLiteChatStore)
     key = "test_adelete_message_key"
     await sqlite_chat_store.aset_messages(key, messages)
 
-    await sqlite_chat_store.adelete_message(key, 2)
+    await sqlite_chat_store.adelete_message(key, 1)
     retrieved_messages = await sqlite_chat_store.aget_messages(key)
     assert len(retrieved_messages) == 1
     assert retrieved_messages[0].content == "Async keep me"
@@ -228,3 +228,119 @@ async def test_async_delete_last_message(sqlite_chat_store: SQLiteChatStore):
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"
+
+
+@pytest.mark.parametrize(
+    ("idx", "removed", "remaining"),
+    [
+        (0, "First", ["Second", "Third"]),
+        (1, "Second", ["First", "Third"]),
+        (2, "Third", ["First", "Second"]),
+        (-1, None, ["First", "Second", "Third"]),
+        (3, None, ["First", "Second", "Third"]),
+        (5, None, ["First", "Second", "Third"]),
+        (2**63 - 1, None, ["First", "Second", "Third"]),
+        (2**63, None, ["First", "Second", "Third"]),
+        (10**100, None, ["First", "Second", "Third"]),
+    ],
+)
+def test_delete_message_uses_conversation_position(
+    sqlite_chat_store: SQLiteChatStore,
+    idx: int,
+    removed: str | None,
+    remaining: list[str],
+):
+    for key, content in [
+        ("other", "Other first"),
+        ("chat", "First"),
+        ("other", "Other second"),
+        ("chat", "Second"),
+        ("chat", "Third"),
+    ]:
+        sqlite_chat_store.add_message(key, ChatMessage(content=content, role="user"))
+
+    result = sqlite_chat_store.delete_message("chat", idx)
+
+    assert (result.content if result is not None else None) == removed
+    assert [m.content for m in sqlite_chat_store.get_messages("chat")] == remaining
+    assert [m.content for m in sqlite_chat_store.get_messages("other")] == [
+        "Other first",
+        "Other second",
+    ]
+    assert sqlite_chat_store.delete_message("missing", 0) is None
+
+
+def test_delete_message_reindexes_after_deletion(sqlite_chat_store: SQLiteChatStore):
+    for content in ["First", "Second", "Third"]:
+        sqlite_chat_store.add_message("chat", ChatMessage(content=content, role="user"))
+
+    for idx, expected in [(1, "Second"), (1, "Third"), (0, "First")]:
+        result = sqlite_chat_store.delete_message("chat", idx)
+        assert result is not None
+        assert result.content == expected
+
+    assert sqlite_chat_store.get_messages("chat") == []
+    assert sqlite_chat_store.delete_message("chat", 0) is None
+
+
+@pytest.mark.parametrize(
+    ("idx", "removed", "remaining"),
+    [
+        (0, "First", ["Second", "Third"]),
+        (1, "Second", ["First", "Third"]),
+        (2, "Third", ["First", "Second"]),
+        (-1, None, ["First", "Second", "Third"]),
+        (3, None, ["First", "Second", "Third"]),
+        (5, None, ["First", "Second", "Third"]),
+        (2**63 - 1, None, ["First", "Second", "Third"]),
+        (2**63, None, ["First", "Second", "Third"]),
+        (10**100, None, ["First", "Second", "Third"]),
+    ],
+)
+@pytest.mark.asyncio
+async def test_adelete_message_uses_conversation_position(
+    sqlite_chat_store: SQLiteChatStore,
+    idx: int,
+    removed: str | None,
+    remaining: list[str],
+):
+    for key, content in [
+        ("other", "Other first"),
+        ("chat", "First"),
+        ("other", "Other second"),
+        ("chat", "Second"),
+        ("chat", "Third"),
+    ]:
+        await sqlite_chat_store.async_add_message(
+            key, ChatMessage(content=content, role="user")
+        )
+
+    result = await sqlite_chat_store.adelete_message("chat", idx)
+
+    assert (result.content if result is not None else None) == removed
+    assert [
+        m.content for m in await sqlite_chat_store.aget_messages("chat")
+    ] == remaining
+    assert [m.content for m in await sqlite_chat_store.aget_messages("other")] == [
+        "Other first",
+        "Other second",
+    ]
+    assert await sqlite_chat_store.adelete_message("missing", 0) is None
+
+
+@pytest.mark.asyncio
+async def test_adelete_message_reindexes_after_deletion(
+    sqlite_chat_store: SQLiteChatStore,
+):
+    for content in ["First", "Second", "Third"]:
+        await sqlite_chat_store.async_add_message(
+            "chat", ChatMessage(content=content, role="user")
+        )
+
+    for idx, expected in [(1, "Second"), (1, "Third"), (0, "First")]:
+        result = await sqlite_chat_store.adelete_message("chat", idx)
+        assert result is not None
+        assert result.content == expected
+
+    assert await sqlite_chat_store.aget_messages("chat") == []
+    assert await sqlite_chat_store.adelete_message("chat", 0) is None
