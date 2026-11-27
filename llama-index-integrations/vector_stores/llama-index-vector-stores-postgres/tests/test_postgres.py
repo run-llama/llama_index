@@ -1290,6 +1290,18 @@ async def test_delete_nodes(
         res = pg_fixture.query(q)
     assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
 
+    # test deleting with only an empty nested filter group deletes nothing
+    nested_empty = MetadataFilters(filters=[MetadataFilters(filters=[])])
+    if use_async:
+        await pg_fixture.adelete_nodes(filters=nested_empty)
+    else:
+        pg_fixture.delete_nodes(filters=nested_empty)
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+    assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
+
     # test deleting element that doesn't exist
     if use_async:
         await pg_fixture.adelete_nodes(["asdf"])

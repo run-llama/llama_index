@@ -1504,7 +1504,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
         """
         # An empty MetadataFilters selects nothing; it must not turn into a delete of every row.
-        has_filters = filters is not None and bool(filters.filters)
+        has_filters = _has_leaf_filter(filters)
         if not node_ids and not has_filters:
             return
 
@@ -1538,7 +1538,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
         """
         # An empty MetadataFilters selects nothing; it must not turn into a delete of every row.
-        has_filters = filters is not None and bool(filters.filters)
+        has_filters = _has_leaf_filter(filters)
         if not node_ids and not has_filters:
             return
 
@@ -1690,6 +1690,14 @@ class PGVectorStore(BasePydanticVectorStore):
                 nodes.append(node)
 
             return nodes
+
+
+def _has_leaf_filter(filters: Optional[MetadataFilters]) -> bool:
+    """Return True if the filter tree contains at least one MetadataFilter."""
+    return filters is not None and any(
+        _has_leaf_filter(f) if isinstance(f, MetadataFilters) else True
+        for f in filters.filters
+    )
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:
