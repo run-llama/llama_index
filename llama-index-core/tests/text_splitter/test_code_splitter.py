@@ -61,6 +61,41 @@ def baz():
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_line_overlap_preserves_source_separators(newline: str) -> None:
+    """Overlapped chunks should remain exact source substrings."""
+    text = newline.join(
+        [
+            "def first():",
+            "    return 1",
+            "",
+            "def second():",
+            "    return 2",
+            "",
+        ]
+    )
+    document = Document(text=text)
+    code_splitter = CodeSplitter(
+        language="python", chunk_lines=4, chunk_lines_overlap=1, max_chars=1000
+    )
+
+    chunks = code_splitter.split_text(text)
+    nodes: List[TextNode] = code_splitter.get_nodes_from_documents([document])
+
+    assert len(chunks) == 2
+    assert (
+        chunks[1] == f"    return 1{newline}{newline}def second():{newline}    return 2"
+    )
+    assert all(node.start_char_idx is not None for node in nodes)
+    assert all(node.end_char_idx is not None for node in nodes)
+    assert all(
+        text[node.start_char_idx : node.end_char_idx] == node.text
+        for node in nodes
+        if node.start_char_idx is not None and node.end_char_idx is not None
+    )
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_typescript_code_splitter() -> None:
     """Test case for code splitting using typescript."""
     if "CI" in os.environ:
@@ -81,7 +116,7 @@ function baz() {
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("function foo()")
-    assert chunks[1].startswith("function baz()")
+    assert "function baz()" in chunks[1]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -114,8 +149,8 @@ def test_html_code_splitter() -> None:
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("<!DOCTYPE html>")
-    assert chunks[1].startswith("<html>")
-    assert chunks[2].startswith("<head>")
+    assert any("<html>" in chunk for chunk in chunks)
+    assert any("<head>" in chunk for chunk in chunks)
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -154,7 +189,7 @@ export default ExampleComponent;"""
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("import React from 'react';")
-    assert chunks[1].startswith("interface Person")
+    assert "interface Person" in chunks[1]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -177,7 +212,7 @@ int main() {
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("#include <iostream>")
-    assert chunks[1].startswith("int main()")
+    assert "int main()" in chunks[1]
     assert chunks[2].startswith("{\n    std::cout")
 
 
@@ -202,7 +237,7 @@ public static void baz() {
 
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("public static void foo()")
-    assert chunks[2].startswith("public static void baz()")
+    assert "public static void baz()" in chunks[2]
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -325,6 +360,86 @@ def baz():
 
     # Verify it's using character mode by default
     assert code_splitter.count_mode == "char"
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_line_limits_and_overlap() -> None:
+    """Line settings should bound chunks and retain the requested context."""
+    if "CI" in os.environ:
+        return
+
+    text = "\n".join(
+        f"def function_{index}():\n    return {index}" for index in range(8)
+    )
+    code_splitter = CodeSplitter(
+        language="python",
+        chunk_lines=4,
+        chunk_lines_overlap=1,
+        max_chars=10000,
+    )
+
+    chunks = code_splitter.split_text(text)
+
+    assert len(chunks) > 1
+    assert all(len(chunk.splitlines()) <= 4 for chunk in chunks)
+    assert all(
+        previous.splitlines()[-1] == current.splitlines()[0]
+        for previous, current in zip(chunks, chunks[1:])
+    )
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_zero_line_overlap() -> None:
+    """A zero overlap should be valid and should not duplicate lines."""
+    if "CI" in os.environ:
+        return
+
+    text = "\n".join(
+        f"def function_{index}():\n    return {index}" for index in range(4)
+    )
+    code_splitter = CodeSplitter(
+        language="python",
+        chunk_lines=3,
+        chunk_lines_overlap=0,
+        max_chars=10000,
+    )
+
+    chunks = code_splitter.split_text(text)
+
+    assert len(chunks) > 1
+    assert all(len(chunk.splitlines()) <= 3 for chunk in chunks)
+    assert all(
+        previous.splitlines()[-1] != current.splitlines()[0]
+        for previous, current in zip(chunks, chunks[1:])
+    )
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_line_overlap_must_be_smaller_than_chunk_lines() -> None:
+    """Reject overlap values that cannot leave a forward chunk window."""
+    for chunk_lines, chunk_lines_overlap in [(1, 1), (2, 2), (2, 3)]:
+        with pytest.raises(ValueError, match="chunk_lines_overlap.*chunk_lines"):
+            CodeSplitter(
+                language="python",
+                chunk_lines=chunk_lines,
+                chunk_lines_overlap=chunk_lines_overlap,
+            )
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_default_line_limit_is_applied() -> None:
+    """The documented default line cap is applied to emitted chunks."""
+    text = "\n".join(
+        f"def function_{index}():\n    return {index}" for index in range(25)
+    )
+    chunks = CodeSplitter(language="python", max_chars=100_000).split_text(text)
+
+    assert len(chunks) == 3
+    assert [len(chunk.splitlines()) for chunk in chunks] == [24, 39, 17]
+    assert chunks[0].startswith("def function_0():")
+    assert chunks[1].startswith("    return 4")
+    assert chunks[2].startswith("    return 16")
+    assert all(len(chunk.splitlines()) <= 40 for chunk in chunks)
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
