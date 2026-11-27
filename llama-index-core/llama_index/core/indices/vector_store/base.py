@@ -412,11 +412,16 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not self._vector_store.stores_text or self._store_nodes_override:
             ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
             if ref_doc_info is not None:
-                for node_id in ref_doc_info.node_ids:
-                    # the docstore can be shared with other indexes, so the
-                    # ref doc may have nodes that are not part of this index
-                    if node_id in self._index_struct.nodes_dict:
-                        self._index_struct.delete(node_id)
+                self._delete_ref_doc_nodes_from_index_struct(ref_doc_info.node_ids)
+
+    def _delete_ref_doc_nodes_from_index_struct(self, node_ids: List[str]) -> None:
+        # nodes_dict maps the id returned by the vector store to the node id,
+        # and the two can differ. The docstore can also be shared with other
+        # indexes, so the ref doc may list nodes that are not in this index.
+        doc_node_ids = set(node_ids)
+        for vector_id, node_id in list(self._index_struct.nodes_dict.items()):
+            if node_id in doc_node_ids:
+                self._index_struct.delete(vector_id)
 
     def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
@@ -438,11 +443,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not self._vector_store.stores_text or self._store_nodes_override:
             ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
             if ref_doc_info is not None:
-                for node_id in ref_doc_info.node_ids:
-                    # the docstore can be shared with other indexes, so the
-                    # ref doc may have nodes that are not part of this index
-                    if node_id in self._index_struct.nodes_dict:
-                        self._index_struct.delete(node_id)
+                self._delete_ref_doc_nodes_from_index_struct(ref_doc_info.node_ids)
 
     async def _adelete_from_docstore(self, ref_doc_id: str) -> None:
         """Delete from docstore only if needed."""

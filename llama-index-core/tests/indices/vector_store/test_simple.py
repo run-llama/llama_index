@@ -346,3 +346,32 @@ def test_simple_pickle(
     all_ref_doc_info = new_index.ref_doc_info
     for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
         assert documents[idx].node_id == ref_doc_id
+
+
+class _PrefixedIdVectorStore(SimpleVectorStore):
+    """A vector store whose add() returns ids that differ from the node ids."""
+
+    def add(self, nodes: Any, **add_kwargs: Any) -> List[str]:
+        return ["vec-" + node_id for node_id in super().add(nodes, **add_kwargs)]
+
+
+def test_delete_ref_doc_when_vector_store_returns_other_ids(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """Index entries are keyed by the vector store's ids, not by node ids."""
+    documents = [
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    storage_context = StorageContext.from_defaults(
+        vector_store=_PrefixedIdVectorStore()
+    )
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context, embed_model=mock_embed_model
+    )
+    kept_node_ids = storage_context.docstore.get_ref_doc_info("test_id_2").node_ids
+
+    index.delete_ref_doc("test_id_1", delete_from_docstore=True)
+
+    assert list(index.index_struct.nodes_dict.values()) == kept_node_ids
+    assert list(index.ref_doc_info) == ["test_id_2"]
