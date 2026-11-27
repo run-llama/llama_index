@@ -29,7 +29,7 @@ class JiraToolSpec(BaseToolSpec):
                 server=server_url,
             )
         else:
-            raise Exception("Error: Please provide Jira api credentials to continue")
+            raise ValueError("Error: Please provide Jira api credentials to continue")
 
     def jira_all_projects(self) -> dict:
         """
