@@ -32,6 +32,7 @@ as the storage backend for `VectorStoreIndex`.
 - Google AlloyDB for PostgreSQL (`AlloyDBVectorStore`). [QuickStart](https://github.com/googleapis/llama-index-alloydb-pg-python/blob/main/samples/llama_index_vector_store.ipynb).
 - Google Cloud SQL for PostgreSQL (`PostgresVectorStore`). [Quickstart](https://github.com/googleapis/llama-index-cloud-sql-pg-python/blob/main/samples/llama_index_vector_store.ipynb)
 - Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
+- Infino (`InfinoVectorStore`). [Quickstart](https://github.com/infino-ai/llama-index-vector-stores-infino#quickstart).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
@@ -554,6 +555,23 @@ txtai_index = txtai.ann.ANNFactory.create(
 
 # construct vector store
 vector_store = TxtaiVectorStore(txtai_index)
+```
+
+**Infino**
+
+```bash
+pip install llama-index-vector-stores-infino
+```
+
+```python
+import infino
+from llama_index.vector_stores.infino import InfinoVectorStore
+
+# a local path, an object storage URI, or an Infino Cloud database
+connection = infino.connect("./infino_data")
+
+# construct vector store
+vector_store = InfinoVectorStore(connection, table_name="docs", dim=1536)
 ```
 
 **Jaguar**
