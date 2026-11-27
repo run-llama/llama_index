@@ -168,3 +168,24 @@ def test_gmail_service_account_key_dict(mock_sa):
             "https://www.googleapis.com/auth/gmail.readonly",
         ],
     )
+
+
+def test_google_search_tool_spec_default_url():
+    spec = GoogleSearchToolSpec(key="test-key", engine="test-engine")
+    assert spec._get_url("hello world") == (
+        "https://www.googleapis.com/customsearch/v1"
+        "?key=test-key&cx=test-engine&q=hello+world"
+    )
+
+
+def test_google_search_tool_spec_custom_base_url():
+    spec = GoogleSearchToolSpec(
+        key="test-key",
+        engine="test-engine",
+        num=3,
+        base_url="https://example.com/customsearch/v1/",
+    )
+    assert spec._get_url("hello world") == (
+        "https://example.com/customsearch/v1"
+        "?key=test-key&cx=test-engine&q=hello+world&num=3"
+    )
