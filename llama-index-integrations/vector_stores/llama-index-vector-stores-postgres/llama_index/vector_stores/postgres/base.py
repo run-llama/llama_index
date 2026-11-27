@@ -1505,6 +1505,12 @@ class PGVectorStore(BasePydanticVectorStore):
         """
         if not node_ids and not filters:
             return
+            if not node_ids and filters is not None and not filters.filters:
+                raise ValueError(
+                    "delete_nodes called with empty metadata filters and no "
+                    "node_ids; refusing to delete all nodes. Pass node_ids or "
+                    "non-empty filters."
+                )
 
         from sqlalchemy import delete
 
@@ -1537,6 +1543,12 @@ class PGVectorStore(BasePydanticVectorStore):
         """
         if not node_ids and not filters:
             return
+            if not node_ids and filters is not None and not filters.filters:
+                raise ValueError(
+                    "delete_nodes called with empty metadata filters and no "
+                    "node_ids; refusing to delete all nodes. Pass node_ids or "
+                    "non-empty filters."
+                )
 
         from sqlalchemy import delete
 
