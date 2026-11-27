@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class MetadataReplacementPostProcessor(BaseNodePostprocessor):
@@ -22,10 +22,15 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        for n in nodes:
-            replacement = n.node.metadata.get(self.target_metadata_key)
+        result = []
+        for node_with_score in nodes:
+            replacement = node_with_score.node.metadata.get(self.target_metadata_key)
             if replacement is None:
-                replacement = n.node.get_content(metadata_mode=MetadataMode.NONE)
-            n.node.set_content(replacement)
+                result.append(node_with_score)
+                continue
 
-        return nodes
+            node = node_with_score.node.model_copy()
+            node.set_content(replacement)
+            result.append(node_with_score.model_copy(update={"node": node}))
+
+        return result
