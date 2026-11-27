@@ -239,6 +239,9 @@ async def test_async_delete_last_message(sqlite_chat_store: SQLiteChatStore):
         (-1, None, ["First", "Second", "Third"]),
         (3, None, ["First", "Second", "Third"]),
         (5, None, ["First", "Second", "Third"]),
+        (2**63 - 1, None, ["First", "Second", "Third"]),
+        (2**63, None, ["First", "Second", "Third"]),
+        (10**100, None, ["First", "Second", "Third"]),
     ],
 )
 def test_delete_message_uses_conversation_position(
@@ -289,6 +292,9 @@ def test_delete_message_reindexes_after_deletion(sqlite_chat_store: SQLiteChatSt
         (-1, None, ["First", "Second", "Third"]),
         (3, None, ["First", "Second", "Third"]),
         (5, None, ["First", "Second", "Third"]),
+        (2**63 - 1, None, ["First", "Second", "Third"]),
+        (2**63, None, ["First", "Second", "Third"]),
+        (10**100, None, ["First", "Second", "Third"]),
     ],
 )
 @pytest.mark.asyncio

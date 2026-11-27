@@ -294,7 +294,8 @@ class SQLiteChatStore(BaseChatStore):
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
-        if idx < 0:
+        # SQLite binds OFFSET as a signed 64-bit integer.
+        if idx < 0 or idx >= 2**63:
             return None
 
         with self._session() as session:
@@ -320,7 +321,8 @@ class SQLiteChatStore(BaseChatStore):
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
-        if idx < 0:
+        # SQLite binds OFFSET as a signed 64-bit integer.
+        if idx < 0 or idx >= 2**63:
             return None
 
         async with self._async_session() as session:
