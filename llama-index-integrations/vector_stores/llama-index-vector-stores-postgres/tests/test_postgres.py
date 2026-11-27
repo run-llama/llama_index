@@ -3220,3 +3220,33 @@ async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async
     assert "e1" not in result.ids
     assert "v1" in result.ids
     assert "v2" in result.ids
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_delete_nodes_with_empty_filters_raises(
+    pg_fixture: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg_fixture.async_add(node_embeddings[:2])
+    else:
+        pg_fixture.add(node_embeddings[:2])
+    with pytest.raises(ValueError):
+        if use_async:
+            await pg_fixture.adelete_nodes(
+                filters=MetadataFilters(filters=[])
+            )
+        else:
+            pg_fixture.delete_nodes(
+                filters=MetadataFilters(filters=[])
+            )
+    query = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10
+    )
+    if use_async:
+        res = await pg_fixture.aquery(query)
+    else:
+        res = pg_fixture.query(query)
+    assert set(res.ids) == {"aaa", "bbb"}
