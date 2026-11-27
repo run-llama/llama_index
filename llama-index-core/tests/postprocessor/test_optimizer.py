@@ -1,5 +1,6 @@
 """Test optimization."""
 
+from threading import Lock
 from typing import Any, List
 from unittest.mock import patch
 
@@ -11,7 +12,14 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.postprocessor.optimizer import SentenceEmbeddingOptimizer
-from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.core.schema import (
+    IndexNode,
+    MediaResource,
+    Node,
+    NodeWithScore,
+    QueryBundle,
+    TextNode,
+)
 
 
 def mock_tokenizer_fn(text: str) -> List[str]:
@@ -257,3 +265,36 @@ def test_optimizer_failure_does_not_shorten_previous_nodes() -> None:
 
     assert optimizer.postprocess_nodes(nodes) is nodes
     assert optimizer.postprocess_nodes([], query_str="France") == []
+
+
+@pytest.mark.parametrize("node_type", ["index", "node"])
+def test_optimizer_preserves_node_resources(node_type: str) -> None:
+    text = "Paris is in France.\nTokyo is in Japan."
+    lock = Lock()
+    resource = MediaResource(text=text)
+    source = (
+        IndexNode(text=text, index_id="reference", obj=lock)
+        if node_type == "index"
+        else Node(text_resource=resource)
+    )
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=CapitalEmbedding(embed_dim=2),
+        tokenizer_fn=str.splitlines,
+        threshold_cutoff=0.5,
+        context_before=0,
+        context_after=0,
+    )
+    nodes = [NodeWithScore(node=source)]
+    first = optimizer.postprocess_nodes(nodes, query_str="France")
+    second = optimizer.postprocess_nodes(nodes, query_str="Japan")
+    assert first[0].get_content() == "Paris is in France."
+    assert second[0].get_content() == "Tokyo is in Japan."
+    assert source.get_content() == text
+    if isinstance(source, IndexNode):
+        assert isinstance(first[0].node, IndexNode)
+        assert isinstance(second[0].node, IndexNode)
+        assert first[0].node.obj is lock
+        assert second[0].node.obj is lock
+    else:
+        assert source.text_resource is resource
+        assert resource.text == text

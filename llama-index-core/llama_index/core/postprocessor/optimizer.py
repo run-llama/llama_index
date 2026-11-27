@@ -163,7 +163,9 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                         f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
                     )
 
-            optimized_node = nodes[node_idx].model_copy(deep=True)
+            # Keep query-specific text changes out of retriever-owned nodes.
+            optimized_node = nodes[node_idx].model_copy()
+            optimized_node.node = optimized_node.node.model_copy()
             optimized_node.node.set_content(" ".join(top_sentences))
             optimized_nodes.append(optimized_node)
 
