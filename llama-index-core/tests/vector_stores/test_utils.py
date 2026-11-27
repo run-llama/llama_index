@@ -25,7 +25,7 @@ def source_node():
 @pytest.fixture
 def text_node(source_node: Document):
     return TextNode(
-        id_="text_node", text="Hello, world!", ref_doc_id=source_node.ref_doc_id
+        id_="text_node", text="Hello, world!", ref_doc_id=source_node.node_id
     )
 
 
