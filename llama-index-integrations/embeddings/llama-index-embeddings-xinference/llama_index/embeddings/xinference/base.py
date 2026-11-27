@@ -82,7 +82,7 @@ class XinferenceEmbedding(BaseEmbedding):
         )
         response.encoding = "utf-8"
         if response.status_code != 200:
-            raise Exception(
+            raise ConnectionError(
                 f"Xinference call failed with status code {response.status_code}."
                 f"Details: {response.text}"
             )
@@ -100,7 +100,7 @@ class XinferenceEmbedding(BaseEmbedding):
                 timeout=self.timeout,
             ) as response:
                 if response.status != 200:
-                    raise Exception(
+                    raise ConnectionError(
                         f"Xinference call failed with status code {response.status}."
                     )
                 data = await response.json()
