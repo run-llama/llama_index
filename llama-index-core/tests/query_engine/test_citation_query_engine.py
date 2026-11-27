@@ -244,3 +244,74 @@ def test_query__synthesizer_called_multimodal_citation_nodes():
         ChatMessage(blocks=[TextBlock(text="Source 1:\n" + "abc " * 50 + "\n")]),
         ChatMessage(blocks=[TextBlock(text="Source 2:\n"), ImageBlock(image=_PNG_1x1)]),
     ]
+
+
+def test_citation_query_engine_custom_callback_manager() -> None:
+    """Test that custom callback_manager passed to from_args is respected."""
+    from typing import Any, List, Optional
+    from llama_index.core.callbacks import CallbackManager
+    from llama_index.core.callbacks.base_handler import BaseCallbackHandler
+    from llama_index.core.postprocessor.types import BaseNodePostprocessor
+    from llama_index.core.schema import QueryBundle
+
+    class CustomTraceHandler(BaseCallbackHandler):
+        def __init__(self) -> None:
+            super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+            self.traces: list[tuple[str, str | None]] = []
+
+        def on_event_start(self, *args: Any, **kwargs: Any) -> str:
+            return ""
+
+        def on_event_end(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def start_trace(self, trace_id: str | None = None) -> None:
+            self.traces.append(("start", trace_id))
+
+        def end_trace(
+            self, trace_id: str | None = None, trace_map: dict | None = None
+        ) -> None:
+            self.traces.append(("end", trace_id))
+
+    class DummyPostprocessor(BaseNodePostprocessor):
+        def _postprocess_nodes(
+            self,
+            nodes: List[NodeWithScore],
+            query_bundle: Optional[QueryBundle] = None,
+        ) -> List[NodeWithScore]:
+            return nodes
+
+    index = MagicMock()
+    index.as_retriever.return_value = MagicMock()
+
+    # 1. Passed explicitly as callback_manager
+    handler = CustomTraceHandler()
+    custom_cb = CallbackManager([handler])
+    postprocessor = DummyPostprocessor()
+    engine = CitationQueryEngine.from_args(
+        index,
+        llm=MockLLM(),
+        node_postprocessors=[postprocessor],
+        callback_manager=custom_cb,
+    )
+    assert engine.callback_manager is custom_cb
+    assert engine._response_synthesizer.callback_manager is custom_cb
+    assert postprocessor.callback_manager is custom_cb
+    assert index.as_retriever.call_args.kwargs.get("callback_manager") is custom_cb
+
+    # 2. Passed via **kwargs
+    handler_kwargs = CustomTraceHandler()
+    custom_cb_kwargs = CallbackManager([handler_kwargs])
+    postprocessor_kwargs = DummyPostprocessor()
+    engine_kwargs = CitationQueryEngine.from_args(
+        index,
+        llm=MockLLM(),
+        node_postprocessors=[postprocessor_kwargs],
+        **{"callback_manager": custom_cb_kwargs},
+    )
+    assert engine_kwargs.callback_manager is custom_cb_kwargs
+    assert engine_kwargs._response_synthesizer.callback_manager is custom_cb_kwargs
+    assert postprocessor_kwargs.callback_manager is custom_cb_kwargs
+    assert (
+        index.as_retriever.call_args.kwargs.get("callback_manager") is custom_cb_kwargs
+    )
