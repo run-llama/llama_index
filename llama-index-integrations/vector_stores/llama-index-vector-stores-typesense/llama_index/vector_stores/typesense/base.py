@@ -258,9 +258,10 @@ class TypesenseVectorStore(BasePydanticVectorStore):
             text = document[self._text_key]
 
             # Note that typesense distances range from 0 to 2, \
-            # where 0 is most similar and 2 is most dissimilar
+            # where 0 is most similar and 2 is most dissimilar,
+            # so convert the distance to a higher-is-better similarity
             if query.mode is not VectorStoreQueryMode.TEXT_SEARCH:
-                score = hit["vector_distance"]
+                score = 1.0 - hit["vector_distance"]
 
             try:
                 node = metadata_dict_to_node(document[self._metadata_key])
