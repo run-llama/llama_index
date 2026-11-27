@@ -20,6 +20,7 @@ def load_reader(data: Dict[str, Any]) -> BasePydanticReader:
     if class_name not in ALL_READERS:
         raise ValueError(f"Reader class name {class_name} not found.")
 
+    data = dict(data)
     # remove static attribute
     data.pop("is_remote", None)
 
