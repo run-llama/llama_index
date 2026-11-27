@@ -28,15 +28,14 @@ Examples:
     ````python
     from llama_index.llms.monsterapi import MonsterLLM
 
-        llm = MonsterLLM(
-            model = "<Replace with basemodel used to deploy>",
-            api_base="https://ecc7deb6-26e0-419b-a7f2-0deb934af29a.monsterapi.ai",
-            api_key="a0f8a6ba-c32f-4407-af0c-169f1915490c",
-            temperature=0.75,
-        )
+    llm = MonsterLLM(
+        model = "<Replace with basemodel used to deploy>",
+        api_base="https://ecc7deb6-26e0-419b-a7f2-0deb934af29a.monsterapi.ai",
+        api_key="a0f8a6ba-c32f-4407-af0c-169f1915490c",
+        temperature=0.75,
+    )
 
-        response = llm.complete("What is the capital of France?")
-        ```
+    response = llm.complete("What is the capital of France?")
 
     ````
 
@@ -45,9 +44,8 @@ Examples:
     ````python3
     from llama_index.llms.monsterapi import MonsterLLM
 
-        llm = MonsterLLM(model="microsoft/Phi-3-mini-4k-instruct")
+    llm = MonsterLLM(model="microsoft/Phi-3-mini-4k-instruct")
 
-        response = llm.complete("What is the capital of France?")
-        print(str(response))
-        ```
+    response = llm.complete("What is the capital of France?")
+    print(str(response))
     ````
