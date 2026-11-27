@@ -42,7 +42,7 @@ class HWPReader(BaseReader):
         file_dir = load_file.listdir()
 
         if self.is_valid(file_dir) is False:
-            raise Exception("Not Valid HwpFile")
+            raise ValueError("Not Valid HwpFile")
 
         result_text = self._get_text(load_file, file_dir)
         result = self._text_to_document(text=result_text, extra_info=extra_info)
