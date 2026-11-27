@@ -120,6 +120,23 @@ def test_acquire_blocks_when_exhausted() -> None:
         mock_sleep.assert_called_once()
 
 
+def test_fractional_rpm_allows_one_request_per_interval() -> None:
+    """requests_per_minute below 1 must not block forever."""
+    rl = RateLimiter(requests_per_minute=0.5)
+    sleeps = []
+
+    def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+        assert len(sleeps) < 5, "acquire() never succeeds"
+        rl._last_refill_time -= seconds
+
+    with patch("llama_index.core.rate_limiter.time.sleep", side_effect=fake_sleep):
+        rl.acquire()
+        rl.acquire()
+
+    assert sleeps == [pytest.approx(120.0, abs=1.0)]
+
+
 def test_refill_caps_at_max() -> None:
     """Token count must not exceed the configured maximum."""
     rl = RateLimiter(requests_per_minute=10)

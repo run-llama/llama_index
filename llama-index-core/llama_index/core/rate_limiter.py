@@ -114,8 +114,10 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
         self._last_refill_time = now
 
         if self.requests_per_minute is not None:
-            self._request_max_tokens = self.requests_per_minute
-            self._request_tokens = self.requests_per_minute
+            # A request needs one whole token, so a fractional rate such as 0.5
+            # (one request every two minutes) still needs a capacity of 1.
+            self._request_max_tokens = max(self.requests_per_minute, 1.0)
+            self._request_tokens = self._request_max_tokens
             self._request_refill_rate = self.requests_per_minute / 60.0
 
         if self.tokens_per_minute is not None:
