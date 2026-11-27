@@ -120,5 +120,5 @@ def split_by_phrase_regex() -> Callable[[str], List[str]]:
     period, or semicolon. The regular expression will also capture the
     delimiters themselves as separate items in the list of phrases.
     """
-    regex = "[^,.;。]+[,.;。]?"
+    regex = "[^,.;。।॥]+[,.;。।॥]?"
     return split_by_regex(regex)

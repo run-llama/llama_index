@@ -20,7 +20,11 @@ from llama_index.core.node_parser.text.utils import (
 from llama_index.core.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
-CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?|[,.;。？！]"
+# Sentence terminators for the backup splitter: Latin, CJK, and the
+# Devanagari danda (U+0964) and double danda (U+0965), which end a sentence
+# in Hindi, Marathi, Sanskrit, Nepali and other languages written in
+# Devanagari.
+CHUNKING_REGEX = "[^,.;。？！।॥]+[,.;。？！।॥]?|[,.;。？！।॥]"
 DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 
 
