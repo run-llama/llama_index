@@ -92,10 +92,13 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         verbose: bool = True,
         use_async: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> "SubQuestionQueryEngine":
-        callback_manager = Settings.callback_manager
-        if len(query_engine_tools) > 0:
-            callback_manager = query_engine_tools[0].query_engine.callback_manager
+        if callback_manager is None:
+            if len(query_engine_tools) > 0:
+                callback_manager = query_engine_tools[0].query_engine.callback_manager
+            else:
+                callback_manager = Settings.callback_manager
 
         llm = llm or Settings.llm
         if question_gen is None:
