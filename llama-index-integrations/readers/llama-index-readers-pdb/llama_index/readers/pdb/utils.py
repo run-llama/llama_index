@@ -10,11 +10,11 @@ def get_pdb_publications_from_rcsb(pdb_id: str) -> List[Dict]:
     pubmed_response = requests.get(pubmed_query)
     entry_response = requests.get(entry_query)
     if pubmed_response.status_code != 200:
-        raise Exception(
+        raise ConnectionError(
             f"RCSB API call (pubmed) for {pdb_id} failed with status code: {pubmed_response.status_code}"
         )
     if entry_response.status_code != 200:
-        raise Exception(
+        raise ConnectionError(
             f"RCSB API call (entry) for {pdb_id} failed with status code: {entry_response.status_code}"
         )
     return (entry_response.json(), pubmed_response.json())
@@ -37,7 +37,7 @@ def get_pdb_publications_from_ebi(pdb_id: str) -> List[Dict]:
     base_url = "https://www.ebi.ac.uk/pdbe/api/pdb/entry/publications/"
     response = requests.get(f"{base_url}{pdb_id}")
     if response.status_code != 200:
-        raise Exception(
+        raise ConnectionError(
             f"EBI API call for ({pdb_id}) failed with status code: {response.status_code}"
         )
     return response.json()[pdb_id]
@@ -65,5 +65,5 @@ def get_pdb_abstract(pdb_id: str) -> Dict:
                 entry_response, pubmed_response
             )
         except Exception:
-            raise Exception("Failed to fetch data from both RCSB and EBI API")
+            raise ConnectionError("Failed to fetch data from both RCSB and EBI API")
     return pimary_title, pubs_dict
