@@ -303,3 +303,27 @@ def test_client_header_initialization(mock_client_class):
 
     assert "x-goog-api-client" in headers
     assert headers["x-goog-api-client"].startswith("llamaindex/")
+
+
+@patch("google.genai.Client")
+def test_timeout_passed_to_http_options(mock_client_class):
+    """The timeout argument (seconds) is forwarded to HttpOptions (milliseconds)."""
+    GoogleGenAIEmbedding(api_key="fake_key", timeout=5)
+
+    _, kwargs = mock_client_class.call_args
+    assert kwargs["http_options"].timeout == 5000
+
+
+@patch("google.genai.Client")
+def test_http_options_timeout_takes_precedence(mock_client_class):
+    """An explicit timeout in http_options is not overridden by the timeout argument."""
+    from google.genai import types
+
+    GoogleGenAIEmbedding(
+        api_key="fake_key",
+        timeout=5,
+        http_options=types.HttpOptions(timeout=1234),
+    )
+
+    _, kwargs = mock_client_class.call_args
+    assert kwargs["http_options"].timeout == 1234
