@@ -474,6 +474,18 @@ class SimpleVectorStoreTest(unittest.TestCase):
         result = simple_vector_store.query(query)
         self.assertEqual(result.ids, [_NODE_ID_WEIGHT_3_RANK_C])
 
+    def test_delete_nodes_with_empty_filters_raises(self) -> None:
+        nodes = _node_embeddings_for_test()[:2]
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(nodes)
+        with pytest.raises(ValueError):
+            simple_vector_store.delete_nodes(
+                filters=MetadataFilters(filters=[])
+            )
+        query = VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=10)
+        result = simple_vector_store.query(query)
+        self.assertEqual(set(result.ids), {node.node_id for node in nodes})        
+
 
 def test_from_persist_dir(persist_dir: str) -> None:
     vector_store = SimpleVectorStore.from_persist_dir(persist_dir=persist_dir)
