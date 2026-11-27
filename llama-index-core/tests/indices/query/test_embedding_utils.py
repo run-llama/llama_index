@@ -137,3 +137,16 @@ def test_get_top_k_embeddings_orders_a_zero_embedding_last() -> None:
 
     assert result_ids == ["x", "zero"]
     assert all(not math.isnan(similarity) for similarity in result_similarities)
+
+
+def test_get_top_k_mmr_embeddings_zero_top_k_returns_nothing() -> None:
+    """MMR reads the same `similarity_top_k or ...` fallback as the DEFAULT path."""
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]
+
+    result_similarities, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=0
+    )
+
+    assert result_similarities == []
+    assert result_ids == []
