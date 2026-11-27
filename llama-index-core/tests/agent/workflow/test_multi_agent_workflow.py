@@ -726,3 +726,71 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_agent_workflow_preserves_empty_state_across_turns() -> None:
+    """Emptying state on turn 1 must not restore initial_state on turn 2 (#24146)."""
+    observed_states = []
+
+    async def clear_cart(ctx: Context) -> dict:
+        async with ctx.store.edit_state() as store:
+            store["state"].clear()
+            return dict(store["state"])
+
+    async def show_cart(ctx: Context) -> dict:
+        cart = dict(await ctx.store.get("state"))
+        observed_states.append(cart)
+        return cart
+
+    agent = FunctionAgent(
+        name="cart_agent",
+        description="Manages a shopping cart",
+        tools=[clear_cart, show_cart],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="clearing cart",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="c1",
+                                    tool_name="clear_cart",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(role=MessageRole.ASSISTANT, content="cleared"),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="checking cart",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="c2",
+                                    tool_name="show_cart",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(role=MessageRole.ASSISTANT, content="cart checked"),
+                ]
+            )
+        ),
+    )
+    workflow = AgentWorkflow(
+        agents=[agent],
+        initial_state={"paper": 2},
+    )
+    ctx = Context(workflow)
+
+    await workflow.run(user_msg="Clear my cart.", ctx=ctx)
+    assert await ctx.store.get("state") == {}
+
+    await workflow.run(user_msg="What is in my cart now?", ctx=ctx)
+    assert await ctx.store.get("state") == {}
+    assert observed_states == [{}]
