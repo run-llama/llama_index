@@ -651,6 +651,48 @@ def test_filter_all(
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    ("operator", "value", "exp_doc_ids"),
+    [
+        (FilterOperator.IN, ["Product Management"], {"match1"}),
+        (FilterOperator.ANY, ["Product Management"], {"match1"}),
+        (FilterOperator.NIN, ["Product Management"], {"match2", "other"}),
+        (FilterOperator.ALL, ["Product Management"], {"match1"}),
+    ],
+)
+def test_filter_set_operators_multi_word_values(
+    os_stores: List[OpensearchVectorStore],
+    insert_document,
+    operator: FilterOperator,
+    value: List[str],
+    exp_doc_ids: Set[str],
+):
+    """
+    Set operators must match multi-word text values exactly.
+
+    Single lowercase words happen to survive analysis on a text field, so this
+    exercises values the standard analyzer would otherwise tokenize.
+    """
+    for os_store in os_stores:
+        for metadata, id_ in [
+            ({"category": ["Product Management"]}, "match1"),
+            ({"category": ["Product Marketing"]}, "match2"),
+            ({"category": ["Accounting"]}, "other"),
+        ]:
+            insert_document(os_store, doc_id=id_, metadata=metadata)
+
+        query = _get_sample_vector_store_query(
+            filters=MetadataFilters(
+                filters=[MetadataFilter(key="category", value=value, operator=operator)]
+            )
+        )
+        query_result = os_store.query(query)
+
+        doc_ids = {node.id_ for node in query_result.nodes}
+        assert doc_ids == exp_doc_ids
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 def test_filter_text_match(
     os_stores: List[OpensearchVectorStore],
     insert_document,
