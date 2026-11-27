@@ -61,7 +61,7 @@ class BrightDataToolSpec(BaseToolSpec):
         )
 
         if response.status_code != 200:
-            raise Exception(
+            raise ValueError(
                 f"Failed to scrape: {response.status_code} - {response.text}"
             )
 
@@ -119,7 +119,7 @@ class BrightDataToolSpec(BaseToolSpec):
         )
 
         if response.status_code != 200:
-            raise Exception(f"Error {response.status_code}: {response.text}")
+            raise ConnectionError(f"Error {response.status_code}: {response.text}")
 
         with open(output_path, "wb") as f:
             f.write(response.content)
@@ -314,7 +314,7 @@ class BrightDataToolSpec(BaseToolSpec):
 
         trigger_data = trigger_response.json()
         if not trigger_data.get("snapshot_id"):
-            raise Exception("No snapshot ID returned from trigger request")
+            raise RuntimeError("No snapshot ID returned from trigger request")
 
         snapshot_id = trigger_data["snapshot_id"]
         if self._verbose:
