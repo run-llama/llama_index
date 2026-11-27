@@ -1503,7 +1503,9 @@ class PGVectorStore(BasePydanticVectorStore):
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
-        if not node_ids and not filters:
+        # An empty MetadataFilters selects nothing; it must not turn into a delete of every row.
+        has_filters = _has_leaf_filter(filters)
+        if not node_ids and not has_filters:
             return
 
         from sqlalchemy import delete
@@ -1515,7 +1517,7 @@ class PGVectorStore(BasePydanticVectorStore):
             if node_ids:
                 stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
-            if filters:
+            if has_filters:
                 stmt = stmt.where(self._recursively_apply_filters(filters))
 
             session.execute(stmt)
@@ -1535,7 +1537,9 @@ class PGVectorStore(BasePydanticVectorStore):
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
-        if not node_ids and not filters:
+        # An empty MetadataFilters selects nothing; it must not turn into a delete of every row.
+        has_filters = _has_leaf_filter(filters)
+        if not node_ids and not has_filters:
             return
 
         from sqlalchemy import delete
@@ -1547,7 +1551,7 @@ class PGVectorStore(BasePydanticVectorStore):
             if node_ids:
                 stmt = stmt.where(self._table_class.node_id.in_(node_ids))
 
-            if filters:
+            if has_filters:
                 stmt = stmt.where(self._recursively_apply_filters(filters))
 
             await async_session.execute(stmt)
@@ -1686,6 +1690,14 @@ class PGVectorStore(BasePydanticVectorStore):
                 nodes.append(node)
 
             return nodes
+
+
+def _has_leaf_filter(filters: Optional[MetadataFilters]) -> bool:
+    """Return True if the filter tree contains at least one MetadataFilter."""
+    return filters is not None and any(
+        _has_leaf_filter(f) if isinstance(f, MetadataFilters) else True
+        for f in filters.filters
+    )
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:
