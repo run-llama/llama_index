@@ -184,7 +184,7 @@ class TopicNodeParser(NodeParser):
     def semantic_chunking(self, paragraphs: List[str]) -> List[str]:
         """
         Perform semantic chunking on the given paragraphs.
-        max_chunk_size: It is based on hard threshold of 1000 characters.
+        max_chunk_size: Hard threshold, measured in tokens with `tokenizer`.
         As per paper the hard threshold that the longest chunk cannot excess the context length limitation of LLM.
         Here we are using 1000 tokens as the threshold.
         """
@@ -208,6 +208,7 @@ class TopicNodeParser(NodeParser):
                 window_propositions.extend(proposition_cache[j])
 
             for prop in window_propositions:
+                prop_size = len(self.tokenizer(prop))
                 if current_chunk:
                     if self.similarity_method == "llm":
                         is_same_topic = self.is_same_topic_llm(current_chunk, prop)
@@ -224,15 +225,14 @@ class TopicNodeParser(NodeParser):
 
                 if not current_chunk or (
                     is_same_topic
-                    and current_chunk_size + len(self.tokenizer(prop))
-                    <= self.max_chunk_size
+                    and current_chunk_size + prop_size <= self.max_chunk_size
                 ):
                     current_chunk.append(prop)
-                    current_chunk_size += len(prop)
+                    current_chunk_size += prop_size
                 else:
                     chunks.append(" ".join(current_chunk))
                     current_chunk = [prop]
-                    current_chunk_size = len(self.tokenizer(prop))
+                    current_chunk_size = prop_size
 
             # If we've reached the max chunk size, start a new chunk
             if current_chunk_size >= self.max_chunk_size:
