@@ -86,8 +86,11 @@ class NodeParser(TransformComponent, ABC):
     ) -> List[BaseNode]:
         # Track search position per document to handle duplicate text correctly
         # Nodes are assumed to be in document order from _parse_nodes
-        # We track the START position (not end) to allow for overlapping chunks
         doc_search_positions: Dict[str, int] = {}
+        consumed_ends: Dict[str, int] = {}
+        non_overlapping = (
+            isinstance(self, TextSplitter) and getattr(self, "chunk_overlap", None) == 0
+        )
 
         for i, node in enumerate(nodes):
             parent_doc = parent_doc_map.get(node.ref_doc_id or "", None)
@@ -107,15 +110,23 @@ class NodeParser(TransformComponent, ABC):
 
                 # Search for node content starting from the last found position
                 node_content = node.get_content(metadata_mode=MetadataMode.NONE)
-                start_char_idx = parent_doc.text.find(node_content, search_start)
+                text = parent_doc.text
+                start_char_idx = text.find(node_content, search_start)
+                previous_end = consumed_ends.get(parent_doc.id_, 0)
+                if 0 <= start_char_idx < previous_end:
+                    # Prefer the next occurrence at the unconsumed boundary.
+                    # Splitters may strip whitespace between consecutive chunks.
+                    next_start = text.find(node_content, previous_end)
+                    if next_start >= 0 and not text[previous_end:next_start].strip():
+                        start_char_idx = next_start
 
                 # update start/end char idx
                 if start_char_idx >= 0 and isinstance(node, TextNode):
                     node.start_char_idx = start_char_idx
                     node.end_char_idx = start_char_idx + len(node_content)
-                    # Update search position to start from next character after this node's START
-                    # This allows overlapping chunks to be found correctly
                     doc_search_positions[doc_id] = start_char_idx + 1
+                    if non_overlapping:
+                        consumed_ends[parent_doc.id_] = node.end_char_idx
 
                 # update metadata
                 if self.include_metadata:

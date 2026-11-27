@@ -1,6 +1,12 @@
 """Test that node parsers assign unique positions to duplicate text."""
 
-from llama_index.core.node_parser import MarkdownNodeParser, SentenceSplitter
+import pytest
+
+from llama_index.core.node_parser import (
+    MarkdownNodeParser,
+    SentenceSplitter,
+    TokenTextSplitter,
+)
 from llama_index.core.schema import Document, TextNode, MetadataMode
 
 
@@ -87,3 +93,43 @@ def test_multiple_documents():
             n for n in nodes if isinstance(n, TextNode) and n.ref_doc_id == doc.doc_id
         ]
         _validate_nodes(doc_nodes, doc)
+
+
+@pytest.mark.parametrize(
+    ("splitter_cls", "chunk_size"), [(SentenceSplitter, 2), (TokenTextSplitter, 4)]
+)
+@pytest.mark.parametrize(
+    ("overlap", "expected"),
+    [
+        (0, [("red red", 0, 7), ("red", 8, 11)]),
+        (1, [("red red", 0, 7), ("red red", 4, 11)]),
+    ],
+)
+def test_repeated_words_respect_chunk_overlap(
+    splitter_cls: type[SentenceSplitter] | type[TokenTextSplitter],
+    chunk_size: int,
+    overlap: int,
+    expected: list[tuple[str, int, int]],
+) -> None:
+    splitter = splitter_cls(chunk_size=chunk_size, chunk_overlap=overlap)
+    nodes = splitter.get_nodes_from_documents([Document(text="red red red")])
+
+    assert [
+        (n.get_content(), n.start_char_idx, n.end_char_idx) for n in nodes
+    ] == expected
+
+
+def test_zero_token_punctuation_overlap_preserves_offsets() -> None:
+    splitter = TokenTextSplitter(
+        tokenizer=lambda s: list(s.replace(".", "").replace(" ", "")),
+        separator=".",
+        chunk_size=5,
+        chunk_overlap=0,
+        keep_whitespaces=True,
+    )
+    nodes = splitter.get_nodes_from_documents([Document(text="bb .. cc")])
+
+    assert [(n.get_content(), n.start_char_idx, n.end_char_idx) for n in nodes] == [
+        ("bb .", 0, 4),
+        (".. cc", 3, 8),
+    ]
