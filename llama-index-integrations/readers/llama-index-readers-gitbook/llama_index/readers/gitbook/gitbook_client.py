@@ -69,7 +69,7 @@ class GitbookClient:
             error_message = f"Error: {response.response.status_code} Client Error: {response.response.reason}"
         else:
             error_message = f"Error: {response}"
-        raise Exception(error_message)
+        raise ConnectionError(error_message)
 
     @staticmethod
     def _extract_page_info(
