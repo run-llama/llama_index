@@ -8,6 +8,7 @@ from llama_index.core.base.llms.types import (
     VideoBlock,
     DocumentBlock,
 )
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.memory.memory import Memory, BaseMemoryBlock, InsertMethod
 
 
@@ -401,3 +402,25 @@ async def test_insert_method_setting():
 
     assert len(user_msgs) == 0
     assert len(system_msgs) > 0
+
+
+@pytest.mark.asyncio
+async def test_memory_block_session_metadata_does_not_mutate_input() -> None:
+    class RecordingBlock(TextMemoryBlock):
+        received: List[ChatMessage] = Field(default_factory=list)
+
+        async def _aput(self, messages: List[ChatMessage]) -> None:
+            self.received = messages
+
+    block = RecordingBlock(name="record")
+    original = ChatMessage(
+        role="user", content="hello", additional_kwargs={"source": "app"}
+    )
+
+    await block.aput([original], session_id="session-a")
+
+    assert block.received[0].additional_kwargs == {
+        "source": "app",
+        "session_id": "session-a",
+    }
+    assert original.additional_kwargs == {"source": "app"}
