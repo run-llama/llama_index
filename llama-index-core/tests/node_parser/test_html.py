@@ -10,6 +10,27 @@ from llama_index.core.schema import Document
     reason="Requires beautifulsoup4.",
     condition=importlib.util.find_spec("bs4") is None,
 )
+@pytest.mark.parametrize(
+    ("html", "expected"),
+    [
+        ("<p>Visible<!-- hidden note -->text</p>", ["Visible\ntext"]),
+        ("<p><!-- hidden note --></p>", []),
+        ("<p><span>Visible<!-- hidden note -->text</span></p>", ["Visibletext"]),
+        ("<p>Visible<span>text</span></p>", ["Visible\ntext"]),
+    ],
+)
+def test_comments_are_excluded_from_nodes(html: str, expected: list[str]) -> None:
+    nodes = HTMLNodeParser(tags=["p"]).get_nodes_from_documents([Document(text=html)])
+
+    assert [node.text for node in nodes] == expected
+    assert all(node.metadata["tag"] == "p" for node in nodes)
+
+
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("bs4") is None,
+)
 def test_no_splits() -> None:
     html_parser = HTMLNodeParser(tags=["h2"])
 
