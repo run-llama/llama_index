@@ -542,8 +542,6 @@ class BaseIndex(Generic[IS], ABC):
             else Settings.llm
         )
 
-        query_engine = self.as_query_engine(llm=llm, **kwargs)
-
         # resolve chat mode
         if chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
             raise ValueError(
@@ -552,21 +550,29 @@ class BaseIndex(Generic[IS], ABC):
                 "to create an agent with a query engine tool."
             )
 
+        if chat_mode == ChatMode.CONTEXT:
+            from llama_index.core.chat_engine import ContextChatEngine
+
+            callback_manager = kwargs.pop("callback_manager", None)
+            retriever = self.as_retriever(**kwargs)
+            if callback_manager is not None:
+                retriever.callback_manager = callback_manager
+
+            return ContextChatEngine.from_defaults(
+                retriever=retriever,
+                llm=llm,
+                callback_manager=callback_manager,
+                **kwargs,
+            )
+
+        query_engine = self.as_query_engine(llm=llm, **kwargs)
+
         if chat_mode == ChatMode.CONDENSE_QUESTION:
             # NOTE: lazy import
             from llama_index.core.chat_engine import CondenseQuestionChatEngine
 
             return CondenseQuestionChatEngine.from_defaults(
                 query_engine=query_engine,
-                llm=llm,
-                **kwargs,
-            )
-
-        elif chat_mode == ChatMode.CONTEXT:
-            from llama_index.core.chat_engine import ContextChatEngine
-
-            return ContextChatEngine.from_defaults(
-                retriever=self.as_retriever(**kwargs),
                 llm=llm,
                 **kwargs,
             )
