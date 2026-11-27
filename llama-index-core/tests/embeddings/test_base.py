@@ -74,6 +74,18 @@ def test_embedding_similarity() -> None:
     assert cosine == 0.8
 
 
+@pytest.mark.parametrize(
+    ("embedding1", "embedding2"),
+    [([0.0, 0.0], [1.0, 0.0]), ([1.0, 0.0], [0.0, 0.0]), ([0.0, 0.0], [0.0, 0.0])],
+)
+def test_embedding_similarity_zero_norm(
+    embedding1: List[float], embedding2: List[float]
+) -> None:
+    """Cosine similarity with a zero vector is 0.0, not nan."""
+    embed_model = MockEmbedding(embed_dim=2)
+    assert embed_model.similarity(embedding1, embedding2) == 0.0
+
+
 def test_embedding_similarity_euclidean() -> None:
     embed_model = MockEmbedding(embed_dim=2)
     query_embedding = [1.0, 0.0]
