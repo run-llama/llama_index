@@ -81,6 +81,6 @@ class PatentsviewReader(BaseReader):
                 )
 
         else:
-            raise Exception(f"Request failed with status code: {response.status_code}")
+            raise ConnectionError(f"Request failed with status code: {response.status_code}")
 
         return results
