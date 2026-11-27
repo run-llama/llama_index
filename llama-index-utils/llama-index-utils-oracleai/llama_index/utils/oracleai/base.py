@@ -153,7 +153,7 @@ class OracleSummary:
                         )
 
                     else:
-                        raise Exception("Invalid input type")
+                        raise TypeError("Invalid input type")
 
                     if summary is None:
                         results.append("")
@@ -161,7 +161,7 @@ class OracleSummary:
                         results.append(str(summary.getvalue()))
 
             else:
-                raise Exception("Invalid input type")
+                raise TypeError("Invalid input type")
 
             cursor.close()
             return results
