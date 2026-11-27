@@ -14,6 +14,10 @@ Agent tools and tool specs live in the [`tools` directory](https://github.com/ru
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
 
+External packages maintained outside the LlamaIndex repository:
+
+- [Datacircle](https://github.com/waynehamadi/llama-index-tools-datacircle) (`llama-index-tools-datacircle`) provides tools for searching and comparing go-to-market data APIs.
+
 ## LlamaPacks -- Code Templates
 
 LlamaPacks are deprecated. See the [dedicated page](/python/framework/community/llama_packs) for details.
