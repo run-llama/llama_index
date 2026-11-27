@@ -117,10 +117,12 @@ def build_metadata_filter_fn(
             if metadata_value is None:
                 return operator in (FilterOperator.NE, FilterOperator.NIN)
 
-            if operator == FilterOperator.EQ:
-                return metadata_value == value
-            if operator == FilterOperator.NE:
-                return metadata_value != value
+            if operator in (FilterOperator.EQ, FilterOperator.NE):
+                # True == 1 in Python, but a boolean filter must not match numbers.
+                equal = metadata_value == value and (
+                    isinstance(metadata_value, bool) == isinstance(value, bool)
+                )
+                return equal if operator == FilterOperator.EQ else not equal
             if operator == FilterOperator.GT:
                 return metadata_value > value
             if operator == FilterOperator.GTE:

@@ -19,6 +19,7 @@ from deprecated import deprecated
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     ConfigDict,
+    StrictBool,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -104,6 +105,7 @@ class MetadataFilter(BaseModel):
     key: str
     value: Optional[
         Union[
+            StrictBool,
             StrictInt,
             StrictFloat,
             StrictStr,
