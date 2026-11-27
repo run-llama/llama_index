@@ -174,14 +174,29 @@ def test_sql_index_async_query(
 
 
 def test_default_output_parser() -> None:
-    """Test default output parser."""
+    """Test default output parser preserves values with spaces and punctuation."""
     test_str = "user_id:2\nfoo:bar\n,,testing:testing2..\nnumber:123,456,789\n"
     fields = default_output_parser(test_str)
     assert fields == {
         "user_id": "2",
         "foo": "bar",
-        "testing": "testing2",
-        "number": "123456789",
+        "testing": "testing2..",
+        "number": "123,456,789",
+    }
+
+    # Verify extraction preserves spaces, symbols, and multiple colons (e.g. URLs/timestamps)
+    rich_str = (
+        "supplier_name: Cedar Ridge Industrial Supply\n"
+        "billing_email: invoices@cedarridge.example\n"
+        "mailing_address: 480 West Juniper Road, Suite 6\n"
+        "endpoint_url: https://api.cedarridge.example:8443/v1\n"
+    )
+    rich_fields = default_output_parser(rich_str)
+    assert rich_fields == {
+        "supplier_name": "Cedar Ridge Industrial Supply",
+        "billing_email": "invoices@cedarridge.example",
+        "mailing_address": "480 West Juniper Road, Suite 6",
+        "endpoint_url": "https://api.cedarridge.example:8443/v1",
     }
 
 
