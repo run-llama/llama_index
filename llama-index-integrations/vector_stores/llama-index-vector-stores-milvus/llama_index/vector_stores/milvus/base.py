@@ -1032,6 +1032,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
 
+    def _mmr_output_fields(self, output_fields: List[str]) -> List[str]:
+        """
+        MMR reranks on the stored embeddings, so make sure they are returned.
+        """
+        if "*" in output_fields or self.embedding_field in output_fields:
+            return output_fields
+        return [*output_fields, self.embedding_field]
+
     def _mmr_search(
         self,
         query: VectorStoreQuery,
@@ -1064,7 +1072,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             data=[query.query_embedding],
             filter=string_expr,
             limit=prefetch_k0,
-            output_fields=output_fields,
+            output_fields=self._mmr_output_fields(output_fields),
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
             partition_names=kwargs.get("milvus_partition_names"),
@@ -1073,7 +1081,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_embeddings = []
         node_ids = []
         for node in nodes:
-            node_embeddings.append(node["entity"]["embedding"])
+            node_embeddings.append(node["entity"][self.embedding_field])
             node_ids.append(node["id"])
         mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
             query_embedding=query.query_embedding,
@@ -1128,7 +1136,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             data=[query.query_embedding],
             filter=string_expr,
             limit=prefetch_k0,
-            output_fields=output_fields,
+            output_fields=self._mmr_output_fields(output_fields),
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
             partition_names=kwargs.get("milvus_partition_names"),
@@ -1137,7 +1145,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_embeddings = []
         node_ids = []
         for node in nodes:
-            node_embeddings.append(node["entity"]["embedding"])
+            node_embeddings.append(node["entity"][self.embedding_field])
             node_ids.append(self._get_id_from_hit(node))
 
         mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
