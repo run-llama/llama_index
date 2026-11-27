@@ -153,6 +153,7 @@ class QueryFusionRetriever(BaseRetriever):
         dist_based: Optional[bool] = False,
     ) -> List[NodeWithScore]:
         """Apply relative score fusion."""
+        num_queries = len({query_str for query_str, _ in results})
         # MinMax scale scores of each result set (highest value becomes 1, lowest becomes 0)
         # then scale by the weight of the retriever
         min_max_scores = {}
@@ -193,7 +194,7 @@ class QueryFusionRetriever(BaseRetriever):
                     existing_score * self._retriever_weights[retriever_idx]
                 )
                 # Divide by the number of queries
-                node_with_score.score /= self.num_queries
+                node_with_score.score /= num_queries
 
         # Use a dict to de-duplicate nodes
         all_nodes: Dict[str, NodeWithScore] = {}
@@ -273,10 +274,21 @@ class QueryFusionRetriever(BaseRetriever):
 
         return results
 
+    @staticmethod
+    def _unique_queries(
+        original: QueryBundle, generated: List[QueryBundle]
+    ) -> List[QueryBundle]:
+        queries = {original.query_str: original}
+        for query in generated:
+            queries.setdefault(query.query_str, query)
+        return list(queries.values())
+
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        queries: List[QueryBundle] = [query_bundle]
+        queries = [query_bundle]
         if self.num_queries > 1:
-            queries.extend(self._get_queries(query_bundle.query_str))
+            queries = self._unique_queries(
+                query_bundle, self._get_queries(query_bundle.query_str)
+            )
 
         if self.use_async:
             results = self._run_nested_async_queries(queries)
@@ -297,9 +309,11 @@ class QueryFusionRetriever(BaseRetriever):
             raise ValueError(f"Invalid fusion mode: {self.mode}")
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        queries: List[QueryBundle] = [query_bundle]
+        queries = [query_bundle]
         if self.num_queries > 1:
-            queries.extend(await self._aget_queries(query_bundle.query_str))
+            queries = self._unique_queries(
+                query_bundle, await self._aget_queries(query_bundle.query_str)
+            )
 
         results = await self._run_async_queries(queries)
 
