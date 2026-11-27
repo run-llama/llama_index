@@ -8,7 +8,7 @@ class OxylabsAmazonSellersReader(OxylabsBaseReader):
     """
     Get data about Amazon merchants.
 
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/amazon/sellers
+    https://developers.oxylabs.io/api-targets/e-commerce/amazon/sellers
     """
 
     top_level_header: str = "Sellers"
