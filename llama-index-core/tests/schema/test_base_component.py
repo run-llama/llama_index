@@ -71,6 +71,7 @@ def test_pickle_preserves_unpickleable_attributes_on_live_instance():
     assert restored.name == "ok"
     assert restored.fn is None
     assert mc.fn(3) == 6
+    # Guard for future Pydantic versions; current BaseModel.__getstate__ already copies __pydantic_private__.
     assert mc._lock is original_lock
     # Repeated pickling should continue working without corrupting the live instance.
     assert pickle.loads(pickle.dumps(mc)).name == "ok"

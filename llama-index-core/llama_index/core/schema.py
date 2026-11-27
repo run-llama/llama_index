@@ -121,31 +121,31 @@ class BaseComponent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
         return self.model_dump(**kwargs)
 
+    @staticmethod
+    def _drop_unpicklable(mapping: Dict[str, Any], label: str) -> Dict[str, Any]:
+        """Copy mapping and drop unpickleable values without mutating the original."""
+        filtered = dict(mapping)
+        for key, val in list(filtered.items()):
+            try:
+                pickle.dumps(val)
+            except Exception:
+                logging.warning(f"Removing unpickleable {label} {key}")
+                del filtered[key]
+        return filtered
+
     def __getstate__(self) -> Dict[str, Any]:
         state = dict(super().__getstate__())
 
         # Copy attribute dicts so removing unpickleable entries does not mutate self.
         dict_state = state.get("__dict__")
         if dict_state is not None:
-            dict_copy = dict(dict_state)
-            for key, val in list(dict_copy.items()):
-                try:
-                    pickle.dumps(val)
-                except Exception:
-                    logging.warning(f"Removing unpickleable attribute {key}")
-                    del dict_copy[key]
-            state["__dict__"] = dict_copy
+            state["__dict__"] = self._drop_unpicklable(dict_state, "attribute")
 
         private_attrs = state.get("__pydantic_private__")
         if private_attrs is not None:
-            private_copy = dict(private_attrs)
-            for key, val in list(private_copy.items()):
-                try:
-                    pickle.dumps(val)
-                except Exception:
-                    logging.warning(f"Removing unpickleable private attribute {key}")
-                    del private_copy[key]
-            state["__pydantic_private__"] = private_copy
+            state["__pydantic_private__"] = self._drop_unpicklable(
+                private_attrs, "private attribute"
+            )
 
         return state
 
