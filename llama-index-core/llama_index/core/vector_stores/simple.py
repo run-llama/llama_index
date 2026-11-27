@@ -216,6 +216,12 @@ class SimpleVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
+        if node_ids is None and filters is not None and not filters.filters:       
+            raise ValueError(
+                "delete_nodes called with empty metadata filters and no "
+                "node_ids; refusing to delete all nodes. Pass node_ids or "
+                "non-empty filters."
+            )
         filter_fn = build_metadata_filter_fn(
             lambda node_id: self.data.metadata_dict[node_id], filters
         )
