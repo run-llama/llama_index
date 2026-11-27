@@ -430,6 +430,16 @@ def test_prepare_chat_with_no_tools_tool_not_required():
     assert len(result["tools"]) == 0
 
 
+def test_prepare_chat_with_tools_chat_message_user_msg():
+    """A ChatMessage user_msg must be sent, not only a str one."""
+    llm = Anthropic()
+    user_msg = ChatMessage(role="user", content="search for llamas")
+
+    result = llm._prepare_chat_with_tools(tools=[search_tool], user_msg=user_msg)
+
+    assert result["messages"] == [user_msg]
+
+
 def test_cache_point_to_cache_control() -> None:
     messages = [
         ChatMessage(role="system", blocks=[TextBlock(text="Hello1")]),
