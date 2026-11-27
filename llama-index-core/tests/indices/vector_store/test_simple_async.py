@@ -2,6 +2,7 @@ import pytest
 from typing import Any, List
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
+from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
@@ -229,3 +230,57 @@ async def test_adelete_ref_doc_calls_vector_store_with_ref_doc_id_only(
     assert delete_log == ["my-doc-id"], (
         f"Expected delete() called once with ref_doc_id only, got: {delete_log}"
     )
+
+
+@pytest.mark.asyncio
+async def test_adelete_ref_doc_with_docstore_shared_by_another_index(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """A shared docstore can hold nodes of the same ref doc from other indexes."""
+    documents = [
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    storage_context = StorageContext.from_defaults()
+    SummaryIndex.from_documents(documents, storage_context=storage_context)
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context, embed_model=mock_embed_model
+    )
+    assert len(index.index_struct.nodes_dict) == 2
+
+    await index.adelete_ref_doc("test_id_1")
+
+    assert len(index.index_struct.nodes_dict) == 1
+    assert len(storage_context.vector_store.data.embedding_dict) == 1
+    nodes = await index.as_retriever(similarity_top_k=5).aretrieve("test")
+    assert [n.node.ref_doc_id for n in nodes] == ["test_id_2"]
+
+
+class _PrefixedIdVectorStore(SimpleVectorStore):
+    """A vector store whose add() returns ids that differ from the node ids."""
+
+    def add(self, nodes: Any, **add_kwargs: Any) -> List[str]:
+        return ["vec-" + node_id for node_id in super().add(nodes, **add_kwargs)]
+
+
+@pytest.mark.asyncio
+async def test_adelete_ref_doc_when_vector_store_returns_other_ids(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """Index entries are keyed by the vector store's ids, not by node ids."""
+    documents = [
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    storage_context = StorageContext.from_defaults(
+        vector_store=_PrefixedIdVectorStore()
+    )
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context, embed_model=mock_embed_model
+    )
+    kept_node_ids = storage_context.docstore.get_ref_doc_info("test_id_2").node_ids
+
+    await index.adelete_ref_doc("test_id_1", delete_from_docstore=True)
+
+    assert list(index.index_struct.nodes_dict.values()) == kept_node_ids
+    assert list(index.ref_doc_info) == ["test_id_2"]
