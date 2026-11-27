@@ -51,3 +51,17 @@ def test_llm_multi_selector_max_choices(patch_llm_predictor) -> None:
 
     result = selector.select(choices, query)
     assert result.inds == [0, 1]
+
+
+def test_llm_multi_selector_zero_max_outputs(patch_llm_predictor) -> None:
+    selector = LLMMultiSelector.from_defaults(max_outputs=0)
+
+    choices = [
+        "apple",
+        "pear",
+        "peach",
+    ]
+    query = "what is the best fruit?"
+
+    result = selector.select(choices, query)
+    assert result.inds == []
