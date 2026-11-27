@@ -38,6 +38,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Google AlloyDB             | cloud                   | ✓                  |               | ✓      | ✓               | ✓                             |
 | Google Cloud SQL Postgres  | cloud                   | ✓                  |               | ✓      | ✓               | ✓                             |
 | Hnswlib                    | in-memory               |                    |               |        |                 |                               |
+| Infino                     | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓\* (using asyncio.to_thread) |
 | txtai                      | in-memory               |                    |               |        |                 |                               |
 | Jaguar                     | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |                               |
 | LanceDB                    | cloud                   | ✓                  |               | ✓      | ✓               |                               |
