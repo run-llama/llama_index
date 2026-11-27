@@ -28,3 +28,16 @@ def test_storage_context_dict() -> None:
         storage_context.index_store.get_index_struct(index_struct.index_id)
         == index_struct
     )
+
+
+def test_from_dict_handles_missing_optional_stores() -> None:
+    storage_context = StorageContext.from_defaults()
+    save_dict = storage_context.to_dict()
+
+    # Omit optional property_graph_store and graph_store keys
+    save_dict.pop("property_graph_store", None)
+    save_dict.pop("graph_store", None)
+
+    loaded = StorageContext.from_dict(save_dict)
+    assert loaded.property_graph_store is None
+    assert loaded.graph_store is not None
