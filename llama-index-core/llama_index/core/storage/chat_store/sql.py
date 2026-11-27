@@ -337,6 +337,9 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def delete_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
         """Delete the oldest n messages for a key and return them (async)."""
+        if n < 0:
+            raise ValueError("n must be non-negative")
+
         session_factory, table = await self._initialize()
 
         oldest_messages = []
@@ -371,6 +374,9 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
         """Archive the oldest n messages for a key and return them (async)."""
+        if n < 0:
+            raise ValueError("n must be non-negative")
+
         session_factory, table = await self._initialize()
 
         async with session_factory() as session:
