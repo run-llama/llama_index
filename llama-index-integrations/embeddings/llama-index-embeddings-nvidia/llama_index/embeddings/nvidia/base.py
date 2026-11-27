@@ -1,6 +1,6 @@
 """NVIDIA embeddings file."""
 
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 import warnings
 import os
 
@@ -230,16 +230,23 @@ class NVIDIAEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "NVIDIAEmbedding"
 
-    def _get_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding."""
-        extra_body = {"input_type": "passage", "truncate": self.truncate}
+    def _get_extra_body(self, input_type: str) -> Dict[str, Any]:
+        """Build the extra request body shared by the sync and async paths."""
+        extra_body: Dict[str, Any] = {
+            "input_type": input_type,
+            "truncate": self.truncate,
+        }
         if self.dimensions:
             extra_body["dimensions"] = self.dimensions
+        return extra_body
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding."""
         return (
             self._client.embeddings.create(
                 input=[query],
                 model=self.model,
-                extra_body=extra_body,
+                extra_body=self._get_extra_body("query"),
             )
             .data[0]
             .embedding
@@ -247,14 +254,11 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        extra_body = {"input_type": "passage", "truncate": self.truncate}
-        if self.dimensions:
-            extra_body["dimensions"] = self.dimensions
         return (
             self._client.embeddings.create(
                 input=[text],
                 model=self.model,
-                extra_body=extra_body,
+                extra_body=self._get_extra_body("passage"),
             )
             .data[0]
             .embedding
@@ -263,13 +267,10 @@ class NVIDIAEmbedding(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         assert len(texts) <= 259, "The batch size should not be larger than 259."
-        extra_body = {"input_type": "passage", "truncate": self.truncate}
-        if self.dimensions:
-            extra_body["dimensions"] = self.dimensions
         data = self._client.embeddings.create(
             input=texts,
             model=self.model,
-            extra_body=extra_body,
+            extra_body=self._get_extra_body("passage"),
         ).data
         return [d.embedding for d in data]
 
@@ -280,7 +281,7 @@ class NVIDIAEmbedding(BaseEmbedding):
                 await self._aclient.embeddings.create(
                     input=[query],
                     model=self.model,
-                    extra_body={"input_type": "query", "truncate": self.truncate},
+                    extra_body=self._get_extra_body("query"),
                 )
             )
             .data[0]
@@ -294,7 +295,7 @@ class NVIDIAEmbedding(BaseEmbedding):
                 await self._aclient.embeddings.create(
                     input=[text],
                     model=self.model,
-                    extra_body={"input_type": "passage", "truncate": self.truncate},
+                    extra_body=self._get_extra_body("passage"),
                 )
             )
             .data[0]
@@ -309,7 +310,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             await self._aclient.embeddings.create(
                 input=texts,
                 model=self.model,
-                extra_body={"input_type": "passage", "truncate": self.truncate},
+                extra_body=self._get_extra_body("passage"),
             )
         ).data
         return [d.embedding for d in data]
