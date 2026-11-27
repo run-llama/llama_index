@@ -31,7 +31,7 @@ _DEFAULT_SCORE_THRESHOLD = 2.0
 def _default_parser_function(output_str: str) -> Tuple[Optional[float], Optional[str]]:
     # Pattern to match the feedback and response
     # This pattern looks for any text ending with '[RESULT]' followed by a number
-    pattern = r"([\s\S]+)(?:\[RESULT\]\s*)(\d)"
+    pattern = r"([\s\S]+)(?:\[RESULT\]\s*)(\d+)"
 
     # Using regex to find all matches
     result = re.search(pattern, output_str)
