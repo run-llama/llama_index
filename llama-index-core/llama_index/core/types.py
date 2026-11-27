@@ -58,6 +58,7 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
             if isinstance(block, TextBlock)
         ]
 
+        new_blocks = list(message.blocks)
         # add text to the last text block, or add a new text block
         format_text = ""
         if text_blocks:
@@ -66,25 +67,28 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 
             if format_idx != -1:
                 # this should always be a text block
-                assert isinstance(message.blocks[format_idx], TextBlock)
-                message.blocks[format_idx].text = self.format(format_text)  # type: ignore
+                assert isinstance(new_blocks[format_idx], TextBlock)
+                new_blocks[format_idx] = TextBlock(text=self.format(format_text))
         else:
-            message.blocks.append(TextBlock(text=self.format(format_text)))
+            new_blocks.append(TextBlock(text=self.format(format_text)))
 
-        return message
+        return message.model_copy(update={"blocks": new_blocks})
 
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
         # NOTE: apply output parser to either the first message if it's a system message
         #       or the last message
-        if messages:
-            if messages[0].role == MessageRole.SYSTEM:
-                # get text from the last text blocks
-                messages[0] = self._format_message(messages[0])
-            else:
-                messages[-1] = self._format_message(messages[-1])
+        if not messages:
+            return []
 
-        return messages
+        formatted_messages = list(messages)
+        if formatted_messages[0].role == MessageRole.SYSTEM:
+            # get text from the last text blocks
+            formatted_messages[0] = self._format_message(formatted_messages[0])
+        else:
+            formatted_messages[-1] = self._format_message(formatted_messages[-1])
+
+        return formatted_messages
 
     @classmethod
     def __get_pydantic_core_schema__(
