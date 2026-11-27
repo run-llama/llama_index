@@ -4,8 +4,12 @@ from typing import Optional, Sequence, Any
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock
 
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.evaluation import EvaluationResult
 from llama_index.core.evaluation.base import BaseEvaluator
+from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.query_engine.custom import CustomQueryEngine
 from llama_index.core.response import Response
@@ -74,6 +78,62 @@ class TestEvalQueryEngineTool(IsolatedAsyncioTestCase):
             "Could not use tool nice_tool because it failed evaluation.\n"
             f"Reason: {evaluation_feedback}"
         )
+        self.expected_tool_output.is_error = True
 
         tool_output = self.eval_query_engine_tool(self.tool_input)
         self.assertEqual(self.expected_tool_output, tool_output)
+
+    async def test_eval_query_engine_tool_async_eval_passing(self) -> None:
+        tool_output = await self.eval_query_engine_tool.acall(self.tool_input)
+        self.assertEqual(self.expected_tool_output, tool_output)
+
+    async def test_eval_query_engine_tool_async_eval_failing(self) -> None:
+        self.mock_evaluator.aevaluate.return_value = EvaluationResult(
+            passing=False, feedback="The answer is not relevant."
+        )
+
+        tool_output = await self.eval_query_engine_tool.acall(self.tool_input)
+
+        self.assertTrue(tool_output.is_error)
+        self.assertIn("failed evaluation", tool_output.content)
+        self.assertEqual(tool_output.raw_input, {"input": self.tool_input})
+        self.assertEqual(tool_output.raw_output, self.expected_tool_output.raw_output)
+
+    async def test_failed_evaluation_does_not_return_direct(self) -> None:
+        self.mock_evaluator.aevaluate.return_value = EvaluationResult(
+            passing=False, feedback="The answer is not relevant."
+        )
+        self.eval_query_engine_tool.metadata.return_direct = True
+        responses = iter(
+            [
+                ChatMessage(
+                    role="assistant",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="lookup-call",
+                                tool_name="nice_tool",
+                                tool_kwargs={"input": self.tool_input},
+                            )
+                        ]
+                    },
+                ),
+                ChatMessage(role="assistant", content="I cannot verify that answer."),
+            ]
+        )
+        model_calls: list[Sequence[ChatMessage]] = []
+
+        def respond(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatMessage:
+            model_calls.append(messages)
+            return next(responses)
+
+        agent = FunctionAgent(
+            tools=[self.eval_query_engine_tool],
+            llm=MockFunctionCallingLLM(response_generator=respond),
+            streaming=False,
+        )
+
+        result = await agent.run(user_msg="Look this up")
+
+        self.assertEqual(result.response.content, "I cannot verify that answer.")
+        self.assertEqual(len(model_calls), 2)
