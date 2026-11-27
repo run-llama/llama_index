@@ -6,7 +6,7 @@ from os import getenv
 import aiohttp
 import httpx
 import requests
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -24,6 +24,43 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import to_openai_message_dicts
+
+
+# Status codes worth sending again: timeouts, conflicts, rate limits and server errors.
+# Every other 4xx (bad key, bad model, context too long) fails the same way on every
+# attempt, so it is raised at once instead of being re-sent max_retries times.
+_RETRYABLE_STATUS = frozenset({408, 409, 429})
+
+
+def _status_of(exc: BaseException) -> Optional[int]:
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        return exc.response.status_code
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code
+    if isinstance(exc, aiohttp.ClientResponseError):
+        return exc.status
+    return None
+
+
+def _is_retryable(exc: BaseException) -> bool:
+    """True for errors a second identical request can fix."""
+    status = _status_of(exc)
+    if status is not None:
+        return status in _RETRYABLE_STATUS or status >= 500
+    return isinstance(
+        exc,
+        (
+            requests.ConnectionError,
+            requests.Timeout,
+            httpx.TransportError,
+            aiohttp.ClientConnectionError,
+            aiohttp.ServerTimeoutError,
+            TimeoutError,
+        ),
+    )
+
+
+_retry_if_transient = retry_if_exception(_is_retryable)
 
 
 class Perplexity(LLM):
@@ -214,7 +251,11 @@ class Perplexity(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         def _complete_retry():
             return self._complete(prompt, **kwargs)
 
@@ -240,7 +281,11 @@ class Perplexity(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         def _chat_retry():
             return self._chat(messages, **kwargs)
 
@@ -271,7 +316,11 @@ class Perplexity(LLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         async def _acomplete_retry(prompt, **kwargs):
             return await self._acomplete(prompt, **kwargs)
 
@@ -303,7 +352,11 @@ class Perplexity(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         async def _achat_retry():
             return await self._achat(messages, **kwargs)
 
@@ -321,7 +374,11 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         def make_request():
             response = requests.post(
                 url,
@@ -376,7 +433,11 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         async def make_request():
             async with aiohttp.ClientSession() as session:
                 response = await session.post(
@@ -427,7 +488,11 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         def make_request():
             response = requests.post(
                 url,
@@ -482,7 +547,11 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        @retry(
+            retry=_retry_if_transient,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_fixed(1),
+        )
         async def make_request():
             async with aiohttp.ClientSession() as session:
                 response = await session.post(

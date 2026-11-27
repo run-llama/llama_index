@@ -306,6 +306,12 @@ async def test_astream_complete_mock(mock_perplexity_llm):
         mock_astream_complete.assert_called_once_with(prompt)
 
 
+def _http_error(status: int) -> requests.HTTPError:
+    response = requests.Response()
+    response.status_code = status
+    return requests.HTTPError(f"{status} error", response=response)
+
+
 @pytest.mark.parametrize(
     ("method", "args"),
     [
@@ -313,13 +319,43 @@ async def test_astream_complete_mock(mock_perplexity_llm):
         ("chat", ([ChatMessage(role=MessageRole.USER, content="Hi")],)),
     ],
 )
-def test_sync_errors(mock_perplexity_llm, method, args):
+def test_sync_errors_are_not_retried(mock_perplexity_llm, method, args):
     with patch.object(
         mock_perplexity_llm, f"_{method}", side_effect=RuntimeError("boom")
-    ):
-        with pytest.raises(RetryError) as e:
+    ) as inner:
+        with pytest.raises(RuntimeError):
             getattr(mock_perplexity_llm, method)(*args)
-        assert isinstance(e.value.__cause__, RuntimeError)
+    assert inner.call_count == 1
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 404, 422])
+def test_client_errors_are_sent_once(mock_perplexity_llm, status):
+    with patch.object(
+        mock_perplexity_llm, "_chat", side_effect=_http_error(status)
+    ) as inner:
+        with pytest.raises(requests.HTTPError):
+            mock_perplexity_llm.chat([ChatMessage(role=MessageRole.USER, content="Hi")])
+    assert inner.call_count == 1
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_transient_errors_are_retried(status):
+    llm = Perplexity(api_key="test", max_retries=3)
+    with patch.object(llm, "_complete", side_effect=_http_error(status)) as inner:
+        with pytest.raises(RetryError) as e:
+            llm.complete("test")
+    assert inner.call_count == 3
+    assert isinstance(e.value.__cause__, requests.HTTPError)
+
+
+def test_connection_error_then_success_is_retried():
+    llm = Perplexity(api_key="test", max_retries=3)
+    ok = CompletionResponse(text="ok")
+    with patch.object(
+        llm, "_complete", side_effect=[requests.ConnectionError("reset"), ok]
+    ) as inner:
+        assert llm.complete("test").text == "ok"
+    assert inner.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -330,10 +366,24 @@ def test_sync_errors(mock_perplexity_llm, method, args):
         ("achat", ([ChatMessage(role=MessageRole.USER, content="Hi")],)),
     ],
 )
-async def test_async_errors(mock_perplexity_llm, method, args):
-    with patch.object(
-        mock_perplexity_llm, f"_{method}", new=AsyncMock(side_effect=ValueError("fail"))
-    ):
-        with pytest.raises(RetryError) as e:
+async def test_async_errors_are_not_retried(mock_perplexity_llm, method, args):
+    inner = AsyncMock(side_effect=ValueError("fail"))
+    with patch.object(mock_perplexity_llm, f"_{method}", new=inner):
+        with pytest.raises(ValueError):
             await getattr(mock_perplexity_llm, method)(*args)
-        assert isinstance(e.value.__cause__, ValueError)
+    assert inner.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_async_client_error_is_sent_once(mock_perplexity_llm):
+    request = httpx.Request("POST", "https://api.perplexity.ai/chat/completions")
+    error = httpx.HTTPStatusError(
+        "401", request=request, response=httpx.Response(401, request=request)
+    )
+    inner = AsyncMock(side_effect=error)
+    with patch.object(mock_perplexity_llm, "_achat", new=inner):
+        with pytest.raises(httpx.HTTPStatusError):
+            await mock_perplexity_llm.achat(
+                [ChatMessage(role=MessageRole.USER, content="Hi")]
+            )
+    assert inner.await_count == 1
