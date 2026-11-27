@@ -1,5 +1,4 @@
 import logging
-import math
 from collections import defaultdict
 from typing import Any, List, Optional
 
@@ -214,7 +213,7 @@ class SupabaseVectorStore(BasePydanticVectorStore):
                 )
 
             nodes.append(node)
-            similarities.append(1.0 - math.exp(-distance))
+            similarities.append(1.0 - distance)
             ids.append(id_)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
