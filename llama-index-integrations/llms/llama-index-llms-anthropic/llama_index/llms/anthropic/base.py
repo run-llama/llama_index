@@ -982,6 +982,7 @@ class Anthropic(FunctionCallingLLM):
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+        if user_msg:
             chat_history.append(user_msg)
 
         tool_dicts = []
