@@ -29,9 +29,16 @@ def get_top_k_embeddings(
     similarity_heap: List[Tuple[float, Any]] = []
     for i, emb in enumerate(embeddings_np):
         similarity = similarity_fn(query_embedding_np, emb)  # type: ignore[arg-type]
+        if math.isnan(similarity):
+            # A zero-length embedding divides by a zero norm, and a `nan` compares False
+            # against everything, so the sort below left it wherever the heap put it -
+            # usually first. No similarity is the honest answer, and it sorts last.
+            similarity = 0.0
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
-            if similarity_top_k and len(similarity_heap) > similarity_top_k:
+            # `similarity_top_k=0` asks for nothing; a truthiness test treated it as
+            # "no limit" and returned every node.
+            if similarity_top_k is not None and len(similarity_heap) > similarity_top_k:
                 heapq.heappop(similarity_heap)
     result_tups = sorted(similarity_heap, key=lambda x: x[0], reverse=True)
 
