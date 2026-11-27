@@ -1,7 +1,7 @@
 import asyncio
 import contextvars
 import pytest
-from llama_index.core.async_utils import batch_gather, asyncio_run
+from llama_index.core.async_utils import batch_gather, asyncio_run, run_async_tasks
 
 
 def test_batch_gather_indivisible_task_list() -> None:
@@ -37,3 +37,25 @@ async def test_asyncio_run_copies_contextvars_when_loop_running() -> None:
         assert result == "sentinel_value"
     finally:
         test_var.reset(token)
+
+
+def test_run_async_tasks_propagates_task_errors_with_progress() -> None:
+    """
+    show_progress only controls the progress bar, so a failing task must raise
+    its own exception instead of being masked by the progress-bar fallback.
+    """
+
+    async def fail() -> None:
+        raise ValueError("original task failure")
+
+    with pytest.raises(ValueError, match="original task failure"):
+        run_async_tasks([fail()], show_progress=True)
+
+
+def test_run_async_tasks_returns_results_with_progress() -> None:
+    """The progress-bar path still returns the task results."""
+
+    async def echo(n: int) -> int:
+        return n
+
+    assert run_async_tasks([echo(1), echo(2)], show_progress=True) == [1, 2]
