@@ -113,6 +113,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         context_template: Optional[Union[str, PromptTemplate]] = None,
         multi_modal_llm: Optional[LLM] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> "MultiModalContextChatEngine":
         """Initialize a MultiModalContextChatEngine from default parameters."""
@@ -127,13 +128,19 @@ class MultiModalContextChatEngine(BaseChatEngine):
         system_prompt = system_prompt or ""
         node_postprocessors = node_postprocessors or []
 
+        callback_manager = (
+            callback_manager
+            or kwargs.get("callback_manager")
+            or Settings.callback_manager
+        )
+
         return cls(
             retriever,
             multi_modal_llm=multi_modal_llm,
             memory=memory,
             system_prompt=system_prompt,
             node_postprocessors=node_postprocessors,
-            callback_manager=Settings.callback_manager,
+            callback_manager=callback_manager,
             context_template=context_template,
         )
 
