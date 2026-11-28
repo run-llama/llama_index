@@ -170,7 +170,7 @@ class PGVectorSQLParser(BaseSQLParser):
             response = response[:sql_result_start]
 
         # this gets you the sql string with [query_vector] placeholders
-        raw_sql_str = response.strip().strip("```sql").strip("```").strip()
+        raw_sql_str = response.replace("```sql", "").replace("```", "").strip()
         query_embedding = self._embed_model.get_query_embedding(query_bundle.query_str)
         query_embedding_str = str(query_embedding)
         return raw_sql_str.replace("[query_vector]", query_embedding_str)
