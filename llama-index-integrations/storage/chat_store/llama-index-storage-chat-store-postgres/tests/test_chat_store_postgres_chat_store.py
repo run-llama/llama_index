@@ -298,6 +298,54 @@ async def test_async_multimodal_messages(postgres_chat_store: PostgresChatStore)
 
 
 @pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_delete_specific_message_with_schema_name(
+    postgres_container: Dict[str, Union[str, Container]],
+):
+    chat_store = PostgresChatStore.from_uri(
+        uri=postgres_container["connection_string"],
+        schema_name="tenant_a",
+    )
+    try:
+        chat_store.delete_messages("user1")
+        for text_content in ("one", "two", "three"):
+            chat_store.add_message(
+                "user1", ChatMessage(role="user", content=text_content)
+            )
+
+        removed = chat_store.delete_message("user1", 1)
+        assert removed.content == "two"
+
+        remaining = chat_store.get_messages("user1")
+        assert [m.content for m in remaining] == ["one", "three"]
+    finally:
+        chat_store.delete_messages("user1")
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_delete_last_message_with_schema_name(
+    postgres_container: Dict[str, Union[str, Container]],
+):
+    chat_store = PostgresChatStore.from_uri(
+        uri=postgres_container["connection_string"],
+        schema_name="tenant_b",
+    )
+    try:
+        chat_store.delete_messages("user1")
+        for text_content in ("one", "two"):
+            chat_store.add_message(
+                "user1", ChatMessage(role="user", content=text_content)
+            )
+
+        removed = chat_store.delete_last_message("user1")
+        assert removed.content == "two"
+
+        remaining = chat_store.get_messages("user1")
+        assert [m.content for m in remaining] == ["one"]
+    finally:
+        chat_store.delete_messages("user1")
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_table_name_without_prefix(
     postgres_container: Dict[str, Union[str, Container]],
 ):
