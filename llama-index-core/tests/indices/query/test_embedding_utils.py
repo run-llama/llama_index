@@ -1,5 +1,7 @@
 """Test embedding utility functions."""
 
+import math
+
 import numpy as np
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
@@ -108,3 +110,57 @@ def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
         query_embedding, embeddings, similarity_top_k=2
     )
     assert unset_ids == [0, 1]
+
+
+def test_get_top_k_embeddings_zero_top_k_returns_nothing() -> None:
+    """`similarity_top_k=0` asks for no nodes; it used to mean "no limit"."""
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
+
+    result_similarities, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, similarity_top_k=0
+    )
+
+    assert result_similarities == []
+    assert result_ids == []
+
+
+def test_get_top_k_embeddings_orders_a_zero_embedding_last() -> None:
+    """A zero embedding divides by a zero norm; the resulting `nan` sorted first."""
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
+    ids = ["zero", "x"]
+
+    result_similarities, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, embedding_ids=ids, similarity_top_k=10
+    )
+
+    assert result_ids == ["x", "zero"]
+    assert all(not math.isnan(similarity) for similarity in result_similarities)
+
+
+def test_get_top_k_embeddings_puts_a_zero_embedding_after_negative_scores() -> None:
+    """`0.0` was not last: a cosine can be negative, so the zero vector outranked it."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[-1.0, 0.0], [0.0, 0.0], [1.0, 0.0]]
+    ids = ["neg", "zero", "x"]
+
+    result_similarities, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, embedding_ids=ids, similarity_top_k=3
+    )
+
+    assert result_ids == ["x", "neg", "zero"]
+    assert result_similarities[-1] == -math.inf
+
+
+def test_get_top_k_mmr_embeddings_zero_top_k_returns_nothing() -> None:
+    """MMR reads the same `similarity_top_k or ...` fallback as the DEFAULT path."""
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]
+
+    result_similarities, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=0
+    )
+
+    assert result_similarities == []
+    assert result_ids == []
