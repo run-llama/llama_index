@@ -143,3 +143,18 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
         [NodeWithScore(node=orig_node)], query
     )[0]
     assert optimized_node.node.get_content() == "world foo bar"
+
+
+def test_short_node_with_percentile_cutoff_keeps_its_only_sentence() -> None:
+    """`int(1 * 0.5)` is 0, and asking for no sentences used to raise."""
+    optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=4), percentile_cutoff=0.5
+    )
+    node = NodeWithScore(node=TextNode(text="A short note."), score=1.0)
+
+    result = optimizer.postprocess_nodes(
+        [node],
+        query_bundle=QueryBundle(query_str="note", embedding=[1.0, 0.0, 0.0, 0.0]),
+    )
+
+    assert result[0].node.get_content() == "A short note."

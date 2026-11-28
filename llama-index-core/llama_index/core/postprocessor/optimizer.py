@@ -121,7 +121,10 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             num_top_k = None
             threshold = None
             if self.percentile_cutoff is not None:
-                num_top_k = int(len(split_text) * self.percentile_cutoff)
+                # A short node can round down to zero - one sentence with a 0.5
+                # cutoff does - and asking for no sentences made the optimizer
+                # raise instead of keeping the sentence it has.
+                num_top_k = max(1, int(len(split_text) * self.percentile_cutoff))
             if self.threshold_cutoff is not None:
                 threshold = self.threshold_cutoff
 

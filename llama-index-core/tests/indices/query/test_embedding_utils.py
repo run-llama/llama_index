@@ -139,6 +139,20 @@ def test_get_top_k_embeddings_orders_a_zero_embedding_last() -> None:
     assert all(not math.isnan(similarity) for similarity in result_similarities)
 
 
+def test_get_top_k_embeddings_puts_a_zero_embedding_after_negative_scores() -> None:
+    """`0.0` was not last: a cosine can be negative, so the zero vector outranked it."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[-1.0, 0.0], [0.0, 0.0], [1.0, 0.0]]
+    ids = ["neg", "zero", "x"]
+
+    result_similarities, result_ids = get_top_k_embeddings(
+        query_embedding, embeddings, embedding_ids=ids, similarity_top_k=3
+    )
+
+    assert result_ids == ["x", "neg", "zero"]
+    assert result_similarities[-1] == -math.inf
+
+
 def test_get_top_k_mmr_embeddings_zero_top_k_returns_nothing() -> None:
     """MMR reads the same `similarity_top_k or ...` fallback as the DEFAULT path."""
     query_embedding = [1.0, 0.0, 0.0]

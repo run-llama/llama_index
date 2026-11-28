@@ -32,8 +32,9 @@ def get_top_k_embeddings(
         if math.isnan(similarity):
             # A zero-length embedding divides by a zero norm, and a `nan` compares False
             # against everything, so the sort below left it wherever the heap put it -
-            # usually first. No similarity is the honest answer, and it sorts last.
-            similarity = 0.0
+            # usually first. `-inf` sorts it after every real score, including the
+            # negative ones a cosine can produce; `0.0` did not.
+            similarity = -math.inf
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
             # `similarity_top_k=0` asks for nothing; a truthiness test treated it as
@@ -144,7 +145,9 @@ def get_top_k_mmr_embeddings(
 
     embedding_length = len(embeddings or [])
     # Same edge as the DEFAULT path above: `0` is falsy, so it used to mean "all".
-    similarity_top_k_count = similarity_top_k if similarity_top_k is not None else embedding_length
+    similarity_top_k_count = (
+        similarity_top_k if similarity_top_k is not None else embedding_length
+    )
     while len(results) < min(similarity_top_k_count, embedding_length):
         # Calculate the similarity score the for the leading one.
         results.append((score, high_score_id))
