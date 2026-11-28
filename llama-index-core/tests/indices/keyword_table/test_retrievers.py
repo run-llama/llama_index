@@ -31,3 +31,19 @@ def test_retrieve(
     nodes = retriever.retrieve(QueryBundle("Hello"))
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "Hello world."
+
+
+@patch(
+    "llama_index.core.indices.keyword_table.simple_base.simple_extract_keywords",
+    mock_extract_keywords,
+)
+@patch(
+    "llama_index.core.indices.keyword_table.retrievers.simple_extract_keywords",
+    mock_extract_keywords,
+)
+def test_as_retriever_custom_kwargs(documents: List[Document]) -> None:
+    """Test that as_retriever accepts custom kwargs without TypeError."""
+    table = SimpleKeywordTableIndex.from_documents(documents)
+    custom_map = {"custom": "value"}
+    retriever = table.as_retriever(retriever_mode="simple", object_map=custom_map)
+    assert retriever.object_map == custom_map

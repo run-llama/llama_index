@@ -111,18 +111,15 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             KeywordTableSimpleRetriever,
         )
 
+        kwargs.setdefault("object_map", self._object_map)
+
         if retriever_mode == KeywordTableRetrieverMode.DEFAULT:
-            return KeywordTableGPTRetriever(
-                self, object_map=self._object_map, llm=self._llm, **kwargs
-            )
+            kwargs.setdefault("llm", self._llm)
+            return KeywordTableGPTRetriever(self, **kwargs)
         elif retriever_mode == KeywordTableRetrieverMode.SIMPLE:
-            return KeywordTableSimpleRetriever(
-                self, object_map=self._object_map, **kwargs
-            )
+            return KeywordTableSimpleRetriever(self, **kwargs)
         elif retriever_mode == KeywordTableRetrieverMode.RAKE:
-            return KeywordTableRAKERetriever(
-                self, object_map=self._object_map, **kwargs
-            )
+            return KeywordTableRAKERetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

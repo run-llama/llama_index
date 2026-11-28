@@ -140,12 +140,13 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         else:
             retriever_mode = retriever_mode
 
+        kwargs.setdefault("object_map", self._object_map)
+        kwargs.setdefault("llm", self._llm)
+        kwargs.setdefault("embed_model", embed_model or self._embed_model)
+        kwargs.setdefault("retriever_mode", retriever_mode)
+
         return KGTableRetriever(
             self,
-            object_map=self._object_map,
-            llm=self._llm,
-            embed_model=embed_model or self._embed_model,
-            retriever_mode=retriever_mode,
             **kwargs,
         )
 

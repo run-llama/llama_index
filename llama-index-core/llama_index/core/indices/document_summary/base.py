@@ -130,22 +130,22 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         LLMRetriever = DocumentSummaryIndexLLMRetriever
         EmbeddingRetriever = DocumentSummaryIndexEmbeddingRetriever
 
+        kwargs.setdefault("object_map", self._object_map)
+
         if retriever_mode == _RetrieverMode.EMBEDDING:
             if not self._embed_summaries:
                 raise ValueError(
                     "Cannot use embedding retriever if embed_summaries is False"
                 )
 
+            kwargs.setdefault("embed_model", self._embed_model)
             return EmbeddingRetriever(
                 self,
-                object_map=self._object_map,
-                embed_model=self._embed_model,
                 **kwargs,
             )
         if retriever_mode == _RetrieverMode.LLM:
-            return LLMRetriever(
-                self, object_map=self._object_map, llm=self._llm, **kwargs
-            )
+            kwargs.setdefault("llm", self._llm)
+            return LLMRetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

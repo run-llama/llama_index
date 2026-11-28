@@ -181,3 +181,17 @@ def test_retrieve_similarity(
         " object_next_hop ...`"
         "\n['foo', 'is', 'bar']"
     )
+
+
+@patch.object(
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+def test_as_retriever_custom_kwargs(
+    _patch_extract_triplets: Any, documents: List[Document]
+) -> None:
+    """Test that as_retriever accepts custom kwargs without TypeError."""
+    index = KnowledgeGraphIndex.from_documents(documents, embed_model=MockEmbedding())
+    custom_map = {"custom": "value"}
+    retriever = index.as_retriever(object_map=custom_map)
+    assert isinstance(retriever, KGTableRetriever)
+    assert retriever.object_map == custom_map

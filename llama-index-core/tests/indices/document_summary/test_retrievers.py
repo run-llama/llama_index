@@ -32,3 +32,10 @@ def test_llm_retriever(
     assert isinstance(retriever, DocumentSummaryIndexLLMRetriever)
     results = retriever.retrieve("Test query")
     assert len(results) == 1
+
+
+def test_as_retriever_custom_kwargs(index: DocumentSummaryIndex) -> None:
+    """Test that as_retriever accepts custom kwargs without TypeError."""
+    custom_map = {"custom": "value"}
+    retriever = index.as_retriever(object_map=custom_map)
+    assert retriever.object_map == custom_map
