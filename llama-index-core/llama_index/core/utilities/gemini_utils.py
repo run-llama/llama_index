@@ -39,8 +39,11 @@ def merge_neighboring_same_role_messages(
 
     while i < len(messages):
         current_message = messages[i]
-        # Initialize merged content with current message content
-        merged_content = current_message.blocks
+        # Initialize merged content with a copy of the current message content.
+        # Aliasing current_message.blocks here would let the extend() below mutate
+        # the caller's input message in place (and corrupt it if the same sequence
+        # is passed in again).
+        merged_content = list(current_message.blocks)
 
         # Check if the next message exists and has the same role
         while (
