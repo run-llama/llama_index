@@ -308,6 +308,32 @@ class TestStore:
         assert len(nodes) == 5
         assert all(n.metadata.get("author") != "Stephen King" for n in nodes)
 
+    @pytest.mark.parametrize(
+        ("operator", "match_all"),
+        [(FilterOperator.IN, False), (FilterOperator.NIN, True)],
+    )
+    def test_query_with_empty_membership_filter(
+        self,
+        vector_store: DuckDBVectorStore,
+        text_node_list: List[TextNode],
+        operator: FilterOperator,
+        match_all: bool,
+    ) -> None:
+        vector_store.clear()
+        vector_store.add(text_node_list)
+        result = vector_store.query(
+            VectorStoreQuery(
+                query_embedding=[1.0, 0.0, 0.0],
+                similarity_top_k=len(text_node_list),
+                filters=MetadataFilters(
+                    filters=[MetadataFilter(key="author", value=[], operator=operator)]
+                ),
+            )
+        )
+
+        expected_ids = {node.node_id for node in text_node_list} if match_all else set()
+        assert set(result.ids or []) == expected_ids
+
     def test_filter_text_match(
         self, vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
     ):
