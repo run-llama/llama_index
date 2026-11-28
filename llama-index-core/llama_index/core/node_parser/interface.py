@@ -269,6 +269,13 @@ class MetadataAwareTextSplitter(TextSplitter):
 
     def _get_metadata_str(self, node: BaseNode) -> str:
         """Helper function to get the proper metadata str for splitting."""
+        # #23683: a splitter built with include_metadata=False never puts the
+        # metadata into the nodes, so it must not reserve chunk budget for it
+        # either. Formatting it anyway made large metadata fail ingestion with
+        # a metadata-length error despite the explicit opt-out.
+        if not getattr(self, "include_metadata", True):
+            return ""
+
         embed_metadata_str = node.get_metadata_str(mode=MetadataMode.EMBED)
         llm_metadata_str = node.get_metadata_str(mode=MetadataMode.LLM)
 
