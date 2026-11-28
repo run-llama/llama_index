@@ -1,5 +1,9 @@
 """Test object index."""
 
+import os
+import subprocess
+import sys
+
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.objects.base import ObjectIndex
 from llama_index.core.objects.base_node_mapping import SimpleObjectNodeMapping
@@ -85,6 +89,41 @@ def test_object_index_persist() -> None:
         obj_index._object_node_mapping.obj_node_mapping
         == reloaded_obj_index._object_node_mapping.obj_node_mapping
     )
+
+
+def test_object_index_persist_across_processes(tmp_path) -> None:
+    """Persisted objects remain retrievable when Python's hash seed changes."""
+    script = """
+import sys
+from llama_index.core import Settings
+from llama_index.core.indices.list.base import SummaryIndex
+from llama_index.core.objects.base import ObjectIndex
+
+Settings.tokenizer = list
+objects = ["alpha", {"name": "beta"}, {"set-a", "set-b", "set-c"}]
+stage, persist_dir = sys.argv[1:]
+if stage == "create":
+    index = ObjectIndex.from_objects(objects, index_cls=SummaryIndex)
+else:
+    index = ObjectIndex.from_persist_dir(persist_dir=persist_dir)
+if stage == "reload":
+    objects.append("delta")
+assert index.as_retriever().retrieve("all") == objects
+if stage == "append":
+    index.insert_object("delta")
+    assert index.as_retriever().retrieve("all") == [*objects, "delta"]
+if stage != "reload":
+    index.persist(persist_dir=persist_dir)
+"""
+    for stage, seed in [("create", "1"), ("append", "2"), ("reload", "3")]:
+        result = subprocess.run(
+            [sys.executable, "-c", script, stage, str(tmp_path)],
+            env={**os.environ, "PYTHONHASHSEED": seed},
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.returncode == 0, result.stderr
 
 
 def test_object_index_with_tools() -> None:
