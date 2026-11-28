@@ -50,6 +50,18 @@ def _quote(value: Any) -> str:
     return f"'{escaped}'"
 
 
+def _escape_like(value: Any) -> str:
+    """Escape a value so a LIKE pattern matches it literally."""
+    # Backslash is the default LIKE escape character in Lance (DataFusion).
+    return (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+        .replace("'", "''")
+    )
+
+
 def _to_lance_filter(
     standard_filters: MetadataFilters,
     metadata_keys: Optional[list],
@@ -67,8 +79,15 @@ def _to_lance_filter(
             )
         operator = sql_operator_mapper[filter.operator]
         if filter.operator == FilterOperator.TEXT_MATCH:
-            pattern = str(filter.value).replace("'", "''")
-            filters.append(f"{key}{operator}'%{pattern}%'")
+            filters.append(f"{key}{operator}'%{_escape_like(filter.value)}%'")
+        elif (
+            filter.operator in (FilterOperator.IN, FilterOperator.NIN)
+            and isinstance(filter.value, list)
+            and len(filter.value) == 0
+        ):
+            # Lance rejects "IN ()". An empty IN matches nothing and an empty
+            # NIN matches everything, so write the result as a literal.
+            filters.append("false" if filter.operator == FilterOperator.IN else "true")
         elif isinstance(filter.value, list):
             processed_values = [
                 _quote(v) if isinstance(v, str) else str(v) for v in filter.value

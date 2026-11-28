@@ -541,6 +541,20 @@ def test_to_lance_filter_operators() -> None:
         build("year", [2000, 2010], FilterOperator.NIN)
         == "metadata.year NOT IN (2000,2010)"
     )
+    assert build("tag", [], FilterOperator.IN) == "false"
+    assert build("tag", [], FilterOperator.NIN) == "true"
+    assert (
+        build("file_name", "my_file", FilterOperator.TEXT_MATCH)
+        == "metadata.file_name LIKE '%my\\_file%'"
+    )
+    assert (
+        build("file_name", "50%", FilterOperator.TEXT_MATCH)
+        == "metadata.file_name LIKE '%50\\%%'"
+    )
+    assert (
+        build("file_path", "C:\\docs", FilterOperator.TEXT_MATCH)
+        == "metadata.file_path LIKE '%C:\\\\docs%'"
+    )
     with pytest.raises(ValueError, match="not supported"):
         build("tags", ["a"], FilterOperator.ANY)
 
@@ -578,3 +592,39 @@ def test_filter_ne_nin_and_quotes(tmp_path: Path, embed_model) -> None:
     assert texts(
         MetadataFilter(key="year", value=[2000, 2020], operator=FilterOperator.NIN)
     ) == ["node2"]
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_filter_text_match_literal_and_empty_lists(tmp_path: Path, embed_model) -> None:
+    """TEXT_MATCH treats %, _ and backslashes literally, and empty IN/NIN work."""
+    uri = str(tmp_path / "test_lancedb_text_match")
+    vector_store = LanceDBVectorStore(uri=uri, mode="overwrite")
+    names = ["my_file.txt", "myXfile.txt", "50%.txt", "500.txt", "C:\\docs\\a_b.txt"]
+    vector_store.add(
+        [
+            TextNode(
+                text=name,
+                metadata={"file_name": name},
+                embedding=embed_model.get_text_embedding(name),
+            )
+            for name in names
+        ]
+    )
+
+    def texts(value, operator: FilterOperator) -> list[str]:
+        metadata_filter = MetadataFilter(
+            key="file_name", value=value, operator=operator
+        )
+        found = vector_store.get_nodes(
+            filters=MetadataFilters(filters=[metadata_filter])
+        )
+        return sorted(n.text for n in found)
+
+    assert texts("my_file", FilterOperator.TEXT_MATCH) == ["my_file.txt"]
+    assert texts("50%", FilterOperator.TEXT_MATCH) == ["50%.txt"]
+    assert texts("C:\\docs", FilterOperator.TEXT_MATCH) == ["C:\\docs\\a_b.txt"]
+    assert texts([], FilterOperator.IN) == []
+    assert texts([], FilterOperator.NIN) == sorted(names)
