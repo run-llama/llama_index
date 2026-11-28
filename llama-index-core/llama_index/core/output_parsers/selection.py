@@ -40,18 +40,23 @@ class SelectionOutputParser(BaseOutputParser):
 
     def _filter_dict(self, json_dict: dict) -> dict:
         """Filter recursively until a dictionary matches all REQUIRED_KEYS."""
-        output_dict = json_dict
+        if self.REQUIRED_KEYS.issubset(json_dict.keys()):
+            return json_dict
         for key, val in json_dict.items():
             if key in self.REQUIRED_KEYS:
                 continue
             elif isinstance(val, dict):
-                output_dict = self._filter_dict(val)
+                filtered = self._filter_dict(val)
+                if self.REQUIRED_KEYS.issubset(filtered.keys()):
+                    return filtered
             elif isinstance(val, list):
                 for item in val:
                     if isinstance(item, dict):
-                        output_dict = self._filter_dict(item)
+                        filtered = self._filter_dict(item)
+                        if self.REQUIRED_KEYS.issubset(filtered.keys()):
+                            return filtered
 
-        return output_dict
+        return json_dict
 
     def _format_output(self, output: List[dict]) -> List[dict]:
         output_json = []
