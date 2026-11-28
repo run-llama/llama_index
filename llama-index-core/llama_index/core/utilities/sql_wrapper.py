@@ -220,31 +220,73 @@ class SQLDatabase:
         Preserves CTE (Common Table Expression) names and already
         schema-qualified identifiers so they are not double-prefixed.
         """
-        # Collect CTE names defined in WITH clauses
+        # Mask strings, quoted identifiers and comments without changing offsets.
+        # A regex over raw SQL would rewrite data such as SELECT 'FROM users'.
+        masked = list(command)
+        i = 0
+        while i < len(command):
+            start = i
+            char = command[i]
+            if char in ("'", '"', "`"):
+                i += 1
+                while i < len(command):
+                    if command[i] == char:
+                        i += 1
+                        if i < len(command) and command[i] == char:
+                            i += 1  # Escaped quote (e.g. SQL's '').
+                        else:
+                            break
+                    elif command[i] == "\\" and i + 1 < len(command):
+                        i += 2
+                    else:
+                        i += 1
+            elif command.startswith("--", i):
+                i = command.find("\n", i)
+                if i == -1:
+                    i = len(command)
+            elif command.startswith("/*", i):
+                end = command.find("*/", i + 2)
+                i = len(command) if end == -1 else end + 2
+            elif char == "$" and (match := re.match(r"\$[A-Za-z_0-9]*\$", command[i:])):
+                delimiter = match.group(0)
+                end = command.find(delimiter, i + len(delimiter))
+                i = len(command) if end == -1 else end + len(delimiter)
+            else:
+                i += 1
+                continue
+            for position in range(start, i):
+                if command[position] != "\n":
+                    masked[position] = " "
+
+        code = "".join(masked)
         cte_names: Set[str] = set()
-        # First CTE: WITH [RECURSIVE] name AS (
-        for m in re.finditer(
-            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(", command, re.IGNORECASE
+        for match in re.finditer(
+            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(",
+            code,
+            re.IGNORECASE,
         ):
-            cte_names.add(m.group(1).lower())
-        # Subsequent CTEs: ), name AS (
-        for m in re.finditer(r"\)\s*,\s*(\w+)\s+AS\s*\(", command, re.IGNORECASE):
-            cte_names.add(m.group(1).lower())
+            cte_names.add(match.group(1).lower())
+        for match in re.finditer(r"\)\s*,\s*(\w+)\s+AS\s*\(", code, re.IGNORECASE):
+            cte_names.add(match.group(1).lower())
 
-        def _replace(match: re.Match) -> str:
-            keyword = match.group(1)
-            table_ref = match.group(2)
-            # Skip CTE references and already schema-qualified names
-            if table_ref.lower() in cte_names or "." in table_ref:
-                return match.group(0)
-            return f"{keyword}{self._schema}.{table_ref}"
-
-        return re.sub(
-            r"\b((?:FROM|JOIN)\s+)(\w+(?:\.\w+)?)",
-            _replace,
-            command,
-            flags=re.IGNORECASE,
+        # Match only unmasked table references, then use their original offsets
+        # so the returned SQL retains all of its original literal text.
+        matches = list(
+            re.finditer(
+                r"\b((?:FROM|JOIN)\s+)(\w+(?:\.\w+)?)",
+                code,
+                re.IGNORECASE,
+            )
         )
+        for match in reversed(matches):
+            table_ref = command[match.start(2) : match.end(2)]
+            if table_ref.lower() not in cte_names and "." not in table_ref:
+                command = (
+                    command[: match.start(2)]
+                    + f"{self._schema}.{table_ref}"
+                    + command[match.end(2) :]
+                )
+        return command
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """
