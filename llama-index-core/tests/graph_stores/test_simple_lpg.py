@@ -36,6 +36,41 @@ def test_delete() -> None:
     assert len(g.graph.get_triplets()) == 0
 
 
+def test_delete_keeps_related_node() -> None:
+    """Deleting a node removes its relations, not the nodes it is related to."""
+    g = SimplePropertyGraphStore()
+
+    e1 = EntityNode(name="e1")
+    e2 = EntityNode(name="e2")
+    r = Relation(label="r", source_id=e1.id, target_id=e2.id)
+
+    g.upsert_nodes([e1, e2])
+    g.upsert_relations([r])
+    g.delete(ids=[e1.id])
+
+    assert [node.id for node in g.graph.get_all_nodes()] == [e2.id]
+    assert g.graph.get_triplets() == []
+
+
+def test_delete_llama_nodes_keeps_linked_chunk() -> None:
+    """Deleting one chunk must not delete the chunk it links to (#23988)."""
+    g = SimplePropertyGraphStore()
+
+    g.upsert_llama_nodes(
+        [
+            TextNode(id_="chunk-a", text="First step"),
+            TextNode(id_="chunk-b", text="Second step"),
+        ]
+    )
+    g.upsert_relations(
+        [Relation(source_id="chunk-a", target_id="chunk-b", label="NEXT")]
+    )
+    g.delete_llama_nodes(node_ids=["chunk-a"])
+
+    assert [node.id for node in g.get()] == ["chunk-b"]
+    assert g.graph.get_triplets() == []
+
+
 def test_get() -> None:
     g = SimplePropertyGraphStore()
 
