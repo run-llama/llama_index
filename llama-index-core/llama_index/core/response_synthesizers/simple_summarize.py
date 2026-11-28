@@ -135,13 +135,13 @@ class SimpleSummarize(BaseSynthesizer):
         chat_content_qa_template = self._chat_content_qa_template.partial_format(
             query_str=query_str
         )
-        single_message_chunk = ChatMessage.merge(
+        merged_message_chunks = ChatMessage.merge(
             splits=message_chunks,
             chunk_size=sum(m.estimate_tokens() for m in message_chunks),
-        )[0]
+        )
         truncated_chunks = self._chat_prompt_helper.truncate(
             prompt=chat_content_qa_template,
-            messages=[single_message_chunk],
+            messages=merged_message_chunks,
             llm=self._llm,
         )
 
@@ -175,13 +175,13 @@ class SimpleSummarize(BaseSynthesizer):
         chat_content_qa_template = self._chat_content_qa_template.partial_format(
             query_str=query_str
         )
-        single_message_chunk = ChatMessage.merge(
+        merged_message_chunks = ChatMessage.merge(
             splits=message_chunks,
             chunk_size=sum(m.estimate_tokens() for m in message_chunks),
-        )[0]
+        )
         truncated_chunks = await self._chat_prompt_helper.atruncate(
             prompt=chat_content_qa_template,
-            messages=[single_message_chunk],
+            messages=merged_message_chunks,
             llm=self._llm,
         )
 
