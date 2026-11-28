@@ -522,6 +522,22 @@ def test_function_tool_output_document_and_nodes():
     assert "World" * 1024 in tool.call().content
 
 
+def test_function_tool_empty_list_output() -> None:
+    """An empty list result must serialize to '[]', not an empty string."""
+
+    def get_numbers() -> List[int]:
+        return []
+
+    def get_nodes() -> List[Document]:
+        return []
+
+    tool = FunctionTool.from_defaults(get_numbers)
+    assert tool.call().content == "[]"
+
+    tool = FunctionTool.from_defaults(get_nodes)
+    assert tool.call().content == "[]"
+
+
 def test_function_tool_field_default() -> None:
     """Test that Field(default=...) defaults are respected in FunctionTool."""
 
