@@ -210,9 +210,15 @@ class FunctionTool(AsyncBaseTool):
                     continue
                 filtered_params.append(param)
 
-            # 3. Remove FieldInfo defaults and partial_params
+            # 3. Render FieldInfo defaults without making the signature invalid
+            # when a Field follows a parameter with an ordinary default.
             final_params = [
-                param.replace(default=inspect.Parameter.empty)
+                param.replace(
+                    default=param.default.default
+                    if not param.default.is_required()
+                    and param.default.default_factory is None
+                    else Ellipsis
+                )
                 if isinstance(param.default, FieldInfo)
                 else param
                 for param in filtered_params
