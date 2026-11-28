@@ -200,3 +200,41 @@ def test_twice_insert_empty(patch_llm_predictor, patch_token_text_splitter) -> N
 def _mock_tokenizer(text: str) -> int:
     """Mock tokenizer that splits by spaces."""
     return len(text.split(" "))
+
+
+def _tree_fingerprint(tree: TreeIndex) -> list:
+    """Structural fingerprint of a tree index, by node content."""
+    st = tree.index_struct
+
+    def fingerprint(node_id: str) -> tuple:
+        node = tree.docstore.get_node(node_id)
+        children = st.node_id_to_children_ids.get(node_id, [])
+        return (node.get_content(), tuple(fingerprint(c) for c in children))
+
+    return [fingerprint(nid) for nid in st.root_nodes.values()]
+
+
+def test_insert_zero_indexed_answer_falls_back_to_parent(
+    documents: List[Document],
+    patch_token_text_splitter,
+    struct_kwargs: Dict,
+) -> None:
+    """Insert treats a 0-indexed answer like an over-range one."""
+    from tests.mock_utils.mock_utils import MockZeroIndexedTreeLLM
+
+    index_kwargs, _ = struct_kwargs
+    # use the real insert prompt so the mock LLM can spot it
+    index_kwargs = {**index_kwargs, "insert_prompt": None}
+    tree_zero = TreeIndex.from_documents(
+        documents, llm=MockZeroIndexedTreeLLM(), **index_kwargs
+    )
+    tree_over = TreeIndex.from_documents(
+        documents, llm=MockZeroIndexedTreeLLM(answer="ANSWER: 99"), **index_kwargs
+    )
+
+    tree_zero.insert(Document(text="This is a new doc."))
+    tree_over.insert(Document(text="This is a new doc."))
+
+    # a 0-indexed answer must follow the same fallback path as an over-range one
+    # (pre-fix it silently inserted under the LAST summary node instead)
+    assert _tree_fingerprint(tree_zero) == _tree_fingerprint(tree_over)

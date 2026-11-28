@@ -1,9 +1,11 @@
 """Mock utils."""
 
 import re
-from typing import List, Optional, Set
+from typing import Any, List, Optional, Set
 
+from llama_index.core.base.llms.types import CompletionResponse
 from llama_index.core.indices.keyword_table.utils import simple_extract_keywords
+from llama_index.core.llms.mock import MockLLM
 
 
 def mock_tokenizer(text: str) -> List[str]:
@@ -59,3 +61,21 @@ def mock_extract_kg_triplets_response(
         response += "(This is, a mock, triplet)\n"
 
     return response
+
+
+class MockZeroIndexedTreeLLM(MockLLM):
+    """Mock LLM that answers tree-select/insert prompts with a 0-indexed choice."""
+
+    def __init__(self, answer: str = "ANSWER: 0") -> None:
+        super().__init__()
+        self._answer = answer
+
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        if (
+            "Some choices are given below" in prompt
+            or "Answer with the number corresponding to the summary" in prompt
+        ):
+            return CompletionResponse(text=self._answer)
+        return CompletionResponse(text="summary")
