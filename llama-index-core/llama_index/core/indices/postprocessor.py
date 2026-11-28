@@ -34,7 +34,6 @@ __all__ = [
     "SentenceTransformerRerank",
     "MetadataReplacementPostProcessor",
     "LongContextReorder",
-    "FlagEmbeddingReranker",
     "RankGPTRerank",
     "BaseNodePostprocessor",
 ]
