@@ -16,11 +16,13 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
         text_splitter (TextSplitter): The splitter to use for chunking.
 
     Returns:
-        str: The first chunk of the split text that fits within the chunk size.
+        str: The first chunk of the split text that fits within the chunk size,
+            or an empty string if the text produces no chunks (e.g. it is empty
+            or whitespace only).
 
     """
     chunks = text_splitter.split_text(text)
-    return chunks[0]
+    return chunks[0] if chunks else ""
 
 
 def split_text_keep_separator(text: str, separator: str) -> List[str]:
