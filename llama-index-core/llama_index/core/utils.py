@@ -162,10 +162,8 @@ def get_tokenizer(model_name: str = "gpt-3.5-turbo") -> Callable[[str], List]:
         except ImportError:
             raise ImportError(tiktoken_import_err)
 
-        # set tokenizer cache temporarily
-        should_revert = False
+        # Spawned workers need this path when unpickling tiktoken encodings by name.
         if "TIKTOKEN_CACHE_DIR" not in os.environ:
-            should_revert = True
             os.environ["TIKTOKEN_CACHE_DIR"] = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "_static/tiktoken_cache",
@@ -174,9 +172,6 @@ def get_tokenizer(model_name: str = "gpt-3.5-turbo") -> Callable[[str], List]:
         enc = tiktoken.encoding_for_model(model_name)
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
-
-        if should_revert:
-            del os.environ["TIKTOKEN_CACHE_DIR"]
 
     assert llama_index.core.global_tokenizer is not None
     return llama_index.core.global_tokenizer
