@@ -197,6 +197,37 @@ async def test_SimpleDirectoryReader_aload_file_extractor(data_path):
     assert len(docs) == 1
 
 
+def test_SimpleDirectoryReader_load_file_filename_as_id(tmp_path):
+    file_path = tmp_path / "plain.txt"
+    file_path.write_text("hello")
+
+    docs = SimpleDirectoryReader.load_file(
+        input_file=file_path,
+        file_metadata=lambda x: {},
+        file_extractor={},
+        filename_as_id=True,
+    )
+
+    assert len(docs) == 1
+    assert docs[0].id_ == str(file_path)
+
+
+@pytest.mark.asyncio
+async def test_SimpleDirectoryReader_aload_file_filename_as_id(tmp_path):
+    file_path = tmp_path / "plain.txt"
+    file_path.write_text("hello")
+
+    docs = await SimpleDirectoryReader.aload_file(
+        input_file=file_path,
+        file_metadata=lambda x: {},
+        file_extractor={},
+        filename_as_id=True,
+    )
+
+    assert len(docs) == 1
+    assert docs[0].id_ == str(file_path)
+
+
 def test_SimpleDirectoryReader_load_file_error(data_path):
     extractor = mock.MagicMock()
     extractor.load_data.side_effect = ValueError
