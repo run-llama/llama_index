@@ -665,3 +665,181 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+
+class _RecordingTransform(TransformComponent):
+    """Transform that records how many times it was called."""
+
+    call_count: int = 0
+
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
+        self.call_count += 1
+        return nodes
+
+
+def _upsert_pipeline(
+    docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
+) -> IngestionPipeline:
+    return IngestionPipeline(
+        transformations=[],
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=docstore_strategy,
+    )
+
+
+def test_plan_upserts_added() -> None:
+    pipeline = _upsert_pipeline()
+
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+    assert plan.added == ["1"]
+    assert plan.updated == []
+    assert plan.unchanged == []
+    assert plan.deletion_candidates == []
+
+
+def test_plan_upserts_updated() -> None:
+    pipeline = _upsert_pipeline()
+
+    pipeline.run(documents=[Document(text="one", doc_id="1")])
+
+    plan = pipeline.plan_upserts(documents=[Document(text="two", doc_id="1")])
+
+    assert plan.added == []
+    assert plan.updated == ["1"]
+    assert plan.unchanged == []
+    assert plan.deletion_candidates == []
+
+
+def test_plan_upserts_unchanged() -> None:
+    pipeline = _upsert_pipeline()
+
+    pipeline.run(documents=[Document(text="one", doc_id="1")])
+
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+    assert plan.added == []
+    assert plan.updated == []
+    assert plan.unchanged == ["1"]
+    assert plan.deletion_candidates == []
+
+
+def test_plan_upserts_upserts_does_not_flag_deletions() -> None:
+    pipeline = _upsert_pipeline()
+
+    pipeline.run(
+        documents=[
+            Document(text="one", doc_id="1"),
+            Document(text="two", doc_id="2"),
+        ]
+    )
+
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+    assert plan.added == []
+    assert plan.updated == []
+    assert plan.unchanged == ["1"]
+    assert plan.deletion_candidates == []
+
+
+def test_plan_upserts_upserts_and_delete_flags_deletions() -> None:
+    pipeline = _upsert_pipeline(docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE)
+
+    pipeline.run(
+        documents=[
+            Document(text="one", doc_id="1"),
+            Document(text="two", doc_id="2"),
+        ]
+    )
+
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+    assert plan.added == []
+    assert plan.updated == []
+    assert plan.unchanged == ["1"]
+    assert set(plan.deletion_candidates) == {"2"}
+
+
+def test_plan_upserts_groups_nodes_by_ref_doc_id() -> None:
+    """
+    Multiple nodes sharing the same ref_doc_id (e.g. chunks of one source
+    document) must collapse to a single entry per group.
+    """
+    pipeline = _upsert_pipeline()
+    nodes = _nodes_sharing_ref_doc("source-doc", 3)
+
+    plan = pipeline.plan_upserts(nodes=nodes)
+
+    assert plan.added == ["source-doc"]
+    assert plan.updated == []
+    assert plan.unchanged == []
+    assert plan.deletion_candidates == []
+
+
+def test_plan_upserts_requires_docstore() -> None:
+    pipeline = IngestionPipeline(
+        transformations=[],
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+
+    with pytest.raises(ValueError, match="docstore"):
+        pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+
+def test_plan_upserts_unsupported_strategy_raises() -> None:
+    pipeline = _upsert_pipeline(docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY)
+
+    with pytest.raises(ValueError, match="plan_upserts"):
+        pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+
+def test_plan_upserts_does_not_mutate_docstore() -> None:
+    pipeline = _upsert_pipeline()
+
+    pipeline.run(documents=[Document(text="one", doc_id="1")])
+
+    hashes_before = dict(pipeline.docstore.get_all_document_hashes())
+    docs_before = len(pipeline.docstore.docs)
+
+    pipeline.plan_upserts(documents=[Document(text="two", doc_id="2")])
+
+    assert pipeline.docstore.get_all_document_hashes() == hashes_before
+    assert len(pipeline.docstore.docs) == docs_before
+
+
+def test_plan_upserts_does_not_call_transformations() -> None:
+    recording_transform = _RecordingTransform()
+    pipeline = IngestionPipeline(
+        transformations=[recording_transform],
+        docstore=SimpleDocumentStore(),
+        vector_store=SimpleVectorStore(),
+        docstore_strategy=DocstoreStrategy.UPSERTS,
+    )
+
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+
+    assert recording_transform.call_count == 0
+    assert plan.added == ["1"]
+
+
+def test_plan_upserts_matches_run_outcome() -> None:
+    pipeline = _upsert_pipeline()
+
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+    assert plan.added == ["1"]
+
+    nodes = pipeline.run(documents=[Document(text="one", doc_id="1")])
+    assert len(nodes) == 1
+
+    # same content again: nothing to do
+    plan = pipeline.plan_upserts(documents=[Document(text="one", doc_id="1")])
+    assert plan.unchanged == ["1"]
+    nodes = pipeline.run(documents=[Document(text="one", doc_id="1")])
+    assert len(nodes) == 0
+
+    # changed content: updated -> re-ingested
+    plan = pipeline.plan_upserts(documents=[Document(text="two", doc_id="1")])
+    assert plan.updated == ["1"]
+    nodes = pipeline.run(documents=[Document(text="two", doc_id="1")])
+    assert len(nodes) == 1
