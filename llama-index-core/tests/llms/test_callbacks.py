@@ -140,3 +140,26 @@ def test_callback_serialized_excludes_secrets(prompt: str) -> None:
     for serialized in handler.serialized_payloads:
         assert "api_key" not in serialized
         assert "sk-super-secret" not in str(serialized)
+
+
+class _LLMWithModelAndTemperature(MockLLM):
+    """MockLLM with model and temperature fields like concrete LLM implementations."""
+
+    model: str = "test-model"
+    temperature: float = 0.7
+
+
+def test_to_payload_includes_model_and_temperature() -> None:
+    llm = _LLMWithModelAndTemperature()
+    payload = llm.to_payload()
+    assert payload["model"] == "test-model"
+    assert payload["temperature"] == 0.7
+    assert payload["class_name"] == llm.class_name()
+
+
+def test_to_payload_omits_none_fields() -> None:
+    llm = MockLLM()
+    payload = llm.to_payload()
+    # MockLLM doesn't define model or temperature, so they shouldn't be in payload
+    assert "model" not in payload or payload.get("model") is None
+    assert "temperature" not in payload or payload.get("temperature") is None

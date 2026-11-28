@@ -231,6 +231,26 @@ class LLM(BaseLLM):
 
     # -- Utils --
 
+    def to_payload(self) -> Dict[str, Any]:
+        """
+        Non-sensitive representation of this LLM for observability.
+
+        Extends the base payload with model and temperature fields if available,
+        ensuring compatibility with OpenTelemetry instrumentors that expect
+        these fields for gen_ai.request.model and gen_ai.request.temperature
+        span attributes.
+        """
+        payload = super().to_payload()
+        # Add model field if present (concrete implementations like OpenAI define it)
+        model = getattr(self, "model", None)
+        if model is not None:
+            payload["model"] = model
+        # Add temperature field if present
+        temperature = getattr(self, "temperature", None)
+        if temperature is not None:
+            payload["temperature"] = temperature
+        return payload
+
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> None:
