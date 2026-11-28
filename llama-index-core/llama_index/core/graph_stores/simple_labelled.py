@@ -52,7 +52,9 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             ]
 
         # Filter by node_ids
-        if ids:
+        # An explicit empty list means "no nodes" (e.g. a filtered vector
+        # search that matched nothing); only None means "no id filter".
+        if ids is not None:
             nodes = [n for n in nodes if n.id in ids]
 
         return nodes
