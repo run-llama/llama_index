@@ -2,9 +2,13 @@ import pytest
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    CitableBlock,
     DocumentBlock,
     ImageBlock,
     AudioBlock,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
     VideoBlock,
 )
 from llama_index.core.memory.memory import Memory
@@ -74,6 +78,84 @@ async def test_estimate_token_count_document(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.document_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_tool_call(memory):
+    """Tool call arguments must be counted, not treated as 0 tokens."""
+    block = ToolCallBlock(
+        tool_call_id="c1",
+        tool_name="search",
+        tool_kwargs={"query": "word " * 50},
+    )
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count > 0
+    assert count == len(memory.tokenizer_fn(block.model_dump_json()))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_thinking(memory):
+    """Thinking blocks contribute their reasoning tokens."""
+    block = ThinkingBlock(content="let me reason about this carefully")
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn(block.content))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_citable_block(memory):
+    """Citable blocks recurse: nested text is tokenized, nested media estimated."""
+    block = CitableBlock(
+        title="title",
+        source="src",
+        content=[
+            TextBlock(text="hello world"),
+            ImageBlock(url="http://example.com/image.jpg"),
+        ],
+    )
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert (
+        count
+        == len(memory.tokenizer_fn("hello world")) + memory.image_token_size_estimate
+    )
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_flushes_large_tool_calls():
+    """Tool-call-heavy history must flush instead of growing unbounded."""
+
+    def word_tokenizer(text: str):
+        return text.split()
+
+    memory = Memory.from_defaults(
+        session_id="tool_flush",
+        token_limit=50,
+        token_flush_size=10,
+        chat_history_token_ratio=1.0,
+        tokenizer_fn=word_tokenizer,
+    )
+
+    big_args = {"query": "word " * 200}
+    for i in range(10):
+        await memory.aput(ChatMessage(role="user", content="hi"))
+        await memory.aput(
+            ChatMessage(
+                role="assistant",
+                blocks=[
+                    ToolCallBlock(
+                        tool_call_id=f"c{i}",
+                        tool_name="search",
+                        tool_kwargs=big_args,
+                    )
+                ],
+            )
+        )
+
+    active = await memory.aget_all(status=MessageStatus.ACTIVE)
+    # Before the fix, tool calls counted as 0 so all 20 messages stayed active.
+    assert len(active) < 20
 
 
 @pytest.mark.asyncio
