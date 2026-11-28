@@ -1,4 +1,4 @@
-import fsspec
+import json
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -12,7 +12,14 @@ from typing import (
     runtime_checkable,
 )
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
+import fsspec
+
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    model_validator,
+)
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -125,6 +132,15 @@ class LabelledPropertyGraph(BaseModel):
         default_factory=set, description="List of triplets (subject, relation, object)."
     )
 
+    @model_validator(mode="after")
+    def _normalize_relation_keys(self) -> "LabelledPropertyGraph":
+        # Rebuild legacy underscore-delimited keys when loading persisted graphs.
+        self.relations = {
+            self._get_relation_key(relation=relation): relation
+            for relation in self.relations.values()
+        }
+        return self
+
     def _get_relation_key(
         self,
         relation: Optional[Relation] = None,
@@ -132,10 +148,14 @@ class LabelledPropertyGraph(BaseModel):
         obj_id: Optional[str] = None,
         rel_id: Optional[str] = None,
     ) -> str:
-        """Get relation id."""
+        """Encode relation components without ambiguous delimiters."""
         if relation:
-            return f"{relation.source_id}_{relation.label}_{relation.target_id}"
-        return f"{subj_id}_{rel_id}_{obj_id}"
+            subj_id, rel_id, obj_id = (
+                relation.source_id,
+                relation.label,
+                relation.target_id,
+            )
+        return json.dumps((subj_id, rel_id, obj_id))
 
     def get_all_nodes(self) -> List[LabelledNode]:
         """Get all entities."""
