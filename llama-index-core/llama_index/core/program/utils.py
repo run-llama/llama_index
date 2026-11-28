@@ -1,6 +1,7 @@
 """Program utils."""
 
 import logging
+import re
 from typing import Any, List, Type, Sequence, Union, Optional, Dict
 
 from llama_index.core.bridge.pydantic import (
@@ -225,6 +226,13 @@ def process_streaming_objects(
             try:
                 # Try repairing the JSON if it's a string
                 if isinstance(output_cls_arg, str):
+                    if match := re.match(
+                        r"^\s*```(?:json)?[ \t]*\r?\n", output_cls_arg
+                    ):
+                        output_cls_arg = output_cls_arg[match.end() :]
+                        output_cls_arg = re.sub(
+                            r"\r?\n[ \t]*`{1,3}\s*$", "", output_cls_arg
+                        )
                     repaired_json = _repair_incomplete_json(output_cls_arg)
                     obj = partial_output_cls.model_validate_json(repaired_json)
                     objects.append(obj)
