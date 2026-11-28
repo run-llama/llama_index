@@ -157,8 +157,19 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         for triplet in triplets:
             self.graph.delete_triplet(triplet)
 
-        nodes = self.get(properties=properties, ids=ids)
-        for node in nodes:
+        # get() returns every node when both filters are empty, so only
+        # select nodes the caller actually asked for.
+        nodes_by_id: Dict[str, LabelledNode] = {}
+        if ids or properties:
+            for node in self.get(properties=properties, ids=ids):
+                nodes_by_id[node.id] = node
+        if entity_names:
+            for entity_name in entity_names:
+                node = self.graph.nodes.get(entity_name)
+                if node is not None:
+                    nodes_by_id[node.id] = node
+
+        for node in nodes_by_id.values():
             self.graph.delete_node(node)
 
     def persist(
