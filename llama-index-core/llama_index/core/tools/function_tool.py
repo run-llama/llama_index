@@ -44,6 +44,29 @@ def _is_context_param(param_annotation: Any) -> bool:
     return param_annotation == Context or (get_origin(param_annotation) is Context)
 
 
+def _get_context_param_name(fn: Callable[..., Any]) -> Optional[str]:
+    """
+    Return the name of the parameter annotated as Context, if any.
+
+    Annotations are resolved first: under ``from __future__ import annotations``
+    they are strings, which never match ``Context``. If an annotation cannot be
+    resolved (e.g. a name imported only under ``TYPE_CHECKING``), fall back to
+    the raw signature.
+    """
+    try:
+        sig = inspect.signature(fn, eval_str=True)
+    except Exception:
+        sig = inspect.signature(fn)
+    return next(
+        (
+            param.name
+            for param in sig.parameters.values()
+            if _is_context_param(param.annotation)
+        ),
+        None,
+    )
+
+
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
@@ -107,18 +130,8 @@ class FunctionTool(AsyncBaseTool):
         fn_to_inspect = fn or async_fn
         assert fn_to_inspect is not None
         sig = inspect.signature(fn_to_inspect)
-        self.requires_context = any(
-            _is_context_param(param.annotation) for param in sig.parameters.values()
-        )
-        self.ctx_param_name = (
-            next(
-                param.name
-                for param in sig.parameters.values()
-                if _is_context_param(param.annotation)
-            )
-            if self.requires_context
-            else None
-        )
+        self.ctx_param_name = _get_context_param_name(fn_to_inspect)
+        self.requires_context = self.ctx_param_name is not None
 
         if metadata is None:
             raise ValueError("metadata must be provided")
@@ -198,12 +211,11 @@ class FunctionTool(AsyncBaseTool):
             param_docs, unknown_params = cls.extract_param_docs(docstring, fn_params)
 
             # 2. Filter context and self in a single pass
-            ctx_param_name = None
+            ctx_param_name = _get_context_param_name(fn_to_parse)
             has_self = False
             filtered_params = []
             for param in fn_sig.parameters.values():
-                if _is_context_param(param.annotation):
-                    ctx_param_name = param.name
+                if param.name == ctx_param_name:
                     continue
                 if param.name == "self":
                     has_self = True
