@@ -184,7 +184,10 @@ class BaseComponent(BaseModel):
 
     @classmethod
     def from_json(cls, data_str: str, **kwargs: Any) -> Self:  # type: ignore
-        data = json.loads(data_str)
+        if isinstance(data_str, dict):
+            data = data_str
+        else:
+            data = json.loads(data_str)
         return cls.from_dict(data, **kwargs)
 
 
