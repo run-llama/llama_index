@@ -9,6 +9,8 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
 )
 from llama_index.core.memory.memory import Memory, BaseMemoryBlock, InsertMethod
+from llama_index.core.memory.memory_blocks.static import StaticMemoryBlock
+
 
 
 class TextMemoryBlock(BaseMemoryBlock[str]):
@@ -401,3 +403,71 @@ async def test_insert_method_setting():
 
     assert len(user_msgs) == 0
     assert len(system_msgs) > 0
+
+
+@pytest.mark.asyncio
+async def test_memory_truncation_priority_order():
+    """Test that memory truncation drops lower-priority blocks (higher priority number) first."""
+    # Priority: 0 = never truncate, 1 = highest priority, 2 = lower priority
+    high_priority_block = StaticMemoryBlock(
+        name="high_priority",
+        static_content="This is high priority critical memory content that must be kept.",
+        priority=1,
+    )
+    low_priority_block = StaticMemoryBlock(
+        name="low_priority",
+        static_content="This is low priority secondary memory content that should be dropped first.",
+        priority=2,
+    )
+
+    # Estimate tokens: both blocks together exceed token_limit
+    memory = Memory(
+        token_limit=20,
+        token_flush_size=10,
+        chat_history_token_ratio=0.5,
+        session_id="test_priority_truncation",
+        memory_blocks=[high_priority_block, low_priority_block],
+    )
+
+    messages = await memory.aget()
+    system_messages = [msg for msg in messages if msg.role == "system"]
+    assert len(system_messages) == 1
+    system_text = system_messages[0].blocks[0].text
+
+    # High priority content (priority=1) should be preserved, low priority content (priority=2) should be truncated
+    assert "This is high priority critical memory content" in system_text
+    assert "This is low priority secondary memory content" not in system_text
+
+
+@pytest.mark.asyncio
+async def test_memory_truncation_preserves_priority_zero():
+    """Test that priority=0 memory blocks are never truncated even when token limit is exceeded."""
+    never_truncate_block = StaticMemoryBlock(
+        name="never_truncate",
+        static_content="Protected core memory that cannot be truncated under any circumstances because it is critical. " * 5,
+        priority=0,
+    )
+    lower_priority_block = StaticMemoryBlock(
+        name="lower_priority",
+        static_content="Disposable memory that can be safely truncated when token limit is exceeded. " * 5,
+        priority=1,
+    )
+
+    memory = Memory(
+        token_limit=30,
+        token_flush_size=10,
+        chat_history_token_ratio=0.5,
+        session_id="test_priority_zero_truncation",
+        memory_blocks=[never_truncate_block, lower_priority_block],
+    )
+
+    messages = await memory.aget()
+    system_messages = [msg for msg in messages if msg.role == "system"]
+    assert len(system_messages) == 1
+    system_text = system_messages[0].blocks[0].text
+
+    # Priority 0 content must be preserved
+    assert "Protected core memory" in system_text
+    assert "Disposable memory" not in system_text
+
+
