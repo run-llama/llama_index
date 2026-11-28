@@ -6,7 +6,8 @@ from llama_index.core.base.response.schema import (
     Response,
     StreamingResponse,
 )
-from llama_index.core.llms.mock import MockLLMWithChatMemoryOfLastCall
+from llama_index.core.llms.mock import MockLLM, MockLLMWithChatMemoryOfLastCall
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
 
@@ -83,6 +84,20 @@ class TestSimpleSummarize:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    @pytest.mark.parametrize("streaming", [False, True])
+    def test_synthesize_formats_context_as_plain_text(self, streaming: bool) -> None:
+        expected = "Hello world.\nThis is a test."
+        nodes = [NodeWithScore(node=TextNode(text=expected), score=1.0)]
+        synthesizer = SimpleSummarize(
+            llm=MockLLM(),
+            text_qa_template=PromptTemplate("{context_str}"),
+            streaming=streaming,
+        )
+
+        response = synthesizer.synthesize(query="unused", nodes=nodes)
+
+        assert str(response) == expected
 
     def test_synthesize__multimodal(
         self, multimodal_nodes: list[NodeWithScore]
@@ -162,6 +177,23 @@ class TestSimpleSummarize:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    @pytest.mark.parametrize("streaming", [False, True])
+    @pytest.mark.asyncio
+    async def test_asynthesize_formats_context_as_plain_text(
+        self, streaming: bool
+    ) -> None:
+        expected = "Hello world.\nThis is a test."
+        nodes = [NodeWithScore(node=TextNode(text=expected), score=1.0)]
+        synthesizer = SimpleSummarize(
+            llm=MockLLM(),
+            text_qa_template=PromptTemplate("{context_str}"),
+            streaming=streaming,
+        )
+
+        response = await synthesizer.asynthesize(query="unused", nodes=nodes)
+
+        assert str(response) == expected
 
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal(
