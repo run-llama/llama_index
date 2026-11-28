@@ -124,6 +124,55 @@ def summarizer_llm():
     )
 
 
+class RetrySummarizerLLM(MockLLM):
+    """Fail one summary request to exercise recovery without a provider call."""
+
+    _fail_next: bool = PrivateAttr(default=True)
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        if self._fail_next:
+            self._fail_next = False
+            raise RuntimeError("Temporary summarization failure")
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content="Earlier summary")
+        )
+
+
+@pytest.mark.parametrize("count_initial_tokens", [False, True])
+def test_failed_summary_preserves_history_and_allows_retry(
+    count_initial_tokens: bool,
+) -> None:
+    history = [
+        ChatMessage(role=MessageRole.USER, content="Earlier question"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Earlier answer"),
+        ChatMessage(role=MessageRole.USER, content="Latest question"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Latest answer"),
+    ]
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=history,
+        token_limit=5,
+        tokenizer_fn=str.split,
+        llm=RetrySummarizerLLM(),
+        count_initial_tokens=count_initial_tokens,
+    )
+    original = [message.model_dump() for message in memory.get_all()]
+
+    with pytest.raises(RuntimeError, match="Temporary summarization failure"):
+        memory.get(initial_token_count=1)
+
+    assert [message.model_dump() for message in memory.get_all()] == original
+    assert [message.model_dump() for message in history] == original
+    assert memory.get_token_count() == 0
+
+    recovered = memory.get(initial_token_count=1)
+    assert [message.content for message in recovered] == [
+        "Earlier summary",
+        "Latest question",
+        "Latest answer",
+    ]
+    assert memory.get_token_count() == 0
+
+
 @pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_put_get(summarizer_llm) -> None:
     # Given one message with fewer tokens than token_limit
