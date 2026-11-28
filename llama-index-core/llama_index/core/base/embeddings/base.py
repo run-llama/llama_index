@@ -333,6 +333,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             else:
                 non_cached_texts.append((i, txt))
         if len(non_cached_texts) > 0:
+            if self.rate_limiter is not None:
+                self.rate_limiter.acquire()
             text_embeddings = self._get_text_embeddings(
                 [x[1] for x in non_cached_texts]
             )
@@ -368,7 +370,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 non_cached_texts.append((i, txt))
 
         if len(non_cached_texts) > 0:
-            text_embeddings = await self._aget_text_embeddings(
+            text_embeddings = await self._aget_text_embeddings_rate_limited(
                 [x[1] for x in non_cached_texts]
             )
             for j, text_embedding in enumerate(text_embeddings):
@@ -511,9 +513,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: model_dict},
                 ) as event:
-                    if self.rate_limiter is not None:
-                        self.rate_limiter.acquire()
                     if not self.embeddings_cache:
+                        if self.rate_limiter is not None:
+                            self.rate_limiter.acquire()
                         embeddings = self._get_text_embeddings(cur_batch)
                     elif self.embeddings_cache is not None:
                         embeddings = self._get_text_embeddings_cached(cur_batch)
