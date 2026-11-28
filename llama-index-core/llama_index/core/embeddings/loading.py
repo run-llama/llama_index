@@ -44,6 +44,9 @@ def load_embed_model(data: dict) -> BaseEmbedding:
     if name is None:
         raise ValueError("Embedding loading requires a class_name")
     if name not in RECOGNIZED_EMBEDDINGS:
-        raise ValueError(f"Invalid Embedding name: {name}")
+        available = ", ".join(sorted(RECOGNIZED_EMBEDDINGS.keys()))
+        raise ValueError(
+            f"Invalid Embedding name: {name}. Available embeddings: {available}"
+        )
 
     return RECOGNIZED_EMBEDDINGS[name].from_dict(data)
