@@ -121,6 +121,74 @@ A list begins here:
     assert splits[5].text == "## Another Header 2"
 
 
+def test_header_splits_with_tilde_code_blocks() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Header 1
+Content
+
+~~~txt
+# has a comment, but is code
+print("hello")
+~~~
+
+# Header 2
+Content
+"""
+            )
+        ]
+    )
+
+    assert len(splits) == 2
+
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[0].text == (
+        '# Header 1\nContent\n\n~~~txt\n# has a comment, but is code\nprint("hello")\n~~~'
+    )
+
+    assert splits[1].metadata == {"header_path": "/"}
+    assert splits[1].text == "# Header 2\nContent"
+
+
+def test_header_splits_with_nested_shorter_fence() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Header 1
+Content
+
+~~~~txt
+~~~
+# has a comment, but is code
+~~~
+
+# still inside the longer outer fence
+~~~~
+
+# Header 2
+Content
+"""
+            )
+        ]
+    )
+
+    assert len(splits) == 2
+
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[0].text == (
+        "# Header 1\nContent\n\n~~~~txt\n~~~\n# has a comment, but is code\n~~~\n\n"
+        "# still inside the longer outer fence\n~~~~"
+    )
+
+    assert splits[1].metadata == {"header_path": "/"}
+    assert splits[1].text == "# Header 2\nContent"
+
+
 def test_non_header_splits() -> None:
     markdown_parser = MarkdownNodeParser()
 
