@@ -92,6 +92,17 @@ def test_SimpleDirectoryReader_excluded(data_path):
     assert [f.name for f in r.input_files] == ["file_0.md", "file_0.xyz", "file_1.txt"]
 
 
+def test_SimpleDirectoryReader_input_dir_inside_hidden_dir(tmp_path):
+    input_dir = tmp_path / ".cache" / "docs"
+    (input_dir / ".git").mkdir(parents=True)
+    (input_dir / "a.txt").write_text("a")
+    (input_dir / ".secret.txt").write_text("hidden file")
+    (input_dir / ".git" / "config").write_text("hidden dir")
+
+    r = SimpleDirectoryReader(input_dir=input_dir, recursive=True)
+    assert [f.name for f in r.input_files] == ["a.txt"]
+
+
 def test_SimpleDirectoryReader_empty(data_path):
     with pytest.raises(ValueError, match="No files found in"):
         SimpleDirectoryReader(input_dir=data_path / "empty")
