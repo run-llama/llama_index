@@ -2,7 +2,7 @@
 
 import os
 import pytest
-from typing import List
+from typing import List, Literal
 from pydantic import ValidationError
 
 try:
@@ -448,3 +448,22 @@ def test_oversized_leaf_not_dropped_token_mode() -> None:
     assert sum(chunk.count("A") for chunk in chunks) == 800
     assert all(len(tokenizer(chunk)) <= 20 for chunk in chunks)
     assert any("y = 1" in chunk for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+@pytest.mark.parametrize("count_mode", ["char", "token"])
+def test_oversized_xml_text_preserves_spaces(
+    count_mode: Literal["char", "token"],
+) -> None:
+    splitter = CodeSplitter(
+        language="xml",
+        count_mode=count_mode,
+        max_chars=32,
+        max_tokens=32,
+        tokenizer=lambda text: list(text.encode()),
+    )
+    text = '<a xml:space="preserve">' + " " * 75 + "</a>"
+    chunks = splitter.split_text(text)
+
+    assert "".join(chunks) == text
+    assert all(0 < len(chunk) <= 32 for chunk in chunks)

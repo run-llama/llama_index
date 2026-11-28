@@ -194,7 +194,7 @@ class CodeSplitter(TextSplitter):
             if child_size > max_size:
                 # Child is too big, recursively chunk the child
                 if len(current_chunk) > 0:
-                    new_chunks.append(current_chunk)
+                    new_chunks.append(current_chunk.strip())
                 current_chunk = ""
                 if child.children:
                     new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
@@ -219,7 +219,7 @@ class CodeSplitter(TextSplitter):
                 if new_chunk_size > max_size:
                     # Child would make the current chunk too big, so start a new chunk
                     if len(current_chunk) > 0:
-                        new_chunks.append(current_chunk)
+                        new_chunks.append(current_chunk.strip())
                     current_chunk = text_bytes[last_end : child.end_byte].decode(
                         "utf-8"
                     )
@@ -230,7 +230,7 @@ class CodeSplitter(TextSplitter):
             last_end = child.end_byte
 
         if len(current_chunk) > 0:
-            new_chunks.append(current_chunk)
+            new_chunks.append(current_chunk.strip())
         return new_chunks
 
     def _split_oversized_leaf(self, text: str, max_size: int) -> List[str]:
@@ -302,10 +302,7 @@ class CodeSplitter(TextSplitter):
                 not tree.root_node.children
                 or tree.root_node.children[0].type != "ERROR"
             ):
-                chunks = [
-                    chunk.strip()
-                    for chunk in self._chunk_node(tree.root_node, text_bytes)
-                ]
+                chunks = self._chunk_node(tree.root_node, text_bytes)
                 event.on_end(
                     payload={EventPayload.CHUNKS: chunks},
                 )
