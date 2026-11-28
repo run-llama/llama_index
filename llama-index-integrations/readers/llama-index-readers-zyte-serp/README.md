@@ -36,7 +36,7 @@ Further the content from these URLs can be loaded using ZyteWebReader in "articl
 
 ```python
 from llama_index.readers.zyte_serp import ZyteSerpReader
-from llama_index.readers.web.zyte.base import ZyteWebReader
+from llama_index.readers.web import ZyteWebReader  # pip install llama-index-readers-web
 
 # Initialize the ZyteSerpReader with your API key
 zyte_serp = ZyteSerpReader(
