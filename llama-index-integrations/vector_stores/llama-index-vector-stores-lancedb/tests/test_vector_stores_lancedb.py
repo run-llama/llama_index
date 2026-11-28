@@ -2,7 +2,11 @@ from typing import Any
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.core import VectorStoreIndex
-from llama_index.vector_stores.lancedb.base import TableNotFoundError, VectorStoreQuery
+from llama_index.vector_stores.lancedb.base import (
+    TableNotFoundError,
+    VectorStoreQuery,
+    _to_lance_filter,
+)
 import pytest
 import pytest
 from llama_index.core import VectorStoreIndex
@@ -513,3 +517,114 @@ def test_filter_fixes(tmp_path: Path, embed_model) -> None:
     assert len(res_int) == 2
     ids_int = sorted([n.text for n in res_int])
     assert ids_int == ["node1", "node3"]
+
+
+def test_to_lance_filter_operators() -> None:
+    """NE means not equal, string values are escaped and NIN is supported."""
+
+    def build(key, value, operator):
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key=key, value=value, operator=operator)]
+        )
+        return _to_lance_filter(filters, None)
+
+    assert build("author", "Ann", FilterOperator.NE) == "metadata.author != 'Ann'"
+    assert build("year", 2000, FilterOperator.NE) == "metadata.year != 2000"
+    assert (
+        build("author", "O'Brien", FilterOperator.EQ) == "metadata.author = 'O''Brien'"
+    )
+    assert (
+        build("title", "Children's", FilterOperator.TEXT_MATCH)
+        == "metadata.title LIKE '%Children''s%'"
+    )
+    assert (
+        build("year", [2000, 2010], FilterOperator.NIN)
+        == "metadata.year NOT IN (2000,2010)"
+    )
+    assert build("tag", [], FilterOperator.IN) == "false"
+    assert build("tag", [], FilterOperator.NIN) == "true"
+    assert (
+        build("file_name", "my_file", FilterOperator.TEXT_MATCH)
+        == "metadata.file_name LIKE '%my\\_file%'"
+    )
+    assert (
+        build("file_name", "50%", FilterOperator.TEXT_MATCH)
+        == "metadata.file_name LIKE '%50\\%%'"
+    )
+    assert (
+        build("file_path", "C:\\docs", FilterOperator.TEXT_MATCH)
+        == "metadata.file_path LIKE '%C:\\\\docs%'"
+    )
+    with pytest.raises(ValueError, match="not supported"):
+        build("tags", ["a"], FilterOperator.ANY)
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_filter_ne_nin_and_quotes(tmp_path: Path, embed_model) -> None:
+    """NE excludes only exact matches, and apostrophes do not break filters."""
+    uri = str(tmp_path / "test_lancedb_filter_ne_nin")
+    vector_store = LanceDBVectorStore(uri=uri, mode="overwrite")
+    nodes = [
+        TextNode(
+            text=f"node{i}",
+            metadata={"author": author, "year": year},
+            embedding=embed_model.get_text_embedding(f"node{i}"),
+        )
+        for i, (author, year) in enumerate(
+            [("Ann", 2000), ("Annabel", 2010), ("O'Brien", 2020)], start=1
+        )
+    ]
+    vector_store.add(nodes)
+
+    def texts(*filters: MetadataFilter) -> list[str]:
+        found = vector_store.get_nodes(filters=MetadataFilters(filters=list(filters)))
+        return sorted(n.text for n in found)
+
+    assert texts(
+        MetadataFilter(key="author", value="Ann", operator=FilterOperator.NE)
+    ) == ["node2", "node3"]
+    assert texts(
+        MetadataFilter(key="author", value="O'Brien", operator=FilterOperator.EQ)
+    ) == ["node3"]
+    assert texts(
+        MetadataFilter(key="year", value=[2000, 2020], operator=FilterOperator.NIN)
+    ) == ["node2"]
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_filter_text_match_literal_and_empty_lists(tmp_path: Path, embed_model) -> None:
+    """TEXT_MATCH treats %, _ and backslashes literally, and empty IN/NIN work."""
+    uri = str(tmp_path / "test_lancedb_text_match")
+    vector_store = LanceDBVectorStore(uri=uri, mode="overwrite")
+    names = ["my_file.txt", "myXfile.txt", "50%.txt", "500.txt", "C:\\docs\\a_b.txt"]
+    vector_store.add(
+        [
+            TextNode(
+                text=name,
+                metadata={"file_name": name},
+                embedding=embed_model.get_text_embedding(name),
+            )
+            for name in names
+        ]
+    )
+
+    def texts(value, operator: FilterOperator) -> list[str]:
+        metadata_filter = MetadataFilter(
+            key="file_name", value=value, operator=operator
+        )
+        found = vector_store.get_nodes(
+            filters=MetadataFilters(filters=[metadata_filter])
+        )
+        return sorted(n.text for n in found)
+
+    assert texts("my_file", FilterOperator.TEXT_MATCH) == ["my_file.txt"]
+    assert texts("50%", FilterOperator.TEXT_MATCH) == ["50%.txt"]
+    assert texts("C:\\docs", FilterOperator.TEXT_MATCH) == ["C:\\docs\\a_b.txt"]
+    assert texts([], FilterOperator.IN) == []
+    assert texts([], FilterOperator.NIN) == sorted(names)

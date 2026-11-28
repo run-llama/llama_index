@@ -9,6 +9,7 @@ sql_operator_mapper = {
     FilterOperator.LT: " < ",
     FilterOperator.LTE: " <= ",
     FilterOperator.TEXT_MATCH: " LIKE ",
-    FilterOperator.NE: " NOT LIKE ",
+    FilterOperator.NE: " != ",
     FilterOperator.IN: " IN ",
+    FilterOperator.NIN: " NOT IN ",
 }

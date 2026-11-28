@@ -44,6 +44,24 @@ class TableNotFoundError(Exception):
     """Raised when the specified table does not exist."""
 
 
+def _quote(value: Any) -> str:
+    """Return a value as a Lance SQL string literal, escaping single quotes."""
+    escaped = str(value).replace("'", "''")
+    return f"'{escaped}'"
+
+
+def _escape_like(value: Any) -> str:
+    """Escape a value so a LIKE pattern matches it literally."""
+    # Backslash is the default LIKE escape character in Lance (DataFusion).
+    return (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+        .replace("'", "''")
+    )
+
+
 def _to_lance_filter(
     standard_filters: MetadataFilters,
     metadata_keys: Optional[list],
@@ -54,26 +72,32 @@ def _to_lance_filter(
         key = filter.key
         if metadata_keys is None or filter.key in metadata_keys:
             key = f"metadata.{filter.key}"
+        if filter.operator not in sql_operator_mapper:
+            raise ValueError(
+                f"Filter operator {filter.operator} is not supported by "
+                "LanceDBVectorStore."
+            )
         operator = sql_operator_mapper[filter.operator]
-        if (
-            filter.operator == FilterOperator.TEXT_MATCH
-            or filter.operator == FilterOperator.NE
+        if filter.operator == FilterOperator.TEXT_MATCH:
+            filters.append(f"{key}{operator}'%{_escape_like(filter.value)}%'")
+        elif (
+            filter.operator in (FilterOperator.IN, FilterOperator.NIN)
+            and isinstance(filter.value, list)
+            and len(filter.value) == 0
         ):
-            filters.append(f"{key}{operator}'%{filter.value}%'")
+            # Lance rejects "IN ()". An empty IN matches nothing and an empty
+            # NIN matches everything, so write the result as a literal.
+            filters.append("false" if filter.operator == FilterOperator.IN else "true")
         elif isinstance(filter.value, list):
-            processed_values = []
-            for v in filter.value:
-                if isinstance(v, str):
-                    safe_v = v.replace("'", "''")
-                    processed_values.append(f"'{safe_v}'")
-                else:
-                    processed_values.append(str(v))
+            processed_values = [
+                _quote(v) if isinstance(v, str) else str(v) for v in filter.value
+            ]
             val = ",".join(processed_values)
             filters.append(f"{key}{operator}({val})")
         elif isinstance(filter.value, (int, float)):
             filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(f"{key}{operator}'{filter.value!s}'")
+            filters.append(f"{key}{operator}{_quote(filter.value)}")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:
