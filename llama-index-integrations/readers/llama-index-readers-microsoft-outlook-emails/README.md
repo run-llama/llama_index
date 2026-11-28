@@ -23,7 +23,7 @@ To use this loader, `client_id`, `client_secret`, and `tenant_id` of the registe
 This loader fetches emails from a specified folder in an Outlook mailbox.
 
 ```python
-from llama_index.readers.outlook_emails import OutlookEmailReader
+from llama_index.readers.microsoft_outlook_emails import OutlookEmailReader
 
 loader = OutlookEmailReader(
     client_id="<Client ID of the app>",
