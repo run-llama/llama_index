@@ -148,6 +148,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
     ) -> "ChatSummaryMemoryBuffer":
         from llama_index.core.storage.chat_store.loading import load_chat_store
 
+        data = data.copy()
+
         # NOTE: this handles backwards compatibility with the old chat history
         if "chat_history" in data:
             chat_history = data.pop("chat_history")

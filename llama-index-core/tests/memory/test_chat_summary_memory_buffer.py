@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from typing import List, Sequence, Any
 import pickle
 
@@ -437,3 +439,34 @@ def test_pickle() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults()
     bytes_ = pickle.dumps(memory)
     assert isinstance(pickle.loads(bytes_), ChatSummaryMemoryBuffer)
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_from_dict_preserves_reusable_snapshot(legacy: bool) -> None:
+    message = ChatMessage(role=MessageRole.USER, content="Keep this conversation")
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        token_limit=1000, chat_history=[message], llm=MockLLM()
+    )
+    snapshot = memory.to_dict()
+    if legacy:
+        snapshot.pop("chat_store")
+        snapshot["chat_history"] = [message.model_dump()]
+    snapshot["llm"] = {"class_name": "MockLLM"}
+    original = deepcopy(snapshot)
+
+    first = ChatSummaryMemoryBuffer.from_dict(snapshot, llm=MockLLM())
+    second = ChatSummaryMemoryBuffer.from_dict(snapshot, llm=MockLLM())
+
+    assert snapshot == original
+    assert first.get_all() == second.get_all() == [message]
+    assert first.token_limit == second.token_limit == 1000
+
+
+def test_from_dict_preserves_snapshot_when_chat_store_is_invalid() -> None:
+    snapshot = {"token_limit": 1000, "chat_store": {"class_name": "UnknownStore"}}
+    original = deepcopy(snapshot)
+
+    with pytest.raises(ValueError, match="Invalid ChatStore name"):
+        ChatSummaryMemoryBuffer.from_dict(snapshot)
+
+    assert snapshot == original
