@@ -298,10 +298,8 @@ class CodeSplitter(TextSplitter):
             text_bytes = bytes(text, "utf-8")
             tree = self._parser.parse(text_bytes)
 
-            if (
-                not tree.root_node.children
-                or tree.root_node.children[0].type != "ERROR"
-            ):
+            # Keep accepting recoverable errors inside top-level nodes (e.g. JSX).
+            if not any(child.type == "ERROR" for child in tree.root_node.children):
                 chunks = [
                     chunk.strip()
                     for chunk in self._chunk_node(tree.root_node, text_bytes)

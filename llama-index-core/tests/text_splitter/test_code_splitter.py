@@ -448,3 +448,11 @@ def test_oversized_leaf_not_dropped_token_mode() -> None:
     assert sum(chunk.count("A") for chunk in chunks) == 800
     assert all(len(tokenizer(chunk)) <= 20 for chunk in chunks)
     assert any("y = 1" in chunk for chunk in chunks)
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+@pytest.mark.parametrize("text", ["???", "# A heading\n???", "x = 1\n???\ny = 2"])
+def test_top_level_parse_error_raises(text: str) -> None:
+    code_splitter = CodeSplitter(language="python")
+    with pytest.raises(ValueError, match="Could not parse code"):
+        code_splitter.split_text(text)
