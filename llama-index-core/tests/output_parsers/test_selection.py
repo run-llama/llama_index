@@ -58,6 +58,14 @@ Here is the output in JSON format:
             1,
             id="boss_fight",
         ),
+        pytest.param(
+            """{"items": [
+    {"choice": 1, "reason": "just because"},
+    {"choice": 2, "reason": "why not"}
+]}""",
+            2,
+            id="wrapped_multi",
+        ),
     ],
 )
 def test_parse(
@@ -69,6 +77,26 @@ def test_parse(
     assert len(parsed.parsed_output) == num_match
     assert parsed.parsed_output[0].choice == 1
     assert parsed.parsed_output[0].reason == "just because"
+
+
+def test_parse_wrapped_multiple_selections_preserves_all(
+    output_parser: SelectionOutputParser,
+) -> None:
+    # A model may wrap multiple selections in an outer object; every selection must be
+    # kept, not just the last one encountered.
+    output = (
+        '{"selections": ['
+        '{"choice": 1, "reason": "first"},'
+        '{"choice": 2, "reason": "second"},'
+        '{"choice": 3, "reason": "third"}]}'
+    )
+    parsed = output_parser.parse(output=output)
+    assert [answer.choice for answer in parsed.parsed_output] == [1, 2, 3]
+    assert [answer.reason for answer in parsed.parsed_output] == [
+        "first",
+        "second",
+        "third",
+    ]
 
 
 def test_failed_parse(output_parser: SelectionOutputParser) -> None:
