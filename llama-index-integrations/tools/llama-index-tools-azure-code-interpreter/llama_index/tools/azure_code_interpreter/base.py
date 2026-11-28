@@ -226,31 +226,37 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         if data and local_file_path:
             raise ValueError("data and local_file_path cannot be provided together")
 
-        if local_file_path:
-            remote_file_path = f"/mnt/data/{os.path.basename(local_file_path)}"
-            data = open(local_file_path, "rb")
+        opened_file = None
+        try:
+            if local_file_path:
+                remote_file_path = f"/mnt/data/{os.path.basename(local_file_path)}"
+                opened_file = open(local_file_path, "rb")
+                data = opened_file
 
-        access_token = self.access_token_provider()
-        if not remote_file_path.startswith("/mnt/data"):
-            remote_file_path = f"/mnt/data/{remote_file_path}"
-        api_url = self._build_url("files/upload")
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-        }
+            access_token = self.access_token_provider()
+            if not remote_file_path.startswith("/mnt/data"):
+                remote_file_path = f"/mnt/data/{remote_file_path}"
+            api_url = self._build_url("files/upload")
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+            }
 
-        files = [("file", (remote_file_path, data, "application/octet-stream"))]
+            files = [("file", (remote_file_path, data, "application/octet-stream"))]
 
-        response = requests.request("POST", api_url, headers=headers, files=files)
-        response.raise_for_status()
+            response = requests.request("POST", api_url, headers=headers, files=files)
+            response.raise_for_status()
 
-        response_json = response.json()
-        remote_files_metadatas = []
-        for entry in response_json["value"]:
-            if "properties" in entry:
-                remote_files_metadatas.append(
-                    RemoteFileMetadata.from_dict(entry["properties"])
-                )
-        return remote_files_metadatas
+            response_json = response.json()
+            remote_files_metadatas = []
+            for entry in response_json["value"]:
+                if "properties" in entry:
+                    remote_files_metadatas.append(
+                        RemoteFileMetadata.from_dict(entry["properties"])
+                    )
+            return remote_files_metadatas
+        finally:
+            if opened_file is not None:
+                opened_file.close()
 
     def download_file_to_local(
         self, remote_file_path: str, local_file_path: Optional[str] = None
