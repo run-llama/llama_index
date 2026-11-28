@@ -2,7 +2,7 @@ import pytest
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.program.function_program import get_function_tool
-from llama_index.core.tools.types import ToolMetadata
+from llama_index.core.tools.types import ToolMetadata, ToolOutput
 
 
 class Inner(BaseModel):
@@ -38,3 +38,18 @@ def test_nested_tool_schema() -> None:
 
     assert schema["required"][0] == "inner"
     assert schema["properties"] == {"inner": {"$ref": "#/$defs/Inner"}}
+
+
+def test_tool_output_raw_input_defaults_to_empty_dict() -> None:
+    # The signature offers raw_input=None, but the field is a dict; the default must build.
+    output = ToolOutput(tool_name="t", content="x")
+
+    assert output.raw_input == {}
+    assert output.content == "x"
+
+
+def test_tool_output_keeps_given_raw_input() -> None:
+    output = ToolOutput(tool_name="t", content="x", raw_input={"input": "q"})
+
+    assert output.raw_input == {"input": "q"}
+
