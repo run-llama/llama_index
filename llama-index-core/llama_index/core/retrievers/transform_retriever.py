@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -42,3 +43,11 @@ class TransformRetriever(BaseRetriever):
             query_bundle, metadata=self._transform_metadata
         )
         return self._retriever.retrieve(query_bundle)
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        query_bundle = await asyncio.to_thread(
+            self._query_transform.run,
+            query_bundle,
+            metadata=self._transform_metadata,
+        )
+        return await self._retriever.aretrieve(query_bundle)
