@@ -86,3 +86,58 @@ def test_json_query_engine(
 
     metadata = cast(Dict[str, Any], response.metadata)
     assert metadata["json_path_response_str"] == TEST_LLM_OUTPUT
+
+
+JSON_PATH_LLM_OUTPUT = "JSONPath: $.name"
+
+
+def mock_predict_json_path(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
+    return JSON_PATH_LLM_OUTPUT
+
+
+async def amock_predict_json_path(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
+    return JSON_PATH_LLM_OUTPUT
+
+
+@pytest.mark.parametrize("call_apredict", [True, False])
+@patch.object(
+    MockLLM,
+    "predict",
+    mock_predict_json_path,
+)
+@patch.object(
+    MockLLM,
+    "apredict",
+    amock_predict_json_path,
+)
+def test_json_query_engine_strips_json_path_prefix_for_output_processor(
+    call_apredict: bool,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+) -> None:
+    """Custom output processors must see the same input in the sync and async paths."""
+    json_val = cast(JSONType, {"name": "Alice"})
+    seen_outputs = []
+
+    def test_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
+        seen_outputs.append(llm_output)
+        return {"path": llm_output}
+
+    query_engine = JSONQueryEngine(
+        json_value=json_val,
+        json_schema=cast(JSONType, {}),
+        llm=MockLLM(),
+        output_processor=test_output_processor,
+        synthesize_response=False,
+    )
+
+    if call_apredict:
+        asyncio_run(query_engine.aquery(QueryBundle("test_nl_query")))
+    else:
+        query_engine.query(QueryBundle("test_nl_query"))
+
+    assert seen_outputs == ["$.name"]
