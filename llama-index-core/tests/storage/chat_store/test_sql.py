@@ -1,3 +1,4 @@
+import asyncio
 import json
 import pytest
 
@@ -285,3 +286,20 @@ async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
     messages = await loaded_store.get_messages("dump_user2")
     assert len(messages) == 1
     assert messages[0].content == "message2"
+
+
+@pytest.mark.asyncio
+async def test_concurrent_add_message_not_lost():
+    """Concurrent writes to the default in-memory SQLite store are all kept."""
+    store = SQLAlchemyChatStore(table_name="chat")
+    await store.get_keys()  # create the table
+
+    await asyncio.gather(
+        *[
+            store.add_message(f"user{i}", ChatMessage(role="user", content="hi"))
+            for i in range(20)
+        ]
+    )
+
+    keys = await store.get_keys()
+    assert len(keys) == 20
