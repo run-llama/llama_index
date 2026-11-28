@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -33,6 +32,9 @@ DEFAULT_PERSIST_ARGS = {
     "similarity_top_k": "similarity_top_k",
     "_verbose": "verbose",
     "corpus_weight_mask": "corpus_weight_mask",
+    "token_pattern": "token_pattern",
+    "skip_stemming": "skip_stemming",
+    "language": "language",
 }
 
 DEFAULT_PERSIST_FILENAME = "retriever.json"
@@ -60,7 +62,7 @@ class BM25Retriever(BaseRetriever):
         object_map (dict, optional):
             A map of object IDs to nodes. Defaults to None.
         token_pattern (str, optional):
-            The token pattern to use. Defaults to (?u)\\b\\w\\w+\\b.
+            The token pattern to use. Defaults to (?u)\b\w\w+\b.
         skip_stemming (bool, optional):
             Whether to skip stemming. Defaults to False.
         verbose (bool, optional):
@@ -84,6 +86,7 @@ class BM25Retriever(BaseRetriever):
         filters: Optional[MetadataFilters] = None,
         corpus_weight_mask: Optional[List[int]] = None,
     ) -> None:
+        self.language = language
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
         self.token_pattern = token_pattern
@@ -95,6 +98,10 @@ class BM25Retriever(BaseRetriever):
         else:
             if nodes is None:
                 raise ValueError("Please pass nodes or an existing BM25 object.")
+            if len(nodes) == 0:
+                raise ValueError(
+                    "Please pass at least one node to initialize BM25Retriever."
+                )
 
             self.corpus = [
                 node_to_metadata_dict(node) | {"node_id": node.node_id}
@@ -108,6 +115,11 @@ class BM25Retriever(BaseRetriever):
                 token_pattern=self.token_pattern,
                 show_progress=verbose,
             )
+            if not corpus_tokens.vocab:
+                raise ValueError(
+                    "No valid tokens found in the provided nodes. Kindly add nodes with text content."
+                )
+
             self.bm25 = bm25s.BM25()
             self.bm25.index(corpus_tokens, show_progress=verbose)
 
@@ -227,6 +239,9 @@ class BM25Retriever(BaseRetriever):
         return cls(existing_bm25=bm25, **retriever_data)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        if self.similarity_top_k <= 0:
+            return []
+
         query = query_bundle.query_str
         tokenized_query = bm25s.tokenize(
             query,
