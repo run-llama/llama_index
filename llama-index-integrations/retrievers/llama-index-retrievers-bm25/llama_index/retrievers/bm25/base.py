@@ -33,6 +33,7 @@ DEFAULT_PERSIST_ARGS = {
     "similarity_top_k": "similarity_top_k",
     "_verbose": "verbose",
     "corpus_weight_mask": "corpus_weight_mask",
+    "skip_zero_score": "skip_zero_score",
 }
 
 DEFAULT_PERSIST_FILENAME = "retriever.json"
@@ -65,6 +66,10 @@ class BM25Retriever(BaseRetriever):
             Whether to skip stemming. Defaults to False.
         verbose (bool, optional):
             Whether to show progress. Defaults to False.
+        skip_zero_score (bool, optional):
+            Whether to leave out nodes with a score of 0.0, which contain none of
+            the query's terms. Defaults to True. Set to False to always get
+            `similarity_top_k` nodes back.
 
     """
 
@@ -83,9 +88,11 @@ class BM25Retriever(BaseRetriever):
         token_pattern: str = r"(?u)\b\w\w+\b",
         filters: Optional[MetadataFilters] = None,
         corpus_weight_mask: Optional[List[int]] = None,
+        skip_zero_score: bool = True,
     ) -> None:
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
+        self.skip_zero_score = skip_zero_score
         self.token_pattern = token_pattern
         self.skip_stemming = skip_stemming
 
@@ -166,6 +173,7 @@ class BM25Retriever(BaseRetriever):
         skip_stemming: bool = False,
         token_pattern: str = r"(?u)\b\w\w+\b",
         filters: Optional[MetadataFilters] = None,
+        skip_zero_score: bool = True,
         # deprecated
         tokenizer: Optional[Callable[[str], List[str]]] = None,
     ) -> "BM25Retriever":
@@ -198,6 +206,7 @@ class BM25Retriever(BaseRetriever):
             skip_stemming=skip_stemming,
             token_pattern=token_pattern,
             filters=filters,
+            skip_zero_score=skip_zero_score,
         )
 
     def get_persist_args(self) -> Dict[str, Any]:
@@ -249,6 +258,10 @@ class BM25Retriever(BaseRetriever):
 
         nodes: List[NodeWithScore] = []
         for idx, score in zip(indexes, scores):
+            # bm25s fills all k slots, so when fewer than k nodes contain a query
+            # term the rest come back with a score of exactly 0.0.
+            if self.skip_zero_score and score <= 0.0:
+                continue
             # idx can be an int or a dict of the node
             if isinstance(idx, dict):
                 node = metadata_dict_to_node(idx)
