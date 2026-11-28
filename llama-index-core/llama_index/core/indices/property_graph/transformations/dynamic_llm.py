@@ -21,6 +21,18 @@ from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
 logger = logging.getLogger(__name__)
 
 
+def _triplet_items_from_llm_json(data: Any) -> List[Any]:
+    """Normalize LLM JSON into a list of triplet objects."""
+    if isinstance(data, dict):
+        nested = data.get("triplets", data.get("data"))
+        if isinstance(nested, list):
+            return nested
+        return [data]
+    if isinstance(data, list):
+        return data
+    return []
+
+
 def default_parse_dynamic_triplets(
     llm_output: str,
 ) -> List[Tuple[EntityNode, Relation, EntityNode]]:
@@ -40,7 +52,9 @@ def default_parse_dynamic_triplets(
     try:
         # Attempt to parse the output as JSON
         data = json.loads(llm_output)
-        for item in data:
+        for item in _triplet_items_from_llm_json(data):
+            if not isinstance(item, dict):
+                continue
             head = item.get("head")
             head_type = item.get("head_type")
             relation = item.get("relation")
@@ -92,7 +106,9 @@ def default_parse_dynamic_triplets_with_props(
     try:
         # Attempt to parse the output as JSON
         data = json.loads(llm_output)
-        for item in data:
+        for item in _triplet_items_from_llm_json(data):
+            if not isinstance(item, dict):
+                continue
             head = item.get("head")
             head_type = item.get("head_type")
             head_props = item.get("head_props", {})
