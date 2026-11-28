@@ -63,6 +63,28 @@ def test_docstore_dict() -> None:
     assert gd2 == node
 
 
+@pytest.mark.parametrize("change_original", [False, True])
+def test_docstore_dict_isolates_changes(change_original: bool) -> None:
+    doc = Document(text="hello world", id_="d1", metadata={"labels": ["original"]})
+    node = TextNode(text="my node", id_="d2")
+    original = SimpleDocumentStore()
+    original.add_documents([doc, node])
+    snapshot = original.to_dict()
+    restored = SimpleDocumentStore.from_dict(snapshot)
+    changed, unchanged = (
+        (original, restored) if change_original else (restored, original)
+    )
+
+    changed.delete_document("d1")
+    changed.add_documents([TextNode(text="updated node", id_="d2")])
+
+    assert unchanged.get_document("d1") == doc
+    assert unchanged.get_document("d2") == node
+    saved = SimpleDocumentStore.from_dict(snapshot)
+    assert saved.get_document("d1") == doc
+    assert saved.get_document("d2") == node
+
+
 def test_docstore_delete_document() -> None:
     doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
     node = TextNode(text="my node", id_="d2", metadata={"node": "info"})
