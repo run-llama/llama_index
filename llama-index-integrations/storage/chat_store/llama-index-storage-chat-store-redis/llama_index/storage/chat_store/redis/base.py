@@ -117,7 +117,7 @@ class RedisChatStore(BaseChatStore):
 
             self._redis_client.delete(key)
             self._redis_client.lpush(key, *current_list)
-            return removed_item
+            return ChatMessage.model_validate_json(removed_item)
         else:
             return None
 
@@ -129,13 +129,16 @@ class RedisChatStore(BaseChatStore):
 
             await self._aredis_client.delete(key)
             await self._aredis_client.lpush(key, *current_list)
-            return removed_item
+            return ChatMessage.model_validate_json(removed_item)
         else:
             return None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        return self._redis_client.rpop(key)
+        removed_item = self._redis_client.rpop(key)
+        if removed_item is None:
+            return None
+        return ChatMessage.model_validate_json(removed_item)
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
