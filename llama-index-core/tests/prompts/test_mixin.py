@@ -71,3 +71,55 @@ def test_prompt_mixin() -> None:
         "foo": PromptTemplate("{foo} {bar}"),
         "mock_object_2:abc": PromptTemplate("{abc} {def} ghi"),
     }
+
+
+def test_prompt_mixin_nested_submodules() -> None:
+    class MockObject3(PromptMixin):
+        def __init__(self) -> None:
+            self._prompt_dict_3 = {"xyz": PromptTemplate("{xyz}")}
+
+        def _get_prompts(self) -> PromptDictType:
+            return self._prompt_dict_3
+
+        def _get_prompt_modules(self) -> PromptMixinType:
+            return {}
+
+        def _update_prompts(self, prompts: PromptDictType) -> None:
+            if "xyz" in prompts:
+                self._prompt_dict_3["xyz"] = prompts["xyz"]
+
+    class MockParent(PromptMixin):
+        def __init__(self) -> None:
+            self.mock_object_2 = MockObject2()
+            self.mock_object_3 = MockObject3()
+            # wire mock_object_3 under mock_object_2
+            self.mock_object_2._get_prompt_modules = (  # type: ignore[assignment]
+                lambda: {"mock_object_3": self.mock_object_3}
+            )
+
+        def _get_prompts(self) -> PromptDictType:
+            return {}
+
+        def _get_prompt_modules(self) -> PromptMixinType:
+            return {"mock_object_2": self.mock_object_2}
+
+        def _update_prompts(self, prompts: PromptDictType) -> None:
+            pass
+
+    parent = MockParent()
+    prompts = parent.get_prompts()
+    assert "mock_object_2:mock_object_3:xyz" in prompts
+    assert "mock_object_2:abc" in prompts
+
+    # Updating nested prompts should not raise ValueError: too many values to unpack
+    parent.update_prompts(
+        {
+            "mock_object_2:mock_object_3:xyz": PromptTemplate("{xyz} updated"),
+            "mock_object_2:abc": PromptTemplate("{abc} updated"),
+        }
+    )
+    assert (
+        parent.get_prompts()["mock_object_2:mock_object_3:xyz"].get_template()
+        == "{xyz} updated"
+    )
+    assert parent.get_prompts()["mock_object_2:abc"].get_template() == "{abc} updated"

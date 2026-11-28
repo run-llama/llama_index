@@ -68,7 +68,7 @@ class PromptMixin(ABC):
         sub_prompt_dicts: Dict[str, PromptDictType] = defaultdict(dict)
         for key in prompts_dict:
             if ":" in key:
-                module_name, sub_key = key.split(":")
+                module_name, sub_key = key.split(":", 1)
                 sub_prompt_dicts[module_name][sub_key] = prompts_dict[key]
 
         # now update prompts for submodules
