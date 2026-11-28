@@ -31,6 +31,16 @@ Required template variables: `query_str`, `image_width`
 ImageOutputQueryTransformPrompt = PromptTemplate
 
 
+"""Step-back prompt for query transformation.
+
+PromptTemplate to abstract a specific question into a higher-level question
+following Zheng et al., 2023 ("Take a Step Back").
+
+Required template variables: `query_str`
+"""
+StepBackQueryTransformPrompt = PromptTemplate
+
+
 DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "The original question is as follows: {query_str}\n"
     "We have an opportunity to answer some, or all of the question from a "
@@ -126,4 +136,31 @@ DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
 
 DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT = PromptTemplate(
     DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL
+)
+
+
+DEFAULT_STEPBACK_QUERY_TRANSFORM_TMPL = (
+    "You are an expert at step-back reasoning.\n"
+    "Given a specific question, generate a more general, higher-level question "
+    "that asks about the underlying principle, concept, or pattern.\n"
+    "\n"
+    "Rules:\n"
+    "- Remove specific names, dates, and identifiers.\n"
+    "- Ask about the principle, role, concept, or pattern.\n"
+    "- Answer ONLY with the abstracted question, nothing else.\n"
+    "\n"
+    "Examples:\n"
+    "Specific: 'What school did Alice attend between Aug and Nov 1954?'\n"
+    "Step-back: 'What is Alice's educational and career background?'\n"
+    "\n"
+    "Specific: 'Who signed document X on March 15, 2024?'\n"
+    "Step-back: 'What is the signing authority process for documents?'\n"
+    "\n"
+    "Specific: '{query_str}'\n"
+    "Step-back:"
+)
+
+DEFAULT_STEPBACK_QUERY_TRANSFORM_PROMPT = PromptTemplate(
+    DEFAULT_STEPBACK_QUERY_TRANSFORM_TMPL,
+    prompt_type=PromptType.STEP_BACK,
 )
