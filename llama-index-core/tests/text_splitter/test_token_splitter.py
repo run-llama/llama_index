@@ -89,3 +89,23 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_chunks_do_not_exceed_chunk_size_after_stripping() -> None:
+    """
+    Chunks are budgeted from splits that carry their leading separator, but
+    emitted stripped. With the default tokenizer `" jumps"` is one token while
+    `"jumps"` is two, so a chunk budgeted at exactly chunk_size used to be emitted
+    one token over it.
+    """
+    tokenizer = tiktoken.get_encoding("gpt2")
+    text = "The quick brown fox jumps over the lazy dog. " * 4
+    splitter = TokenTextSplitter(
+        chunk_size=12, chunk_overlap=4, tokenizer=tokenizer.encode
+    )
+
+    chunks = splitter.split_text(text)
+
+    assert chunks
+    for chunk in chunks:
+        assert len(tokenizer.encode(chunk)) <= 12
