@@ -593,7 +593,8 @@ class Memory(BaseMemory):
                 )
 
                 if system_idx is not None:
-                    # Update existing system message
+                    # Stores may return live objects; render memory on a copy.
+                    result[system_idx] = result[system_idx].model_copy(deep=True)
                     result[system_idx].blocks = [
                         *memory_content,
                         *result[system_idx].blocks,
@@ -611,7 +612,7 @@ class Memory(BaseMemory):
                 if session_idx is not None:
                     # Get actual index (since we enumerated in reverse)
                     actual_idx = len(result) - 1 - session_idx
-                    # Update existing user message
+                    result[actual_idx] = result[actual_idx].model_copy(deep=True)
                     result[actual_idx].blocks = [
                         *memory_content,
                         *result[actual_idx].blocks,
