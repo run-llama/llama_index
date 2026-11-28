@@ -7,7 +7,7 @@ dev = ["pytest", "pytest-asyncio", "pytest-cov>=6.1.1"]
 
 [project]
 name = "llama-index-instrumentation"
-version = "0.6.0"
+version = "0.6.1"
 description = "Instrumentation and Observability for LlamaIndex"
 license = "MIT"
 readme = "README.md"

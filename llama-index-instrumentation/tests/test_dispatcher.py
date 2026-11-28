@@ -25,7 +25,7 @@ from llama_index_instrumentation import DispatcherSpanMixin
 from llama_index_instrumentation.base import BaseEvent
 from llama_index_instrumentation.dispatcher import Dispatcher, Manager, instrument_tags
 from llama_index_instrumentation.event_handlers import BaseEventHandler
-from llama_index_instrumentation.span import BaseSpan
+from llama_index_instrumentation.span import BaseSpan, active_span_id
 from llama_index_instrumentation.span_handlers import BaseSpanHandler
 from llama_index_instrumentation.span_handlers.base import Thread
 
@@ -185,6 +185,29 @@ def test_dispatcher_span_args(mock_uuid, mock_span_enter, mock_span_exit):
         "instance": None,
         "result": result,
     }
+
+
+@pytest.mark.asyncio
+async def test_sync_span_returning_future_restores_parent_context():
+    test_dispatcher = Dispatcher(name="test", propagate=False)
+
+    @test_dispatcher.span
+    def returns_future():
+        return asyncio.get_running_loop().create_future()
+
+    token = active_span_id.set("parent")
+    future = None
+    try:
+        future = returns_future()
+        assert active_span_id.get() == "parent"
+
+        future.set_result("done")
+        await asyncio.sleep(0)
+        assert active_span_id.get() == "parent"
+    finally:
+        if future is not None and not future.done():
+            future.cancel()
+        active_span_id.reset(token)
 
 
 @patch.object(Dispatcher, "span_exit")

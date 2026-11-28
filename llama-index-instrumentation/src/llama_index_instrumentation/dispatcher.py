@@ -3,7 +3,7 @@ import inspect
 import logging
 import uuid
 from contextlib import contextmanager
-from contextvars import Context, ContextVar, Token, copy_context
+from contextvars import ContextVar, Token
 from functools import partial
 from typing import Any, Callable, Dict, Generator, List, Optional, Protocol, TypeVar
 
@@ -362,9 +362,6 @@ class Dispatcher(BaseModel):
             tags = active_instrument_tags.get()
             result = None
 
-            # Copy the current context
-            context = copy_context()
-
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
@@ -380,7 +377,6 @@ class Dispatcher(BaseModel):
                 span_id: str,
                 bound_args: inspect.BoundArguments,
                 instance: Any,
-                context: Context,
             ) -> None:
                 try:
                     result = None if future.exception() else future.result()
@@ -398,16 +394,6 @@ class Dispatcher(BaseModel):
                         id_=span_id, bound_args=bound_args, instance=instance, err=e
                     )
                     raise
-                finally:
-                    try:
-                        context.run(active_span_id.reset, token)
-                    except ValueError as e:
-                        # TODO: Since the context is created in a sync context no in async task,
-                        # detaching the token raises an ValueError saying "token was created
-                        # in a different Context. We should figure out how to handle active spans
-                        # correctly, but for now just suppressing the error so it won't be
-                        # surfaced to the user.
-                        _logger.debug(f"Failed to reset active_span_id: {e}")
 
             try:
                 result = func(*args, **kwargs)
@@ -420,7 +406,6 @@ class Dispatcher(BaseModel):
                             span_id=id_,
                             bound_args=bound_args,
                             instance=instance,
-                            context=context,
                         )
                     )
                     return new_future
@@ -435,8 +420,7 @@ class Dispatcher(BaseModel):
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             finally:
-                if not isinstance(result, asyncio.Future):
-                    active_span_id.reset(token)
+                active_span_id.reset(token)
 
         @wrapt.decorator
         async def async_wrapper(
