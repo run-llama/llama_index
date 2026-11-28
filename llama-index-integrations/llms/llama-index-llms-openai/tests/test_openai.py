@@ -800,6 +800,36 @@ async def test_astream_chat_reasoning_content(MockAsyncOpenAI: MagicMock) -> Non
     assert len(reasoning_chunks) == 2
 
 
+@pytest.mark.asyncio()
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_astream_chat_keeps_reasoning_in_first_chunk(
+    MockAsyncOpenAI: MagicMock,
+) -> None:
+    """Reasoning in the first chunk, next to the role, is not skipped."""
+    mock_instance = MockAsyncOpenAI.return_value
+
+    async def mock_async_stream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        yield _make_chunk(
+            {"role": "assistant", "content": None, "__extra__": {"reasoning": "Plan"}}
+        )
+        yield _make_chunk({"content": "Done"})
+        yield _make_chunk({}, finish_reason="stop")
+
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_async_stream()
+    mock_instance.chat.completions.create = create_fn
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response_gen = await llm.astream_chat([ChatMessage(role="user", content="test")])
+    responses = [r async for r in response_gen]
+
+    thinking_blocks = [
+        b for b in responses[-1].message.blocks if isinstance(b, ThinkingBlock)
+    ]
+    assert [b.content for b in thinking_blocks] == ["Plan"]
+    assert responses[0].additional_kwargs["thinking_delta"] == "Plan"
+
+
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_chat_reasoning_content_non_streaming(MockSyncOpenAI: MagicMock) -> None:
     """Test that reasoning_content in non-streaming responses is captured as ThinkingBlock."""
