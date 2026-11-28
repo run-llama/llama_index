@@ -17,6 +17,7 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store               | Type                    | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async                         |
 | -------------------------- | ----------------------- | ------------------ | ------------- | ------ | --------------- | ----------------------------- |
+| Actian VectorAI DB         | self-hosted / cloud     | ✓                  |               | ✓      | ✓               | ✓                             |
 | Alibaba Cloud OpenSearch   | cloud                   | ✓                  |               | ✓      | ✓               | ✓                             |
 | Apache Cassandra®         | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
 | Astra DB                   | cloud                   | ✓                  |               | ✓      | ✓               |                               |
@@ -74,6 +75,7 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 
 ## Example Notebooks
 
+- [Actian VectorAI DB](/python/examples/vector_stores/actianvectoraivectorstoredemo)
 - [Alibaba Cloud OpenSearch](/python/examples/vector_stores/alibabacloudopensearchindexdemo)
 - [Astra DB](/python/examples/vector_stores/astradbindexdemo)
 - [Async Index Creation](/python/examples/vector_stores/asyncindexcreationdemo)
