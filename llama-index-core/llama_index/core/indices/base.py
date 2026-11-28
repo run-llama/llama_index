@@ -221,7 +221,7 @@ class BaseIndex(Generic[IS], ABC):
 
         with self._callback_manager.as_trace("ainsert_nodes"):
             await self.docstore.async_add_documents(nodes, allow_update=True)
-            self._insert(nodes=nodes)
+            self._insert(nodes, **insert_kwargs)
             await self._storage_context.index_store.async_add_index_struct(
                 self._index_struct
             )
