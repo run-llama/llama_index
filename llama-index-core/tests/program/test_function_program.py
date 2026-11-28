@@ -491,3 +491,40 @@ def test_function_program_error_message_includes_llm_text() -> None:
     )
     with pytest.raises(ValueError, match="Here's a great album"):
         llm_program(topic="songs")
+
+
+def test_function_program_does_not_mutate_caller_llm_kwargs() -> None:
+    """Test that FunctionCallingProgram.__call__ does not mutate the caller's llm_kwargs dict."""
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLM(),
+    )
+    llm_kwargs = {
+        "tool_required": True,
+        "tool_choice": "auto",
+        "allow_parallel_tool_calls": True,
+        "temperature": 0.7,
+    }
+    original = dict(llm_kwargs)
+    llm_program(topic="songs", llm_kwargs=llm_kwargs)
+    assert llm_kwargs == original
+
+
+@pytest.mark.asyncio
+async def test_async_function_program_does_not_mutate_caller_llm_kwargs() -> None:
+    """Test that FunctionCallingProgram.acall does not mutate the caller's llm_kwargs dict."""
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLM(),
+    )
+    llm_kwargs = {
+        "tool_required": True,
+        "tool_choice": "auto",
+        "allow_parallel_tool_calls": True,
+        "temperature": 0.7,
+    }
+    original = dict(llm_kwargs)
+    await llm_program.acall(topic="songs", llm_kwargs=llm_kwargs)
+    assert llm_kwargs == original

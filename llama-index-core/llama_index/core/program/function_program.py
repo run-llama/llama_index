@@ -148,7 +148,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
         # avoid passing in duplicate kwargs
-        llm_kwargs = llm_kwargs or {}
+        llm_kwargs = dict(llm_kwargs) if llm_kwargs else {}
         llm_kwargs.pop("tool_required", None)
         llm_kwargs.pop("tool_choice", None)
         llm_kwargs.pop("allow_parallel_tool_calls", None)
@@ -179,7 +179,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
         # avoid passing in duplicate kwargs
-        llm_kwargs = llm_kwargs or {}
+        llm_kwargs = dict(llm_kwargs) if llm_kwargs else {}
         llm_kwargs.pop("tool_required", None)
         llm_kwargs.pop("tool_choice", None)
         llm_kwargs.pop("allow_parallel_tool_calls", None)
@@ -327,7 +327,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             raise ValueError("stream_call is only supported for LLMs.")
 
         # avoid passing in duplicate kwargs
-        llm_kwargs = llm_kwargs or {}
+        llm_kwargs = dict(llm_kwargs) if llm_kwargs else {}
         llm_kwargs.pop("tool_required", None)
         llm_kwargs.pop("tool_choice", None)
         llm_kwargs.pop("allow_parallel_tool_calls", None)
@@ -378,7 +378,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             raise ValueError("stream_call is only supported for LLMs.")
 
         # avoid passing in duplicate kwargs
-        llm_kwargs = llm_kwargs or {}
+        llm_kwargs = dict(llm_kwargs) if llm_kwargs else {}
         llm_kwargs.pop("tool_required", None)
         llm_kwargs.pop("tool_choice", None)
         llm_kwargs.pop("allow_parallel_tool_calls", None)
