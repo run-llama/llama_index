@@ -547,7 +547,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
     def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
         """Read file content."""
         fs: fsspec.AbstractFileSystem = kwargs.get("fs", self.fs)
-        with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
+        with fs.open(str(input_file), errors=self.errors, encoding=self.encoding) as f:
             # default mode is 'rb', we can cast the return value of f.read()
             return cast(bytes, f.read())
 
@@ -634,7 +634,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         else:
             # do standard read
             fs = fs or get_default_fs()
-            with fs.open(input_file, errors=errors, encoding=encoding) as f:
+            with fs.open(str(input_file), errors=errors, encoding=encoding) as f:
                 data = cast(bytes, f.read()).decode(encoding, errors=errors)
 
             doc = Document(text=data, metadata=metadata or {})  # type: ignore
@@ -704,7 +704,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         else:
             # do standard read
             fs = fs or get_default_fs()
-            with fs.open(input_file, errors=errors, encoding=encoding) as f:
+            with fs.open(str(input_file), errors=errors, encoding=encoding) as f:
                 data = cast(bytes, f.read()).decode(encoding, errors=errors)
 
             doc = Document(text=data, metadata=metadata or {})  # type: ignore
