@@ -777,3 +777,63 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+# --- Tests for nested object schema handling ---
+
+
+base_test_cases = [
+    pytest.param(
+        {
+            "properties": {
+                "nested": {
+                    "properties": {
+                        "value": {"title": "Value", "type": "string"},
+                    },
+                    "required": ["value"],
+                    "type": "object",
+                },
+            },
+            "required": ["nested"],
+            "type": "object",
+        },
+        id="nested-object",
+    ),
+    pytest.param(
+        {
+            "$defs": {
+                "Inner": {
+                    "properties": {
+                        "value": {"title": "Value", "type": "string"},
+                    },
+                    "required": ["value"],
+                    "title": "Inner",
+                    "type": "object",
+                },
+            },
+            "properties": {
+                "nested": {"$ref": "#/$defs/Inner"},
+            },
+            "required": ["nested"],
+            "type": "object",
+        },
+        id="referenced-nested-object",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "json_schema",
+    [
+        *base_test_cases,
+    ],
+)
+def test_create_model_from_json_schema(client: BasicMCPClient, json_schema: dict):
+    """Converting a JSON schema into a Pydantic model and back to a JSON schema should yield the original schema."""
+    tool_spec = McpToolSpec(client, allowed_tools=[])
+    pydantic_model = tool_spec.create_model_from_json_schema(json_schema)
+    json_schema_from_pydantic_model = pydantic_model.model_json_schema()
+
+    del json_schema_from_pydantic_model["title"]
+
+    assert json_schema == json_schema_from_pydantic_model
