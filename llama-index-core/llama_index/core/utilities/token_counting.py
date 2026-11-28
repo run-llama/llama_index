@@ -1,10 +1,33 @@
 # Modified from:
 # https://github.com/nyno-ai/openai-token-counter
 
+import json
 from typing import Any, Callable, Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.utils import get_tokenizer
+
+
+def _as_token_text(value: Any) -> str:
+    """Coerce tool/function payload values into tokenizer-safe text."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return json.dumps(value)
+    return str(value)
+
+
+def _as_mapping(value: Any) -> Dict[str, Any]:
+    """Coerce a function_call payload into a dict."""
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "model_dump"):
+        dumped = value.model_dump()
+        if isinstance(dumped, dict):
+            return dumped
+    return {}
 
 
 class TokenCounter:
@@ -55,12 +78,16 @@ class TokenCounter:
 
             # backward compatibility
             if "function_call" in additional_kwargs:
-                function_call = additional_kwargs.pop("function_call")
+                function_call = _as_mapping(additional_kwargs.pop("function_call"))
                 if function_call.get("name", None) is not None:
-                    tokens += self.get_string_tokens(function_call["name"])
+                    tokens += self.get_string_tokens(
+                        _as_token_text(function_call["name"])
+                    )
 
                 if function_call.get("arguments", None) is not None:
-                    tokens += self.get_string_tokens(function_call["arguments"])
+                    tokens += self.get_string_tokens(
+                        _as_token_text(function_call["arguments"])
+                    )
 
                 tokens += 3  # Additional tokens for function call
 
@@ -71,8 +98,12 @@ class TokenCounter:
                         hasattr(tool_call, "function")
                         and tool_call.function is not None
                     ):
-                        tokens += self.get_string_tokens(tool_call.function.name)
-                        tokens += self.get_string_tokens(tool_call.function.arguments)
+                        tokens += self.get_string_tokens(
+                            _as_token_text(tool_call.function.name)
+                        )
+                        tokens += self.get_string_tokens(
+                            _as_token_text(tool_call.function.arguments)
+                        )
 
                         tokens += 3  # Additional tokens for tool call
 
@@ -106,12 +137,16 @@ class TokenCounter:
 
             # backward compatibility
             if "function_call" in additional_kwargs:
-                function_call = additional_kwargs.pop("function_call")
+                function_call = _as_mapping(additional_kwargs.pop("function_call"))
                 if function_call.get("name", None) is not None:
-                    tokens += self.get_string_tokens(function_call["name"])
+                    tokens += self.get_string_tokens(
+                        _as_token_text(function_call["name"])
+                    )
 
                 if function_call.get("arguments", None) is not None:
-                    tokens += self.get_string_tokens(function_call["arguments"])
+                    tokens += self.get_string_tokens(
+                        _as_token_text(function_call["arguments"])
+                    )
 
                 tokens += 3  # Additional tokens for function call
 
@@ -122,8 +157,12 @@ class TokenCounter:
                         hasattr(tool_call, "function")
                         and tool_call.function is not None
                     ):
-                        tokens += self.get_string_tokens(tool_call.function.name)
-                        tokens += self.get_string_tokens(tool_call.function.arguments)
+                        tokens += self.get_string_tokens(
+                            _as_token_text(tool_call.function.name)
+                        )
+                        tokens += self.get_string_tokens(
+                            _as_token_text(tool_call.function.arguments)
+                        )
 
                         tokens += 3  # Additional tokens for tool call
 
