@@ -1,3 +1,4 @@
+import asyncio
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -60,6 +61,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     _metadata: MetaData = PrivateAttr(default_factory=MetaData)
     _table: Optional[Table] = PrivateAttr(default=None)
     _db_data: Optional[List[Dict[str, Any]]] = PrivateAttr(default=None)
+    _initialize_lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
+    _initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -92,22 +95,35 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def _initialize(self) -> Tuple[sessionmaker, Table]:
         """Initialize the chat store. Used to avoid HTTP connections in constructor."""
-        if self._async_session_factory is not None and self._table is not None:
+        if (
+            self._initialized
+            and self._async_session_factory is not None
+            and self._table is not None
+        ):
             return self._async_session_factory, self._table
 
-        async_engine, async_session_factory = await self._setup_connections()
-        table = await self._setup_tables(async_engine)
+        async with self._initialize_lock:
+            if (
+                self._initialized
+                and self._async_session_factory is not None
+                and self._table is not None
+            ):
+                return self._async_session_factory, self._table
 
-        # Restore data from in-memory database if provided
-        if self._db_data:
-            async with async_session_factory() as session:
-                await session.execute(insert(table).values(self._db_data))
-                await session.commit()
+            async_engine, async_session_factory = await self._setup_connections()
+            table = await self._setup_tables(async_engine)
 
-                # clear the data after it's inserted
-                self._db_data = None
+            # Restore data from in-memory database if provided
+            if self._db_data:
+                async with async_session_factory() as session:
+                    await session.execute(insert(table).values(self._db_data))
+                    await session.commit()
 
-        return async_session_factory, table
+                    # clear the data after it's inserted
+                    self._db_data = None
+
+            self._initialized = True
+            return async_session_factory, table
 
     async def _setup_connections(
         self,
@@ -138,7 +154,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         # Create metadata with schema
         if self.db_schema is not None and not self._is_sqlite_database():
             # Only set schema for databases that support it
-            self._metadata = MetaData(schema=self.db_schema)
+            if self._table is None:
+                self._metadata = MetaData(schema=self.db_schema)
 
             # Create schema if it doesn't exist (PostgreSQL, SQL Server, etc.)
             async with async_engine.begin() as conn:
@@ -147,22 +164,23 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
                 )
 
         # Create messages table with status column
-        self._table = Table(
-            f"{self.table_name}",
-            self._metadata,
-            Column("id", Integer, primary_key=True, autoincrement=True),
-            Column("key", String, nullable=False, index=True),
-            Column("timestamp", BigInteger, nullable=False, index=True),
-            Column("role", String, nullable=False),
-            Column(
-                "status",
-                String,
-                nullable=False,
-                default=MessageStatus.ACTIVE.value,
-                index=True,
-            ),
-            Column("data", JSON, nullable=False),
-        )
+        if self._table is None:
+            self._table = Table(
+                f"{self.table_name}",
+                self._metadata,
+                Column("id", Integer, primary_key=True, autoincrement=True),
+                Column("key", String, nullable=False, index=True),
+                Column("timestamp", BigInteger, nullable=False, index=True),
+                Column("role", String, nullable=False),
+                Column(
+                    "status",
+                    String,
+                    nullable=False,
+                    default=MessageStatus.ACTIVE.value,
+                    index=True,
+                ),
+                Column("data", JSON, nullable=False),
+            )
 
         # Create tables in the database
         async with async_engine.begin() as conn:
@@ -436,6 +454,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         """
         Dump the store's configuration and data (if in-memory).
 
+        Wait for any ongoing initialization before serializing an in-memory store.
+
         Returns:
             A dictionary containing the store's configuration and potentially its data.
 
@@ -447,6 +467,10 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         }
 
         if self._is_in_memory_uri(self.async_database_uri):
+            if self._initialize_lock.locked():
+                raise RuntimeError(
+                    "Wait for chat store initialization to finish before serializing it."
+                )
             # switch to sync sqlite
             dump_data["db_data"] = asyncio_run(self._dump_db_data())
 
