@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.embeddings import MockEmbedding
+from llama_index.core.memory import Memory
 from llama_index.core.memory.memory_blocks.vector import VectorMemoryBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import RichPromptTemplate
@@ -153,6 +154,25 @@ async def test_vector_memory_block_get(vector_memory_block: VectorMemoryBlock):
     # Check that we got a result
     assert result != ""
     assert "capital of France is Paris" in result
+
+
+@pytest.mark.asyncio
+async def test_memory_retrieves_vector_context_from_chat_message_input(
+    vector_memory_block: VectorMemoryBlock,
+):
+    await vector_memory_block.aput(
+        messages=[ChatMessage(role="user", content="My favorite city is Paris.")]
+    )
+    memory = Memory.from_defaults(memory_blocks=[vector_memory_block])
+
+    messages = await memory.aget(
+        input=ChatMessage(role="user", content="What is my favorite city?")
+    )
+
+    assert any(
+        "My favorite city is Paris." in (message.content or "") for message in messages
+    )
+    assert await memory.aget_all() == []
 
 
 @pytest.mark.asyncio
