@@ -841,6 +841,7 @@ class OpenAI(FunctionCallingLLM):
                         first_chat_chunk
                         and response.choices[0].delta.content is None
                         and response.choices[0].delta.tool_calls is None
+                        and not get_openai_reasoning_content(response.choices[0].delta)
                     ):
                         first_chat_chunk = False
                         continue
