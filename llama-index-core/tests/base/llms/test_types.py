@@ -896,6 +896,45 @@ def test_image_block_resolve_image_buffer(png_1px: bytes):
     assert b.resolve_image() == img
 
 
+@pytest.mark.parametrize("encoded", [False, True])
+def test_image_block_resolve_image_buffer_base64(
+    png_1px: bytes, png_1px_b64: bytes, encoded: bool
+):
+    contents = png_1px_b64 if encoded else png_1px
+    buffer = BytesIO(contents)
+    buffer.seek(5)
+    b = ImageBlock(image=buffer)
+
+    for _ in range(2):
+        img = b.resolve_image(as_base64=True)
+        assert buffer.tell() == 0
+        assert img is not buffer
+        assert img.read() == png_1px_b64
+        assert buffer.tell() == 0
+
+    assert b.resolve_image() is buffer
+    assert buffer.read() == contents
+
+
+@pytest.mark.parametrize("encoded", [False, True])
+def test_image_block_inline_url_buffer(
+    png_1px: bytes, png_1px_b64: bytes, encoded: bool
+):
+    contents = png_1px_b64 if encoded else png_1px
+    b = ImageBlock(image=BytesIO(contents), image_mimetype="image/png")
+
+    for _ in range(2):
+        assert b.inline_url() == f"data:image/png;base64,{png_1px_b64.decode()}"
+
+
+@pytest.mark.parametrize("as_base64", [False, True])
+def test_image_block_resolve_empty_buffer(as_base64: bool):
+    b = ImageBlock(image=BytesIO())
+
+    with pytest.raises(ValueError, match="resolve_image returned zero bytes"):
+        b.resolve_image(as_base64=as_base64)
+
+
 def test_image_block_resolve_image_path(
     tmp_path: Path, png_1px_b64: bytes, png_1px: bytes
 ):
