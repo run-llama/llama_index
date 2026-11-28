@@ -1,3 +1,4 @@
+import re
 from collections import OrderedDict
 from typing import (
     Any,
@@ -25,6 +26,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     ChatResponse,
     CompletionResponse,
+    LLMMetadata,
 )
 from llama_index.core.base.response.schema import (
     AsyncStreamingResponse,
@@ -40,6 +42,7 @@ from llama_index.core.llms.mock import (
     MockFunctionCallingLLMWithChatMemoryOfLastCall,
 )
 from llama_index.core.llms.utils import parse_partial_json
+from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.response_synthesizers.refine import (
     Refine,
     StructuredRefineResponse,
@@ -47,6 +50,59 @@ from llama_index.core.response_synthesizers.refine import (
 )
 from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
 from llama_index.core.types import BasePydanticProgram
+
+
+class RepackedOrderRecordingLLM(CustomLLM):
+    """Return a long answer to force the refine loop to repack its input."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._prompts: list[str] = []
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(context_window=1024, num_output=0, is_chat_model=False)
+
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        self._prompts.append(prompt)
+        return CompletionResponse(text="answer tokens " * 300)
+
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> Generator[CompletionResponse, None, None]:
+        yield self.complete(prompt, formatted=formatted, **kwargs)
+
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return self.complete(prompt, formatted=formatted, **kwargs)
+
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> AsyncGenerator[CompletionResponse, None]:
+        yield self.complete(prompt, formatted=formatted, **kwargs)
+
+
+def _repacked_order_refine(llm: CustomLLM) -> Refine:
+    return Refine(
+        llm=llm,
+        prompt_helper=PromptHelper(
+            context_window=1024,
+            num_output=64,
+            chunk_overlap_ratio=0.0,
+        ),
+        streaming=False,
+    )
+
+
+def _repacked_order_chunks() -> list[str]:
+    return ["first context about apples", " ".join(f"w{i:03d}" for i in range(150))]
+
+
+def _repacked_order_words(prompts: list[str]) -> list[list[str]]:
+    return [re.findall(r"w\d{3}", prompt) for prompt in prompts]
 
 
 class FailingStub(BasePydanticProgram):
@@ -1003,3 +1059,26 @@ class TestRefine:
         )
         assert str(synthesizer.synthesize("question", nodes)) == "Empty Response"
         assert str(await synthesizer.asynthesize("question", nodes)) == "Empty Response"
+
+    def test_refines_repacked_chunks_in_document_order(self) -> None:
+        llm = RepackedOrderRecordingLLM()
+        synthesizer = _repacked_order_refine(llm)
+
+        synthesizer.get_response("what is in the docs?", _repacked_order_chunks())
+
+        words_by_prompt = _repacked_order_words(llm._prompts)
+        assert words_by_prompt[1] == [f"w{i:03d}" for i in range(139)]
+        assert words_by_prompt[2] == [f"w{i:03d}" for i in range(139, 150)]
+
+    @pytest.mark.asyncio
+    async def test_arefines_repacked_chunks_in_document_order(self) -> None:
+        llm = RepackedOrderRecordingLLM()
+        synthesizer = _repacked_order_refine(llm)
+
+        await synthesizer.aget_response(
+            "what is in the docs?", _repacked_order_chunks()
+        )
+
+        words_by_prompt = _repacked_order_words(llm._prompts)
+        assert words_by_prompt[1] == [f"w{i:03d}" for i in range(139)]
+        assert words_by_prompt[2] == [f"w{i:03d}" for i in range(139, 150)]
