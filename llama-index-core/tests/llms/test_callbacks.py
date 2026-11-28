@@ -1,13 +1,34 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.llms.mock import MockLLMWithNonyieldingChatStream
+from llama_index.core.prompts import PromptTemplate
+
+
+class _City(BaseModel):
+    """A test model for structured predict."""
+
+    name: str = Field(description="city")
+
+
+def _empty_response_generator(messages: Sequence[ChatMessage], **kwargs: Any):
+    return
+    yield
+
+
+async def _empty_async_response_generator(
+    messages: Sequence[ChatMessage], **kwargs: Any
+):
+    return
+    yield
 
 
 @pytest.fixture()
@@ -42,6 +63,22 @@ async def test_llm_astream_chat_handles_nonyielding_stream(
     )
     async for _ in response:
         pass
+
+
+def test_stream_structured_predict_handles_nonyielding_stream(prompt: str) -> None:
+    llm = MockFunctionCallingLLM(response_generator=_empty_response_generator)
+    partials = list(llm.stream_structured_predict(_City, PromptTemplate(prompt)))
+    assert partials == []
+
+
+@pytest.mark.asyncio
+async def test_astream_structured_predict_handles_nonyielding_stream(
+    prompt: str,
+) -> None:
+    llm = MockFunctionCallingLLM(response_generator=_empty_async_response_generator)
+    response = await llm.astream_structured_predict(_City, PromptTemplate(prompt))
+    partials = [p async for p in response]
+    assert partials == []
 
 
 def test_llm_complete_prompt_arg(llm: LLM, prompt: str) -> None:
