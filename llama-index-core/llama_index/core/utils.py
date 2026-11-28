@@ -581,7 +581,13 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
 
 
 def infer_torch_device() -> str:
-    """Infer the input to torch.device."""
+    """
+    Infer the input to torch.device.
+
+    Preference order is CUDA, Intel XPU, Apple MPS, then CPU. The XPU
+    check is skipped when ``torch.xpu`` is missing, which is the case for
+    PyTorch builds without Intel GPU support.
+    """
     try:
         has_cuda = torch.cuda.is_available()
     except NameError:
@@ -590,6 +596,14 @@ def infer_torch_device() -> str:
         has_cuda = torch.cuda.is_available()
     if has_cuda:
         return "cuda"
+    try:
+        # Stock CUDA, CPU, and MPS wheels do not define torch.xpu. A failed
+        # lazy import should fall through instead of raising.
+        has_xpu = hasattr(torch, "xpu") and bool(torch.xpu.is_available())
+    except (AttributeError, ImportError):
+        has_xpu = False
+    if has_xpu:
+        return "xpu"
     if torch.backends.mps.is_available():
         return "mps"
     return "cpu"

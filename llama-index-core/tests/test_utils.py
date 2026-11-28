@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Type, Union
 from unittest import mock
 import os
+import sys
 import time
 
 import pytest
@@ -18,6 +19,7 @@ from llama_index.core.utils import (
     get_color_mapping,
     get_retry_on_exceptions_with_backoff_decorator,
     get_tokenizer,
+    infer_torch_device,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
@@ -353,3 +355,93 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+class _TorchStub:
+    """Stand-in for torch. ``xpu=None`` omits the attribute, as stock wheels do."""
+
+    cuda: mock.Mock
+    backends: mock.Mock
+    xpu: mock.Mock
+
+    def __init__(self, *, cuda: bool, xpu: Optional[bool], mps: bool) -> None:
+        self.cuda = mock.Mock()
+        self.cuda.is_available.return_value = cuda
+        self.backends = mock.Mock()
+        self.backends.mps.is_available.return_value = mps
+        if xpu is not None:
+            xpu_mod = mock.Mock()
+            xpu_mod.is_available.return_value = xpu
+            self.xpu = xpu_mod
+
+
+@pytest.mark.parametrize(
+    ("cuda", "xpu", "mps", "expected"),
+    [
+        (True, True, True, "cuda"),
+        (True, False, False, "cuda"),
+        (True, None, True, "cuda"),
+        (False, True, True, "xpu"),
+        (False, True, False, "xpu"),
+        (False, False, True, "mps"),
+        (False, None, True, "mps"),
+        (False, False, False, "cpu"),
+        (False, None, False, "cpu"),
+    ],
+)
+def test_infer_torch_device_priority(
+    monkeypatch: pytest.MonkeyPatch,
+    cuda: bool,
+    xpu: Optional[bool],
+    mps: bool,
+    expected: str,
+) -> None:
+    """CUDA wins, then XPU, then MPS, then CPU. Missing torch.xpu is ignored."""
+    torch_mod = _TorchStub(cuda=cuda, xpu=xpu, mps=mps)
+    monkeypatch.setitem(sys.modules, "torch", torch_mod)
+
+    assert infer_torch_device() == expected
+
+    xpu_mod = getattr(torch_mod, "xpu", None)
+    if cuda:
+        if xpu_mod is not None:
+            xpu_mod.is_available.assert_not_called()
+        torch_mod.backends.mps.is_available.assert_not_called()
+    elif xpu:
+        torch_mod.backends.mps.is_available.assert_not_called()
+    else:
+        torch_mod.backends.mps.is_available.assert_called_once_with()
+
+
+class _TorchWithoutXPU:
+    """torch stand-in whose ``xpu`` attribute fails to import."""
+
+    cuda: mock.Mock
+    backends: mock.Mock
+
+    def __init__(self) -> None:
+        self.cuda = mock.Mock()
+        self.cuda.is_available.return_value = False
+        self.backends = mock.Mock()
+        self.backends.mps.is_available.return_value = False
+
+    @property
+    def xpu(self) -> None:
+        raise ImportError("torch was not built with XPU support")
+
+
+def test_infer_torch_device_xpu_probe_failure_falls_through(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A torch.xpu that fails to import or probe must not override MPS or CPU."""
+    torch_mod = _TorchStub(cuda=False, xpu=True, mps=True)
+    xpu_mod = getattr(torch_mod, "xpu", None)
+    assert xpu_mod is not None
+    xpu_mod.is_available.side_effect = AttributeError("xpu unavailable")
+    monkeypatch.setitem(sys.modules, "torch", torch_mod)
+
+    assert infer_torch_device() == "mps"
+
+    monkeypatch.setitem(sys.modules, "torch", _TorchWithoutXPU())
+
+    assert infer_torch_device() == "cpu"
