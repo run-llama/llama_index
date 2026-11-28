@@ -24,7 +24,7 @@ as the storage backend for `VectorStoreIndex`.
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
 - Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
-- DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
@@ -34,7 +34,7 @@ as the storage backend for `VectorStoreIndex`.
 - Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
-- Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
+- Lantern (`LanternVectorStore`). [Quickstart](https://lantern.dev/docs).
 - MariaDB (`MariaDBVectorStore`). [MariaDB Vector Overview](https://mariadb.com/kb/en/vector-overview/)
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
@@ -44,7 +44,7 @@ as the storage backend for `VectorStoreIndex`.
 - Opensearch (`OpensearchVectorStore`) [Opensearch as vector database](https://opensearch.org/platform/search/vector-database.html). [QuickStart](https://opensearch.org/docs/latest/search-plugins/knn/index/)
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
-- LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
+- LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://docs.lancedb.com/)
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
