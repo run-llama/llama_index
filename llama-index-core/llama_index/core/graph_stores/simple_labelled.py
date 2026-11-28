@@ -213,11 +213,11 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             else:
                 raise ValueError(f"Could not infer node type for data: {node_dict!s}")
 
-        # clear the nodes, to load later
-        data["nodes"] = {}
+        # Validate graph data separately; nodes are restored below.
+        graph_data = {**data, "nodes": {}}
 
         # load the graph
-        graph = LabelledPropertyGraph.model_validate(data)
+        graph = LabelledPropertyGraph.model_validate(graph_data)
 
         # add the node back
         graph.nodes = kg_nodes
