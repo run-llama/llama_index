@@ -1,5 +1,6 @@
 """Test prompts."""
 
+from threading import Lock
 from typing import Any
 
 import pytest
@@ -18,6 +19,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.types import BaseOutputParser
 
@@ -38,6 +40,66 @@ class MockOutputParser(BaseOutputParser):
 @pytest.fixture()
 def output_parser() -> BaseOutputParser:
     return MockOutputParser(format_string="output_instruction")
+
+
+class LockingOutputParser(MockOutputParser):
+    """Output parser with state that cannot be deep-copied."""
+
+    def __init__(self) -> None:
+        super().__init__(format_string="output_instruction")
+        self._lock = Lock()
+
+
+@pytest.fixture(params=["text", "chat"])
+def prompt_with_uncopyable_parser(
+    request: pytest.FixtureRequest,
+) -> BasePromptTemplate:
+    parser = LockingOutputParser()
+    metadata = {"tags": []}
+    if request.param == "text":
+        return PromptTemplate(
+            "hello {text} {foo}", output_parser=parser, metadata=metadata
+        )
+    return ChatPromptTemplate.from_messages(
+        [("user", "hello {text} {foo}")], output_parser=parser, metadata=metadata
+    )
+
+
+def test_partial_format_with_uncopyable_parser(
+    prompt_with_uncopyable_parser: BasePromptTemplate,
+) -> None:
+    prompt = prompt_with_uncopyable_parser
+    parser = prompt.output_parser
+
+    partial = prompt.partial_format(foo="bar")
+    assert partial.output_parser is parser
+    assert prompt.output_parser is parser
+    assert partial.format_messages(text="world")[0].content == (
+        "hello world bar\noutput_instruction"
+    )
+
+    partial.metadata["tags"].append("partial")
+    assert prompt.metadata["tags"] == []
+    assert prompt.kwargs == {}
+    assert partial.partial_format(foo="baz").kwargs == {"foo": "baz"}
+    assert partial.kwargs == {"foo": "bar"}
+
+
+def test_partial_format_copy_failure_preserves_parser(
+    prompt_with_uncopyable_parser: BasePromptTemplate,
+) -> None:
+    prompt = prompt_with_uncopyable_parser
+    parser = prompt.output_parser
+    prompt.metadata["lock"] = Lock()
+
+    with pytest.raises(TypeError, match="cannot pickle"):
+        prompt.partial_format(foo="bar")
+
+    assert prompt.output_parser is parser
+    assert prompt.kwargs == {}
+    assert prompt.format_messages(text="world", foo="bar")[0].content == (
+        "hello world bar\noutput_instruction"
+    )
 
 
 def test_template() -> None:
