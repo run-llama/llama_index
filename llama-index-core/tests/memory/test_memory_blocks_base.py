@@ -116,14 +116,15 @@ class ParameterizedMemoryBlock(BaseMemoryBlock[str]):
         pass
 
 
-@pytest.fixture()
-def memory_with_blocks():
+@pytest.fixture(params=[1, 3])
+def memory_with_blocks(request):
     """Set up memory with different types of memory blocks."""
     return Memory(
         token_limit=1000,
         token_flush_size=700,
         chat_history_token_ratio=0.9,
         session_id="test_blocks",
+        memory_blocks_concurrency=request.param,
         memory_blocks=[
             TextMemoryBlock(name="text_block", priority=1),
             ContentBlocksMemoryBlock(name="content_blocks", priority=2),
