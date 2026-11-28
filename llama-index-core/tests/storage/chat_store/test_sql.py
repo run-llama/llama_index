@@ -1,7 +1,10 @@
 import json
+from types import SimpleNamespace
+
 import pytest
 
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.storage.chat_store import sql as sql_module
 from llama_index.core.storage.chat_store.sql import (
     SQLAlchemyChatStore,
     MessageStatus,
@@ -53,6 +56,54 @@ async def test_add_messages_batch(chat_store: SQLAlchemyChatStore):
     messages = await chat_store.get_messages("batch_user")
     assert len(messages) == 3
     assert [m.content for m in messages] == ["hello", "world", "how are you?"]
+
+
+@pytest.mark.asyncio
+async def test_message_order_with_coarse_clock(
+    chat_store: SQLAlchemyChatStore, monkeypatch: pytest.MonkeyPatch
+):
+    """Messages keep insertion order when the clock does not advance (e.g. Windows)."""
+    monkeypatch.setattr(sql_module, "time", SimpleNamespace(time_ns=lambda: 1_000_000))
+
+    await chat_store.set_messages(
+        "coarse",
+        [
+            ChatMessage(role="user", content="a"),
+            ChatMessage(role="assistant", content="b"),
+        ],
+    )
+    await chat_store.add_message("coarse", ChatMessage(role="user", content="c"))
+    await chat_store.add_messages(
+        "coarse",
+        [
+            ChatMessage(role="assistant", content="d"),
+            ChatMessage(role="user", content="e"),
+        ],
+    )
+    await chat_store.add_message("coarse", ChatMessage(role="assistant", content="f"))
+
+    messages = await chat_store.get_messages("coarse")
+    assert [m.content for m in messages] == ["a", "b", "c", "d", "e", "f"]
+
+
+@pytest.mark.asyncio
+async def test_message_order_when_clock_goes_backwards(
+    chat_store: SQLAlchemyChatStore, monkeypatch: pytest.MonkeyPatch
+):
+    """Messages keep insertion order when the wall clock is stepped backwards."""
+    clock = iter([5_000_000, 4_000_000, 3_000_000])
+    monkeypatch.setattr(
+        sql_module, "time", SimpleNamespace(time_ns=lambda: next(clock))
+    )
+
+    await chat_store.add_message("back", ChatMessage(role="user", content="first"))
+    await chat_store.add_message(
+        "back", ChatMessage(role="assistant", content="second")
+    )
+    await chat_store.add_message("back", ChatMessage(role="user", content="third"))
+
+    messages = await chat_store.get_messages("back")
+    assert [m.content for m in messages] == ["first", "second", "third"]
 
 
 @pytest.mark.asyncio
