@@ -21,3 +21,24 @@ llm = OpenAILike(
     is_function_calling_model=False,
 )
 ```
+
+### PZERO Example
+
+[PZERO](https://pzero.studio) provides prepaid inference over OpenAI-compatible endpoints. Point `api_base` to `https://api.pzero.studio/v1` and ensure `is_chat_model=True`:
+
+```python
+import os
+from llama_index.llms.openai_like import OpenAILike
+
+llm = OpenAILike(
+    model="deepseek-v4-flash",
+    api_base="https://api.pzero.studio/v1",
+    api_key=os.environ["PZERO_API_KEY"],
+    context_window=128000,
+    is_chat_model=True,
+)
+
+response = llm.complete("Hello from PZERO")
+print(str(response))
+```
+
