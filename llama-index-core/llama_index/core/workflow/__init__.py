@@ -1,5 +1,9 @@
 from .context import Context
-from .context_serializers import JsonPickleSerializer, JsonSerializer
+from .context_serializers import (
+    JsonPickleSerializer,
+    JsonSerializer,
+    PickleSerializer,
+)
 from .decorators import step
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
 from .events import Event, HumanResponseEvent, InputRequiredEvent, StartEvent, StopEvent
@@ -19,4 +23,5 @@ __all__ = [
     "HumanResponseEvent",
     "JsonPickleSerializer",
     "JsonSerializer",
+    "PickleSerializer",
 ]
