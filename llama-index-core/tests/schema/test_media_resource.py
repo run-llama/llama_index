@@ -1,6 +1,6 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
-from llama_index.core.bridge.pydantic import AnyUrl
+from llama_index.core.bridge.pydantic import AnyUrl, ValidationError
 from llama_index.core.schema import MediaResource
 
 
@@ -53,3 +53,13 @@ def test_hash():
         == "04414a5f03ad7fa055229b4d3690d47427cb0b65bc7eb8f770d1ecbd54ab4909"
     )
     assert MediaResource().hash == ""
+
+
+def test_invalid_path_raises_validation_error():
+    for invalid_path in [12345, object(), PurePosixPath("a/b.txt")]:
+        try:
+            MediaResource(path=invalid_path)
+        except ValidationError as exc:
+            assert "path" in str(exc)
+        else:
+            raise AssertionError("Expected ValidationError")
