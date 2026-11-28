@@ -2,6 +2,9 @@ from pathlib import Path
 
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import SimpleChatStore
+from llama_index.core.storage.chat_store.simple_chat_store import (
+    chat_message_serialization,
+)
 
 
 def test_add_messages() -> None:
@@ -91,3 +94,19 @@ def test_persist_non_ascii_unescaped(tmp_path: Path) -> None:
     assert SimpleChatStore.from_persist_path(persist_path).get_messages("user1") == [
         ChatMessage(role="user", content="ハロー héllo"),
     ]
+
+
+def test_chat_message_serialization_calls_handler_with_value_only() -> None:
+    """The wrap serializer must not pass `info` as the handler's `index_key`."""
+    calls = []
+
+    def handler(value, *args):
+        calls.append(args)
+        return {"additional_kwargs": {"a": 1}}
+
+    result = chat_message_serialization(
+        ChatMessage(role="user", content="hi"), handler, info=object()
+    )
+
+    assert calls == [()]
+    assert result == {"additional_kwargs": {"a": 1}}
