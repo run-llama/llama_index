@@ -202,3 +202,49 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+def test_header_path_with_crlf_line_endings() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="# Guide\r\nIntro\r\n## Install\r\nRun pip\r\n### Linux\r\nUse apt\r\n"
+            )
+        ]
+    )
+    assert [s.metadata["header_path"] for s in splits] == [
+        "/",
+        "/Guide/",
+        "/Guide/Install/",
+    ]
+    assert splits[1].text.startswith("## Install\n")
+
+
+def test_header_path_ignores_trailing_whitespace() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [Document(text="# Guide  \nA\n## Install\t\nB\n### Linux\nC")]
+    )
+    assert splits[2].metadata == {"header_path": "/Guide/Install/"}
+
+
+def test_header_path_ignores_closing_hashes() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [Document(text="# Guide #\nA\n## Install ##\nB\n### Linux\nC")]
+    )
+    assert splits[2].metadata == {"header_path": "/Guide/Install/"}
+    assert splits[0].text == "# Guide\nA"
+
+
+def test_header_path_keeps_hash_that_is_part_of_the_text() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [Document(text="# C#\nA\n## Setup\nB")]
+    )
+    assert splits[1].metadata == {"header_path": "/C#/"}
